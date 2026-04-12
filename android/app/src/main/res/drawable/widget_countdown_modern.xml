@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modern countdown badge with gradient -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Background with gradient -->
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:angle="90"
+                android:startColor="#007DFF"
+                android:endColor="#0056CC"
+                android:type="linear" />
+            <corners android:radius="6dp" />
+        </shape>
+    </item>
+</layer-list>

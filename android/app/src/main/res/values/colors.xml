@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<color name="ic_launcher_background">#FFFFFF</color>
+
+	<!-- Widget Colors -->
+	<color name="widget_background">#F5F9FC</color>
+	<color name="widget_text_primary">#1A2E35</color>
+	<color name="widget_text_secondary">#5A6A72</color>
+	<color name="widget_accent">#2D5B8A</color>
+	<color name="widget_highlight">#E8F4FD</color>
+	<color name="widget_border">#C5D9E8</color>
+
+	<!-- Theme Colors -->
+	<color name="primary">#1E3A5F</color>
+	<color name="primary_dark">#152A45</color>
+	<color name="accent">#4A90D9</color>
+	<color name="success">#4CAF50</color>
+	<color name="warning">#FF9800</color>
+	<color name="error">#F44336</color>
+
+	<!-- Adhan Full-Screen Activity Colors -->
+	<color name="adhan_fullscreen_background">#1E3A5F</color>
+	<color name="adhan_fullscreen_text_primary">#FFFFFF</color>
+	<color name="adhan_fullscreen_text_secondary">#B0BEC5</color>
+</resources>

@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "101079644290",
+    "project_id": "com-aura-hala",
+    "storage_bucket": "com-aura-hala.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:101079644290:android:c817d6084a5fb73a025c9b",
+        "android_client_info": {
+          "package_name": "com.aura.hala"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "101079644290-q2rssodlfmdvpv03vbp4u2ltjla031di.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aura.hala",
+            "certificate_hash": "a1b5ba157786ef05031e9b214a1a91023c42fec4"
+          }
+        },
+        {
+          "client_id": "101079644290-aieikjb291655asl5red7kfqnlpknsn0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_tzdYWMrxYIHVtEmZ0YxCxOX5rfb0_BA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "101079644290-aieikjb291655asl5red7kfqnlpknsn0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

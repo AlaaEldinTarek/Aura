@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Glow Effect -->
+    <item android:top="-2dp" android:left="-2dp" android:right="-2dp" android:bottom="-2dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#404DA6FF"/>
+            <corners android:radius="14dp"/>
+        </shape>
+    </item>
+    <!-- Card Background with Blue Border -->
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#2C2C2C"/>
+            <corners android:radius="12dp"/>
+            <stroke android:width="2dp" android:color="#4DA6FF"/>
+        </shape>
+    </item>
+</layer-list>

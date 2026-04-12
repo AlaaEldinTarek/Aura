@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Background for prayer time items - selector style -->
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="#1A007DFF">
+    <item android:id="@android:id/mask">
+        <shape android:shape="rectangle">
+            <corners android:radius="12dp" />
+            <solid android:color="#FFFFFF" />
+        </shape>
+    </item>
+</ripple>

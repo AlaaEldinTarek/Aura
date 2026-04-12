@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Moon body -->
+    <path
+        android:fillColor="#E0E0E0"
+        android:pathData="M54,30a24,24 0,1,0 0,48a24,24 0,1,0 0,-48z"/>
+
+    <!-- Moon craters -->
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M40,45a5,5 0,1,0 0,10a5,5 0,1,0 0,-10z"/>
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M62,52a4,4 0,1,0 0,8a4,4 0,1,0 0,-8z"/>
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M48,60a3,3 0,1,0 0,6a3,3 0,1,0 0,-6z"/>
+    <path
+        android:fillColor="#BDBDBD"
+        android:pathData="M65,62a3,3 0,1,0 0,6a3,3 0,1,0 0,-6z"/>
+
+    <!-- Moon shine -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.15"
+        android:pathData="M54,18a18,18 0,0,1 0,36a18,18 0,0,1 0,-36z"/>
+</vector>

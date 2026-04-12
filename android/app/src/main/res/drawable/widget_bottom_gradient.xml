@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bottom accent gradient for widget -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:angle="0"
+        android:startColor="#FFFFFF"
+        android:endColor="#E0E0E0"
+        android:type="linear" />
+</shape>

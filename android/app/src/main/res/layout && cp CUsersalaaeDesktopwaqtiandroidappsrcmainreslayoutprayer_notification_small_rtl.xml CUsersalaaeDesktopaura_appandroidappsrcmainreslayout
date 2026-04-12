@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- LTR layout for English -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="@android:color/transparent">
+
+    <!-- White card with blue border and rounded corners -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/notification_card_bg"
+        android:padding="12dp">
+
+        <!-- Top row: App icon and name -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="start|center_vertical"
+            android:layout_marginBottom="6dp">
+
+            <!-- App icon -->
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/waqti_logo"
+                android:scaleType="fitCenter"
+                android:layout_marginEnd="6dp" />
+
+            <!-- App name -->
+            <TextView
+                android:id="@+id/app_name"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Waqti - وقتي"
+                android:textSize="13sp"
+                android:textColor="#666666"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Main Content Row: Emoji Centered -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <!-- COLUMN 1: Text Info (Label, Prayer Name, Countdown) - LEFT -->
+            <LinearLayout
+                android:id="@+id/text_info_container"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:orientation="vertical"
+                android:gravity="start">
+
+                <!-- Row 1: Label -->
+                <TextView
+                    android:id="@+id/notification_label"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Next Prayer"
+                    android:textSize="11sp"
+                    android:textColor="#666666"
+                    android:includeFontPadding="false"
+                    android:layout_marginBottom="2dp" />
+
+                <!-- Row 2: Prayer Name -->
+                <TextView
+                    android:id="@+id/notification_prayer_name"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Dhuhr"
+                    android:textSize="22sp"
+                    android:textColor="#000000"
+                    android:textStyle="bold"
+                    android:includeFontPadding="false"
+                    android:layout_marginBottom="2dp" />
+
+                <!-- Row 3: Countdown -->
+                <TextView
+                    android:id="@+id/notification_countdown"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Starts in 3h 24m"
+                    android:textSize="11sp"
+                    android:textColor="#666666"
+                    android:includeFontPadding="false" />
+            </LinearLayout>
+
+            <!-- COLUMN 2: Prayer Icon - CENTERED -->
+            <ImageView
+                android:id="@+id/notification_emoji"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:src="@drawable/ic_prayer_dhuhr"
+                android:scaleType="centerCrop"
+                android:layout_centerInParent="true"
+                android:contentDescription="Prayer Icon" />
+
+            <!-- COLUMN 3: Time and Period - RIGHT -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:orientation="horizontal"
+                android:gravity="bottom">
+
+                <!-- Time -->
+                <TextView
+                    android:id="@+id/notification_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="11:58"
+                    android:textSize="32sp"
+                    android:textColor="#000000"
+                    android:textStyle="bold"
+                    android:includeFontPadding="false" />
+
+                <!-- Period (AM/PM) -->
+                <TextView
+                    android:id="@+id/notification_period"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PM"
+                    android:textSize="12sp"
+                    android:textColor="#666666"
+                    android:layout_marginStart="2dp"
+                    android:layout_marginBottom="2dp"
+                    android:includeFontPadding="false" />
+            </LinearLayout>
+
+        </RelativeLayout>
+
+        <!-- Progress Bar -->
+        <ProgressBar
+            android:id="@+id/notification_progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:layout_marginTop="10dp"
+            android:progress="0"
+            android:max="100"
+            android:progressTint="#4CAF50"
+            android:progressBackgroundTint="#E0E0E0" />
+
+        <!-- Current prayer - HIDDEN -->
+        <TextView
+            android:id="@+id/notification_current_prayer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+    </LinearLayout>
+</LinearLayout>

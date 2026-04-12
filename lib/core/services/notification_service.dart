@@ -1,0 +1,629 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../models/prayer_time.dart';
+import '../models/prayer_record.dart' show kPrayerNames, PrayerStatus, PrayerMethod, getCurrentUserId;
+import '../constants/app_constants.dart';
+import 'prayer_tracking_service.dart';
+
+/// Service for managing prayer time notifications
+class NotificationService {
+  NotificationService._();
+
+  static final NotificationService instance = NotificationService._();
+
+  final FlutterLocalNotificationsPlugin _notifications =
+      FlutterLocalNotificationsPlugin();
+  SharedPreferences? _prefs;
+
+  // Store prayer times for "remind me again" feature
+  final Map<String, DateTime> _scheduledPrayerTimes = {};
+
+  // Notification channels
+  static const String _prayerChannelId = 'prayer_times';
+  static const String _prayerChannelName = 'Prayer Times';
+  static const String _prayerChannelDescription = 'Notifications for prayer times';
+
+  // Notification IDs
+  static const int _fajrNotificationId = 1;
+  static const int _sunriseNotificationId = 2;
+  static const int _dhuhrNotificationId = 3;
+  static const int _asrNotificationId = 4;
+  static const int _maghribNotificationId = 5;
+  static const int _ishaNotificationId = 6;
+
+  /// Initialize the notification service
+  Future<void> initialize() async {
+    tz_data.initializeTimeZones();
+
+    final AndroidInitializationSettings initializationSettingsAndroid =
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+
+    final DarwinInitializationSettings initializationSettingsDarwin =
+        DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
+
+    final InitializationSettings initializationSettings = InitializationSettings(
+      android: initializationSettingsAndroid,
+      iOS: initializationSettingsDarwin,
+    );
+
+    await _notifications.initialize(
+      initializationSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        debugPrint('═══════════════════════════════════════');
+        debugPrint('🔔 [NOTIFICATION] Action received: ${response.actionId}');
+        debugPrint('🔔 [NOTIFICATION] Payload: ${response.payload}');
+
+        // Handle "Remind Me Again" action
+        if (response.actionId == 'remind_again' && response.payload != null) {
+          _handleRemindMeAgain(response.payload!);
+        } else if (response.actionId == 'mark_prayed' && response.payload != null) {
+          _handleMarkPrayed(response.payload!);
+        } else if (response.actionId == null || response.actionId == '') {
+          // Notification was tapped (not an action button)
+          debugPrint('🔔 [NOTIFICATION] Notification tapped by user');
+        }
+        debugPrint('═══════════════════════════════════════');
+      },
+    );
+
+    // Create notification channels for Android
+    await _createNotificationChannels();
+
+    _prefs = await SharedPreferences.getInstance();
+    debugPrint('NotificationService: Initialized');
+  }
+
+  /// Create notification channels for Android
+  Future<void> _createNotificationChannels() async {
+    const AndroidNotificationChannel channel = AndroidNotificationChannel(
+      _prayerChannelId,
+      _prayerChannelName,
+      description: _prayerChannelDescription,
+      importance: Importance.high,
+      enableVibration: true,
+      playSound: true,
+      showBadge: true,
+    );
+
+    const AndroidNotificationChannel prayerCheckChannel = AndroidNotificationChannel(
+      'prayer_check',
+      'Prayer Check',
+      description: 'Reminders to check if you prayed',
+      importance: Importance.high,
+      enableVibration: true,
+      playSound: true,
+      showBadge: true,
+    );
+
+    await _notifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
+
+    await _notifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(prayerCheckChannel);
+  }
+
+  /// Request notification permissions
+  Future<bool> requestPermissions() async {
+    debugPrint('═══════════════════════════════════════');
+    debugPrint('🔔 [PERMISSION] requestPermissions called');
+
+    // Android 13+ requires POST_NOTIFICATIONS permission
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final status = await Permission.notification.request();
+      debugPrint('📱 [PERMISSION] Notification permission status: $status');
+      if (!status.isGranted) {
+        debugPrint('❌ [PERMISSION] Notification permission denied');
+        return false;
+      }
+      debugPrint('✅ [PERMISSION] Notification permission granted');
+    }
+
+    // For exact alarm permission on Android 12+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final exactAlarmStatus = await Permission.scheduleExactAlarm.request();
+      debugPrint('⏰ [PERMISSION] Exact alarm permission status: $exactAlarmStatus');
+      if (!exactAlarmStatus.isGranted) {
+        debugPrint('⚠️ [PERMISSION] Exact alarm permission denied');
+      } else {
+        debugPrint('✅ [PERMISSION] Exact alarm permission granted');
+      }
+    }
+
+    debugPrint('✅ [PERMISSION] All permissions completed');
+    debugPrint('═══════════════════════════════════════');
+    return true;
+  }
+
+  /// Schedule a notification for a specific prayer time
+  Future<void> schedulePrayerNotification(PrayerTime prayer) async {
+    if (_prefs == null) return;
+
+    debugPrint('═══════════════════════════════════════');
+    debugPrint('🔔 [NOTIFICATION] schedulePrayerNotification called for ${prayer.name}');
+
+    // Check if prayer notifications are master enabled
+    final masterEnabled = _prefs!.getBool(AppConstants.keyPrayerNotificationsEnabled) ?? true;
+    if (!masterEnabled) {
+      debugPrint('❌ [NOTIFICATION] Prayer notifications are DISABLED in settings');
+      return;
+    }
+
+    // Check if notifications are enabled for this prayer
+    if (!_isNotificationEnabled(prayer.name)) {
+      debugPrint('❌ [NOTIFICATION] Notifications disabled for ${prayer.name}');
+      return;
+    }
+
+    final notificationId = _getNotificationId(prayer.name);
+    final scheduledTime = prayer.time;
+    final now = DateTime.now();
+
+    // Schedule notification X minutes before prayer time
+    final reminderMinutes = _prefs?.getInt(AppConstants.keyNotificationReminderMinutes) ?? 10;
+    final reminderTime = scheduledTime.subtract(Duration(minutes: reminderMinutes));
+
+    debugPrint('📅 [NOTIFICATION] Current time: $now');
+    debugPrint('📅 [NOTIFICATION] Prayer time: ${prayer.time} (${prayer.name})');
+    debugPrint('📅 [NOTIFICATION] Reminder time: $reminderTime ($reminderMinutes min before)');
+
+    // If reminder time has passed, don't schedule
+    if (reminderTime.isBefore(now)) {
+      debugPrint('❌ [NOTIFICATION] ${prayer.name} reminder time has passed - SKIPPING');
+      debugPrint('═══════════════════════════════════════');
+      return;
+    }
+
+    debugPrint('✅ [NOTIFICATION] Scheduling notification for ${prayer.name}...');
+
+    final isArabic = await _getLanguagePreference() == 'ar';
+    final title = isArabic ? prayer.nameAr : prayer.name;
+    final body = isArabic ? 'الصلاة بعد $reminderMinutes دقائق' : 'Prayer in $reminderMinutes minutes';
+
+    // Create "Remind Me Again" and "Mark as Prayed" action buttons
+    final remindAgainLabel = isArabic ? 'ذكرني مرة أخرى' : 'Remind Me Again';
+    final markPrayedLabel = isArabic ? 'أديت الصلاة' : 'Mark as Prayed';
+    final AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      _prayerChannelId,
+      _prayerChannelName,
+      channelDescription: _prayerChannelDescription,
+      importance: Importance.high,
+      priority: Priority.high,
+      showWhen: true,
+      icon: '@mipmap/ic_launcher',
+      // Add action buttons
+      actions: [
+        AndroidNotificationAction(
+          'mark_prayed',
+          markPrayedLabel,
+          showsUserInterface: false,
+        ),
+        AndroidNotificationAction(
+          'remind_again',
+          remindAgainLabel,
+          showsUserInterface: false,
+        ),
+      ],
+    );
+
+    final NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    final tz.TZDateTime scheduledDate = tz.TZDateTime.from(
+      reminderTime,
+      tz.local,
+    );
+
+    await _notifications.zonedSchedule(
+      notificationId,
+      title,
+      body,
+      scheduledDate,
+      platformChannelSpecifics,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time,
+      payload: '${prayer.name}|${prayer.nameAr}|${prayer.time.millisecondsSinceEpoch}', // Store prayer info
+    );
+
+    // Store prayer time for "remind me again" feature
+    _scheduledPrayerTimes[prayer.name] = prayer.time;
+
+    debugPrint('NotificationService: Scheduled ${prayer.name} notification for $scheduledDate');
+  }
+
+  /// Schedule all prayer notifications for the day
+  Future<void> scheduleDailyPrayers(List<PrayerTime> prayers) async {
+    debugPrint('═══════════════════════════════════════');
+    debugPrint('🔔 [NOTIFICATION] scheduleDailyPrayers called with ${prayers.length} prayers');
+    for (final prayer in prayers) {
+      if (prayer.name != 'Sunrise') {
+        await schedulePrayerNotification(prayer);
+      }
+    }
+    debugPrint('✅ [NOTIFICATION] Finished scheduling daily prayers');
+    debugPrint('═══════════════════════════════════════');
+  }
+
+  /// Schedule prayer check reminders - 30 min before each prayer,
+  /// check if the PREVIOUS prayer was completed, if not remind the user.
+  /// Uses notification IDs 3001-3006 to avoid conflicts.
+  Future<void> schedulePrayerCheckReminders(List<PrayerTime> prayers, Map<String, bool> completedPrayers) async {
+    debugPrint('═══════════════════════════════════════');
+    debugPrint('🔔 [PRAYER_CHECK] Scheduling prayer check reminders');
+
+    // Prayer order for determining "previous" prayer (skip Sunrise)
+    final trackablePrayers = prayers.where((p) => p.name != 'Sunrise').toList();
+
+    for (int i = 0; i < trackablePrayers.length; i++) {
+      final currentPrayer = trackablePrayers[i];
+
+      // Find the previous trackable prayer
+      if (i == 0) continue; // No previous prayer for Fajr (first of day)
+      final previousPrayer = trackablePrayers[i - 1];
+      final previousCompleted = completedPrayers[previousPrayer.name] ?? false;
+
+      // If already completed, no need to remind
+      if (previousCompleted) {
+        debugPrint('✅ [PRAYER_CHECK] ${previousPrayer.name} already completed, skipping reminder');
+        continue;
+      }
+
+      // Schedule 30 minutes before current prayer time
+      final reminderTime = currentPrayer.time.subtract(const Duration(minutes: 30));
+      final now = DateTime.now();
+
+      if (reminderTime.isBefore(now)) {
+        debugPrint('❌ [PRAYER_CHECK] ${currentPrayer.name} reminder time has passed - skipping');
+        continue;
+      }
+
+      final isArabic = await _getLanguagePreference() == 'ar';
+      final prevName = isArabic ? previousPrayer.nameAr : previousPrayer.name;
+      final title = isArabic ? 'تذكير الصلاة' : 'Prayer Reminder';
+      final body = isArabic
+          ? 'هل صليت $prevName؟ حان موعد ${isArabic ? currentPrayer.nameAr : currentPrayer.name} بعد 30 دقيقة'
+          : 'Did you pray $prevName? ${currentPrayer.name} is in 30 minutes';
+
+      final notificationId = 3000 + _getNotificationId(currentPrayer.name);
+
+      final androidDetails = AndroidNotificationDetails(
+        'prayer_check',
+        'Prayer Check',
+        channelDescription: 'Reminders to check if you prayed',
+        importance: Importance.high,
+        priority: Priority.high,
+        showWhen: true,
+        icon: '@mipmap/ic_launcher',
+        actions: [
+          AndroidNotificationAction(
+            'mark_prayed_${previousPrayer.name.toLowerCase()}',
+            isArabic ? 'نعم، صليت' : 'Yes, I prayed',
+            showsUserInterface: false,
+          ),
+        ],
+      );
+
+      final platformDetails = NotificationDetails(android: androidDetails);
+
+      final scheduledDate = tz.TZDateTime.from(reminderTime, tz.local);
+
+      await _notifications.zonedSchedule(
+        notificationId,
+        title,
+        body,
+        scheduledDate,
+        platformDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+        payload: 'prayer_check|${previousPrayer.name}|${previousPrayer.nameAr}',
+      );
+
+      debugPrint('✅ [PRAYER_CHECK] Scheduled: "Did you pray ${previousPrayer.name}?" 30 min before ${currentPrayer.name}');
+    }
+
+    debugPrint('═══════════════════════════════════════');
+  }
+
+  /// Schedule a "remind me again" notification (5 minutes before prayer)
+  /// This is called when user taps "Remind Me Again" on the 10-minute notification
+  Future<void> scheduleRemindMeAgain(String prayerName, String prayerNameAr, DateTime prayerTime) async {
+    debugPrint('═══════════════════════════════════════');
+    debugPrint('🔔 [REMIND_AGAIN] Scheduling remind again for $prayerName');
+
+    final notificationId = _getNotificationId(prayerName) + 5000; // 5001-5006: avoid conflict with native IDs (1001-1006, 2001-2006, 3001-3006)
+    final now = DateTime.now();
+
+    // Schedule notification 5 minutes before prayer time
+    final reminderTime = prayerTime.subtract(const Duration(minutes: 5));
+
+    debugPrint('📅 [REMIND_AGAIN] Current time: $now');
+    debugPrint('📅 [REMIND_AGAIN] Prayer time: $prayerTime');
+    debugPrint('📅 [REMIND_AGAIN] Reminder time: $reminderTime (5 min before)');
+
+    // If reminder time has passed, don't schedule
+    if (reminderTime.isBefore(now)) {
+      debugPrint('❌ [REMIND_AGAIN] Reminder time has passed - too late to remind again');
+      debugPrint('═══════════════════════════════════════');
+      return;
+    }
+
+    final isArabic = await _getLanguagePreference() == 'ar';
+    final title = isArabic ? prayerNameAr : prayerName;
+    final body = isArabic ? 'الصلاة بعد 5 دقائق' : 'Prayer in 5 minutes';
+
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      _prayerChannelId,
+      _prayerChannelName,
+      channelDescription: _prayerChannelDescription,
+      importance: Importance.high,
+      priority: Priority.high,
+      showWhen: true,
+      icon: '@mipmap/ic_launcher',
+    );
+
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    final tz.TZDateTime scheduledDate = tz.TZDateTime.from(
+      reminderTime,
+      tz.local,
+    );
+
+    await _notifications.zonedSchedule(
+      notificationId,
+      title,
+      body,
+      scheduledDate,
+      platformChannelSpecifics,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      matchDateTimeComponents: DateTimeComponents.time,
+    );
+
+    debugPrint('✅ [REMIND_AGAIN] Scheduled remind-again notification for $title at $scheduledDate');
+    debugPrint('═══════════════════════════════════════');
+  }
+
+  /// Handle "Remind Me Again" button tap
+  /// Handle "Mark as Prayed" action from notification
+  Future<void> _handleMarkPrayed(String payload) async {
+    debugPrint('═══════════════════════════════════════');
+    debugPrint('✅ [MARK_PRAYED] Handling mark as prayed request');
+    debugPrint('📦 [MARK_PRAYED] Payload: $payload');
+
+    final parts = payload.split('|');
+    if (parts.isEmpty) {
+      debugPrint('❌ [MARK_PRAYED] Invalid payload format');
+      return;
+    }
+
+    final prayerName = parts[0];
+    debugPrint('🕌 [MARK_PRAYED] Prayer: $prayerName');
+
+    try {
+      final userId = getCurrentUserId();
+      final success = await PrayerTrackingService.instance.recordPrayer(
+        userId: userId,
+        prayerName: prayerName,
+        date: DateTime.now(),
+        prayedAt: DateTime.now(),
+        status: PrayerStatus.onTime,
+        method: PrayerMethod.congregation,
+      );
+      debugPrint(success
+          ? '✅ [MARK_PRAYED] Successfully recorded $prayerName from notification'
+          : '❌ [MARK_PRAYED] Failed to record $prayerName');
+    } catch (e) {
+      debugPrint('❌ [MARK_PRAYED] Error: $e');
+    }
+    debugPrint('═══════════════════════════════════════');
+  }
+
+  Future<void> _handleRemindMeAgain(String payload) async {
+    debugPrint('═══════════════════════════════════════');
+    debugPrint('🔄 [REMIND_AGAIN] Handling remind me again request');
+    debugPrint('📦 [REMIND_AGAIN] Payload: $payload');
+
+    // Parse payload: "prayerName|prayerNameAr|timestamp"
+    final parts = payload.split('|');
+    if (parts.length != 3) {
+      debugPrint('❌ [REMIND_AGAIN] Invalid payload format');
+      return;
+    }
+
+    final prayerName = parts[0];
+    final prayerNameAr = parts[1];
+    final prayerTimeMillis = int.tryParse(parts[2]);
+
+    if (prayerTimeMillis == null) {
+      debugPrint('❌ [REMIND_AGAIN] Invalid timestamp in payload');
+      return;
+    }
+
+    final prayerTime = DateTime.fromMillisecondsSinceEpoch(prayerTimeMillis);
+    debugPrint('🕌 [REMIND_AGAIN] Prayer: $prayerName ($prayerNameAr) at $prayerTime');
+
+    // Schedule remind again notification (5 minutes before) - await to ensure it completes
+    await scheduleRemindMeAgain(prayerName, prayerNameAr, prayerTime);
+
+    debugPrint('═══════════════════════════════════════');
+  }
+
+  /// Cancel a specific prayer notification
+  Future<void> cancelPrayerNotification(String prayerName) async {
+    final notificationId = _getNotificationId(prayerName);
+    await _notifications.cancel(notificationId);
+    debugPrint('NotificationService: Cancelled $prayerName notification');
+  }
+
+  /// Cancel all prayer notifications
+  Future<void> cancelAllNotifications() async {
+    await _notifications.cancelAll();
+    debugPrint('NotificationService: Cancelled all notifications');
+  }
+
+  /// Show immediate notification (useful for testing)
+  Future<void> showTestNotification() async {
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      _prayerChannelId,
+      _prayerChannelName,
+      channelDescription: _prayerChannelDescription,
+      importance: Importance.high,
+      priority: Priority.high,
+      showWhen: true,
+      icon: '@mipmap/ic_launcher',
+    );
+
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    await _notifications.show(
+      0,
+      'Test Notification',
+      'This is a test prayer notification',
+      platformChannelSpecifics,
+    );
+  }
+
+  /// Show notification at exact prayer time (when adhan plays)
+  Future<void> showPrayerTimeNotification({
+    required String prayerName,
+    required String prayerNameAr,
+    required String language,
+  }) async {
+    final isArabic = language == 'ar';
+    final title = isArabic ? prayerNameAr : prayerName;
+    final body = isArabic ? 'حان الآن موعد صلاة $title' : 'It\'s time for $title prayer';
+
+    const AndroidNotificationDetails androidPlatformChannelSpecifics =
+        AndroidNotificationDetails(
+      _prayerChannelId,
+      _prayerChannelName,
+      channelDescription: _prayerChannelDescription,
+      importance: Importance.max,
+      priority: Priority.high,
+      showWhen: true,
+      icon: '@mipmap/ic_launcher',
+      visibility: NotificationVisibility.public,
+      category: AndroidNotificationCategory.alarm,
+      fullScreenIntent: true,
+    );
+
+    const NotificationDetails platformChannelSpecifics =
+        NotificationDetails(android: androidPlatformChannelSpecifics);
+
+    final notificationId = _getNotificationId(prayerName);
+
+    await _notifications.show(
+      notificationId,
+      title,
+      body,
+      platformChannelSpecifics,
+    );
+
+    debugPrint('🔔 [NOTIFICATION] Showed prayer time notification for $prayerName');
+  }
+
+  /// Check if notification is enabled for a prayer
+  bool _isNotificationEnabled(String prayerName) {
+    if (_prefs == null) return true;
+    return _prefs!.getBool('notify_${prayerName.toLowerCase()}') ?? true;
+  }
+
+  /// Get notification ID for prayer
+  int _getNotificationId(String prayerName) {
+    switch (prayerName) {
+      case 'Fajr':
+        return _fajrNotificationId;
+      case 'Sunrise':
+        return _sunriseNotificationId;
+      case 'Zuhr':
+        return _dhuhrNotificationId;
+      case 'Asr':
+        return _asrNotificationId;
+      case 'Maghrib':
+        return _maghribNotificationId;
+      case 'Isha':
+        return _ishaNotificationId;
+      default:
+        return 0;
+    }
+  }
+
+  /// Get language preference
+  Future<String> _getLanguagePreference() async {
+    if (_prefs == null) return 'en';
+    return _prefs!.getString('language') ?? 'en';
+  }
+
+  /// Toggle notification for a prayer
+  Future<void> togglePrayerNotification(String prayerName, bool enabled) async {
+    if (_prefs != null) {
+      await _prefs!.setBool('notify_${prayerName.toLowerCase()}', enabled);
+      if (enabled) {
+        // Re-schedule notifications if enabled
+        debugPrint('NotificationService: Enabled notifications for $prayerName');
+      } else {
+        // Cancel if disabled
+        await cancelPrayerNotification(prayerName);
+        debugPrint('NotificationService: Disabled notifications for $prayerName');
+      }
+    }
+  }
+
+  /// Check if notification permission is granted
+  Future<bool> areNotificationsEnabled() async {
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return await Permission.notification.isGranted;
+    }
+    return true;
+  }
+
+  /// Open app notification settings
+  Future<void> openNotificationSettings() async {
+    // This would require a platform-specific implementation
+    // For now, just log it
+    debugPrint('NotificationService: Opening notification settings');
+  }
+
+  /// Debug method to check notification status
+  Future<void> debugCheckNotificationStatus() async {
+    debugPrint('═══════════════════════════════════════');
+    debugPrint('🔔 [DEBUG] Notification Status Check');
+    debugPrint('═══════════════════════════════════════');
+
+    // Check permissions
+    final hasPermission = await areNotificationsEnabled();
+    debugPrint('📱 Permission granted: $hasPermission');
+
+    // Check notification enabled for each prayer
+    final prayers = kPrayerNames;
+    for (final prayer in prayers) {
+      final enabled = _isNotificationEnabled(prayer);
+      debugPrint('🕌 $prayer notifications: ${enabled ? "ENABLED" : "DISABLED"}');
+    }
+
+    // Get pending notifications
+    final pendingNotifications = await _notifications.getNotificationAppLaunchDetails();
+    debugPrint('📋 Notification launched from: ${pendingNotifications?.didNotificationLaunchApp ?? false}');
+
+    debugPrint('═══════════════════════════════════════');
+  }
+}

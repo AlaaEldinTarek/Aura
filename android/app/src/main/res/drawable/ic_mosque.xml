@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Main dome -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,4 C8,4 5,6 5,8 L5,10 L19,10 L19,8 C19,6 16,4 12,4 Z"/>
+
+    <!-- Small inner dome -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,6 C10,6 9,7 9,8 L15,8 C15,7 14,6 12,6 Z"/>
+
+    <!-- Base/Rectangle -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M4,10 L20,10 L20,11 L4,11 Z"/>
+
+    <!-- Left minaret -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M6,10 L7,4 L8,4 L8,10 Z"/>
+
+    <!-- Right minaret -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M16,10 L17,4 L18,4 L18,10 Z"/>
+
+    <!-- Left minaret top -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M7.5,4 L7.5,2 L8.5,2 L8.5,4 Z"/>
+
+    <!-- Right minaret top -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M16.5,4 L16.5,2 L17.5,2 L17.5,4 Z"/>
+</vector>

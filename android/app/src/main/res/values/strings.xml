@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App Name -->
+    <string name="app_name">Aura</string>
+
+    <!-- Prayer Names -->
+    <string name="Fajr">Fajr</string>
+    <string name="Dhuhr">Dhuhr</string>
+    <string name="Asr">Asr</string>
+    <string name="Maghrib">Maghrib</string>
+    <string name="Isha">Isha</string>
+    <string name="Sunrise">Sunrise</string>
+
+    <!-- Common Strings -->
+    <string name="loading">Loading…</string>
+    <string name="prayer_times">Prayer Times</string>
+
+    <!-- Widget Descriptions -->
+    <string name="next_prayer_widget_description">Shows the next upcoming prayer time</string>
+    <string name="all_prayers_widget_description">Shows all daily prayer times</string>
+
+    <!-- Adhan Full-Screen Activity -->
+    <string name="prayer_time_icon">Prayer Time</string>
+</resources>
