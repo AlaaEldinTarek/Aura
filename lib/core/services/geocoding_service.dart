@@ -45,10 +45,12 @@ class GeocodingService {
         const Duration(seconds: 10),
       );
 
-      if (response.statusCode == 200) {
-        final data = json.decode(response.data.toString());
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data is Map<String, dynamic>
+            ? response.data as Map<String, dynamic>
+            : json.decode(response.data.toString()) as Map<String, dynamic>;
 
-        if (data != null && data['address'] != null) {
+        if (data['address'] != null) {
           final address = data['address'] as Map<String, dynamic>;
 
           // Try to get city name in priority order

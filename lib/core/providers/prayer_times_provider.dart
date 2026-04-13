@@ -62,6 +62,14 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
   SharedPreferences? _prefs;
   Timer? _nextPrayerUpdateTimer;
 
+  // Cached location to avoid GPS calls every minute
+  LocationData? _cachedLocation;
+  DateTime? _locationCacheTime;
+  static const Duration _locationCacheTTL = Duration(minutes: 15);
+
+  // Track last side effects day to avoid re-running on same day
+  String? _lastSideEffectsDate;
+
   PrayerTimesNotifier(this._prayerTimesService, this._locationService, [this._prefs])
       : super(PrayerTimesState(selectedDate: DateTime.now())) {
     // Wrap init in microtask to avoid modifying state during provider creation
@@ -75,16 +83,64 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
     super.dispose();
   }
 
+  /// Get location (cached for 15 minutes to avoid GPS lag)
+  Future<LocationData> _getCachedLocation() async {
+    final now = DateTime.now();
+    if (_cachedLocation != null && _locationCacheTime != null) {
+      final age = now.difference(_locationCacheTime!);
+      if (age < _locationCacheTTL) {
+        debugPrint('📍 [CACHE] Using cached location (${age.inSeconds}s old)');
+        return _cachedLocation!;
+      }
+    }
+    debugPrint('📍 [CACHE] Cache expired or empty, fetching fresh location...');
+    final location = await _locationService.getBestLocation();
+    _cachedLocation = location;
+    _locationCacheTime = now;
+    return location;
+  }
+
   /// Start periodic timer to update next prayer every minute
   void _startNextPrayerUpdateTimer() {
     _nextPrayerUpdateTimer?.cancel();
     _nextPrayerUpdateTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
       if (!state.isLoading && state.prayerTimes.isNotEmpty) {
-        // Use full refresh to handle day transitions properly
-        loadPrayerTimes(DateTime.now());
+        // Quick update: just recalculate next/current prayer without GPS
+        _quickUpdateNextPrayer();
       }
     });
     debugPrint('⏰ [TIMER] Started next prayer update timer (every minute)');
+  }
+
+  /// Quick update that only recalculates next/current prayer (no GPS, no side effects)
+  void _quickUpdateNextPrayer() {
+    final nextPrayer = _prayerTimesService.getNextPrayer(state.prayerTimes);
+    final currentPrayer = _prayerTimesService.getCurrentPrayer(state.prayerTimes);
+
+    // Check if next prayer is tomorrow (day transition) - need full reload
+    if (nextPrayer != null) {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final nextPrayerDate = DateTime(nextPrayer.time.year, nextPrayer.time.month, nextPrayer.time.day);
+      if (nextPrayerDate.isAfter(today)) {
+        debugPrint('📅 [QUICK_UPDATE] Day transition detected, doing full reload');
+        loadPrayerTimes(DateTime.now());
+        return;
+      }
+    }
+
+    final updatedPrayerTimes = state.prayerTimes.map((p) {
+      return p.copyWith(
+        isNext: nextPrayer?.name == p.name,
+        isCurrent: currentPrayer?.name == p.name,
+      );
+    }).toList();
+
+    state = state.copyWith(
+      prayerTimes: updatedPrayerTimes,
+      nextPrayer: nextPrayer,
+      currentPrayer: currentPrayer,
+    );
   }
 
   Future<void> _init() async {
@@ -113,8 +169,8 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      // Get location
-      final locationData = await _locationService.getBestLocation();
+      // Get location (uses cache to avoid GPS every time)
+      final locationData = await _getCachedLocation();
 
       // Use provided or saved calculation method
       final method = calculationMethod ?? _getCalculationMethod();
@@ -122,7 +178,6 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
 
       // Load iqama settings from preferences
       final iqamaMinutes = await PrayerTimesService.loadIqamaMinutes();
-      debugPrint('🕌 [PRAYER] Using iqama minutes: $iqamaMinutes');
 
       // Get prayer times with iqama settings
       final prayerTimes = await _prayerTimesService.getPrayerTimes(
@@ -137,9 +192,6 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
       // Get next and current prayer
       final nextPrayer = _prayerTimesService.getNextPrayer(prayerTimes);
       final currentPrayer = _prayerTimesService.getCurrentPrayer(prayerTimes);
-
-      debugPrint('🕌 [PRAYER_TIMES] Next prayer determined: ${nextPrayer?.name} at ${nextPrayer?.time}');
-      debugPrint('🕌 [PRAYER_TIMES] Current prayer: ${currentPrayer?.name}');
 
       // Update next/current flags
       final updatedPrayerTimes = prayerTimes.map((p) {
@@ -160,81 +212,80 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
         location: locationData,
       );
 
-      debugPrint('PrayerTimesNotifier: Loaded ${prayerTimes.length} prayer times');
-      debugPrint('  Location: ${locationData.cityName}');
-      debugPrint('  Next prayer: ${nextPrayer?.name} at ${nextPrayer?.time}');
-      debugPrint('  Current prayer: ${currentPrayer?.name} at ${currentPrayer?.time}');
+      // ---- SIDE EFFECTS in background (fire-and-forget) ----
+      // Only run once per day to avoid wasting resources every minute
+      final todayKey = '${date.year}-${date.month}-${date.day}';
+      if (_lastSideEffectsDate == todayKey) return; // Guard before spawning async
+      _lastSideEffectsDate = todayKey; // Set synchronously to prevent concurrent runs
+      () async {
 
-      // Schedule notifications for prayer times (5-minute reminders)
-      try {
-        await NotificationService.instance.scheduleDailyPrayers(updatedPrayerTimes);
-        debugPrint('PrayerTimesNotifier: Scheduled 5-minute reminder notifications');
-      } catch (e) {
-        debugPrint('PrayerTimesNotifier: Error scheduling notifications - $e');
-      }
-
-      // Schedule prayer check reminders (30 min before prayer, check if previous was done)
-      try {
-        await PrayerTrackingService.instance.initialize();
-        final summary = await PrayerTrackingService.instance.getDailySummary(
-          userId: getCurrentUserId(),
-          date: DateTime.now(),
-        );
-        final completedPrayers = <String, bool>{};
-        for (final entry in summary.prayers.entries) {
-          completedPrayers[entry.key] = entry.value != PrayerStatus.missed;
+        // Schedule notifications for prayer times (5-minute reminders)
+        try {
+          await NotificationService.instance.scheduleDailyPrayers(updatedPrayerTimes);
+        } catch (e) {
+          debugPrint('PrayerTimesNotifier: Error scheduling notifications - $e');
         }
-        await NotificationService.instance.schedulePrayerCheckReminders(
-          updatedPrayerTimes,
-          completedPrayers,
-        );
-        debugPrint('PrayerTimesNotifier: Scheduled prayer check reminders');
-      } catch (e) {
-        debugPrint('PrayerTimesNotifier: Error scheduling prayer check reminders - $e');
-      }
 
-      // Schedule native alarms for adhan playback at exact prayer times
-      try {
-        await PrayerAlarmService.instance.scheduleDailyPrayerAlarms(updatedPrayerTimes);
-        debugPrint('PrayerTimesNotifier: Scheduled native adhan alarms');
-      } catch (e) {
-        debugPrint('PrayerTimesNotifier: Error scheduling adhan alarms - $e');
-      }
-
-      // Save to widget service for home screen widgets
-      try {
-        final language = await _prefs?.getString('language') ?? 'en';
-        final localizedCityName = getLocalizedCityName(locationData.cityName, language);
-        await PrayerWidgetService.instance.savePrayerTimes(
-          prayerTimes: updatedPrayerTimes,
-          nextPrayer: nextPrayer,
-          currentPrayer: currentPrayer,
-          language: language,
-          locationName: localizedCityName,
-        );
-      } catch (e) {
-        debugPrint('PrayerTimesNotifier: Error saving to widget service - $e');
-      }
-
-      // Update foreground service notification with fresh prayer times
-      try {
-        final language = await _prefs?.getString('language') ?? 'en';
-        final prayerTimesMap = <String, String>{};
-        for (final p in updatedPrayerTimes) {
-          final key = '${p.name.toLowerCase()}_time';
-          prayerTimesMap[key] = p.time.millisecondsSinceEpoch.toString();
+        // Schedule prayer check reminders (30 min before prayer, check if previous was done)
+        try {
+          await PrayerTrackingService.instance.initialize();
+          final summary = await PrayerTrackingService.instance.getDailySummary(
+            userId: getCurrentUserId(),
+            date: DateTime.now(),
+          );
+          final completedPrayers = <String, bool>{};
+          for (final entry in summary.prayers.entries) {
+            completedPrayers[entry.key] = entry.value != PrayerStatus.missed;
+          }
+          await NotificationService.instance.schedulePrayerCheckReminders(
+            updatedPrayerTimes,
+            completedPrayers,
+          );
+        } catch (e) {
+          debugPrint('PrayerTimesNotifier: Error scheduling prayer check reminders - $e');
         }
-        await BackgroundServiceManager.instance.updatePrayerTimes(
-          prayerTimes: prayerTimesMap,
-          nextPrayerName: nextPrayer?.name,
-          nextPrayerNameAr: nextPrayer?.nameAr,
-          nextPrayerTime: nextPrayer?.time.millisecondsSinceEpoch,
-          language: language,
-        );
-        debugPrint('PrayerTimesNotifier: Updated foreground service with next prayer: ${nextPrayer?.name}');
-      } catch (e) {
-        debugPrint('PrayerTimesNotifier: Error updating foreground service - $e');
-      }
+
+        // Schedule native alarms for adhan playback at exact prayer times
+        try {
+          await PrayerAlarmService.instance.scheduleDailyPrayerAlarms(updatedPrayerTimes);
+        } catch (e) {
+          debugPrint('PrayerTimesNotifier: Error scheduling adhan alarms - $e');
+        }
+
+        // Save to widget service for home screen widgets
+        try {
+          final language = await _prefs?.getString('language') ?? 'en';
+          final localizedCityName = getLocalizedCityName(locationData.cityName, language);
+          await PrayerWidgetService.instance.savePrayerTimes(
+            prayerTimes: updatedPrayerTimes,
+            nextPrayer: nextPrayer,
+            currentPrayer: currentPrayer,
+            language: language,
+            locationName: localizedCityName,
+          );
+        } catch (e) {
+          debugPrint('PrayerTimesNotifier: Error saving to widget service - $e');
+        }
+
+        // Update foreground service notification with fresh prayer times
+        try {
+          final language = await _prefs?.getString('language') ?? 'en';
+          final prayerTimesMap = <String, String>{};
+          for (final p in updatedPrayerTimes) {
+            final key = '${p.name.toLowerCase()}_time';
+            prayerTimesMap[key] = p.time.millisecondsSinceEpoch.toString();
+          }
+          await BackgroundServiceManager.instance.updatePrayerTimes(
+            prayerTimes: prayerTimesMap,
+            nextPrayerName: nextPrayer?.name,
+            nextPrayerNameAr: nextPrayer?.nameAr,
+            nextPrayerTime: nextPrayer?.time.millisecondsSinceEpoch,
+            language: language,
+          );
+        } catch (e) {
+          debugPrint('PrayerTimesNotifier: Error updating foreground service - $e');
+        }
+      }();
     } catch (e) {
       debugPrint('PrayerTimesNotifier: Error loading prayer times: $e');
       state = state.copyWith(

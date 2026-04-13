@@ -27,7 +27,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       vsync: this,
       duration: const Duration(milliseconds: 2500), // Slower animation (2.5 seconds)
     );
-    _requestNotificationPermission();
+    // Defer permission request to avoid blocking the splash animation
+    Future.delayed(const Duration(milliseconds: 500), () {
+      if (mounted) _requestNotificationPermission();
+    });
     _startNavigationTimer();
   }
 

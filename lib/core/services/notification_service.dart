@@ -66,6 +66,9 @@ class NotificationService {
           _handleRemindMeAgain(response.payload!);
         } else if (response.actionId == 'mark_prayed' && response.payload != null) {
           _handleMarkPrayed(response.payload!);
+        } else if (response.actionId != null && response.actionId!.startsWith('mark_prayed_') && response.payload != null) {
+          // Handle prayer check "Yes, I prayed" action (mark_prayed_fajr, mark_prayed_zuhr, etc.)
+          _handleMarkPrayed(response.payload!);
         } else if (response.actionId == null || response.actionId == '') {
           // Notification was tapped (not an action button)
           debugPrint('🔔 [NOTIFICATION] Notification tapped by user');
@@ -413,7 +416,15 @@ class NotificationService {
       return;
     }
 
-    final prayerName = parts[0];
+    // Handle both payload formats:
+    // Regular: "Fajr|الفجر|timestamp"
+    // Prayer check: "prayer_check|Fajr|الفجر"
+    String prayerName;
+    if (parts[0] == 'prayer_check' && parts.length >= 2) {
+      prayerName = parts[1]; // prayer_check|Fajr|الفجر → Fajr
+    } else {
+      prayerName = parts[0]; // Fajr|الفجر|timestamp → Fajr
+    }
     debugPrint('🕌 [MARK_PRAYED] Prayer: $prayerName');
 
     try {

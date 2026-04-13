@@ -27,6 +27,7 @@ import '../settings/adhan_calculation_method.dart';
 import '../settings/asr_madhab_selection.dart';
 import '../../core/utils/haptic_feedback.dart' as haptic;
 import '../../core/utils/prayer_time_rules.dart';
+import '../../core/providers/daily_prayer_status_provider.dart';
 
 /// Prayer Screen - Displays prayer times for the day
 class PrayerScreen extends ConsumerStatefulWidget {
@@ -38,8 +39,6 @@ class PrayerScreen extends ConsumerStatefulWidget {
 
 class _PrayerScreenState extends ConsumerState<PrayerScreen>
     with TickerProviderStateMixin {
-  bool _hasAnimated = false; // Track if animations have played
-
   // Local state for prayer data (prevents full page rebuilds)
   List<PrayerTime> _prayerTimes = [];
   PrayerTime? _nextPrayer;
@@ -72,6 +71,49 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
   }
 
   Future<void> _loadPrayerTimes() async {
+    // Check if provider already has valid data (from app startup init)
+    final existingState = ref.read(prayerTimesProvider);
+    final hasExistingData = existingState != null &&
+        existingState.prayerTimes.isNotEmpty &&
+        existingState.isLoading == false;
+
+    if (hasExistingData) {
+      // Use existing data right away - no shimmer
+      setState(() {
+        _prayerTimes = existingState.prayerTimes;
+        _nextPrayer = existingState.nextPrayer;
+        _currentPrayer = existingState.currentPrayer;
+        _location = existingState.location;
+        _isLoading = false;
+        _errorMessage = existingState.errorMessage;
+      });
+
+      // Load completed prayers in background
+      _loadCompletedPrayers();
+
+      // Refresh in background (don't block UI)
+      try {
+        final notifier = ref.read(prayerTimesProvider.notifier);
+        await notifier.loadPrayerTimes(DateTime.now());
+        if (!mounted) return;
+        final freshState = ref.read(prayerTimesProvider);
+        if (freshState != null) {
+          setState(() {
+            _prayerTimes = freshState.prayerTimes;
+            _nextPrayer = freshState.nextPrayer;
+            _currentPrayer = freshState.currentPrayer;
+            _location = freshState.location;
+            _errorMessage = freshState.errorMessage;
+          });
+          await _loadCompletedPrayers();
+        }
+      } catch (e) {
+        debugPrint('Error refreshing prayer times: $e');
+      }
+      return;
+    }
+
+    // No existing data - show shimmer while loading
     setState(() {
       _isLoading = true;
     });
@@ -107,42 +149,23 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     await _loadPrayerTimes();
   }
 
-  /// Load completed prayers for today
+  /// Load completed prayers for today (uses shared provider)
   Future<void> _loadCompletedPrayers() async {
-    await _trackingService.initialize();
-
-    // Get user ID from auth
-    final userId = getCurrentUserId();
-
     try {
-      final summary = await _trackingService.getDailySummary(
-        userId: userId,
-        date: DateTime.now(),
-      );
+      final notifier = ref.read(dailyPrayerStatusProvider.notifier);
+      await notifier.load();
 
+      final statuses = ref.read(dailyPrayerStatusProvider).statuses;
       setState(() {
         _prayerStatuses.clear();
         _explicitlyMarked.clear();
-        for (final entry in summary.prayers.entries) {
+        for (final entry in statuses.entries) {
           _prayerStatuses[entry.key] = entry.value;
-          // A prayer is explicitly marked if Firestore has a record for it
           if (entry.value != PrayerStatus.missed) {
             _explicitlyMarked.add(entry.key);
           }
         }
       });
-
-      // Schedule prayer check reminders (30 min before next prayer, check if previous was done)
-      if (_prayerTimes.isNotEmpty) {
-        final completedMap = <String, bool>{};
-        for (final entry in _prayerStatuses.entries) {
-          completedMap[entry.key] = entry.value != PrayerStatus.missed;
-        }
-        await NotificationService.instance.schedulePrayerCheckReminders(
-          _prayerTimes,
-          completedMap,
-        );
-      }
     } catch (e) {
       debugPrint('Error loading completed prayers: $e');
     }
@@ -183,6 +206,8 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
 
       if (success && mounted) {
         haptic.HapticFeedback.success();
+        // Update shared provider so home screen also gets the change
+        ref.read(dailyPrayerStatusProvider.notifier).updatePrayer(prayerName, chosenStatus);
         setState(() {
           _prayerStatuses[prayerName] = chosenStatus;
           _explicitlyMarked.add(prayerName);
@@ -272,6 +297,8 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
 
       if (mounted) {
         haptic.HapticFeedback.light();
+        // Update shared provider so home screen also gets the change
+        ref.read(dailyPrayerStatusProvider.notifier).removePrayer(prayerName);
         setState(() {
           _prayerStatuses[prayerName] = PrayerStatus.missed;
           _explicitlyMarked.remove(prayerName);
@@ -319,15 +346,6 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    // Mark animations as played after first build
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && !_hasAnimated) {
-        setState(() {
-          _hasAnimated = true;
-        });
-      }
-    });
-
     // Create local state for passing to _buildContent
     final localState = PrayerTimesState(
       prayerTimes: _prayerTimes,
@@ -369,7 +387,13 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
           ),
         ],
       ),
-      body: _buildContent(context, localState, isDark, isArabic),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: KeyedSubtree(
+          key: ValueKey(_isLoading),
+          child: _buildContent(context, localState, isDark, isArabic),
+        ),
+      ),
     );
   }
 
@@ -406,8 +430,9 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
             // Date Header Card with Hijri-style design
             _buildDateHeader(context, state.selectedDate, state.prayerTimes,
                     isDark, isArabic)
-                .animate(target: _hasAnimated ? 1 : null)
-                .fadeIn(duration: 400.ms),
+                .animate()
+                .fadeIn(duration: 400.ms)
+                .slideY(begin: 0.08, duration: 400.ms),
 
             const SizedBox(height: AppConstants.paddingMedium),
 
@@ -415,14 +440,14 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
             if (state.nextPrayer != null) ...[
               _buildNextPrayerSection(
                       context, state.nextPrayer!, isDark, isArabic)
-                  .animate(target: _hasAnimated ? 1 : null)
+                  .animate()
                   .fadeIn(delay: 100.ms, duration: 400.ms),
               const SizedBox(height: AppConstants.paddingLarge),
             ],
 
             // Prayers List Header
             _buildPrayersListHeader(context, isArabic)
-                .animate(target: _hasAnimated ? 1 : null)
+                .animate()
                 .fadeIn(delay: 200.ms, duration: 400.ms),
 
             const SizedBox(height: AppConstants.paddingSmall),
@@ -433,7 +458,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
             // Muslim Toolkit
             const SizedBox(height: AppConstants.paddingLarge),
             _buildMuslimToolkit(context, isDark, isArabic)
-                .animate(target: _hasAnimated ? 1 : null)
+                .animate()
                 .fadeIn(delay: 600.ms, duration: 400.ms),
 
             // Bottom padding for nav bar
@@ -672,7 +697,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
               ? () => _explicitlyMarked.contains(prayer.name) ? _unmarkPrayerDirect(prayer.name) : _markPrayerAsCompleted(prayer.name)
               : null,
         ),
-      ).animate(target: _hasAnimated ? 1 : null).fadeIn(
+      ).animate().fadeIn(
             delay: Duration(milliseconds: 250 + (index * 50)),
             duration: 400.ms,
           );

@@ -63,35 +63,63 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
     final now = DateTime.now();
 
     try {
-      // Get statistics for the last 30 days
+      // Fetch records for last 60 days (covers this month + last month for comparison)
+      final sixtyDaysAgo = now.subtract(const Duration(days: 60));
+
+      // Run streak + records in parallel (2 queries instead of 4 sequential)
+      final results = await Future.wait([
+        _trackingService.calculateCurrentStreak(userId: userId),
+        _trackingService.getPrayersForDateRange(
+          userId: userId,
+          startDate: sixtyDaysAgo,
+          endDate: now,
+        ),
+      ]);
+
+      final streak = results[0] as int;
+      final allRecords = results[1] as List<PrayerRecord>;
+
+      // Filter last 30 days for main stats
       final thirtyDaysAgo = now.subtract(const Duration(days: 30));
-      final stats = await _trackingService.getStatistics(
-        userId: userId,
-        startDate: thirtyDaysAgo,
-        endDate: now,
-      );
+      final records = allRecords.where((r) => r.date.isAfter(thirtyDaysAgo)).toList();
 
-      // Get streaks
-      final streak = await _trackingService.calculateCurrentStreak(userId: userId);
-
-      // Per-prayer breakdown (last 30 days)
-      final records = await _trackingService.getPrayersForDateRange(
-        userId: userId,
-        startDate: thirtyDaysAgo,
-        endDate: now,
-      );
+      // Compute stats from records (eliminates getStatistics call)
+      int bestStreak = streak; // Use current streak as baseline
+      {
+        // Calculate best streak from records
+        int tempStreak = 0;
+        int tempBest = 0;
+        DateTime? lastDate;
+        final sortedRecords = List<PrayerRecord>.from(records)
+          ..sort((a, b) => a.date.compareTo(b.date));
+        for (final record in sortedRecords) {
+          final d = DateTime(record.date.year, record.date.month, record.date.day);
+          if (lastDate != null && d.difference(lastDate).inDays > 1) {
+            tempStreak = 0;
+          }
+          if (record.status == PrayerStatus.onTime || record.status == PrayerStatus.late) {
+            if (lastDate == null || d != lastDate) {
+              tempStreak++;
+              if (tempStreak > tempBest) tempBest = tempStreak;
+            }
+          } else {
+            tempStreak = 0;
+          }
+          lastDate = d;
+        }
+        if (tempBest > bestStreak) bestStreak = tempBest;
+      }
 
       // Initialize per-prayer counters
       final Map<String, int> prayerCompleted = {};
       final Map<String, int> prayerTotal = {};
       for (final name in kPrayerNames) {
         prayerCompleted[name] = 0;
-        prayerTotal[name] = 30; // 30 days * 1 prayer per day
+        prayerTotal[name] = 30;
       }
 
       int completedOnTime = 0;
       int completedLate = 0;
-      int totalMissed = 0;
       int totalExcused = 0;
 
       for (final record in records) {
@@ -108,15 +136,12 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
         }
       }
 
-      // Calculate missed = total expected - completed - excused
-      totalMissed = (kPrayerNames.length * 30) - completedOnTime - completedLate - totalExcused;
-      if (totalMissed < 0) totalMissed = 0;
-
+      final totalMissed = ((kPrayerNames.length * 30) - completedOnTime - completedLate - totalExcused).clamp(0, kPrayerNames.length * 30);
       final totalPrayers = completedOnTime + completedLate + totalMissed;
       final completionRate = totalPrayers > 0 ? (completedOnTime + completedLate) / totalPrayers : 0.0;
       final onTimeRate = totalPrayers > 0 ? completedOnTime / totalPrayers : 0.0;
 
-      // Weekly chart data (last 4 weeks)
+      // Weekly chart data (last 4 weeks) - computed from records we already have
       final List<double> weeklyRates = [];
       final List<String> weeklyLabels = [];
       for (int i = 3; i >= 0; i--) {
@@ -128,38 +153,39 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
               d.isBefore(weekEnd.add(const Duration(days: 1)));
         }).toList();
 
-        int weekCompleted = weekRecords.where((r) =>
+        final weekCompleted = weekRecords.where((r) =>
             r.status == PrayerStatus.onTime || r.status == PrayerStatus.late).length;
-        int weekExpected = kPrayerNames.length * 7;
+        final weekExpected = kPrayerNames.length * 7;
         weeklyRates.add(weekExpected > 0 ? weekCompleted / weekExpected : 0);
         weeklyLabels.add('${weekStart.day}/${weekStart.month}');
       }
 
-      // Monthly comparison
+      // Monthly comparison - computed from allRecords (60 days covers both months)
       final thisMonthStart = DateTime(now.year, now.month, 1);
-      final thisMonthRecords = records.where((r) =>
+      final thisMonthRecords = allRecords.where((r) =>
           !r.date.isBefore(thisMonthStart)).toList();
-      int thisCompleted = thisMonthRecords.where((r) =>
+      final thisCompleted = thisMonthRecords.where((r) =>
           r.status == PrayerStatus.onTime || r.status == PrayerStatus.late).length;
-      int daysThisMonth = now.day;
-      int expectedThisMonth = kPrayerNames.length * daysThisMonth;
-      double thisMonthRate = expectedThisMonth > 0 ? thisCompleted / expectedThisMonth : 0;
+      final daysThisMonth = now.day;
+      final expectedThisMonth = kPrayerNames.length * daysThisMonth;
+      final thisMonthRate = expectedThisMonth > 0 ? thisCompleted / expectedThisMonth : 0.0;
 
-      double lastMonthRate = 0;
+      // Last month - computed from same allRecords, no extra Firestore query
       final lastMonth = DateTime(now.year, now.month - 1, 1);
       final lastMonthStart = DateTime(lastMonth.year, lastMonth.month, 1);
-      final lastMonthEnd = DateTime(now.year, now.month, 0); // last day of last month
-      final lastMonthStats = await _trackingService.getStatistics(
-        userId: userId,
-        startDate: lastMonthStart,
-        endDate: lastMonthEnd,
-      );
-      lastMonthRate = lastMonthStats.completionRate;
+      final lastMonthEnd = DateTime(now.year, now.month, 0);
+      final lastMonthRecords = allRecords.where((r) =>
+          !r.date.isBefore(lastMonthStart) && !r.date.isAfter(lastMonthEnd)).toList();
+      final lastMonthCompleted = lastMonthRecords.where((r) =>
+          r.status == PrayerStatus.onTime || r.status == PrayerStatus.late).length;
+      final daysLastMonth = lastMonthEnd.day;
+      final expectedLastMonth = kPrayerNames.length * daysLastMonth;
+      final lastMonthRate = expectedLastMonth > 0 ? lastMonthCompleted / expectedLastMonth : 0.0;
 
       if (mounted) {
         setState(() {
           _currentStreak = streak;
-          _bestStreak = stats.bestStreak;
+          _bestStreak = bestStreak;
           _totalCompleted = completedOnTime + completedLate;
           _totalOnTime = completedOnTime;
           _totalLate = completedLate;

@@ -79,57 +79,56 @@ void main() async {
     await prefsService.ensureInitialized();
   }
 
-  // Initialize Prayer Widget Service with error handling
-  try {
-    await PrayerWidgetService.init();
-    debugPrint('✅ PrayerWidgetService initialized');
-  } catch (e, st) {
-    debugPrint('❌ PrayerWidgetService initialization failed: $e');
-    debugPrint('📍 Stack trace: $st');
-  }
-
-  // Initialize Notification Service with error handling
-  try {
-    await NotificationService.instance.initialize();
-    debugPrint('✅ NotificationService initialized');
-  } catch (e, st) {
-    debugPrint('❌ NotificationService initialization failed: $e');
-    debugPrint('📍 Stack trace: $st');
-  }
-
-  // Initialize Adhan Player Service with error handling
-  try {
-    await AdhanPlayerService.instance.initialize();
-    debugPrint('✅ AdhanPlayerService initialized');
-  } catch (e, st) {
-    debugPrint('❌ AdhanPlayerService initialization failed: $e');
-    debugPrint('📍 Stack trace: $st');
-  }
-
-  // Initialize Prayer Alarm Service with error handling (for native adhan alarms)
-  try {
-    await PrayerAlarmService.instance.initialize();
-    debugPrint('✅ PrayerAlarmService initialized');
-  } catch (e, st) {
-    debugPrint('❌ PrayerAlarmService initialization failed: $e');
-    debugPrint('📍 Stack trace: $st');
-  }
-
-  // Initialize Background Service Manager with error handling (for keeping app alive)
-  try {
-    await BackgroundServiceManager.instance.initialize();
-    debugPrint('✅ BackgroundServiceManager initialized');
-  } catch (e, st) {
-    debugPrint('❌ BackgroundServiceManager initialization failed: $e');
-    debugPrint('📍 Stack trace: $st');
-  }
-
-  // Initialize Offline Queue Service
-  try {
-    await OfflineQueueService.instance.initialize();
-  } catch (e) {
-    debugPrint('❌ OfflineQueueService initialization failed: $e');
-  }
+  // Initialize services in parallel (they're independent of each other)
+  await Future.wait([
+    () async {
+      try {
+        await PrayerWidgetService.init();
+        debugPrint('✅ PrayerWidgetService initialized');
+      } catch (e, st) {
+        debugPrint('❌ PrayerWidgetService initialization failed: $e');
+      }
+    }(),
+    () async {
+      try {
+        await NotificationService.instance.initialize();
+        debugPrint('✅ NotificationService initialized');
+      } catch (e, st) {
+        debugPrint('❌ NotificationService initialization failed: $e');
+      }
+    }(),
+    () async {
+      try {
+        await AdhanPlayerService.instance.initialize();
+        debugPrint('✅ AdhanPlayerService initialized');
+      } catch (e, st) {
+        debugPrint('❌ AdhanPlayerService initialization failed: $e');
+      }
+    }(),
+    () async {
+      try {
+        await PrayerAlarmService.instance.initialize();
+        debugPrint('✅ PrayerAlarmService initialized');
+      } catch (e, st) {
+        debugPrint('❌ PrayerAlarmService initialization failed: $e');
+      }
+    }(),
+    () async {
+      try {
+        await BackgroundServiceManager.instance.initialize();
+        debugPrint('✅ BackgroundServiceManager initialized');
+      } catch (e, st) {
+        debugPrint('❌ BackgroundServiceManager initialization failed: $e');
+      }
+    }(),
+    () async {
+      try {
+        await OfflineQueueService.instance.initialize();
+      } catch (e) {
+        debugPrint('❌ OfflineQueueService initialization failed: $e');
+      }
+    }(),
+  ]);
 
   runApp(
     ProviderScope(
