@@ -5,7 +5,9 @@
     android:orientation="vertical"
     android:background="#FFFFFF"
     android:paddingStart="12dp"
-    android:paddingEnd="12dp">
+    android:paddingEnd="12dp"
+    android:layoutDirection="rtl"
+    android:textDirection="rtl">
 
     <!-- Header: App name - Next Prayer -->
     <LinearLayout
@@ -14,7 +16,8 @@
         android:orientation="horizontal"
         android:gravity="center_vertical"
         android:paddingTop="8dp"
-        android:paddingBottom="0dp">
+        android:paddingBottom="0dp"
+        android:layoutDirection="rtl">
 
         <ImageView
             android:id="@+id/notification_small_icon"
@@ -31,31 +34,26 @@
             android:layout_marginStart="6dp"
             android:text="Aura - Next Prayer"
             android:textSize="12sp"
-            android:textColor="#8a000000" />
+            android:textColor="#8a000000"
+            android:textDirection="rtl" />
 
     </LinearLayout>
 
-    <!-- Content: Icon + Prayer info (centered) -->
+    <!-- Content: Prayer info + Icon (RTL: text right, icon left) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center_vertical|center_horizontal">
-
-        <ImageView
-            android:id="@+id/notification_logo"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:src="@mipmap/ic_launcher"
-            android:scaleType="centerCrop"
-            android:contentDescription="Prayer Icon" />
+        android:gravity="center_vertical|center_horizontal"
+        android:layoutDirection="rtl">
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:layout_marginStart="6dp"
-            android:orientation="vertical">
+            android:layout_marginEnd="6dp"
+            android:orientation="vertical"
+            android:gravity="end">
 
             <TextView
                 android:id="@+id/notification_title"
@@ -64,7 +62,8 @@
                 android:text="Maghrib"
                 android:textSize="22sp"
                 android:textStyle="bold"
-                android:textColor="#de000000" />
+                android:textColor="#de000000"
+                android:textDirection="rtl" />
 
             <TextView
                 android:id="@+id/notification_time"
@@ -73,7 +72,8 @@
                 android:text="⏰ 2h 15m 30s"
                 android:textSize="20sp"
                 android:textStyle="bold"
-                android:textColor="#007DFF" />
+                android:textColor="#007DFF"
+                android:textDirection="rtl" />
 
             <TextView
                 android:id="@+id/notification_until"
@@ -81,9 +81,18 @@
                 android:layout_height="wrap_content"
                 android:text="Until Azan"
                 android:textSize="16sp"
-                android:textColor="#8a000000" />
+                android:textColor="#8a000000"
+                android:textDirection="rtl" />
 
         </LinearLayout>
+
+        <ImageView
+            android:id="@+id/notification_logo"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@mipmap/ic_launcher"
+            android:scaleType="centerCrop"
+            android:contentDescription="Prayer Icon" />
 
     </LinearLayout>
 

@@ -14,6 +14,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.widget.RemoteViews
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.StyleSpan
@@ -295,12 +296,20 @@ class PrayerForegroundService : Service() {
 
         val primaryColor = 0xFF007DFF.toInt()
 
-        // Load prayer icon
-        val bigLogo = loadPrayerIcon()
+        // Get theme
+        val prefs = getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+        val themeMode = prefs.getString("themeMode", "system") ?: "system"
+        val isDark = when (themeMode) {
+            "dark" -> true
+            "light" -> false
+            else -> {
+                val nightMode = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+                nightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES
+            }
+        }
 
         val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setLargeIcon(bigLogo)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .setContentIntent(pendingIntent)
@@ -321,7 +330,7 @@ class PrayerForegroundService : Service() {
 
             Log.d(TAG, "📱 [NOTIFICATION] Showing loading state")
         } else {
-            // Show countdown to next prayer
+            // Show countdown to next prayer with custom layout
             val (timeRemaining, timeString) = calculateTimeRemaining()
 
             val nextPrayerText = if (currentLanguage == "ar") {
@@ -342,23 +351,34 @@ class PrayerForegroundService : Service() {
                 "Until Azan"
             }
 
-            // Create a title with bold prayer name
-            val fullTitle = "$nextPrayerText - $prayerName"
-            val spannableTitle = SpannableString(fullTitle)
-            val boldStart = fullTitle.indexOf(prayerName)
-            val boldEnd = boldStart + prayerName.length
-            if (boldStart >= 0) {
-                spannableTitle.setSpan(
-                    StyleSpan(Typeface.BOLD),
-                    boldStart,
-                    boldEnd,
-                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
+            // Custom layout with "Aura - Next Prayer" header
+            val isArabic = currentLanguage == "ar"
+            val layoutId = when {
+                isArabic && isDark -> R.layout.notification_large_dark_rtl
+                isArabic -> R.layout.notification_large_rtl
+                isDark -> R.layout.notification_large_dark
+                else -> R.layout.notification_large
+            }
+            val contentView = RemoteViews(packageName, layoutId)
+
+            // Header: "Aura - Next Prayer"
+            contentView.setTextViewText(R.id.notification_header, "Aura - $nextPrayerText")
+
+            // Prayer icon
+            val prayerIcon = loadPrayerIcon()
+            if (prayerIcon != null) {
+                contentView.setImageViewBitmap(R.id.notification_logo, prayerIcon)
             }
 
+            // Prayer info
+            contentView.setTextViewText(R.id.notification_title, prayerName)
+            contentView.setTextViewText(R.id.notification_time, "⏰ $timeString")
+            contentView.setTextViewText(R.id.notification_until, untilText)
+
             notificationBuilder
-                .setContentTitle(spannableTitle)
-                .setContentText("⏰ $timeString • $untilText")
+                .setContentTitle("Aura - $nextPrayerText")
+                .setCustomContentView(contentView)
+                .setCustomBigContentView(contentView)
 
             Log.d(TAG, "📱 [NOTIFICATION] Showing countdown: $prayerName in $timeString")
         }
