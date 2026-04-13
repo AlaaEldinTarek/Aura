@@ -462,3 +462,40 @@ adb logcat | grep -E "(PrayerAlarm|NotificationService|PrayerTimes|AdhanPlayer|S
 # View specific prayer logs
 adb logcat | grep "🕌"
 ```
+
+---
+
+## Git Commit Guidelines
+
+### Commit Rules
+- **One commit per logical change** — never bundle unrelated changes together
+- **Clear, descriptive messages** — explain what was changed AND why
+- **Use imperative mood** — "Fix Zuhr prayer skipped" not "Fixed Zuhr prayer"
+- **Always include Co-Authored-By** — `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>`
+
+### Commit Message Format
+```
+Short summary of what changed (under 72 chars)
+
+Detailed explanation of what was changed, why, and which files
+are affected. Reference specific function names or files.
+
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
+```
+
+### Examples of Good Commits
+- `Fix Zuhr prayer being skipped in alarm scheduling` — one specific bug, one commit
+- `Add custom notification layout with big prayer icons and RTL support` — one feature
+- `Fix prayer progress showing all prayers as tracked` — one bug fix
+
+### Examples of Bad Commits
+- `Update stuff` — too vague
+- `Fix bugs and add features and update UI` — too many changes in one commit
+- `Changes` — meaningless
+
+### Dhuhr → Zuhr Naming Convention
+After renaming "Dhuhr" to "Zuhr" in the UI, the Adhan library still uses `.dhuhr`. All switch statements must handle both:
+- Flutter: `case 'dhuhr': case 'zuhr':`
+- Kotlin: `"Dhuhr", "Zuhr" ->`
+- SharedPreferences key: always use `dhuhr_time`
+- `kPrayerNames` uses `'Zuhr'` as canonical name
