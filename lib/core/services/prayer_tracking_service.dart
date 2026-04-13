@@ -143,12 +143,7 @@ class PrayerTrackingService {
 
     final Map<String, PrayerStatus> prayerStatuses = {};
 
-    // Initialize all prayers as missed
-    for (final prayerName in _prayerNames) {
-      prayerStatuses[prayerName] = PrayerStatus.missed;
-    }
-
-    // Update with actual records
+    // Only add prayers that have actual records
     for (final record in records) {
       prayerStatuses[record.prayerName] = record.status;
     }
