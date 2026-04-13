@@ -305,6 +305,7 @@ class PrayerCard extends StatelessWidget {
       case 'sunrise':
         return '🌅';
       case 'dhuhr':
+      case 'zuhr':
         return '☀️';
       case 'asr':
         return '🌤️';

@@ -8,6 +8,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/providers/prayer_times_provider.dart';
+import '../../core/providers/daily_prayer_status_provider.dart';
 import '../../core/widgets/app_card.dart';
 import '../../core/widgets/offline_banner.dart';
 import '../../core/widgets/greeting_widget.dart';
@@ -24,62 +25,37 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final PrayerTrackingService _trackingService = PrayerTrackingService.instance;
-  Map<String, PrayerStatus?> _completedPrayers = {};
   Timer? _countdownTimer;
-  Duration _remaining = Duration.zero;
-  int _refreshCounter = 0;
+
+  // ValueNotifier for countdown - only rebuilds the countdown widget, not entire screen
+  final ValueNotifier<Duration> _countdownNotifier = ValueNotifier(Duration.zero);
 
   @override
   void initState() {
     super.initState();
-    _loadCompletedPrayers();
+    // Load prayer statuses via shared provider (cached, won't hit Firestore if fresh)
+    Future.microtask(() => ref.read(dailyPrayerStatusProvider.notifier).load());
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       final prayer = ref.read(prayerTimesProvider).nextPrayer;
       if (prayer == null) return;
       final diff = prayer.time.difference(DateTime.now());
-      setState(() {
-        _remaining = diff.isNegative ? Duration.zero : diff;
-        _refreshCounter++;
-      });
-      if (_refreshCounter % 60 == 0) {
-        _loadCompletedPrayers();
-      }
+      _countdownNotifier.value = diff.isNegative ? Duration.zero : diff;
     });
   }
 
   @override
   void dispose() {
     _countdownTimer?.cancel();
+    _countdownNotifier.dispose();
     super.dispose();
   }
 
-  Future<void> _loadCompletedPrayers() async {
-    try {
-      final userId = getCurrentUserId();
-      await _trackingService.initialize();
-      final records = await _trackingService.getPrayersForDate(
-        userId: userId,
-        date: DateTime.now(),
-      );
-      if (mounted) {
-        setState(() {
-          _completedPrayers = {
-            for (final record in records) record.prayerName: record.status,
-          };
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading completed prayers: $e');
-    }
-  }
-
-  String _formatCountdown(bool isArabic) {
-    if (_remaining == Duration.zero) return '--:--';
-    final h = _remaining.inHours;
-    final m = _remaining.inMinutes % 60;
-    final s = _remaining.inSeconds % 60;
+  String _formatCountdown(Duration remaining, bool isArabic) {
+    if (remaining == Duration.zero) return '--:--';
+    final h = remaining.inHours;
+    final m = remaining.inMinutes % 60;
+    final s = remaining.inSeconds % 60;
     String text;
     if (h > 0) {
       text = isArabic
@@ -100,7 +76,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     switch (name.toLowerCase()) {
       case 'fajr': return '🌙';
       case 'sunrise': return '🌅';
-      case 'dhuhr': return '☀️';
+      case 'dhuhr':
+      case 'zuhr': return '☀️';
       case 'asr': return '🌤️';
       case 'maghrib': return '🌇';
       case 'isha': return '🌃';
@@ -118,10 +95,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final userName = user?.displayName ?? 'User';
     final isGuest = ref.watch(guestModeProvider.select((async) => async.value ?? false));
 
-    // Calculate prayer progress
+    // Calculate prayer progress from shared provider
+    final prayerStatuses = ref.watch(dailyPrayerStatusProvider).statuses;
     final trackablePrayers = kPrayerNames;
     final completedCount = trackablePrayers.where((p) {
-      final status = _completedPrayers[p];
+      final status = prayerStatuses[p];
       return status == PrayerStatus.onTime || status == PrayerStatus.late;
     }).length;
     final totalPrayers = trackablePrayers.length;
@@ -157,7 +135,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     const SizedBox(height: AppConstants.paddingMedium),
 
                     // Prayer Progress Bar
-                    _buildPrayerProgress(context, isDark, isArabic, completedCount, totalPrayers)
+                    _buildPrayerProgress(context, isDark, isArabic, completedCount, totalPrayers, prayerStatuses)
                         .animate().fadeIn(delay: 200.ms, duration: 400.ms),
 
                     const SizedBox(height: AppConstants.paddingLarge),
@@ -265,26 +243,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   ),
 
                   // Countdown
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        _formatCountdown(isArabic),
-                        style: TextStyle(
-                          color: AppConstants.primaryColor,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        isArabic ? 'حتى الأذان' : 'Until Adhan',
-                        style: TextStyle(
-                          color: isDark ? Colors.white54 : Colors.black54,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
+                  ValueListenableBuilder<Duration>(
+                    valueListenable: _countdownNotifier,
+                    builder: (context, remaining, _) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            _formatCountdown(remaining, isArabic),
+                            style: TextStyle(
+                              color: AppConstants.primaryColor,
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            isArabic ? 'حتى الأذان' : 'Until Adhan',
+                            style: TextStyle(
+                              color: isDark ? Colors.white54 : Colors.black54,
+                              fontSize: 11,
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
@@ -350,6 +333,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     bool isArabic,
     int completedCount,
     int totalPrayers,
+    Map<String, PrayerStatus> prayerStatuses,
   ) {
     final progress = totalPrayers > 0 ? completedCount / totalPrayers : 0.0;
 
@@ -410,7 +394,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: List.generate(trackablePrayers.length, (i) {
-              final status = _completedPrayers[trackablePrayers[i]];
+              final status = prayerStatuses[trackablePrayers[i]];
               final isTracked = status != null;
 
               // Match prayer_status_dialog.dart icon/color style

@@ -218,7 +218,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
             // Cancel each prayer alarm
-            for (prayer in listOf("Fajr", "Sunrise", "Zuhr", "Dhuhr", "Asr", "Maghrib", "Isha")) {
+            for (prayer in listOf("Fajr", "Sunrise", "Zuhr", "Asr", "Maghrib", "Isha")) {
                 val intent = Intent(context, PrayerAlarmReceiver::class.java)
                 val requestCode = getNotificationId(prayer)
                 val pendingIntent = PendingIntent.getBroadcast(
@@ -310,7 +310,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         val editor = prefs.edit()
 
         // Find the next prayer based on the current one
-        val prayerOrder = listOf("Fajr", "Sunrise", "Zuhr", "Dhuhr", "Asr", "Maghrib", "Isha")
+        val prayerOrder = listOf("Fajr", "Sunrise", "Zuhr", "Asr", "Maghrib", "Isha")
         val currentIndex = prayerOrder.indexOf(currentPrayerName)
 
         if (currentIndex >= 0) {
@@ -320,7 +320,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             if (currentIndex < prayerOrder.size - 1) {
                 // Get next prayer in the same day
                 nextPrayerName = prayerOrder[currentIndex + 1]
-                val nextPrayerTimeKey = "${nextPrayerName.lowercase()}_time"
+                val nextPrayerTimeKey = if (nextPrayerName == "Zuhr") "dhuhr_time" else "${nextPrayerName.lowercase()}_time"
                 val storedTime = prefs.getString(nextPrayerTimeKey, null)
                 nextPrayerTime = storedTime?.toLongOrNull() ?: 0L
             } else {

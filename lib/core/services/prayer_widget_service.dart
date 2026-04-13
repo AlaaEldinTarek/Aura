@@ -87,6 +87,7 @@ class PrayerWidgetService {
       case 'sunrise':
         return 'sunrise_time';
       case 'dhuhr':
+      case 'zuhr':
         return 'dhuhr_time';
       case 'asr':
         return 'asr_time';
