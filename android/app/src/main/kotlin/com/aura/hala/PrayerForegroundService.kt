@@ -387,29 +387,39 @@ class PrayerForegroundService : Service() {
     }
 
     private fun loadPrayerIcon(): Bitmap? {
-        // Use actual drawable resources instead of emoji text
-        val resId = when (nextPrayerName?.lowercase()) {
-            "fajr" -> R.drawable.ic_prayer_fajr
-            "sunrise" -> R.drawable.ic_prayer_sunrise
-            "dhuhr", "zuhr" -> R.drawable.ic_prayer_dhuhr
-            "asr" -> R.drawable.ic_prayer_afternoon
-            "maghrib" -> R.drawable.ic_prayer_maghrib
-            "isha" -> R.drawable.ic_prayer_isha
-            else -> R.drawable.ic_mosque
+        // Icon changes based on which prayer time has started
+        // After Isha→Fajr: Night, After Fajr→Sunrise: Fajr, After Sunrise→Zuhr: Sun,
+        // After Zuhr→Asr: Zuhr, After Asr→Maghrib: Afternoon, After Maghrib→Isha: Moon
+        val timeSlots = listOf(
+            Pair("isha_time", R.drawable.ic_prayer_isha),        // Isha (after Isha)
+            Pair("fajr_time", R.drawable.ic_prayer_fajr),        // Fajr (after Fajr)
+            Pair("sunrise_time", R.drawable.ic_prayer_dhuhr),    // Zuhr (after Sunrise)
+            Pair("dhuhr_time", R.drawable.ic_prayer_dhuhr),      // Zuhr (after Zuhr)
+            Pair("asr_time", R.drawable.ic_prayer_afternoon),    // Afternoon (after Asr)
+            Pair("maghrib_time", R.drawable.ic_prayer_maghrib)   // Maghrib (after Maghrib)
+        )
+
+        val now = System.currentTimeMillis()
+        var resId = R.drawable.ic_prayer_isha // default: Isha (before Fajr)
+
+        // Find the last time slot that has started
+        for (slot in timeSlots) {
+            val slotTime = prayerTimes[slot.first]
+            if (slotTime != null && slotTime <= now) {
+                resId = slot.second
+            }
         }
 
         return try {
-            val original = BitmapFactory.decodeResource(resources, resId)
-            if (original != null) {
-                Bitmap.createScaledBitmap(original, 256, 256, true)
+            val drawable = ResourcesCompat.getDrawable(resources, resId, null)
+            if (drawable != null) {
+                val bitmap = Bitmap.createBitmap(256, 256, Bitmap.Config.ARGB_8888)
+                val canvas = android.graphics.Canvas(bitmap)
+                drawable.setBounds(0, 0, 256, 256)
+                drawable.draw(canvas)
+                bitmap
             } else {
-                // Fallback to app launcher icon
-                val fallback = BitmapFactory.decodeResource(resources, R.drawable.ic_launcher_foreground)
-                if (fallback != null) {
-                    Bitmap.createScaledBitmap(fallback, 256, 256, true)
-                } else {
-                    null
-                }
+                null
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error loading prayer icon: ${e.message}")
