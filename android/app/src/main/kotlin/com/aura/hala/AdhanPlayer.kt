@@ -1,20 +1,28 @@
 package com.aura.hala
 
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.media.AudioManager
 import android.media.MediaPlayer
 import android.os.VibrationEffect
 import android.os.Vibrator
+import android.provider.Settings
 import android.util.Log
 import java.io.IOException
 
 /**
  * Native Adhan Player using Android MediaPlayer
  * Plays adhan audio for prayer times
+ * Catches volume button presses via ContentObserver to stop adhan on lock screen
  */
 object AdhanPlayer {
     private const val TAG = "AdhanPlayer"
     private var mediaPlayer: MediaPlayer? = null
     private var currentPrayer: String? = null
+    private var volumeReceiver: BroadcastReceiver? = null
+    private var lastVolumeIndex: Int = -1
 
     // Synchronization lock to prevent double adhan playback
     private val playbackLock = Any()
@@ -53,6 +61,52 @@ object AdhanPlayer {
     fun getCustomAdhan(): String? = customAdhanPath
 
     /**
+     * Register volume change receiver to catch volume button presses on lock screen
+     */
+    private fun registerVolumeReceiver(context: Context) {
+        unregisterVolumeReceiver()
+
+        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        lastVolumeIndex = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+
+        volumeReceiver = object : BroadcastReceiver() {
+            override fun onReceive(ctx: Context, intent: Intent) {
+                if (intent.action == "android.media.VOLUME_CHANGED_ACTION") {
+                    val streamType = intent.getIntExtra("android.media.EXTRA_VOLUME_STREAM_TYPE", -1)
+                    if (streamType == AudioManager.STREAM_MUSIC) {
+                        val newVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+                        if (newVolume != lastVolumeIndex) {
+                            lastVolumeIndex = newVolume
+                            Log.d(TAG, "🔊 [VOLUME] Volume changed to $newVolume — stopping adhan")
+                            stop()
+                        }
+                    }
+                }
+            }
+        }
+
+        val filter = IntentFilter("android.media.VOLUME_CHANGED_ACTION")
+        context.registerReceiver(volumeReceiver, filter)
+        Log.d(TAG, "✅ [VOLUME RECEIVER] Registered — volume keys will stop adhan")
+    }
+
+    /**
+     * Unregister volume change receiver
+     */
+    private fun unregisterVolumeReceiver() {
+        volumeReceiver?.let {
+            try {
+                // We need an application context to unregister
+                // This is handled in releasePlayer()
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ [VOLUME RECEIVER] Unregister error: ${e.message}")
+            }
+        }
+    }
+
+    private var appContext: Context? = null
+
+    /**
      * Play adhan for the specified prayer
      * @param context Application context
      * @param prayerName Name of the prayer (Fajr, Dhuhr, Asr, Maghrib, Isha)
@@ -64,7 +118,7 @@ object AdhanPlayer {
         Log.d(TAG, "🔒 [LOCK] Acquired playback lock")
 
         // Check if adhan is enabled
-        val prefs = context.getSharedPreferences("aura_prefs", Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
         val adhanEnabled = prefs.getBoolean("adhan_enabled", true)
 
         if (!adhanEnabled) {
@@ -75,6 +129,12 @@ object AdhanPlayer {
 
         // Stop any currently playing adhan
         stop()
+
+        // Save context for cleanup
+        appContext = context.applicationContext
+
+        // Register volume receiver to catch volume button presses
+        registerVolumeReceiver(context.applicationContext)
 
         // Check for custom adhan
         if (customAdhanPath != null) {
@@ -131,8 +191,6 @@ object AdhanPlayer {
             mediaPlayer = MediaPlayer()
             mediaPlayer?.setOnCompletionListener {
                 Log.d(TAG, "✅ [CUSTOM] Playback completed for $prayerName")
-                // Don't cancel notification here - let it stay for 20 minutes
-                // Notification will be cancelled by SilentOffReceiver
                 releasePlayer()
             }
             mediaPlayer?.setOnErrorListener { _, what, extra ->
@@ -171,8 +229,6 @@ object AdhanPlayer {
             mediaPlayer = MediaPlayer()
             mediaPlayer?.setOnCompletionListener {
                 Log.d(TAG, "✅ [BUILT-IN] Playback completed for $prayerName")
-                // Don't cancel notification here - let it stay for 20 minutes
-                // Notification will be cancelled by SilentOffReceiver
                 releasePlayer()
             }
             mediaPlayer?.setOnErrorListener { _, what, extra ->
@@ -230,12 +286,23 @@ object AdhanPlayer {
     }
 
     /**
-     * Release the MediaPlayer resources
+     * Release the MediaPlayer and volume receiver
      */
     private fun releasePlayer() {
         mediaPlayer?.release()
         mediaPlayer = null
         currentPrayer = null
+
+        // Unregister volume receiver
+        try {
+            volumeReceiver?.let {
+                appContext?.unregisterReceiver(it)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [VOLUME RECEIVER] Unregister error: ${e.message}")
+        }
+        volumeReceiver = null
+        appContext = null
     }
 
     /**
@@ -252,7 +319,6 @@ object AdhanPlayer {
             }
 
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                // Vibrate pattern: 500ms on, 200ms off, 500ms on
                 vibrator.vibrate(
                     VibrationEffect.createWaveform(longArrayOf(0, 500, 200, 500), -1)
                 )
@@ -270,7 +336,6 @@ object AdhanPlayer {
      */
     private fun playDefaultSound(context: Context) {
         try {
-            // Play system default notification sound
             val player = MediaPlayer()
             player.setDataSource(context, android.provider.Settings.System.DEFAULT_NOTIFICATION_URI)
             player.prepare()

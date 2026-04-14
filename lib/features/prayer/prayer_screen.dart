@@ -21,6 +21,7 @@ import '../../core/services/adhan_player_service.dart';
 import '../../core/services/background_service_manager.dart';
 import '../../core/services/location_service.dart';
 import '../../core/services/notification_service.dart';
+import '../../core/services/prayer_alarm_service.dart';
 import '../../core/services/prayer_tracking_service.dart';
 import '../settings/prayer_calculation_settings_dialog.dart';
 import '../settings/adhan_calculation_method.dart';
@@ -1373,6 +1374,33 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
                       : 'Play adhan for testing'),
             ),
             onTap: _toggleAdhan,
+          ),
+          // Test Adhan Notification Button
+          ListTile(
+            leading: const Icon(Icons.notifications_active_outlined,
+                color: AppConstants.primaryColor),
+            title: Text(
+              isArabic ? 'اختبار إشعار الأذان' : 'Test Adhan Notification',
+            ),
+            subtitle: Text(
+              isArabic
+                  ? 'يشغل الإشعار والشاشة الكاملة بعد 10 ثوان'
+                  : 'Triggers notification & full screen in 10 sec',
+            ),
+            trailing: const Icon(Icons.play_arrow, color: AppConstants.primaryColor),
+            onTap: () async {
+              await PrayerAlarmService.instance.testAdhanNow('Maghrib');
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(isArabic
+                        ? 'تم تشغيل إشعار الأذان'
+                        : 'Adhan notification triggered'),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
+            },
           ),
           // Test Notification Button
           ListTile(

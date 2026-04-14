@@ -87,25 +87,12 @@ class ToggleSilentModeReceiver : BroadcastReceiver() {
         Log.d(TAG, "📱 Saved current ringer mode: $currentRingerMode")
         Log.d(TAG, "🔐 Has DND permission: $hasDndPermission")
 
-        // Set to silent mode
+        // Set to vibrate mode (not silent/DND — user preference)
         try {
-            if (hasDndPermission) {
-                audioManager.ringerMode = AudioManager.RINGER_MODE_SILENT
-                Log.d(TAG, "🔕 Enabled SILENT mode")
-            } else {
-                // Fallback: Use vibrate mode
-                audioManager.ringerMode = AudioManager.RINGER_MODE_VIBRATE
-                Log.d(TAG, "⚠️ No DND permission, using VIBRATE mode")
-            }
-        } catch (e: SecurityException) {
-            Log.e(TAG, "❌ SecurityException: ${e.message}")
-            // Fallback to vibrate mode
-            try {
-                audioManager.ringerMode = AudioManager.RINGER_MODE_VIBRATE
-                Log.d(TAG, "⚠️ Fallback to vibrate mode")
-            } catch (e2: Exception) {
-                Log.e(TAG, "❌ Failed to set ringer mode: ${e2.message}")
-            }
+            audioManager.ringerMode = AudioManager.RINGER_MODE_VIBRATE
+            Log.d(TAG, "📳 Enabled VIBRATE mode")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Error setting vibrate mode: ${e.message}")
         }
 
         // Mark silent mode as active
@@ -234,18 +221,10 @@ class ToggleSilentModeReceiver : BroadcastReceiver() {
         val language = getLanguage(context)
         val isArabic = language == "ar"
 
-        val message = if (noDndPermission) {
-            if (isArabic) {
-                "وضع الاهتزاز لصلاة $prayerNameAr"
-            } else {
-                "Vibrate mode for $prayerName"
-            }
+        val message = if (isArabic) {
+            "وضع الاهتزاز لصلاة $prayerNameAr - 20 دقيقة"
         } else {
-            if (isArabic) {
-                "وضع صامت لصلاة $prayerNameAr - 20 دقيقة"
-            } else {
-                "Silent mode for $prayerName - 20 minutes"
-            }
+            "Vibrate mode for $prayerName - 20 minutes"
         }
 
         android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show()
@@ -357,9 +336,9 @@ class SilentOffReceiver : BroadcastReceiver() {
         val language = getLanguagePreference(context)
         val isArabic = language == "ar"
         val message = if (isArabic) {
-            "انتهى الوضع الصامت - عودة للوضع الطبيعي"
+            "انتهى وضع الاهتزاز - عودة للوضع الطبيعي"
         } else {
-            "Silent mode ended - Sound restored"
+            "Vibrate mode ended - Sound restored"
         }
         android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).show()
 

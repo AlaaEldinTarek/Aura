@@ -283,24 +283,40 @@ class MainActivity : FlutterActivity() {
                         "Isha" -> "العشاء"
                         else -> "الظهر"
                     }
-                    Log.d("PrayerChannel", "🧪 TESTING ADHAN NOW for $prayerName")
+                    Log.d("PrayerChannel", "🧪 TESTING ADHAN in 10 seconds for $prayerName")
 
-                    // Trigger silent mode (if enabled)
-                    val sharedPrefs = getSharedPreferences("aura_prefs", Context.MODE_PRIVATE)
-                    val silentModeEnabled = sharedPrefs.getBoolean("silent_mode_enabled", true)
-                    if (silentModeEnabled) {
-                        Log.d("PrayerChannel", "🔕 Triggering silent mode for test")
-                        SilentModeScheduler.triggerSilentMode(this, prayerName, prayerNameAr)
-                    }
+                    // Schedule alarm to fire in 10 seconds
+                    val alarmManager = getSystemService(Context.ALARM_SERVICE) as android.app.AlarmManager
+                    val testTime = System.currentTimeMillis() + (10 * 1000)
 
-                    // Send broadcast to PrayerAlarmReceiver to play adhan and show notification
                     val intent = Intent(this, PrayerAlarmReceiver::class.java).apply {
                         putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME, prayerName)
                         putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME_AR, prayerNameAr)
-                        putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_TIME, System.currentTimeMillis())
+                        putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_TIME, testTime)
                     }
-                    sendBroadcast(intent)
 
+                    val pendingIntent = android.app.PendingIntent.getBroadcast(
+                        this,
+                        9999, // Test request code
+                        intent,
+                        android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+                    )
+
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        alarmManager.setExactAndAllowWhileIdle(
+                            android.app.AlarmManager.RTC_WAKEUP,
+                            testTime,
+                            pendingIntent
+                        )
+                    } else {
+                        alarmManager.setExact(
+                            android.app.AlarmManager.RTC_WAKEUP,
+                            testTime,
+                            pendingIntent
+                        )
+                    }
+
+                    Log.d("PrayerChannel", "🧪 Test alarm scheduled in 10 seconds for $prayerName")
                     result.success(true)
                 }
                 "cancelAllPrayerAlarms" -> {

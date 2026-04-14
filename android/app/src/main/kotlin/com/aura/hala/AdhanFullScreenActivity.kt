@@ -1,19 +1,15 @@
 package com.aura.hala
 
-import android.app.AlarmManager
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -23,6 +19,8 @@ import java.util.Locale
  * Simple Full-Screen Activity for Adhan
  * Shows when prayer time arrives - works on lock screen and unlocked screen
  * Compatible with Android 10+ and all devices including Huawei
+ *
+ * Adhan stops when: user closes activity, presses volume buttons
  */
 class AdhanFullScreenActivity : AppCompatActivity() {
 
@@ -45,7 +43,6 @@ class AdhanFullScreenActivity : AppCompatActivity() {
 
     private lateinit var prayerName: String
     private lateinit var prayerNameAr: String
-    private var adhanPlaying = true
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,29 +62,23 @@ class AdhanFullScreenActivity : AppCompatActivity() {
         setContentView(R.layout.activity_adhan_fullscreen)
         setupUI()
 
-        // Play adhan
-        playAdhan()
-
         Log.d(TAG, "✅ [ADHAN] Full screen activity ready")
     }
 
     private fun setupFullScreen() {
         // For Android 12+ (API 31+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // Use turnScreenOn and setShowWhenLocked for Android 12+
             try {
                 setTurnScreenOn(true)
                 setShowWhenLocked(true)
                 Log.d(TAG, "✅ [ADHAN] Using Android 12+ APIs")
             } catch (e: Exception) {
                 Log.w(TAG, "⚠️ [ADHAN] Android 12+ APIs failed: ${e.message}")
-                // Fallback to window flags
                 setupWindowFlags()
             }
         }
         // For Android 10-11 (API 29-30)
         else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            // Use window flags for Android 10-11
             setupWindowFlags()
             Log.d(TAG, "✅ [ADHAN] Using window flags for Android 10-11")
         }
@@ -113,6 +104,37 @@ class AdhanFullScreenActivity : AppCompatActivity() {
         )
     }
 
+    /**
+     * Stop adhan and close activity
+     */
+    private fun stopAdhanAndFinish() {
+        if (AdhanPlayer.isPlaying()) {
+            AdhanPlayer.stop()
+            Log.d(TAG, "⏹️ [ADHAN] Stopped adhan audio")
+        }
+        finish()
+    }
+
+    /**
+     * Catch volume button presses — stop adhan immediately
+     */
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            Log.d(TAG, "🔊 [ADHAN] Volume button pressed — stopping adhan")
+            if (AdhanPlayer.isPlaying()) {
+                AdhanPlayer.stop()
+                // Update message
+                val prefs = getSharedPreferences("${packageName}_preferences", MODE_PRIVATE)
+                val isArabic = prefs.getString("language", "en") == "ar"
+                findViewById<TextView>(R.id.prayerMessage).text =
+                    if (isArabic) "تم إيقاف الأذان" else "Azan stopped"
+            }
+            // Don't consume — let system adjust volume normally
+            return super.onKeyDown(keyCode, event)
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
     private fun setupUI() {
         // Get language
         val prefs = getSharedPreferences("${packageName}_preferences", MODE_PRIVATE)
@@ -129,144 +151,52 @@ class AdhanFullScreenActivity : AppCompatActivity() {
         val msg = if (isArabic) "حان الآن موعد صلاة $prayerNameAr" else "It's time for $prayerName prayer"
         findViewById<TextView>(R.id.prayerMessage).text = msg
 
-        // Stop button
-        findViewById<Button>(R.id.btnStop).apply {
-            text = if (isArabic) "إيقاف" else "Stop"
-            setOnClickListener {
-                stopAdhan()
-            }
-        }
-
-        // Silent mode button
+        // Stop Vibrate button — sends same broadcast as notification (ToggleSilentModeReceiver DISMISS_SILENT)
+        val silentPrefs = getSharedPreferences("aura_silent_mode", MODE_PRIVATE)
+        val isSilentActive = silentPrefs.getBoolean("is_silent_active", false)
         val silentEnabled = prefs.getBoolean("silent_mode_enabled", true)
-        findViewById<Button>(R.id.btnSilentMode).apply {
-            if (silentEnabled) {
+        findViewById<Button>(R.id.btnVibrateAlways).apply {
+            if (silentEnabled && isSilentActive) {
                 visibility = View.VISIBLE
-                text = if (isArabic) "وضع صامت (20 دقيقة)" else "Silent Mode (20 min)"
+                text = if (isArabic) "إيقاف الاهتزاز" else "Stop Vibrate"
                 setOnClickListener {
-                    enableSilentMode()
+                    val dismissIntent = Intent(this@AdhanFullScreenActivity, ToggleSilentModeReceiver::class.java).apply {
+                        action = "com.aura.hala.DISMISS_SILENT"
+                        putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME, prayerName)
+                    }
+                    sendBroadcast(dismissIntent)
+
+                    // Update UI
+                    isEnabled = false
+                    alpha = 0.5f
                 }
             } else {
                 visibility = View.GONE
             }
         }
 
-        // Close button
+        // Close button — stops adhan + closes activity
         findViewById<Button>(R.id.btnClose).apply {
             text = if (isArabic) "إغلاق" else "Close"
             setOnClickListener {
-                finish()
+                stopAdhanAndFinish()
             }
         }
 
         Log.d(TAG, "✅ [ADHAN] UI setup complete")
     }
 
-    private fun playAdhan() {
-        if (AdhanPlayer.isPlaying()) {
-            AdhanPlayer.stop()
-        }
-        AdhanPlayer.play(this, prayerName)
-        Log.d(TAG, "🎵 [ADHAN] Playing adhan for $prayerName")
-    }
-
-    private fun stopAdhan() {
-        AdhanPlayer.stop()
-        adhanPlaying = false
-
-        // Update UI
-        findViewById<Button>(R.id.btnStop).apply {
-            isEnabled = false
-            alpha = 0.5f
-        }
-
-        val prefs = getSharedPreferences("${packageName}_preferences", MODE_PRIVATE)
-        val isArabic = prefs.getString("language", "en") == "ar"
-        findViewById<TextView>(R.id.prayerMessage).text = if (isArabic) "تم إيقاف الأذان" else "Azan stopped"
-
-        Log.d(TAG, "⏹️ [ADHAN] Stopped")
-    }
-
-    private fun enableSilentMode() {
-        val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        val prefs = getSharedPreferences("aura_silent_mode", MODE_PRIVATE)
-
-        // Save current mode
-        prefs.edit().putInt("saved_ringer_mode", audioManager.ringerMode).apply()
-
-        // Check DND permission
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val hasDndPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            try {
-                notificationManager.isNotificationPolicyAccessGranted
-            } catch (e: Exception) {
-                false
-            }
-        } else {
-            true
-        }
-
-        // Set silent or vibrate mode
-        try {
-            if (hasDndPermission) {
-                audioManager.ringerMode = AudioManager.RINGER_MODE_SILENT
-                Log.d(TAG, "🔕 [ADHAN] Silent mode enabled")
-            } else {
-                audioManager.ringerMode = AudioManager.RINGER_MODE_VIBRATE
-                Log.d(TAG, "📳 [ADHAN] Vibrate mode enabled (no DND permission)")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ [ADHAN] Error setting silent mode: ${e.message}")
-        }
-
-        // Mark as active and save end time
-        prefs.edit().putBoolean("is_silent_active", true).apply()
-        val endTime = System.currentTimeMillis() + (20 * 60 * 1000)
-        prefs.edit().putLong("silent_end_time", endTime).apply()
-
-        // Schedule restore
-        scheduleSilentRestore(endTime)
-
-        // Show toast
-        val prefs2 = getSharedPreferences("${packageName}_preferences", MODE_PRIVATE)
-        val isArabic = prefs2.getString("language", "en") == "ar"
-        val toastMsg = if (hasDndPermission) {
-            if (isArabic) "وضع صامت لمدة 20 دقيقة" else "Silent mode for 20 minutes"
-        } else {
-            if (isArabic) "وضع اهتزاز لمدة 20 دقيقة" else "Vibrate mode for 20 minutes"
-        }
-        Toast.makeText(this, toastMsg, Toast.LENGTH_SHORT).show()
-
-        Log.d(TAG, "✅ [ADHAN] Silent mode enabled, will restore in 20 min")
-    }
-
-    private fun scheduleSilentRestore(time: Long) {
-        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(this, SilentOffReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
-            this, 3999, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // Use setExactAndAllowWhileIdle for Android 6+ for better reliability
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, time, pendingIntent)
-        } else {
-            alarmManager.setExact(AlarmManager.RTC_WAKEUP, time, pendingIntent)
-        }
-
-        val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(time))
-        Log.d(TAG, "⏰ [ADHAN] Silent restore scheduled for $timeStr")
-    }
-
     override fun onDestroy() {
         super.onDestroy()
+        // Stop adhan when activity is destroyed (swipe away, back button, etc.)
+        if (AdhanPlayer.isPlaying()) {
+            AdhanPlayer.stop()
+            Log.d(TAG, "⏹️ [ADHAN] Stopped adhan on destroy")
+        }
         Log.d(TAG, "📱 [ADHAN] Activity destroyed")
     }
 
     override fun onBackPressed() {
-        // Allow closing with back button
-        super.onBackPressed()
-        Log.d(TAG, "📱 [ADHAN] Back pressed")
+        stopAdhanAndFinish()
     }
 }

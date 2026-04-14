@@ -1,91 +1,95 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Simple Full-Screen Adhan Layout -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- Full-Screen Adhan Layout with buttons at bottom -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
     android:padding="32dp"
     android:background="#1E3A5F">
 
-    <!-- App Icon -->
-    <ImageView
-        android:layout_width="100dp"
-        android:layout_height="100dp"
-        android:src="@mipmap/ic_launcher"
-        android:layout_marginBottom="24dp" />
-
-    <!-- Prayer Name -->
-    <TextView
-        android:id="@+id/prayerTitle"
+    <!-- Center content -->
+    <LinearLayout
+        android:id="@+id/contentCenter"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Dhuhr"
-        android:textSize="48sp"
-        android:textStyle="bold"
-        android:textColor="#FFFFFF"
-        android:layout_marginBottom="8dp" />
-
-    <!-- Time -->
-    <TextView
-        android:id="@+id/prayerTime"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="12:00"
-        android:textSize="28sp"
-        android:textColor="#B0BEC5"
-        android:layout_marginBottom="16dp" />
-
-    <!-- Message -->
-    <TextView
-        android:id="@+id/prayerMessage"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="It's time for Dhuhr prayer"
-        android:textSize="18sp"
-        android:textColor="#B0BEC5"
+        android:orientation="vertical"
         android:gravity="center"
-        android:layout_marginBottom="48dp" />
+        android:layout_centerInParent="true">
 
-    <!-- Buttons -->
+        <!-- App Icon -->
+        <ImageView
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@mipmap/ic_launcher"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Prayer Name -->
+        <TextView
+            android:id="@+id/prayerTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Dhuhr"
+            android:textSize="48sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Time -->
+        <TextView
+            android:id="@+id/prayerTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="12:00"
+            android:textSize="28sp"
+            android:textColor="#B0BEC5"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Message -->
+        <TextView
+            android:id="@+id/prayerMessage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="It's time for Dhuhr prayer"
+            android:textSize="18sp"
+            android:textColor="#B0BEC5"
+            android:gravity="center" />
+
+    </LinearLayout>
+
+    <!-- Buttons at bottom -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="24dp">
 
-        <!-- Stop Button -->
+        <!-- Stop Vibrate Button -->
         <Button
-            android:id="@+id/btnStop"
-            android:layout_width="match_parent"
-            android:layout_height="64dp"
-            android:text="Stop Adhan"
-            android:textSize="18sp"
-            android:textStyle="bold"
+            android:id="@+id/btnVibrateAlways"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="8dp"
+            android:text="Stop Vibrate"
+            android:textSize="12sp"
             android:textColor="#FFFFFF"
-            android:backgroundTint="#E53935"
-            android:layout_marginBottom="16dp" />
-
-        <!-- Silent Mode Button -->
-        <Button
-            android:id="@+id/btnSilentMode"
-            android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:text="Silent Mode (20 min)"
-            android:textSize="16sp"
-            android:textColor="#FFFFFF"
-            android:backgroundTint="#1976D2"
-            android:layout_marginBottom="16dp" />
+            android:background="@drawable/btn_vibrate_always"
+            android:textAllCaps="false" />
 
         <!-- Close Button -->
         <Button
             android:id="@+id/btnClose"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_width="0dp"
+            android:layout_height="44dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
             android:text="Close"
-            android:textSize="14sp"
-            android:textColor="#B0BEC5"
-            android:backgroundTint="@android:color/transparent" />
+            android:textSize="12sp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/btn_close"
+            android:textAllCaps="false" />
 
     </LinearLayout>
 
-</LinearLayout>
+</RelativeLayout>
