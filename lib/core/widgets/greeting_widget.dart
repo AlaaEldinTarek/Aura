@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants/app_constants.dart';
+import '../providers/auth_provider.dart';
 
 /// A beautiful greeting widget that shows personalized greeting
 /// based on time of day
@@ -43,7 +44,7 @@ class GreetingWidget extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            // Icon
+            // Avatar: user photo or app logo
             Container(
               width: size.width > 600 ? 60 : 50,
               height: size.width > 600 ? 60 : 50,
@@ -51,11 +52,9 @@ class GreetingWidget extends ConsumerWidget {
                 color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
               ),
-              child: Center(
-                child: Text(
-                  icon,
-                  style: const TextStyle(fontSize: 28),
-                ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+                child: _buildAvatar(ref),
               ),
             ),
             const SizedBox(width: AppConstants.paddingMedium),
@@ -89,6 +88,23 @@ class GreetingWidget extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  Widget _buildAvatar(WidgetRef ref) {
+    final user = ref.watch(currentUserProvider);
+    final photoURL = user?.photoURL;
+
+    if (photoURL != null && photoURL.isNotEmpty) {
+      return Image.network(
+        photoURL,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => Image.asset(
+          'assets/images/logo.png',
+          fit: BoxFit.cover,
+        ),
+      );
+    }
+    return Image.asset('assets/images/logo.png', fit: BoxFit.cover);
   }
 
   (String, String, String, Color) _getTimeBasedGreeting(int hour) {
