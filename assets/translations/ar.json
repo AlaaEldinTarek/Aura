@@ -56,7 +56,7 @@
   "theme_light": "الوضع الفاتح",
   "theme_dark": "الوضع الداكن",
   "theme_system": "النظام",
-  "language_english": "English",
+  "language_english": "الإنجليزية",
   "language_arabic": "العربية",
   "logout": "تسجيل الخروج",
   "logout_confirm": "هل أنت متأكد من تسجيل الخروج؟",
@@ -160,6 +160,7 @@
 
   "notification_time_dialog_title": "وقت التنبيه",
   "language_dialog_name": "اللغة",
+  "language_dialog_title": "اللغة",
   "theme_dialog_title": "المظهر",
 
   "cancel": "إلغاء",

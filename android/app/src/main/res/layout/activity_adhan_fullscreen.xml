@@ -1,10 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Full-Screen Adhan Layout with buttons at bottom -->
+<!-- Full-Screen Adhan Layout - Modern design with gradient and prayer icon -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="32dp"
-    android:background="#1E3A5F">
+    android:background="@drawable/bg_adhan_fullscreen">
+
+    <!-- Bismillah at top -->
+    <TextView
+        android:id="@+id/bismillah"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="48dp"
+        android:text="بسم الله الرحمن الرحيم"
+        android:textSize="20sp"
+        android:textColor="#4DFFFFFF" />
 
     <!-- Center content -->
     <LinearLayout
@@ -15,43 +25,66 @@
         android:gravity="center"
         android:layout_centerInParent="true">
 
-        <!-- App Icon -->
-        <ImageView
-            android:layout_width="100dp"
-            android:layout_height="100dp"
-            android:src="@mipmap/ic_launcher"
-            android:layout_marginBottom="24dp" />
+        <!-- Prayer Icon with circular glow background -->
+        <FrameLayout
+            android:layout_width="160dp"
+            android:layout_height="160dp"
+            android:layout_marginBottom="28dp">
+
+            <!-- Glow circle -->
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:src="@drawable/bg_prayer_icon_glow" />
+
+            <!-- Prayer icon -->
+            <ImageView
+                android:id="@+id/prayerIcon"
+                android:layout_width="120dp"
+                android:layout_height="120dp"
+                android:layout_gravity="center"
+                android:src="@mipmap/ic_launcher" />
+
+        </FrameLayout>
 
         <!-- Prayer Name -->
         <TextView
             android:id="@+id/prayerTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Dhuhr"
-            android:textSize="48sp"
+            android:text="Maghrib"
+            android:textSize="52sp"
             android:textStyle="bold"
             android:textColor="#FFFFFF"
-            android:layout_marginBottom="8dp" />
+            android:layout_marginBottom="4dp" />
 
         <!-- Time -->
         <TextView
             android:id="@+id/prayerTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="12:00"
-            android:textSize="28sp"
-            android:textColor="#B0BEC5"
-            android:layout_marginBottom="16dp" />
+            android:text="18:14"
+            android:textSize="30sp"
+            android:textColor="#80FFFFFF"
+            android:layout_marginBottom="20dp" />
+
+        <!-- Divider line -->
+        <View
+            android:layout_width="48dp"
+            android:layout_height="2dp"
+            android:background="#33FFFFFF"
+            android:layout_marginBottom="20dp" />
 
         <!-- Message -->
         <TextView
             android:id="@+id/prayerMessage"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="It's time for Dhuhr prayer"
+            android:text="It's time for Maghrib prayer"
             android:textSize="18sp"
-            android:textColor="#B0BEC5"
-            android:gravity="center" />
+            android:textColor="#B3FFFFFF"
+            android:gravity="center"
+            android:maxWidth="320dp" />
 
     </LinearLayout>
 
@@ -62,17 +95,19 @@
         android:orientation="horizontal"
         android:gravity="center"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="24dp">
+        android:layout_marginBottom="48dp"
+        android:paddingStart="32dp"
+        android:paddingEnd="32dp">
 
         <!-- Stop Vibrate Button -->
         <Button
             android:id="@+id/btnVibrateAlways"
             android:layout_width="0dp"
-            android:layout_height="44dp"
+            android:layout_height="48dp"
             android:layout_weight="1"
             android:layout_marginEnd="8dp"
             android:text="Stop Vibrate"
-            android:textSize="12sp"
+            android:textSize="14sp"
             android:textColor="#FFFFFF"
             android:background="@drawable/btn_vibrate_always"
             android:textAllCaps="false" />
@@ -81,11 +116,11 @@
         <Button
             android:id="@+id/btnClose"
             android:layout_width="0dp"
-            android:layout_height="44dp"
+            android:layout_height="48dp"
             android:layout_weight="1"
             android:layout_marginStart="8dp"
             android:text="Close"
-            android:textSize="12sp"
+            android:textSize="14sp"
             android:textColor="#FFFFFF"
             android:background="@drawable/btn_close"
             android:textAllCaps="false" />

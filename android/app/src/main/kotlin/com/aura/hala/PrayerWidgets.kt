@@ -126,7 +126,7 @@ class NextPrayerWidget : AppWidgetProvider() {
         if (!locationName.isNullOrEmpty()) {
             views.setTextViewText(R.id.widget_location_small, locationName)
         } else {
-            views.setTextViewText(R.id.widget_location_small, "Location")
+            views.setTextViewText(R.id.widget_location_small, if (isArabic) "الموقع" else "Location")
         }
 
         // Calculate and set time remaining

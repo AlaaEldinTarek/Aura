@@ -641,7 +641,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text(isArabic ? 'خطأ: $e' : 'Error: $e'),
             backgroundColor: Colors.red,
           ),
         );

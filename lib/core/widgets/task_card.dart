@@ -176,6 +176,7 @@ class _PriorityBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final colors = {
       TaskPriority.high: Colors.red,
       TaskPriority.medium: Colors.orange,
@@ -183,9 +184,9 @@ class _PriorityBadge extends StatelessWidget {
     };
 
     final labels = {
-      TaskPriority.high: 'High',
-      TaskPriority.medium: 'Medium',
-      TaskPriority.low: 'Low',
+      TaskPriority.high: isArabic ? 'عالية' : 'High',
+      TaskPriority.medium: isArabic ? 'متوسطة' : 'Medium',
+      TaskPriority.low: isArabic ? 'منخفضة' : 'Low',
     };
 
     final color = colors[priority]!;
@@ -216,13 +217,14 @@ class _CategoryBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final labels = {
-      TaskCategory.work: 'Work',
-      TaskCategory.personal: 'Personal',
-      TaskCategory.shopping: 'Shopping',
-      TaskCategory.health: 'Health',
-      TaskCategory.study: 'Study',
-      TaskCategory.prayer: 'Prayer',
+      TaskCategory.work: isArabic ? 'عمل' : 'Work',
+      TaskCategory.personal: isArabic ? 'شخصي' : 'Personal',
+      TaskCategory.shopping: isArabic ? 'تسوق' : 'Shopping',
+      TaskCategory.health: isArabic ? 'صحة' : 'Health',
+      TaskCategory.study: isArabic ? 'دراسة' : 'Study',
+      TaskCategory.prayer: isArabic ? 'صلاة' : 'Prayer',
     };
 
     return Container(
@@ -256,6 +258,7 @@ class _DueDateBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     // Format date
     final now = DateTime.now();
@@ -264,11 +267,11 @@ class _DueDateBadge extends StatelessWidget {
 
     String label;
     if (dueDay == today) {
-      label = 'Today';
+      label = isArabic ? 'اليوم' : 'Today';
     } else {
       final tomorrow = today.add(const Duration(days: 1));
       if (dueDay == tomorrow) {
-        label = 'Tomorrow';
+        label = isArabic ? 'غداً' : 'Tomorrow';
       } else {
         label = '${dueDate.day}/${dueDate.month}';
       }

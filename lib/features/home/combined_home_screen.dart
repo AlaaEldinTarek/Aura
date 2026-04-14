@@ -552,7 +552,7 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
               },
               loading: () => const ShimmerListTile(),
               error: (error, _) => Center(
-                child: Text('Error: $error'),
+                child: Text(isArabic ? 'خطأ: $error' : 'Error: $error'),
               ),
             ),
 
@@ -568,7 +568,7 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
       spacing: 8,
       children: [
         FilterChip(
-          label: const Text('All'),
+          label: Text(isArabic ? 'الكل' : 'All'),
           selected: true,
           onSelected: (_) {},
           backgroundColor: isDark ? AppConstants.darkCard : Colors.white,
@@ -576,14 +576,14 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
           checkmarkColor: AppConstants.primaryColor,
         ),
         FilterChip(
-          label: const Text('Today'),
+          label: Text(isArabic ? 'اليوم' : 'Today'),
           selected: false,
           onSelected: (_) {},
           backgroundColor: isDark ? AppConstants.darkCard : Colors.white,
           selectedColor: AppConstants.primaryColor.withOpacity(0.2),
         ),
         FilterChip(
-          label: const Text('High Priority'),
+          label: Text(isArabic ? 'أولوية عالية' : 'High Priority'),
           selected: false,
           onSelected: (_) {},
           backgroundColor: isDark ? AppConstants.darkCard : Colors.white,

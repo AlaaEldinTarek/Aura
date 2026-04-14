@@ -123,7 +123,7 @@ class ProfileScreen extends ConsumerWidget {
             const SizedBox(height: AppConstants.paddingMedium),
 
             // Profile Header Card
-            _buildProfileHeader(context, user, isDark)
+            _buildProfileHeader(context, user, isDark, isArabic)
                 .animate().fadeIn(duration: 400.ms),
 
             const SizedBox(height: AppConstants.paddingMedium),
@@ -279,6 +279,7 @@ class ProfileScreen extends ConsumerWidget {
     BuildContext context,
     User user,
     bool isDark,
+    bool isArabic,
   ) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
@@ -366,7 +367,7 @@ class ProfileScreen extends ConsumerWidget {
               children: [
                 // Name
                 Text(
-                  user.displayName ?? 'User',
+                  user.displayName ?? (isArabic ? 'مستخدم' : 'User'),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: isDark ? Colors.white : AppConstants.primaryColor,
@@ -592,7 +593,7 @@ class ProfileScreen extends ConsumerWidget {
                 } catch (e) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('$e'), backgroundColor: AppConstants.error),
+                      SnackBar(content: Text(isArabic ? 'خطأ: $e' : 'Error: $e'), backgroundColor: AppConstants.error),
                     );
                   }
                 }
@@ -643,7 +644,7 @@ class ProfileScreen extends ConsumerWidget {
                 } catch (e) {
                   if (context.mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('$e'), backgroundColor: AppConstants.error),
+                      SnackBar(content: Text(isArabic ? 'خطأ: $e' : 'Error: $e'), backgroundColor: AppConstants.error),
                     );
                   }
                 }

@@ -160,6 +160,7 @@
 
   "notification_time_dialog_title": "Notification Time",
   "language_dialog_title": "Language",
+  "language_dialog_name": "Language",
   "theme_dialog_title": "Theme",
 
   "cancel": "Cancel",
