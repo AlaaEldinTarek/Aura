@@ -32,6 +32,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         const val ACTION_STOP_ADHAN = "com.aura.hala.STOP_ADHAN"
         const val ACTION_TOGGLE_SILENT = "com.aura.hala.TOGGLE_SILENT"
         const val ACTION_REMIND_AGAIN = "com.aura.hala.REMIND_AGAIN"
+        const val EXTRA_IS_REMIND_LATER = "is_remind_later"
 
         // Notification IDs for each prayer
         private const val NOTIFICATION_FAJR = 1001
@@ -70,6 +71,26 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
                 "Maghrib" -> REMINDER_MAGHRIB
                 "Isha" -> REMINDER_ISHA
                 else -> 2000
+            }
+        }
+
+        // Remind-later notification IDs (offset by 4000)
+        private const val REMIND_LATER_FAJR = 4001
+        private const val REMIND_LATER_SUNRISE = 4002
+        private const val REMIND_LATER_DHUHR = 4003
+        private const val REMIND_LATER_ASR = 4004
+        private const val REMIND_LATER_MAGHRIB = 4005
+        private const val REMIND_LATER_ISHA = 4006
+
+        fun getRemindLaterNotificationId(prayerName: String): Int {
+            return when (prayerName) {
+                "Fajr" -> REMIND_LATER_FAJR
+                "Sunrise" -> REMIND_LATER_SUNRISE
+                "Dhuhr", "Zuhr" -> REMIND_LATER_DHUHR
+                "Asr" -> REMIND_LATER_ASR
+                "Maghrib" -> REMIND_LATER_MAGHRIB
+                "Isha" -> REMIND_LATER_ISHA
+                else -> 4000
             }
         }
 
@@ -232,6 +253,77 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
 
             Log.d(TAG, "All prayer alarms cancelled")
         }
+
+        /**
+         * Schedule a 5-minute remind-later alarm before prayer time
+         */
+        fun scheduleRemindLaterAlarm(
+            context: Context,
+            prayerName: String,
+            prayerNameAr: String,
+            prayerTime: Long
+        ) {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+            // Schedule 5 minutes before prayer time
+            val remindTime = prayerTime - (5 * 60 * 1000)
+            val now = System.currentTimeMillis()
+
+            if (remindTime <= now) {
+                Log.w(TAG, "⚠️ [REMIND_LATER] $prayerName 5-min reminder time has passed, skipping")
+                return
+            }
+
+            val intent = Intent(context, PrayerAlarmReceiver::class.java).apply {
+                putExtra(EXTRA_PRAYER_NAME, prayerName)
+                putExtra(EXTRA_PRAYER_NAME_AR, prayerNameAr)
+                putExtra(EXTRA_PRAYER_TIME, prayerTime)
+                putExtra(EXTRA_IS_REMINDER, true)
+                putExtra(EXTRA_IS_REMIND_LATER, true)
+            }
+
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                getRemindLaterNotificationId(prayerName),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    remindTime,
+                    pendingIntent
+                )
+            } else {
+                alarmManager.setExact(
+                    AlarmManager.RTC_WAKEUP,
+                    remindTime,
+                    pendingIntent
+                )
+            }
+
+            val delay = remindTime - now
+            val delayMinutes = delay / 1000 / 60
+            val remindTimeStr = DateFormat.format("HH:mm", Date(remindTime))
+            val prayerTimeStr = DateFormat.format("HH:mm", Date(prayerTime))
+
+            Log.d(TAG, "═══════════════════════════════════════")
+            Log.d(TAG, "🔔 [REMIND_LATER SCHEDULED] $prayerName")
+            Log.d(TAG, "⏰ Reminder time: $remindTimeStr (5 min before $prayerTimeStr)")
+            Log.d(TAG, "⏳ Time until reminder: $delayMinutes minutes")
+            Log.d(TAG, "═══════════════════════════════════════")
+        }
+
+        /**
+         * Cancel all reminder notifications for a prayer (10-min and 5-min)
+         */
+        fun cancelReminderNotifications(context: Context, prayerName: String) {
+            val notificationManager = NotificationManagerCompat.from(context)
+            notificationManager.cancel(getReminderNotificationId(prayerName))
+            notificationManager.cancel(getRemindLaterNotificationId(prayerName))
+            Log.d(TAG, "🗑️ Cancelled reminder notifications for $prayerName")
+        }
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -245,6 +337,22 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         val prayerNameAr = intent.getStringExtra(EXTRA_PRAYER_NAME_AR) ?: prayerName
         val prayerTime = intent.getLongExtra(EXTRA_PRAYER_TIME, 0)
         val isReminder = intent.getBooleanExtra(EXTRA_IS_REMINDER, false)
+        val isRemindLater = intent.getBooleanExtra(EXTRA_IS_REMIND_LATER, false)
+        val action = intent.action
+
+        // Handle "Remind Me Later" button press from 10-min notification
+        if (action == ACTION_REMIND_AGAIN) {
+            Log.d(TAG, "🔄 [REMIND_AGAIN] User pressed Remind Me Later for $prayerName")
+            handleRemindMeAgain(context, prayerName, prayerNameAr, prayerTime)
+            return
+        }
+
+        // Handle 5-minute remind-later notification
+        if (isRemindLater) {
+            Log.d(TAG, "⏰ [REMIND_LATER] 5-minute reminder for $prayerName")
+            showRemindLaterNotification(context, prayerName, prayerNameAr, prayerTime)
+            return
+        }
 
         if (isReminder) {
             // This is a 10-minute reminder notification
@@ -262,26 +370,47 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         val silentModeEnabled = defaultPrefs.getBoolean("silent_mode_enabled", true)
         Log.d(TAG, "🔧 [SETTINGS] Silent mode enabled: $silentModeEnabled")
 
-        // Play adhan for this prayer (except Sunrise)
-        if (prayerName != "Sunrise") {
-            Log.d(TAG, "🎵 [ADHAN] Starting adhan playback for $prayerName")
-            AdhanPlayer.play(context, prayerName)
+        // Cancel any pending reminder notifications for this prayer (10-min and 5-min)
+        cancelReminderNotifications(context, prayerName)
 
-            // Enable silent mode immediately (if enabled in settings)
-            if (silentModeEnabled) {
-                Log.d(TAG, "🔕 [SILENT] Enabling silent mode for $prayerName")
-                enableSilentModeForPrayer(context, prayerName, prayerNameAr)
-            } else {
-                Log.d(TAG, "⏭️ [SILENT] Silent mode disabled in settings")
+        // Play adhan audio (except Sunrise — no adhan for sunrise)
+        if (prayerName != "Sunrise") {
+            try {
+                AdhanPlayer.play(context, prayerName)
+                Log.d(TAG, "🎵 [ADHAN] Playing adhan audio for $prayerName")
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ [ADHAN] Error playing adhan: ${e.message}")
             }
         } else {
-            Log.d(TAG, "⏭️ [ADHAN] Sunrise - skipping adhan and silent mode")
+            Log.d(TAG, "⏭️ [ADHAN] Sunrise - skipping adhan audio")
+        }
+
+        // Enable vibrate mode for this prayer (except Sunrise)
+        if (prayerName != "Sunrise") {
+            if (silentModeEnabled) {
+                Log.d(TAG, "📳 [VIBRATE] Enabling vibrate mode for $prayerName")
+                enableSilentModeForPrayer(context, prayerName, prayerNameAr)
+            } else {
+                Log.d(TAG, "⏭️ [VIBRATE] Vibrate mode disabled in settings")
+            }
+        } else {
+            Log.d(TAG, "⏭️ [ADHAN] Sunrise - skipping vibrate mode")
         }
 
         // Show notification AFTER silent mode is enabled (so buttons are correct)
         Log.d(TAG, "📱 [NOTIFICATION] About to call showPrayerNotification for $prayerName")
         showPrayerNotification(context, prayerName, prayerNameAr, prayerTime)
         Log.d(TAG, "📱 [NOTIFICATION] Returned from showPrayerNotification for $prayerName")
+
+        // Launch full screen adhan activity directly (not relying on fullScreenIntent)
+        try {
+            val fullScreenIntent = AdhanFullScreenActivity.getIntent(context, prayerName, prayerNameAr)
+            fullScreenIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(fullScreenIntent)
+            Log.d(TAG, "📱 [FULLSCREEN] Launched full screen adhan activity")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [FULLSCREEN] Error launching full screen: ${e.message}")
+        }
 
         // Update next prayer for widget and app
         updateNextPrayer(context, prayerName)
@@ -417,17 +546,12 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         silentPrefs.edit().putInt("saved_ringer_mode", currentRingerMode).apply()
         Log.d(TAG, "📱 Saved ringer mode: $currentRingerMode, DND permission: $hasDndPermission")
 
-        // Set to silent mode
+        // Set to vibrate mode (not silent/DND — user preference)
         try {
-            if (hasDndPermission) {
-                audioManager.ringerMode = AudioManager.RINGER_MODE_SILENT
-                Log.d(TAG, "🔕 Enabled SILENT mode")
-            } else {
-                audioManager.ringerMode = AudioManager.RINGER_MODE_VIBRATE
-                Log.d(TAG, "🔕 Enabled VIBRATE mode (no DND permission)")
-            }
+            audioManager.ringerMode = AudioManager.RINGER_MODE_VIBRATE
+            Log.d(TAG, "📳 Enabled VIBRATE mode for prayer")
         } catch (e: Exception) {
-            Log.e(TAG, "❌ Error setting silent mode: ${e.message}")
+            Log.e(TAG, "❌ Error setting vibrate mode: ${e.message}")
         }
 
         // Mark silent mode as active
@@ -593,38 +717,24 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             .setShowWhen(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setVibrate(longArrayOf(0, 500, 200, 500))
-            // Tap notification → open full-screen adhan
+            // Tap notification → opens full-screen adhan → closing stops adhan
             .setContentIntent(fullScreenPendingIntent)
             // Auto-show full screen on lock screen / when screen is off
             .setFullScreenIntent(fullScreenPendingIntent, true)
-            // Add Stop button
-            .addAction(
-                android.R.drawable.ic_media_pause,
-                if (isArabic) "إيقاف" else "Stop",
-                stopPendingIntent
-            )
         Log.d(TAG, "📱 [NOTIFICATION] Notification built with contentIntent + fullScreenIntent")
 
         // Add silent mode buttons based on settings and current state
-        if (silentModeEnabled) {
-            if (isSilentActive) {
-                builder.addAction(
-                    android.R.drawable.ic_media_play,
-                    if (isArabic) "إلغاء الصامت" else "Dismiss",
-                    dismissSilentPendingIntent
-                )
-                builder.addAction(
-                    android.R.drawable.ic_media_pause,
-                    if (isArabic) "اهتزاز دائم" else "Vibrate Always",
-                    extendSilentPendingIntent
-                )
-            } else {
-                builder.addAction(
-                    android.R.drawable.ic_lock_silent_mode,
-                    if (isArabic) "وضع صامت" else "Silent Mode",
-                    enableSilentPendingIntent
-                )
-            }
+        if (silentModeEnabled && isSilentActive) {
+            builder.addAction(
+                android.R.drawable.ic_media_play,
+                if (isArabic) "إيقاف الاهتزاز" else "Stop Vibrate",
+                dismissSilentPendingIntent
+            )
+            builder.addAction(
+                android.R.drawable.ic_media_pause,
+                if (isArabic) "اهتزاز دائم" else "Vibrate Always",
+                extendSilentPendingIntent
+            )
         }
 
         // Add big text style for expanded content on lock screen
@@ -725,6 +835,82 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             Log.d(TAG, "✅ [REMINDER] Notification shown for $prayerName (ID: $notificationId)")
         } catch (e: Exception) {
             Log.e(TAG, "❌ [REMINDER] ERROR showing notification: ${e.message}", e)
+        }
+    }
+
+    /**
+     * Handle "Remind Me Later" button press from 10-min notification
+     * Cancels the 10-min notification and schedules a 5-min reminder alarm
+     */
+    private fun handleRemindMeAgain(
+        context: Context,
+        prayerName: String,
+        prayerNameAr: String,
+        prayerTime: Long
+    ) {
+        // Cancel the 10-min reminder notification
+        val notificationManager = NotificationManagerCompat.from(context)
+        notificationManager.cancel(getReminderNotificationId(prayerName))
+        Log.d(TAG, "🗑️ [REMIND_AGAIN] Cancelled 10-min notification for $prayerName")
+
+        // Schedule 5-minute reminder alarm
+        scheduleRemindLaterAlarm(context, prayerName, prayerNameAr, prayerTime)
+        Log.d(TAG, "✅ [REMIND_AGAIN] Scheduled 5-min reminder for $prayerName")
+    }
+
+    /**
+     * Show 5-minute remind-later notification
+     * This notification auto-dismisses when azan fires
+     */
+    private fun showRemindLaterNotification(
+        context: Context,
+        prayerName: String,
+        prayerNameAr: String,
+        prayerTime: Long
+    ) {
+        Log.d(TAG, "═══════════════════════════════════════")
+        Log.d(TAG, "⏰ [REMIND_LATER] Showing 5-minute reminder for $prayerName")
+
+        // Get language preference
+        val defaultPrefs = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
+        val language = defaultPrefs.getString("language", "en") ?: "en"
+        val isArabic = language == "ar"
+
+        val title = if (isArabic) prayerNameAr else prayerName
+        val message = if (isArabic) {
+            "الأذان بعد 5 دقائق"
+        } else {
+            "Azan in 5 minutes"
+        }
+
+        val notificationId = getRemindLaterNotificationId(prayerName)
+
+        // Build notification
+        val builder = NotificationCompat.Builder(context, "prayer_times")
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setAutoCancel(false)
+            .setOngoing(false)
+            .setShowWhen(true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setVibrate(longArrayOf(0, 300, 200, 300))
+
+        // Add big text style
+        val bigTextStyle = NotificationCompat.BigTextStyle()
+            .bigText(message)
+            .setBigContentTitle(title)
+        builder.setStyle(bigTextStyle)
+
+        // Show notification
+        val notificationManager = NotificationManagerCompat.from(context)
+        try {
+            notificationManager.notify(notificationId, builder.build())
+            Log.d(TAG, "✅ [REMIND_LATER] Notification shown for $prayerName (ID: $notificationId)")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [REMIND_LATER] ERROR showing notification: ${e.message}")
         }
     }
 }

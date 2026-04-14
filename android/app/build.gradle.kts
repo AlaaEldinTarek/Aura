@@ -34,6 +34,10 @@ android {
         release {
             isShrinkResources = true
             isMinifyEnabled = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
             signingConfig = signingConfigs.getByName("debug")
         }
     }
@@ -47,6 +51,9 @@ flutter {
 dependencies {
     // AndroidX AppCompat for AppCompatActivity
     implementation("androidx.appcompat:appcompat:1.6.1")
+
+    // Media session for catching volume keys on lock screen
+    implementation("androidx.media:media:1.7.0")
 
     // Import the Firebase BoM (Bill of Materials)
     implementation(platform("com.google.firebase:firebase-bom:33.10.0"))
