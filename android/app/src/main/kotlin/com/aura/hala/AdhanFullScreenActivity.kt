@@ -179,7 +179,7 @@ class AdhanFullScreenActivity : AppCompatActivity() {
                 AdhanPlayer.stop()
                 stopPulseAnimation()
                 // Update message
-                val prefs = getSharedPreferences("${packageName}_preferences", MODE_PRIVATE)
+                val prefs = getSharedPreferences("aura_prayer_times", MODE_PRIVATE)
                 val isArabic = prefs.getString("language", "en") == "ar"
                 findViewById<TextView>(R.id.prayerMessage).text =
                     if (isArabic) "تم إيقاف الأذان" else "Azan stopped"
@@ -191,8 +191,8 @@ class AdhanFullScreenActivity : AppCompatActivity() {
     }
 
     private fun setupUI() {
-        // Get language
-        val prefs = getSharedPreferences("${packageName}_preferences", MODE_PRIVATE)
+        // Get language from aura_prayer_times (saved by Flutter MethodChannel)
+        val prefs = getSharedPreferences("aura_prayer_times", MODE_PRIVATE)
         val isArabic = prefs.getString("language", "en") == "ar"
 
         // Set prayer-specific icon
@@ -220,7 +220,7 @@ class AdhanFullScreenActivity : AppCompatActivity() {
         // Stop Vibrate button
         val silentPrefs = getSharedPreferences("aura_silent_mode", MODE_PRIVATE)
         val isSilentActive = silentPrefs.getBoolean("is_silent_active", false)
-        val silentEnabled = prefs.getBoolean("silent_mode_enabled", true)
+        val silentEnabled = silentPrefs.getBoolean("silent_mode_enabled", true)
         findViewById<Button>(R.id.btnVibrateAlways).apply {
             if (silentEnabled && isSilentActive) {
                 visibility = View.VISIBLE

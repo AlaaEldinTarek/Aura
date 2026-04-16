@@ -366,7 +366,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         Log.d(TAG, "📿 [PRAYER] Name: $prayerName ($prayerNameAr)")
         Log.d(TAG, "⏰ [PRAYER] Scheduled for: $scheduledTimeStr")
 
-        val defaultPrefs = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
+        val defaultPrefs = context.getSharedPreferences("aura_silent_mode", Context.MODE_PRIVATE)
         val silentModeEnabled = defaultPrefs.getBoolean("silent_mode_enabled", true)
         Log.d(TAG, "🔧 [SETTINGS] Silent mode enabled: $silentModeEnabled")
 
@@ -415,10 +415,11 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         // Update next prayer for widget and app
         updateNextPrayer(context, prayerName)
 
-        // Schedule next day's prayers
-        if (prayerName == "Isha") {
-            Log.d(TAG, "Last prayer of the day, scheduling tomorrow's prayers")
-            // Trigger service to reschedule for tomorrow
+        // After Fajr (first prayer of new day) or Isha (last prayer), trigger reschedule
+        // Fajr: new day started, need fresh prayer times
+        // Isha: last prayer, schedule tomorrow's alarms
+        if (prayerName == "Fajr" || prayerName == "Isha") {
+            Log.d(TAG, "Triggering reschedule after $prayerName for fresh prayer times")
             val serviceIntent = Intent(context, PrayerRescheduleService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(serviceIntent)
@@ -437,32 +438,36 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         // Get prayer times from shared preferences
         val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
         val editor = prefs.edit()
+        val now = System.currentTimeMillis()
 
         // Find the next prayer based on the current one
         val prayerOrder = listOf("Fajr", "Sunrise", "Zuhr", "Asr", "Maghrib", "Isha")
         val currentIndex = prayerOrder.indexOf(currentPrayerName)
 
         if (currentIndex >= 0) {
-            val nextPrayerName: String
-            val nextPrayerTime: Long
+            var nextPrayerName: String? = null
+            var nextPrayerTime: Long = 0L
 
-            if (currentIndex < prayerOrder.size - 1) {
-                // Get next prayer in the same day
-                nextPrayerName = prayerOrder[currentIndex + 1]
-                val nextPrayerTimeKey = if (nextPrayerName == "Zuhr") "dhuhr_time" else "${nextPrayerName.lowercase()}_time"
-                val storedTime = prefs.getString(nextPrayerTimeKey, null)
-                nextPrayerTime = storedTime?.toLongOrNull() ?: 0L
-            } else {
-                // After Isha, next prayer is Fajr tomorrow
-                nextPrayerName = "Fajr"
+            // Try to find a future prayer from the next one onwards
+            for (i in (currentIndex + 1) until prayerOrder.size) {
+                val candidateName = prayerOrder[i]
+                val timeKey = if (candidateName == "Zuhr") "dhuhr_time" else "${candidateName.lowercase()}_time"
+                val storedTime = prefs.getString(timeKey, null)?.toLongOrNull() ?: 0L
+                if (storedTime > now) {
+                    nextPrayerName = candidateName
+                    nextPrayerTime = storedTime
+                    break
+                }
+            }
+
+            // If no future prayer found today, next is Fajr tomorrow
+            if (nextPrayerName == null) {
                 val fajrTimeKey = "fajr_time"
-                val storedFajrTime = prefs.getString(fajrTimeKey, null)
-                val fajrTime = storedFajrTime?.toLongOrNull() ?: 0L
-
+                val storedFajrTime = prefs.getString(fajrTimeKey, null)?.toLongOrNull() ?: 0L
+                nextPrayerName = "Fajr"
                 // Add 24 hours to get tomorrow's Fajr
-                nextPrayerTime = fajrTime + (24 * 60 * 60 * 1000)
-
-                Log.d(TAG, "🌙 [UPDATE] After Isha, next prayer is Fajr tomorrow")
+                nextPrayerTime = storedFajrTime + (24 * 60 * 60 * 1000)
+                Log.d(TAG, "🌙 [UPDATE] No future prayer today, next is Fajr tomorrow")
             }
 
             if (nextPrayerTime > 0) {

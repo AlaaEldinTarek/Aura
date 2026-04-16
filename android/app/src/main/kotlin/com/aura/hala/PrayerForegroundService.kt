@@ -112,16 +112,21 @@ class PrayerForegroundService : Service() {
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+            // Delete old channel to allow importance upgrade
+            manager.deleteNotificationChannel(CHANNEL_ID)
+
             val channel = NotificationChannel(
                 CHANNEL_ID,
                 "Prayer Times Service",
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Keeps prayer times running in background"
+                description = "Shows next prayer countdown"
                 setShowBadge(false)
+                lockscreenVisibility = Notification.VISIBILITY_PUBLIC
             }
 
-            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             manager.createNotificationChannel(channel)
         }
     }
@@ -164,11 +169,13 @@ class PrayerForegroundService : Service() {
             }
         }
 
-        // If we have old prayer times, clear them and trigger a reload
+        // If we have old prayer times, clear them and trigger a reload from Flutter
         if (hasOldPrayerTimes) {
-            Log.w(TAG, "Detected old prayer times, clearing cache")
+            Log.w(TAG, "Detected old prayer times, clearing cache and requesting Flutter update")
             prayerTimes.clear()
-            // Don't set nextPrayerTime to null, let checkAndUpdateNextPrayer handle it
+            isPrayerDataLoaded = false
+            // Request Flutter to recalculate prayer times by launching MainActivity
+            requestFlutterUpdate()
         }
 
         Log.d(TAG, "Loaded prayer times: ${prayerTimes.size} prayers")
@@ -178,6 +185,10 @@ class PrayerForegroundService : Service() {
     private fun checkAndUpdateNextPrayer() {
         // Skip if prayer data not loaded yet
         if (!isPrayerDataLoaded || nextPrayerTime == null) {
+            // Try reloading prayer times in case Flutter updated them
+            if (!isPrayerDataLoaded) {
+                loadPrayerTimes()
+            }
             return
         }
 
@@ -296,21 +307,11 @@ class PrayerForegroundService : Service() {
 
         val primaryColor = 0xFF007DFF.toInt()
 
-        // Get theme
-        val prefs = getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
-        val themeMode = prefs.getString("themeMode", "system") ?: "system"
-        val isDark = when (themeMode) {
-            "dark" -> true
-            "light" -> false
-            else -> {
-                val nightMode = resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
-                nightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES
-            }
-        }
-
         val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
             .setContentIntent(pendingIntent)
             .setColor(primaryColor)
@@ -351,18 +352,14 @@ class PrayerForegroundService : Service() {
                 "Until Azan"
             }
 
-            // Custom layout with "Aura - Next Prayer" header
+            // Always dark layout - immune to OEM theme overrides
             val isArabic = currentLanguage == "ar"
-            val layoutId = when {
-                isArabic && isDark -> R.layout.notification_large_dark_rtl
-                isArabic -> R.layout.notification_large_rtl
-                isDark -> R.layout.notification_large_dark
-                else -> R.layout.notification_large
-            }
+            val layoutId = if (isArabic) R.layout.notification_large_rtl else R.layout.notification_large
             val contentView = RemoteViews(packageName, layoutId)
 
             // Header: "Aura - Next Prayer"
-            contentView.setTextViewText(R.id.notification_header, "Aura - $nextPrayerText")
+            val headerText = if (isArabic) "هالة - $nextPrayerText" else "Aura - $nextPrayerText"
+            contentView.setTextViewText(R.id.notification_header, headerText)
 
             // Prayer icon
             val prayerIcon = loadPrayerIcon()
@@ -372,7 +369,7 @@ class PrayerForegroundService : Service() {
 
             // Prayer info
             contentView.setTextViewText(R.id.notification_title, prayerName)
-            contentView.setTextViewText(R.id.notification_time, "⏰ $timeString")
+            contentView.setTextViewText(R.id.notification_time, timeString)
             contentView.setTextViewText(R.id.notification_until, untilText)
 
             notificationBuilder
@@ -390,32 +387,34 @@ class PrayerForegroundService : Service() {
         // Icon changes based on which prayer time has started
         // After Isha→Fajr: Night, After Fajr→Sunrise: Fajr, After Sunrise→Zuhr: Sun,
         // After Zuhr→Asr: Zuhr, After Asr→Maghrib: Afternoon, After Maghrib→Isha: Moon
+        // Reverse chronological order — first match is the most recent prayer that started
         val timeSlots = listOf(
-            Pair("isha_time", R.drawable.ic_prayer_isha),        // Isha (after Isha)
-            Pair("fajr_time", R.drawable.ic_prayer_fajr),        // Fajr (after Fajr)
-            Pair("sunrise_time", R.drawable.ic_prayer_dhuhr),    // Zuhr (after Sunrise)
-            Pair("dhuhr_time", R.drawable.ic_prayer_dhuhr),      // Zuhr (after Zuhr)
+            Pair("isha_time", R.drawable.ic_prayer_isha),        // Night (after Isha)
+            Pair("maghrib_time", R.drawable.ic_prayer_maghrib),  // Maghrib (after Maghrib)
             Pair("asr_time", R.drawable.ic_prayer_afternoon),    // Afternoon (after Asr)
-            Pair("maghrib_time", R.drawable.ic_prayer_maghrib)   // Maghrib (after Maghrib)
+            Pair("dhuhr_time", R.drawable.ic_prayer_dhuhr),      // Zuhr (after Zuhr)
+            Pair("sunrise_time", R.drawable.ic_prayer_dhuhr),    // Morning (after Sunrise)
+            Pair("fajr_time", R.drawable.ic_prayer_fajr)         // Fajr (after Fajr)
         )
 
         val now = System.currentTimeMillis()
-        var resId = R.drawable.ic_prayer_isha // default: Isha (before Fajr)
+        var resId = R.drawable.ic_prayer_isha // default: Night (before Fajr)
 
-        // Find the last time slot that has started
+        // Find the most recent prayer that has started
         for (slot in timeSlots) {
             val slotTime = prayerTimes[slot.first]
             if (slotTime != null && slotTime <= now) {
                 resId = slot.second
+                break
             }
         }
 
         return try {
             val drawable = ResourcesCompat.getDrawable(resources, resId, null)
             if (drawable != null) {
-                val bitmap = Bitmap.createBitmap(256, 256, Bitmap.Config.ARGB_8888)
+                val bitmap = Bitmap.createBitmap(128, 128, Bitmap.Config.ARGB_8888)
                 val canvas = android.graphics.Canvas(bitmap)
-                drawable.setBounds(0, 0, 256, 256)
+                drawable.setBounds(0, 0, 128, 128)
                 drawable.draw(canvas)
                 bitmap
             } else {
@@ -430,7 +429,7 @@ class PrayerForegroundService : Service() {
     private fun calculateTimeRemaining(): Pair<Long, String> {
         // Return 0 if prayer data not loaded
         if (nextPrayerTime == null) {
-            return Pair(0, "--:--:--")
+            return Pair(0, "--:--")
         }
 
         val now = System.currentTimeMillis()
@@ -438,30 +437,19 @@ class PrayerForegroundService : Service() {
 
         var remaining = prayerTime - now
 
-        // If prayer time has passed (shouldn't happen after checkAndUpdateNextPrayer, but just in case)
+        // If prayer time has passed
         if (remaining < 0) {
-            Log.w(TAG, "Prayer time has passed, remaining is negative. This should be handled by checkAndUpdateNextPrayer()")
-            // Don't add 24 hours - let checkAndUpdateNextPrayer handle the transition
-            // Just show "Now" briefly until the next update cycle
             remaining = 0
         }
 
         val hours = remaining / 3600000
         val minutes = (remaining % 3600000) / 60000
-        val seconds = (remaining % 60000) / 1000
 
+        // Digital clock style: 02:15 (no seconds)
         val timeString = if (currentLanguage == "ar") {
-            when {
-                hours > 0 -> "${toEasternArabic(hours)} س ${toEasternArabic(minutes)} د ${toEasternArabic(seconds)} ث"
-                minutes > 0 -> "${toEasternArabic(minutes)} د ${toEasternArabic(seconds)} ث"
-                else -> "${toEasternArabic(seconds)} ث"
-            }
+            String.format("%s:%s", toEasternArabic(hours), toEasternArabic(minutes))
         } else {
-            when {
-                hours > 0 -> "$hours h $minutes m $seconds s"
-                minutes > 0 -> "$minutes m $seconds s"
-                else -> "$seconds s"
-            }
+            String.format("%d:%02d", hours, minutes)
         }
 
         return Pair(remaining, timeString)
@@ -507,6 +495,24 @@ class PrayerForegroundService : Service() {
 
         // Force update notification immediately
         updateNotification()
+    }
+
+    /**
+     * Request Flutter to recalculate prayer times by launching MainActivity briefly.
+     * This ensures fresh prayer times are saved to SharedPreferences when the app
+     * hasn't been opened for a new day.
+     */
+    private fun requestFlutterUpdate() {
+        try {
+            val intent = Intent(this, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                putExtra("refresh_prayer_times", true)
+            }
+            startActivity(intent)
+            Log.d(TAG, "✅ [REFRESH] Launched MainActivity to refresh prayer times")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [REFRESH] Failed to launch MainActivity: ${e.message}")
+        }
     }
 
     // Convert Western Arabic numerals to Eastern Arabic numerals

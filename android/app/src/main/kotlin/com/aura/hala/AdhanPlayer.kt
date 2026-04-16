@@ -118,7 +118,7 @@ object AdhanPlayer {
         Log.d(TAG, "🔒 [LOCK] Acquired playback lock")
 
         // Check if adhan is enabled
-        val prefs = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
+        val prefs = context.getSharedPreferences("aura_prefs", Context.MODE_PRIVATE)
         val adhanEnabled = prefs.getBoolean("adhan_enabled", true)
 
         if (!adhanEnabled) {

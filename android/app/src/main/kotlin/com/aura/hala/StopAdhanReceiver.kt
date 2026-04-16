@@ -54,7 +54,7 @@ class StopAdhanReceiver : BroadcastReceiver() {
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             val notificationId = PrayerAlarmReceiver.getNotificationId(prayerName)
 
-            val defaultPrefs = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
+            val defaultPrefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
             val language = defaultPrefs.getString("language", "en") ?: "en"
             val isArabic = language == "ar"
 

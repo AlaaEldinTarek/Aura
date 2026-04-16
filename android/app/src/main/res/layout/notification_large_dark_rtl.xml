@@ -3,27 +3,27 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="#3A3A3C"
-    android:paddingStart="12dp"
-    android:paddingEnd="12dp"
+    android:background="@drawable/bg_notification"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp"
     android:layoutDirection="rtl"
-    android:textDirection="rtl"
-    android:gravity="center_horizontal">
+    android:textDirection="rtl">
 
-    <!-- Header: App name - Next Prayer -->
+    <!-- Header: App icon + Title -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingTop="8dp"
-        android:paddingBottom="0dp"
+        android:paddingBottom="4dp"
         android:layoutDirection="rtl">
 
         <ImageView
             android:id="@+id/notification_small_icon"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
             android:src="@drawable/ic_launcher_foreground"
             android:scaleType="centerCrop" />
 
@@ -33,26 +33,34 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="6dp"
-            android:text="Aura - Next Prayer"
-            android:textSize="12sp"
-            android:textColor="#b3ffffff"
-            android:textDirection="rtl" />
+            android:text="هالة - الصلاة القادمة"
+            android:textSize="11sp"
+            android:textColor="#99000000"
+            android:textDirection="rtl"
+            android:letterSpacing="0.03" />
 
     </LinearLayout>
 
-    <!-- Content: Prayer info + Icon (RTL: text right, icon left) -->
+    <!-- Divider -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#1A000000"
+        android:layout_marginBottom="6dp" />
+
+    <!-- Content: Prayer info + Icon (RTL) -->
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:layout_gravity="center_horizontal"
         android:layoutDirection="rtl">
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="0dp"
+            android:layout_weight="1"
+            android:layout_marginEnd="12dp"
             android:orientation="vertical"
             android:gravity="end">
 
@@ -60,37 +68,48 @@
                 android:id="@+id/notification_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Maghrib"
-                android:textSize="22sp"
+                android:text="المغرب"
+                android:textSize="24sp"
                 android:textStyle="bold"
-                android:textColor="#ffffffff"
+                android:textColor="#DE000000"
                 android:textDirection="rtl" />
 
-            <TextView
-                android:id="@+id/notification_time"
+            <!-- Timer + Until Azan on same line -->
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="⏰ 2h 15m 30s"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="#4DA6FF"
-                android:textDirection="rtl" />
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layoutDirection="rtl">
 
-            <TextView
-                android:id="@+id/notification_until"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Until Azan"
-                android:textSize="16sp"
-                android:textColor="#b3ffffff"
-                android:textDirection="rtl" />
+                <TextView
+                    android:id="@+id/notification_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="٢ س ١٥ د ٣٠ ث"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#007DFF"
+                    android:textDirection="rtl" />
+
+                <TextView
+                    android:id="@+id/notification_until"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="حتى الأذان"
+                    android:textSize="12sp"
+                    android:textColor="#99000000"
+                    android:paddingEnd="8dp"
+                    android:textDirection="rtl" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
         <ImageView
             android:id="@+id/notification_logo"
-            android:layout_width="100dp"
-            android:layout_height="100dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:src="@mipmap/ic_launcher"
             android:scaleType="centerCrop"
             android:contentDescription="Prayer Icon" />
