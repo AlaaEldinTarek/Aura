@@ -54,7 +54,6 @@ class AuraBottomNavBar extends StatelessWidget {
                 label: 'task_management'.tr(),
                 isSelected: currentIndex == 2,
                 onTap: () => onTap(2),
-                isComingSoon: true,
               ),
               _buildNavItem(
                 context: context,

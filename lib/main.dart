@@ -13,6 +13,7 @@ import 'core/services/notification_service.dart';
 import 'core/services/adhan_player_service.dart';
 import 'core/services/prayer_alarm_service.dart';
 import 'core/services/background_service_manager.dart';
+import 'core/services/task_service.dart';
 import 'core/providers/preferences_provider.dart';
 import 'core/providers/auth_provider.dart';
 import 'features/splash/splash_screen.dart';
@@ -126,6 +127,14 @@ void main() async {
         await OfflineQueueService.instance.initialize();
       } catch (e) {
         debugPrint('❌ OfflineQueueService initialization failed: $e');
+      }
+    }(),
+    () async {
+      try {
+        await TaskService.instance.initialize();
+        debugPrint('✅ TaskService initialized');
+      } catch (e, st) {
+        debugPrint('❌ TaskService initialization failed: $e');
       }
     }(),
   ]);

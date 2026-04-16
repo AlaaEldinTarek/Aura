@@ -3,18 +3,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/providers/prayer_times_provider.dart';
 import '../../core/providers/daily_prayer_status_provider.dart';
-import '../../core/widgets/app_card.dart';
+import '../../core/providers/task_provider.dart';
 import '../../core/widgets/offline_banner.dart';
 import '../../core/widgets/greeting_widget.dart';
 import '../../core/widgets/permission_dialog.dart';
+import '../../core/widgets/task_card.dart';
 import '../../core/utils/number_formatter.dart';
 import '../../core/services/prayer_tracking_service.dart';
+import '../../core/services/task_service.dart';
 import '../../core/models/prayer_record.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -137,6 +138,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     // Prayer Progress Bar
                     _buildPrayerProgress(context, isDark, isArabic, completedCount, totalPrayers, prayerStatuses)
                         .animate().fadeIn(delay: 200.ms, duration: 400.ms),
+
+                    const SizedBox(height: AppConstants.paddingLarge),
+
+                    // Today's Tasks Preview
+                    _buildTodayTasksPreview(context, isDark, isArabic)
+                        .animate().fadeIn(delay: 300.ms, duration: 400.ms),
 
                     const SizedBox(height: AppConstants.paddingLarge),
 
@@ -456,6 +463,173 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildTodayTasksPreview(BuildContext context, bool isDark, bool isArabic) {
+    final allTasksAsync = ref.watch(allTasksProvider);
+    final statsAsync = ref.watch(taskStatisticsProvider);
+
+    return Container(
+      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+      decoration: BoxDecoration(
+        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
+        border: Border.all(
+          color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                isArabic ? 'مهام اليوم' : "Today's Tasks",
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              GestureDetector(
+                onTap: () {
+                  // Navigate to main Tasks tab (index 2 in bottom nav)
+                  final nav = Navigator.of(context);
+                  nav.pop();
+                },
+                child: Text(
+                  isArabic ? 'عرض الكل' : 'View All',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppConstants.primaryColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+
+          // Progress bar
+          statsAsync.when(
+            data: (stats) {
+              if (stats.dueToday == 0) return const SizedBox(height: 8);
+              final done = (stats.completed).clamp(0, stats.dueToday);
+              final progress = stats.dueToday > 0 ? done / stats.dueToday : 0.0;
+              return Padding(
+                padding: const EdgeInsets.only(top: 10, bottom: 4),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 6,
+                        backgroundColor:
+                            isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          progress >= 1.0 ? Colors.green : AppConstants.primaryColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      isArabic
+                          ? '$done من ${stats.dueToday} مكتملة'
+                          : '$done of ${stats.dueToday} completed',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+            loading: () => const SizedBox(height: 8),
+            error: (_, __) => const SizedBox(height: 8),
+          ),
+
+          const SizedBox(height: 4),
+
+          // Task list
+          allTasksAsync.when(
+            data: (allTasks) {
+              final todayTasks =
+                  allTasks.where((t) => !t.isCompleted && t.isDueToday).toList();
+              final upcomingTasks =
+                  allTasks.where((t) => !t.isCompleted && t.isUpcoming).toList();
+              final toShow = todayTasks.isNotEmpty ? todayTasks : upcomingTasks;
+
+              if (toShow.isEmpty) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.check_circle_outline,
+                          size: 22, color: Colors.green.shade400),
+                      const SizedBox(width: 8),
+                      Text(
+                        isArabic ? 'أنجزت كل مهام اليوم!' : 'All done for today!',
+                        style: TextStyle(
+                          color:
+                              isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (todayTasks.isEmpty && upcomingTasks.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        isArabic ? 'قريباً' : 'Upcoming',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.orange.shade700,
+                        ),
+                      ),
+                    ),
+                  ...toShow.take(3).map((task) => Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: TaskCard(
+                          key: ValueKey(task.id),
+                          task: task,
+                          onToggle: () => _toggleTask(task.id),
+                        ),
+                      )),
+                ],
+              );
+            },
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            ),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _toggleTask(String taskId) async {
+    final userId = getCurrentUserId();
+    try {
+      await TaskService.instance.toggleTaskCompletion(
+        userId: userId,
+        taskId: taskId,
+      );
+    } catch (e) {
+      debugPrint('Error toggling task: $e');
+    }
   }
 
   Widget _buildDailyProgressRing(BuildContext context, bool isDark, bool isArabic, int completed, int total) {

@@ -3,19 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/widgets/bottom_nav_bar.dart';
 import '../../core/utils/haptic_feedback.dart' as app_haptic;
 import '../../core/constants/app_constants.dart';
-import '../../core/providers/auth_provider.dart';
-import '../../core/providers/preferences_provider.dart';
-import '../../core/widgets/app_card.dart';
-import '../../core/widgets/offline_banner.dart';
-import '../../core/widgets/greeting_widget.dart';
-import '../../core/widgets/empty_state.dart';
 import '../home/home_screen.dart';
 import '../prayer/prayer_screen.dart';
 import '../profile/profile_screen.dart';
+import '../tasks/tasks_screen.dart';
 
 /// Main wrapper screen with TabController
 class MainWrapperScreen extends ConsumerStatefulWidget {
@@ -158,7 +152,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
           children: const [
             HomeScreen(),
             PrayerScreen(),
-            _PlaceholderScreen(title: 'Tasks'),
+            TasksScreen(),
             ProfileScreen(),
           ],
         ),
@@ -171,23 +165,3 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
   }
 }
 
-/// Placeholder screen for unimplemented features
-class _PlaceholderScreen extends StatelessWidget {
-  final String title;
-
-  const _PlaceholderScreen({required this.title});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-      ),
-      body: EmptyState(
-        icon: Icons.construction,
-        title: 'coming_soon'.tr(),
-        subtitle: '${title}_coming_soon'.tr(),
-      ),
-    );
-  }
-}

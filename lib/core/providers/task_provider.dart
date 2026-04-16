@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/task.dart';
 import '../services/task_service.dart';
+import 'auth_provider.dart';
 
 /// Task Service provider
 final taskServiceProvider = Provider<TaskService>((ref) {
@@ -9,10 +10,12 @@ final taskServiceProvider = Provider<TaskService>((ref) {
   return service;
 });
 
-/// Current user ID provider (will be connected to auth)
+/// Current user ID provider - gets user ID from auth system
+/// Falls back to 'guest_user' for guest mode
 final currentUserIdProvider = Provider<String>((ref) {
-  // TODO: Get from auth provider
-  return 'guest_user';
+  final user = ref.watch(currentUserProvider);
+  // Use actual user UID if logged in, otherwise use guest ID
+  return user?.uid ?? 'guest_user';
 });
 
 /// Tasks list provider with real-time updates
@@ -32,6 +35,14 @@ final tasksProvider = StreamProvider.family<List<Task>, TaskFilterParams>(
   },
   name: 'tasksProvider',
 );
+
+/// All tasks provider — used by TasksScreen to split into sections
+/// Fetches all tasks without filters for client-side section splitting
+final allTasksProvider = StreamProvider.autoDispose<List<Task>>((ref) {
+  final service = ref.watch(taskServiceProvider);
+  final userId = ref.watch(currentUserIdProvider);
+  return service.getTasksStream(userId: userId, limit: 200);
+});
 
 /// Task statistics provider
 final taskStatisticsProvider = FutureProvider.autoDispose<TaskStatistics>((ref) async {

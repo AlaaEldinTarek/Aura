@@ -26,7 +26,7 @@ import java.util.Date
 
 class PrayerForegroundService : Service() {
 
-    private val CHANNEL_ID = "prayer_foreground_channel"
+    private val CHANNEL_ID = "prayer_foreground_channel_v4"
     // Use 9999 to avoid conflict with prayer alarm notifications (1001-1006)
     private val NOTIFICATION_ID = 9999
     private val UPDATE_INTERVAL = 1000L
@@ -125,6 +125,8 @@ class PrayerForegroundService : Service() {
                 description = "Shows next prayer countdown"
                 setShowBadge(false)
                 lockscreenVisibility = Notification.VISIBILITY_PUBLIC
+                setSound(null, null)       // No sound — updates every second
+                enableVibration(false)     // No vibration on updates
             }
 
             manager.createNotificationChannel(channel)
@@ -313,6 +315,7 @@ class PrayerForegroundService : Service() {
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
+            .setOnlyAlertOnce(true)
             .setContentIntent(pendingIntent)
             .setColor(primaryColor)
             .setShowWhen(false)

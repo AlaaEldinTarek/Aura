@@ -25,22 +25,74 @@ class TaskCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppConstants.paddingSmall),
+    final isOverdue = task.isOverdue && !task.isCompleted;
+
+    // Left accent color: overdue > selected > priority (completed = none)
+    final Color leftAccent;
+    final double leftWidth;
+    if (task.isCompleted) {
+      leftAccent = Colors.transparent;
+      leftWidth = 0;
+    } else if (isOverdue) {
+      leftAccent = Colors.red;
+      leftWidth = 3;
+    } else if (isSelected) {
+      leftAccent = AppConstants.primaryColor;
+      leftWidth = 3;
+    } else {
+      switch (task.priority) {
+        case TaskPriority.high:
+          leftAccent = Colors.orange;
+          leftWidth = 3;
+        case TaskPriority.medium:
+          leftAccent = Colors.amber;
+          leftWidth = 3;
+        case TaskPriority.low:
+          leftAccent = Colors.green;
+          leftWidth = 3;
+      }
+    }
+
+    final card = Container(
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : Colors.white,
+        color: isOverdue
+            ? (isDark
+                ? Colors.red.withOpacity(0.07)
+                : Colors.red.withOpacity(0.04))
+            : (isDark ? AppConstants.darkCard : Colors.white),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-        border: Border.all(
-          color: isSelected
-              ? AppConstants.primaryColor
-              : isDark
-                  ? AppConstants.darkBorder
-                  : AppConstants.lightBorder,
-          width: isSelected ? 2 : 1,
+        border: Border(
+          left: BorderSide(color: leftAccent, width: leftWidth),
+          top: BorderSide(
+            color: isSelected
+                ? AppConstants.primaryColor
+                : isDark
+                    ? AppConstants.darkBorder
+                    : AppConstants.lightBorder,
+            width: isSelected ? 2 : 1,
+          ),
+          right: BorderSide(
+            color: isSelected
+                ? AppConstants.primaryColor
+                : isDark
+                    ? AppConstants.darkBorder
+                    : AppConstants.lightBorder,
+            width: isSelected ? 2 : 1,
+          ),
+          bottom: BorderSide(
+            color: isSelected
+                ? AppConstants.primaryColor
+                : isDark
+                    ? AppConstants.darkBorder
+                    : AppConstants.lightBorder,
+            width: isSelected ? 2 : 1,
+          ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+            color: isOverdue
+                ? Colors.red.withOpacity(0.1)
+                : Colors.black.withOpacity(isDark ? 0.3 : 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -121,6 +173,12 @@ class TaskCard extends StatelessWidget {
                           isOverdue: task.isOverdue,
                         ),
                       ],
+
+                      // Recurrence badge
+                      if (task.isRecurring) ...[
+                        const SizedBox(width: 8),
+                        _RecurrenceBadge(recurrenceType: task.recurrenceType),
+                      ],
                     ],
                   ),
                 ],
@@ -139,6 +197,83 @@ class TaskCard extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+
+    // Wrap with Dismissible only if swipe actions are available
+    if (onToggle == null && onDelete == null) return card;
+
+    return Dismissible(
+      key: ValueKey('dismissible_${task.id}'),
+      // Swipe right → complete/uncomplete
+      background: _buildSwipeBackground(
+        alignment: Alignment.centerLeft,
+        color: task.isCompleted ? Colors.orange : Colors.green,
+        icon: task.isCompleted ? Icons.refresh : Icons.check,
+        label: task.isCompleted
+            ? (isArabic ? 'إلغاء الإتمام' : 'Undo')
+            : (isArabic ? 'إتمام' : 'Complete'),
+      ),
+      // Swipe left → delete
+      secondaryBackground: _buildSwipeBackground(
+        alignment: Alignment.centerRight,
+        color: Colors.red,
+        icon: Icons.delete,
+        label: isArabic ? 'حذف' : 'Delete',
+      ),
+      confirmDismiss: (direction) async {
+        if (direction == DismissDirection.startToEnd) {
+          // Swipe right: toggle completion, don't remove from list
+          onToggle?.call();
+          return false;
+        } else {
+          // Swipe left: confirm delete
+          return onDelete != null;
+        }
+      },
+      onDismissed: (direction) {
+        if (direction == DismissDirection.endToStart) {
+          onDelete?.call();
+        }
+      },
+      child: card,
+    );
+  }
+
+  Widget _buildSwipeBackground({
+    required AlignmentGeometry alignment,
+    required Color color,
+    required IconData icon,
+    required String label,
+  }) {
+    return Container(
+      alignment: alignment,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (alignment == Alignment.centerLeft) ...[
+            Icon(icon, color: Colors.white, size: 22),
+            const SizedBox(width: 8),
+            Text(label,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13)),
+          ] else ...[
+            Text(label,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13)),
+            const SizedBox(width: 8),
+            Icon(icon, color: Colors.white, size: 22),
+          ],
+        ],
       ),
     );
   }
@@ -240,6 +375,46 @@ class _CategoryBadge extends StatelessWidget {
           fontWeight: FontWeight.w600,
           color: AppConstants.primaryColor,
         ),
+      ),
+    );
+  }
+}
+
+/// Recurrence badge widget
+class _RecurrenceBadge extends StatelessWidget {
+  final RecurrenceType recurrenceType;
+
+  const _RecurrenceBadge({required this.recurrenceType});
+
+  @override
+  Widget build(BuildContext context) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final labels = {
+      RecurrenceType.daily: isArabic ? 'يومي' : 'Daily',
+      RecurrenceType.weekly: isArabic ? 'أسبوعي' : 'Weekly',
+      RecurrenceType.monthly: isArabic ? 'شهري' : 'Monthly',
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.purple.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.repeat, size: 11, color: Colors.purple),
+          const SizedBox(width: 4),
+          Text(
+            labels[recurrenceType] ?? '',
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: Colors.purple,
+            ),
+          ),
+        ],
       ),
     );
   }

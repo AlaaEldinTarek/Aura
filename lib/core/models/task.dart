@@ -12,6 +12,11 @@ class Task {
   final DateTime createdAt;
   final DateTime? completedAt;
   final List<String>? tags;
+  // Recurrence fields
+  final RecurrenceType recurrenceType;
+  final int recurrenceInterval;
+  final DateTime? recurrenceEndDate;
+  final String? parentTaskId;
 
   Task({
     required this.id,
@@ -24,7 +29,13 @@ class Task {
     required this.createdAt,
     this.completedAt,
     this.tags,
+    this.recurrenceType = RecurrenceType.none,
+    this.recurrenceInterval = 1,
+    this.recurrenceEndDate,
+    this.parentTaskId,
   });
+
+  bool get isRecurring => recurrenceType != RecurrenceType.none;
 
   /// Create Task from Firestore document
   factory Task.fromFirestore(DocumentSnapshot doc) {
@@ -48,6 +59,13 @@ class Task {
       tags: data['tags'] != null
           ? List<String>.from(data['tags'] as List)
           : null,
+      recurrenceType: RecurrenceType.fromString(
+          data['recurrenceType'] as String? ?? 'none'),
+      recurrenceInterval: data['recurrenceInterval'] as int? ?? 1,
+      recurrenceEndDate: data['recurrenceEndDate'] != null
+          ? DateTime.parse(data['recurrenceEndDate'] as String)
+          : null,
+      parentTaskId: data['parentTaskId'] as String?,
     );
   }
 
@@ -63,6 +81,10 @@ class Task {
       'createdAt': createdAt.toIso8601String(),
       'completedAt': completedAt?.toIso8601String(),
       'tags': tags,
+      'recurrenceType': recurrenceType.value,
+      'recurrenceInterval': recurrenceInterval,
+      'recurrenceEndDate': recurrenceEndDate?.toIso8601String(),
+      'parentTaskId': parentTaskId,
     };
   }
 
@@ -78,6 +100,14 @@ class Task {
     DateTime? createdAt,
     DateTime? completedAt,
     List<String>? tags,
+    RecurrenceType? recurrenceType,
+    int? recurrenceInterval,
+    DateTime? recurrenceEndDate,
+    String? parentTaskId,
+    bool clearDueDate = false,
+    bool clearCompletedAt = false,
+    bool clearRecurrenceEndDate = false,
+    bool clearParentTaskId = false,
   }) {
     return Task(
       id: id ?? this.id,
@@ -86,10 +116,18 @@ class Task {
       isCompleted: isCompleted ?? this.isCompleted,
       priority: priority ?? this.priority,
       category: category ?? this.category,
-      dueDate: dueDate ?? this.dueDate,
+      dueDate: clearDueDate ? null : (dueDate ?? this.dueDate),
       createdAt: createdAt ?? this.createdAt,
-      completedAt: completedAt ?? this.completedAt,
+      completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
       tags: tags ?? this.tags,
+      recurrenceType: recurrenceType ?? this.recurrenceType,
+      recurrenceInterval: recurrenceInterval ?? this.recurrenceInterval,
+      recurrenceEndDate: clearRecurrenceEndDate
+          ? null
+          : (recurrenceEndDate ?? this.recurrenceEndDate),
+      parentTaskId: clearParentTaskId
+          ? null
+          : (parentTaskId ?? this.parentTaskId),
     );
   }
 
@@ -106,6 +144,37 @@ class Task {
     final today = DateTime(now.year, now.month, now.day);
     final dueDay = DateTime(dueDate!.year, dueDate!.month, dueDate!.day);
     return dueDay == today;
+  }
+
+  /// Check if task is due within next 7 days (but not today)
+  bool get isUpcoming {
+    if (dueDate == null) return false;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dueDay = DateTime(dueDate!.year, dueDate!.month, dueDate!.day);
+    final weekLater = today.add(const Duration(days: 7));
+    return dueDay.isAfter(today) && dueDay.isBefore(weekLater);
+  }
+
+  /// Calculate the next due date for a recurring task
+  DateTime? get nextRecurrenceDate {
+    if (!isRecurring || dueDate == null) return null;
+    switch (recurrenceType) {
+      case RecurrenceType.daily:
+        return dueDate!.add(Duration(days: recurrenceInterval));
+      case RecurrenceType.weekly:
+        return dueDate!.add(Duration(days: 7 * recurrenceInterval));
+      case RecurrenceType.monthly:
+        return DateTime(
+          dueDate!.year,
+          dueDate!.month + recurrenceInterval,
+          dueDate!.day,
+          dueDate!.hour,
+          dueDate!.minute,
+        );
+      case RecurrenceType.none:
+        return null;
+    }
   }
 
   @override
@@ -154,6 +223,25 @@ enum TaskCategory {
     return TaskCategory.values.firstWhere(
       (e) => e.value == value,
       orElse: () => TaskCategory.other,
+    );
+  }
+}
+
+/// Recurrence type for tasks
+enum RecurrenceType {
+  none('none'),
+  daily('daily'),
+  weekly('weekly'),
+  monthly('monthly');
+
+  final String value;
+
+  const RecurrenceType(this.value);
+
+  static RecurrenceType fromString(String value) {
+    return RecurrenceType.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => RecurrenceType.none,
     );
   }
 }

@@ -27,6 +27,11 @@ class NotificationService {
   static const String _prayerChannelName = 'Prayer Times';
   static const String _prayerChannelDescription = 'Notifications for prayer times';
 
+  // Task notification channel
+  static const String _taskChannelId = 'task_reminders';
+  static const String _taskChannelName = 'Task Reminders';
+  static const String _taskChannelDescription = 'Reminders for upcoming tasks';
+
   // Notification IDs
   static const int _fajrNotificationId = 1;
   static const int _sunriseNotificationId = 2;
@@ -113,6 +118,20 @@ class NotificationService {
     await _notifications
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(prayerCheckChannel);
+
+    const AndroidNotificationChannel taskChannel = AndroidNotificationChannel(
+      _taskChannelId,
+      _taskChannelName,
+      description: _taskChannelDescription,
+      importance: Importance.high,
+      enableVibration: true,
+      playSound: true,
+      showBadge: true,
+    );
+
+    await _notifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(taskChannel);
   }
 
   /// Request notification permissions
@@ -474,6 +493,79 @@ class NotificationService {
     await scheduleRemindMeAgain(prayerName, prayerNameAr, prayerTime);
 
     debugPrint('═══════════════════════════════════════');
+  }
+
+  // ─── Task Notifications ───────────────────────────────────────────────────
+
+  /// Convert task ID (Firestore string) to a notification ID in range 4000-4999
+  int _taskNotificationId(String taskId) => 4000 + (taskId.hashCode.abs() % 1000);
+
+  /// Schedule a reminder notification for a task with a due date.
+  /// Fires 30 minutes before the due time (or at the due time if < 30 min away).
+  Future<void> scheduleTaskReminder({
+    required String taskId,
+    required String title,
+    required DateTime dueDate,
+    String language = 'en',
+  }) async {
+    final isArabic = language == 'ar';
+    final now = DateTime.now();
+
+    // Decide reminder time: 30 min before due, but no earlier than now
+    final thirtyBefore = dueDate.subtract(const Duration(minutes: 30));
+    final reminderTime = thirtyBefore.isAfter(now) ? thirtyBefore : dueDate;
+
+    if (reminderTime.isBefore(now)) {
+      debugPrint('TaskNotification: Due date already passed for "$title" — skipping');
+      return;
+    }
+
+    final notifId = _taskNotificationId(taskId);
+
+    // Cancel any existing reminder for this task first
+    await _notifications.cancel(notifId);
+
+    final body = isArabic
+        ? thirtyBefore.isAfter(now)
+            ? 'موعد المهمة بعد 30 دقيقة'
+            : 'حان موعد المهمة الآن'
+        : thirtyBefore.isAfter(now)
+            ? 'Task due in 30 minutes'
+            : 'Task is due now';
+
+    final androidDetails = AndroidNotificationDetails(
+      _taskChannelId,
+      _taskChannelName,
+      channelDescription: _taskChannelDescription,
+      importance: Importance.high,
+      priority: Priority.high,
+      showWhen: true,
+      icon: '@mipmap/ic_launcher',
+    );
+
+    final details = NotificationDetails(android: androidDetails);
+    final scheduledDate = tz.TZDateTime.from(reminderTime, tz.local);
+
+    await _notifications.zonedSchedule(
+      notifId,
+      title,
+      body,
+      scheduledDate,
+      details,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      payload: 'task|$taskId',
+    );
+
+    debugPrint('TaskNotification: Scheduled "$title" at $scheduledDate (id=$notifId)');
+  }
+
+  /// Cancel the reminder for a specific task
+  Future<void> cancelTaskNotification(String taskId) async {
+    final notifId = _taskNotificationId(taskId);
+    await _notifications.cancel(notifId);
+    debugPrint('TaskNotification: Cancelled notification for task $taskId (id=$notifId)');
   }
 
   /// Cancel a specific prayer notification

@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task.dart';
+import 'notification_service.dart';
 
 /// Service for managing tasks with Firestore
 /// Optimized for performance with pagination and caching
@@ -144,6 +146,10 @@ class TaskService {
     TaskCategory category = TaskCategory.other,
     DateTime? dueDate,
     List<String>? tags,
+    RecurrenceType recurrenceType = RecurrenceType.none,
+    int recurrenceInterval = 1,
+    DateTime? recurrenceEndDate,
+    String? parentTaskId,
   }) async {
     try {
       final docRef = _firestore
@@ -161,12 +167,28 @@ class TaskService {
         dueDate: dueDate,
         createdAt: DateTime.now(),
         tags: tags,
+        recurrenceType: recurrenceType,
+        recurrenceInterval: recurrenceInterval,
+        recurrenceEndDate: recurrenceEndDate,
+        parentTaskId: parentTaskId,
       );
 
       await docRef.set(task.toFirestore());
 
       // Update cache
       _taskCache[task.id] = task;
+
+      // Schedule reminder notification if task has a due date
+      if (task.dueDate != null) {
+        final prefs = await SharedPreferences.getInstance();
+        final language = prefs.getString('language') ?? 'en';
+        await NotificationService.instance.scheduleTaskReminder(
+          taskId: task.id,
+          title: task.title,
+          dueDate: task.dueDate!,
+          language: language,
+        );
+      }
 
       debugPrint('TaskService: Added task ${task.id}');
       return task;
@@ -187,6 +209,9 @@ class TaskService {
     TaskCategory? category,
     DateTime? dueDate,
     List<String>? tags,
+    RecurrenceType? recurrenceType,
+    int? recurrenceInterval,
+    DateTime? recurrenceEndDate,
   }) async {
     try {
       // Get current task from cache or Firestore
@@ -219,6 +244,9 @@ class TaskService {
         completedAt: isCompleted == true && !currentTask.isCompleted
             ? DateTime.now()
             : null,
+        recurrenceType: recurrenceType,
+        recurrenceInterval: recurrenceInterval,
+        recurrenceEndDate: recurrenceEndDate,
       );
 
       await _firestore
@@ -231,6 +259,20 @@ class TaskService {
       // Update cache
       _taskCache[taskId] = updatedTask;
 
+      // Handle notification: cancel if completed, reschedule if due date changed
+      if (updatedTask.isCompleted) {
+        await NotificationService.instance.cancelTaskNotification(taskId);
+      } else if (updatedTask.dueDate != null) {
+        final prefs = await SharedPreferences.getInstance();
+        final language = prefs.getString('language') ?? 'en';
+        await NotificationService.instance.scheduleTaskReminder(
+          taskId: taskId,
+          title: updatedTask.title,
+          dueDate: updatedTask.dueDate!,
+          language: language,
+        );
+      }
+
       debugPrint('TaskService: Updated task $taskId');
       return true;
     } catch (e) {
@@ -240,6 +282,7 @@ class TaskService {
   }
 
   /// Toggle task completion status
+  /// For recurring tasks: marks complete and auto-creates next occurrence
   Future<bool> toggleTaskCompletion({
     required String userId,
     required String taskId,
@@ -260,6 +303,13 @@ class TaskService {
       }
 
       final newStatus = !currentTask.isCompleted;
+
+      // For recurring tasks being completed, create next occurrence
+      if (newStatus && currentTask.isRecurring) {
+        await _completeRecurringTask(userId: userId, task: currentTask);
+        return true;
+      }
+
       return await updateTask(
         userId: userId,
         taskId: taskId,
@@ -269,6 +319,47 @@ class TaskService {
       debugPrint('TaskService: Error toggling task - $e');
       return false;
     }
+  }
+
+  /// Complete a recurring task and create the next occurrence
+  Future<void> _completeRecurringTask({
+    required String userId,
+    required Task task,
+  }) async {
+    // 1. Mark current task as completed
+    await updateTask(
+      userId: userId,
+      taskId: task.id,
+      isCompleted: true,
+    );
+
+    // 2. Calculate next due date
+    final nextDate = task.nextRecurrenceDate;
+    if (nextDate == null) return;
+
+    // 3. Check if recurrence end date has passed
+    if (task.recurrenceEndDate != null &&
+        nextDate.isAfter(task.recurrenceEndDate!)) {
+      debugPrint('TaskService: Recurrence series ended for ${task.id}');
+      return;
+    }
+
+    // 4. Create next task instance
+    await addTask(
+      userId: userId,
+      title: task.title,
+      description: task.description,
+      priority: task.priority,
+      category: task.category,
+      dueDate: nextDate,
+      tags: task.tags,
+      recurrenceType: task.recurrenceType,
+      recurrenceInterval: task.recurrenceInterval,
+      recurrenceEndDate: task.recurrenceEndDate,
+      parentTaskId: task.parentTaskId ?? task.id,
+    );
+
+    debugPrint('TaskService: Created next recurrence for task ${task.id}');
   }
 
   /// Delete a task
@@ -286,6 +377,9 @@ class TaskService {
 
       // Remove from cache
       _taskCache.remove(taskId);
+
+      // Cancel any scheduled reminder
+      await NotificationService.instance.cancelTaskNotification(taskId);
 
       debugPrint('TaskService: Deleted task $taskId');
       return true;

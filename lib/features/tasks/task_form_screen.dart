@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/services.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/models/task.dart';
 import '../../core/services/task_service.dart';
+import '../../core/providers/task_provider.dart';
 
 /// Task Form Screen - Add or Edit a task
 class TaskFormScreen extends ConsumerStatefulWidget {
@@ -29,6 +28,11 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   DateTime? _selectedDueDate;
   TimeOfDay? _selectedDueTime;
   List<String> _tags = [];
+  // Recurrence
+  bool _recurrenceEnabled = false;
+  RecurrenceType _recurrenceType = RecurrenceType.daily;
+  int _recurrenceInterval = 1;
+  DateTime? _recurrenceEndDate;
 
   @override
   void initState() {
@@ -45,6 +49,12 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     _selectedCategory = task.category;
     _selectedDueDate = task.dueDate;
     _tags = task.tags ?? [];
+    _recurrenceEnabled = task.isRecurring;
+    _recurrenceType = task.recurrenceType == RecurrenceType.none
+        ? RecurrenceType.daily
+        : task.recurrenceType;
+    _recurrenceInterval = task.recurrenceInterval;
+    _recurrenceEndDate = task.recurrenceEndDate;
   }
 
   @override
@@ -61,10 +71,20 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
 
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    // TODO: Get user ID from auth
-    const userId = 'guest_user';
+    // Get user ID from auth provider
+    final userId = ref.read(currentUserIdProvider);
 
     try {
+      final effectiveDueDate = _selectedDueTime != null && _selectedDueDate != null
+          ? DateTime(
+              _selectedDueDate!.year,
+              _selectedDueDate!.month,
+              _selectedDueDate!.day,
+              _selectedDueTime!.hour,
+              _selectedDueTime!.minute,
+            )
+          : _selectedDueDate;
+
       if (widget.task == null) {
         // Create new task
         final task = await TaskService.instance.addTask(
@@ -75,16 +95,11 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               : _descriptionController.text.trim(),
           priority: _selectedPriority,
           category: _selectedCategory,
-          dueDate: _selectedDueTime != null && _selectedDueDate != null
-              ? DateTime(
-                  _selectedDueDate!.year,
-                  _selectedDueDate!.month,
-                  _selectedDueDate!.day,
-                  _selectedDueTime!.hour,
-                  _selectedDueTime!.minute,
-                )
-              : _selectedDueDate,
+          dueDate: effectiveDueDate,
           tags: _tags.isEmpty ? null : _tags,
+          recurrenceType: _recurrenceEnabled ? _recurrenceType : RecurrenceType.none,
+          recurrenceInterval: _recurrenceInterval,
+          recurrenceEndDate: _recurrenceEnabled ? _recurrenceEndDate : null,
         );
 
         if (task != null && mounted) {
@@ -107,16 +122,11 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               : _descriptionController.text.trim(),
           priority: _selectedPriority,
           category: _selectedCategory,
-          dueDate: _selectedDueTime != null && _selectedDueDate != null
-              ? DateTime(
-                  _selectedDueDate!.year,
-                  _selectedDueDate!.month,
-                  _selectedDueDate!.day,
-                  _selectedDueTime!.hour,
-                  _selectedDueTime!.minute,
-                )
-              : _selectedDueDate,
+          dueDate: effectiveDueDate,
           tags: _tags.isEmpty ? null : _tags,
+          recurrenceType: _recurrenceEnabled ? _recurrenceType : RecurrenceType.none,
+          recurrenceInterval: _recurrenceInterval,
+          recurrenceEndDate: _recurrenceEnabled ? _recurrenceEndDate : null,
         );
 
         if (success && mounted) {
@@ -582,11 +592,252 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               ),
             ],
 
+            const SizedBox(height: AppConstants.paddingMedium),
+
+            // Recurrence Card
+            _buildRecurrenceCard(isDark, isArabic),
+
             const SizedBox(height: AppConstants.paddingLarge * 2),
           ],
         ),
       ),
     );
+  }
+
+  Widget _buildRecurrenceCard(bool isDark, bool isArabic) {
+    final borderColor = isDark ? AppConstants.darkBorder : AppConstants.lightBorder;
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: borderColor),
+        borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+      ),
+      child: Column(
+        children: [
+          // Toggle header
+          SwitchListTile(
+            secondary: Icon(
+              Icons.repeat,
+              color: _recurrenceEnabled ? AppConstants.primaryColor : Colors.grey,
+            ),
+            title: Text(isArabic ? 'تكرار المهمة' : 'Repeat Task'),
+            subtitle: Text(
+              _recurrenceEnabled
+                  ? _getRecurrenceLabel(isArabic)
+                  : (isArabic ? 'لا تكرار' : 'No repeat'),
+              style: TextStyle(
+                fontSize: 12,
+                color: _recurrenceEnabled
+                    ? AppConstants.primaryColor
+                    : Colors.grey,
+              ),
+            ),
+            value: _recurrenceEnabled,
+            activeColor: AppConstants.primaryColor,
+            onChanged: (val) => setState(() => _recurrenceEnabled = val),
+          ),
+
+          // Recurrence options (only when enabled)
+          if (_recurrenceEnabled) ...[
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(AppConstants.paddingMedium),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Frequency selector
+                  Text(
+                    isArabic ? 'التكرار' : 'Frequency',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      _buildFrequencyChip(RecurrenceType.daily,
+                          isArabic ? 'يومي' : 'Daily', isDark),
+                      const SizedBox(width: 8),
+                      _buildFrequencyChip(RecurrenceType.weekly,
+                          isArabic ? 'أسبوعي' : 'Weekly', isDark),
+                      const SizedBox(width: 8),
+                      _buildFrequencyChip(RecurrenceType.monthly,
+                          isArabic ? 'شهري' : 'Monthly', isDark),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Interval input
+                  Row(
+                    children: [
+                      Text(
+                        isArabic ? 'كل' : 'Every',
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: 60,
+                        child: TextFormField(
+                          initialValue: '$_recurrenceInterval',
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 8),
+                          ),
+                          onChanged: (val) {
+                            final n = int.tryParse(val);
+                            if (n != null && n > 0) {
+                              setState(() => _recurrenceInterval = n);
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        _getIntervalUnit(isArabic),
+                        style: const TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // End date (optional)
+                  InkWell(
+                    onTap: () => _selectRecurrenceEndDate(),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.event_available,
+                          size: 20,
+                          color: isDark
+                              ? Colors.grey.shade400
+                              : Colors.grey.shade600,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _recurrenceEndDate != null
+                                ? (isArabic ? 'ينتهي: ' : 'Ends: ') +
+                                    '${_recurrenceEndDate!.day}/${_recurrenceEndDate!.month}/${_recurrenceEndDate!.year}'
+                                : (isArabic
+                                    ? 'تاريخ انتهاء (اختياري)'
+                                    : 'End date (optional)'),
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: isDark
+                                  ? Colors.grey.shade300
+                                  : Colors.grey.shade700,
+                            ),
+                          ),
+                        ),
+                        if (_recurrenceEndDate != null)
+                          IconButton(
+                            icon: const Icon(Icons.clear, size: 18),
+                            onPressed: () =>
+                                setState(() => _recurrenceEndDate = null),
+                            color: Colors.grey,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFrequencyChip(RecurrenceType type, String label, bool isDark) {
+    final isSelected = _recurrenceType == type;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _recurrenceType = type),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppConstants.primaryColor
+                : (isDark ? AppConstants.darkCard : Colors.grey.shade100),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isSelected
+                  ? AppConstants.primaryColor
+                  : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+            ),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isSelected
+                  ? Colors.white
+                  : (isDark ? Colors.grey.shade300 : Colors.grey.shade700),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _getRecurrenceLabel(bool isArabic) {
+    final intervalStr = _recurrenceInterval == 1 ? '' : ' $_recurrenceInterval';
+    switch (_recurrenceType) {
+      case RecurrenceType.daily:
+        return isArabic
+            ? 'كل$intervalStr ${_recurrenceInterval == 1 ? 'يوم' : 'أيام'}'
+            : 'Every$intervalStr day${_recurrenceInterval == 1 ? '' : 's'}';
+      case RecurrenceType.weekly:
+        return isArabic
+            ? 'كل$intervalStr ${_recurrenceInterval == 1 ? 'أسبوع' : 'أسابيع'}'
+            : 'Every$intervalStr week${_recurrenceInterval == 1 ? '' : 's'}';
+      case RecurrenceType.monthly:
+        return isArabic
+            ? 'كل$intervalStr ${_recurrenceInterval == 1 ? 'شهر' : 'أشهر'}'
+            : 'Every$intervalStr month${_recurrenceInterval == 1 ? '' : 's'}';
+      case RecurrenceType.none:
+        return '';
+    }
+  }
+
+  String _getIntervalUnit(bool isArabic) {
+    switch (_recurrenceType) {
+      case RecurrenceType.daily:
+        return isArabic ? 'أيام' : 'day(s)';
+      case RecurrenceType.weekly:
+        return isArabic ? 'أسابيع' : 'week(s)';
+      case RecurrenceType.monthly:
+        return isArabic ? 'أشهر' : 'month(s)';
+      case RecurrenceType.none:
+        return '';
+    }
+  }
+
+  Future<void> _selectRecurrenceEndDate() async {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _recurrenceEndDate ??
+          DateTime.now().add(const Duration(days: 30)),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365 * 2)),
+      helpText: isArabic ? 'تاريخ انتهاء التكرار' : 'Recurrence End Date',
+      confirmText: isArabic ? 'تم' : 'OK',
+      cancelText: isArabic ? 'إلغاء' : 'Cancel',
+    );
+    if (picked != null) {
+      setState(() => _recurrenceEndDate = picked);
+    }
   }
 
   Color _getPriorityColor(TaskPriority priority) {
@@ -668,7 +919,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     if (widget.task == null) return;
 
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    const userId = 'guest_user';
+    final userId = ref.read(currentUserIdProvider);
 
     try {
       await TaskService.instance.deleteTask(
