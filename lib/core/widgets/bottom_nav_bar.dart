@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../constants/app_constants.dart';
+import '../providers/task_provider.dart';
+
 /// Custom bottom navigation bar for the app
-/// Provides navigation between main sections
-class AuraBottomNavBar extends StatelessWidget {
+class AuraBottomNavBar extends ConsumerWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
@@ -14,8 +16,14 @@ class AuraBottomNavBar extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // Get today's task count for badge
+    final todayCount = ref.watch(allTasksProvider).whenOrNull(
+          data: (tasks) =>
+              tasks.where((t) => !t.isCompleted && t.isDueToday).length,
+        ) ?? 0;
 
     return Container(
       decoration: BoxDecoration(
@@ -54,6 +62,7 @@ class AuraBottomNavBar extends StatelessWidget {
                 label: 'task_management'.tr(),
                 isSelected: currentIndex == 2,
                 onTap: () => onTap(2),
+                badge: todayCount,
               ),
               _buildNavItem(
                 context: context,
@@ -76,6 +85,7 @@ class AuraBottomNavBar extends StatelessWidget {
     required bool isSelected,
     required VoidCallback onTap,
     bool isComingSoon = false,
+    int badge = 0,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -97,12 +107,41 @@ class AuraBottomNavBar extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
-                icon,
-                size: 24,
-                color: isSelected
-                    ? AppConstants.primaryColor
-                    : (isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary),
+              // Icon with optional badge
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    icon,
+                    size: 24,
+                    color: isSelected
+                        ? AppConstants.primaryColor
+                        : (isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary),
+                  ),
+                  if (badge > 0)
+                    Positioned(
+                      right: -8,
+                      top: -4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '$badge',
+                            style: const TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
               ),
               SizedBox(height: isComingSoon ? 1 : 2),
               Text(

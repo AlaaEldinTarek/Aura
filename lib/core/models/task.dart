@@ -146,14 +146,14 @@ class Task {
     return dueDay == today;
   }
 
-  /// Check if task is due within next 7 days (but not today)
+  /// Check if task is due tomorrow (but not today)
   bool get isUpcoming {
     if (dueDate == null) return false;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final dueDay = DateTime(dueDate!.year, dueDate!.month, dueDate!.day);
-    final weekLater = today.add(const Duration(days: 7));
-    return dueDay.isAfter(today) && dueDay.isBefore(weekLater);
+    final tomorrow = today.add(const Duration(days: 1));
+    return dueDay == tomorrow;
   }
 
   /// Calculate the next due date for a recurring task

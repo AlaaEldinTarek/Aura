@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/task.dart';
 import '../constants/app_constants.dart';
 
-/// Performance-optimized task card widget
+/// Performance-optimized task card widget with completion animation
 class TaskCard extends StatelessWidget {
   final Task task;
   final VoidCallback? onTap;
@@ -48,13 +48,16 @@ class TaskCard extends StatelessWidget {
     final card = Container(
       decoration: BoxDecoration(
         color: isOverdue
-            ? (isDark ? Colors.red.withOpacity(0.07) : Colors.red.withOpacity(0.04))
+            ? (isDark
+                ? Colors.red.withOpacity(0.07)
+                : Colors.red.withOpacity(0.04))
             : (isDark ? AppConstants.darkCard : Colors.white),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         border: isSelected
             ? Border.all(color: AppConstants.primaryColor, width: 2)
             : Border.all(
-                color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+                color:
+                    isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
               ),
         boxShadow: [
           BoxShadow(
@@ -90,21 +93,28 @@ class TaskCard extends StatelessWidget {
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: task.isCompleted
-                                  ? (isDark ? Colors.grey.shade600 : Colors.grey.shade400)
+                                  ? (isDark
+                                      ? Colors.grey.shade600
+                                      : Colors.grey.shade400)
                                   : (isDark ? Colors.white : Colors.black87),
-                              decoration: task.isCompleted ? TextDecoration.lineThrough : null,
+                              decoration: task.isCompleted
+                                  ? TextDecoration.lineThrough
+                                  : null,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          if (task.description != null && task.description!.isNotEmpty)
+                          if (task.description != null &&
+                              task.description!.isNotEmpty)
                             Padding(
                               padding: const EdgeInsets.only(top: 4),
                               child: Text(
                                 task.description!,
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                  color: isDark
+                                      ? Colors.grey.shade400
+                                      : Colors.grey.shade600,
                                 ),
                                 maxLines: 2,
                                 overflow: TextOverflow.ellipsis,
@@ -119,21 +129,26 @@ class TaskCard extends StatelessWidget {
                               if (task.category != TaskCategory.other)
                                 _CategoryBadge(category: task.category),
                               if (task.dueDate != null)
-                                _DueDateBadge(dueDate: task.dueDate!, isOverdue: task.isOverdue),
+                                _DueDateBadge(
+                                    dueDate: task.dueDate!,
+                                    isOverdue: task.isOverdue),
                               if (task.isRecurring)
-                                _RecurrenceBadge(recurrenceType: task.recurrenceType),
+                                _RecurrenceBadge(
+                                    recurrenceType: task.recurrenceType),
                             ],
                           ),
                           if (task.tags != null && task.tags!.isNotEmpty) ...[
-                            const SizedBox(height: 10),
+                            const SizedBox(height: 6),
                             Wrap(
                               spacing: 6,
                               runSpacing: 6,
                               children: task.tags!.take(3).map((tag) {
                                 return Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 15, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: AppConstants.primaryColor.withOpacity(0.1),
+                                    color: AppConstants.primaryColor
+                                        .withOpacity(0.1),
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Text(
@@ -170,7 +185,7 @@ class TaskCard extends StatelessWidget {
               top: 0,
               bottom: 0,
               child: Container(
-                width: 3,
+                width: 5,
                 decoration: BoxDecoration(
                   color: leftAccent,
                   borderRadius: BorderRadius.only(
@@ -192,7 +207,9 @@ class TaskCard extends StatelessWidget {
         alignment: Alignment.centerLeft,
         color: task.isCompleted ? Colors.orange : Colors.green,
         icon: task.isCompleted ? Icons.refresh : Icons.check,
-        label: task.isCompleted ? (isArabic ? 'إلغاء الإتمام' : 'Undo') : (isArabic ? 'إتمام' : 'Complete'),
+        label: task.isCompleted
+            ? (isArabic ? 'إلغاء الإتمام' : 'Undo')
+            : (isArabic ? 'إتمام' : 'Complete'),
       ),
       secondaryBackground: _buildSwipeBackground(
         alignment: Alignment.centerRight,
@@ -220,21 +237,33 @@ class TaskCard extends StatelessWidget {
   Widget _buildCheckbox(BuildContext context, bool isDark) {
     return GestureDetector(
       onTap: onToggle,
-      child: Container(
-        width: 24,
-        height: 24,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: task.isCompleted
-              ? AppConstants.primaryColor
-              : (isDark ? Colors.grey.shade800 : Colors.grey.shade200),
-          border: Border.all(
+      child: AnimatedScale(
+        scale: task.isCompleted ? 1.3 : 1.0,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOutBack,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
             color: task.isCompleted
                 ? AppConstants.primaryColor
-                : (isDark ? Colors.grey.shade700 : Colors.grey.shade400),
+                : (isDark ? Colors.grey.shade800 : Colors.grey.shade200),
+            border: Border.all(
+              color: task.isCompleted
+                  ? AppConstants.primaryColor
+                  : (isDark ? Colors.grey.shade700 : Colors.grey.shade400),
+              width: task.isCompleted ? 2 : 1,
+            ),
+          ),
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 200),
+            opacity: task.isCompleted ? 1.0 : 0.0,
+            child: const Icon(Icons.check, size: 16, color: Colors.white),
           ),
         ),
-        child: task.isCompleted ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
       ),
     );
   }
@@ -258,9 +287,17 @@ class TaskCard extends StatelessWidget {
           if (alignment == Alignment.centerLeft) ...[
             Icon(icon, color: Colors.white, size: 22),
             const SizedBox(width: 8),
-            Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+            Text(label,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13)),
           ] else ...[
-            Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
+            Text(label,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13)),
             const SizedBox(width: 8),
             Icon(icon, color: Colors.white, size: 22),
           ],
@@ -290,8 +327,12 @@ class _PriorityBadge extends StatelessWidget {
     final color = colors[priority]!;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(4)),
-      child: Text(labels[priority]!, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+      decoration: BoxDecoration(
+          color: color.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(4)),
+      child: Text(labels[priority]!,
+          style: TextStyle(
+              fontSize: 11, fontWeight: FontWeight.w600, color: color)),
     );
   }
 }
@@ -313,9 +354,14 @@ class _CategoryBadge extends StatelessWidget {
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: AppConstants.primaryColor.withOpacity(0.15), borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(
+          color: AppConstants.primaryColor.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(4)),
       child: Text(labels[category] ?? category.value,
-          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppConstants.primaryColor)),
+          style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: AppConstants.primaryColor)),
     );
   }
 }
@@ -334,14 +380,19 @@ class _RecurrenceBadge extends StatelessWidget {
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(color: Colors.purple.withOpacity(0.15), borderRadius: BorderRadius.circular(4)),
+      decoration: BoxDecoration(
+          color: Colors.purple.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(4)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.repeat, size: 11, color: Colors.purple),
           const SizedBox(width: 4),
           Text(labels[recurrenceType] ?? '',
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.purple)),
+              style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.purple)),
         ],
       ),
     );
@@ -374,16 +425,22 @@ class _DueDateBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: isOverdue ? Colors.red.withOpacity(0.15) : (isDark ? Colors.grey.shade800 : Colors.grey.shade200),
+        color: isOverdue
+            ? Colors.red.withOpacity(0.15)
+            : (isDark ? Colors.grey.shade800 : Colors.grey.shade200),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(isOverdue ? Icons.warning : Icons.schedule, size: 11, color: isOverdue ? Colors.red : Colors.grey),
+          Icon(isOverdue ? Icons.warning : Icons.schedule,
+              size: 11, color: isOverdue ? Colors.red : Colors.grey),
           const SizedBox(width: 4),
           Text(label,
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: isOverdue ? Colors.red : Colors.grey.shade600)),
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: isOverdue ? Colors.red : Colors.grey.shade600)),
         ],
       ),
     );

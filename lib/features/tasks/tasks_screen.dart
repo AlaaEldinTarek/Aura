@@ -26,6 +26,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   _SortOrder _sortOrder = _SortOrder.dateDesc;
   final TextEditingController _searchController = TextEditingController();
 
+  // Track recently completed tasks so they stay visible for animation
+  final Set<String> _recentlyCompleted = {};
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -40,7 +43,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     final statsAsync = ref.watch(taskStatisticsProvider);
 
     return Scaffold(
-      backgroundColor: isDark ? AppConstants.darkBackground : const Color(0xFFF5F7FA),
+      backgroundColor:
+          isDark ? AppConstants.darkBackground : const Color(0xFFF5F7FA),
       appBar: AppBar(
         title: _showSearch
             ? TextField(
@@ -89,8 +93,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               PopupMenuItem(
                 value: _SortOrder.dateDesc,
                 child: Row(children: [
-                  Icon(Icons.arrow_downward, size: 16,
-                      color: _sortOrder == _SortOrder.dateDesc ? AppConstants.primaryColor : null),
+                  Icon(Icons.arrow_downward,
+                      size: 16,
+                      color: _sortOrder == _SortOrder.dateDesc
+                          ? AppConstants.primaryColor
+                          : null),
                   const SizedBox(width: 8),
                   Text(isArabic ? 'الأحدث أولاً' : 'Newest first'),
                 ]),
@@ -98,8 +105,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               PopupMenuItem(
                 value: _SortOrder.dateAsc,
                 child: Row(children: [
-                  Icon(Icons.arrow_upward, size: 16,
-                      color: _sortOrder == _SortOrder.dateAsc ? AppConstants.primaryColor : null),
+                  Icon(Icons.arrow_upward,
+                      size: 16,
+                      color: _sortOrder == _SortOrder.dateAsc
+                          ? AppConstants.primaryColor
+                          : null),
                   const SizedBox(width: 8),
                   Text(isArabic ? 'الأقدم أولاً' : 'Oldest first'),
                 ]),
@@ -107,8 +117,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               PopupMenuItem(
                 value: _SortOrder.priority,
                 child: Row(children: [
-                  Icon(Icons.flag, size: 16,
-                      color: _sortOrder == _SortOrder.priority ? AppConstants.primaryColor : null),
+                  Icon(Icons.flag,
+                      size: 16,
+                      color: _sortOrder == _SortOrder.priority
+                          ? AppConstants.primaryColor
+                          : null),
                   const SizedBox(width: 8),
                   Text(isArabic ? 'حسب الأولوية' : 'By priority'),
                 ]),
@@ -116,8 +129,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               PopupMenuItem(
                 value: _SortOrder.title,
                 child: Row(children: [
-                  Icon(Icons.sort_by_alpha, size: 16,
-                      color: _sortOrder == _SortOrder.title ? AppConstants.primaryColor : null),
+                  Icon(Icons.sort_by_alpha,
+                      size: 16,
+                      color: _sortOrder == _SortOrder.title
+                          ? AppConstants.primaryColor
+                          : null),
                   const SizedBox(width: 8),
                   Text(isArabic ? 'أبجدياً' : 'Alphabetical'),
                 ]),
@@ -147,7 +163,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             SliverToBoxAdapter(
               child: statsAsync.when(
                 data: (stats) => _buildStatsRow(stats, isDark, isArabic),
-                loading: () => const SizedBox(height: 80, child: Center(child: CircularProgressIndicator())),
+                loading: () => const SizedBox(
+                    height: 80,
+                    child: Center(child: CircularProgressIndicator())),
                 error: (_, __) => const SizedBox.shrink(),
               ),
             ),
@@ -177,7 +195,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                 error: (error, _) => Center(
                   child: Padding(
                     padding: const EdgeInsets.all(32),
-                    child: Text(isArabic ? 'خطأ في تحميل المهام' : 'Error loading tasks'),
+                    child: Text(isArabic
+                        ? 'خطأ في تحميل المهام'
+                        : 'Error loading tasks'),
                   ),
                 ),
               ),
@@ -277,11 +297,27 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     final categories = [
       (null, isArabic ? 'الكل' : 'All', Icons.list),
       (TaskCategory.work, isArabic ? 'عمل' : 'Work', Icons.work_outline),
-      (TaskCategory.personal, isArabic ? 'شخصي' : 'Personal', Icons.person_outline),
-      (TaskCategory.shopping, isArabic ? 'تسوق' : 'Shopping', Icons.shopping_cart_outlined),
-      (TaskCategory.health, isArabic ? 'صحة' : 'Health', Icons.favorite_outline),
+      (
+        TaskCategory.personal,
+        isArabic ? 'شخصي' : 'Personal',
+        Icons.person_outline
+      ),
+      (
+        TaskCategory.shopping,
+        isArabic ? 'تسوق' : 'Shopping',
+        Icons.shopping_cart_outlined
+      ),
+      (
+        TaskCategory.health,
+        isArabic ? 'صحة' : 'Health',
+        Icons.favorite_outline
+      ),
       (TaskCategory.study, isArabic ? 'دراسة' : 'Study', Icons.school_outlined),
-      (TaskCategory.prayer, isArabic ? 'صلاة' : 'Prayer', Icons.mosque_outlined),
+      (
+        TaskCategory.prayer,
+        isArabic ? 'صلاة' : 'Prayer',
+        Icons.mosque_outlined
+      ),
       (TaskCategory.other, isArabic ? 'أخرى' : 'Other', Icons.more_horiz),
     ];
 
@@ -320,7 +356,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                     size: 14,
                     color: isSelected
                         ? AppConstants.primaryColor
-                        : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                        : (isDark
+                            ? Colors.grey.shade400
+                            : Colors.grey.shade600),
                   ),
                   const SizedBox(width: 4),
                   Text(
@@ -329,8 +367,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                       fontSize: 12,
                       color: isSelected
                           ? AppConstants.primaryColor
-                          : (isDark ? Colors.grey.shade300 : Colors.grey.shade700),
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                          : (isDark
+                              ? Colors.grey.shade300
+                              : Colors.grey.shade700),
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
                     ),
                   ),
                 ],
@@ -367,7 +408,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                   _selectedTag = isSelected ? null : tag;
                 }),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppConstants.primaryColor.withOpacity(0.15)
@@ -376,17 +418,22 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                     border: Border.all(
                       color: isSelected
                           ? AppConstants.primaryColor
-                          : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+                          : (isDark
+                              ? Colors.grey.shade700
+                              : Colors.grey.shade300),
                     ),
                   ),
                   child: Text(
                     '#$tag',
                     style: TextStyle(
                       fontSize: 11,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.normal,
                       color: isSelected
                           ? AppConstants.primaryColor
-                          : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                          : (isDark
+                              ? Colors.grey.shade400
+                              : Colors.grey.shade600),
                     ),
                   ),
                 ),
@@ -408,10 +455,16 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
       case _SortOrder.dateAsc:
         sorted.sort((a, b) => a.createdAt.compareTo(b.createdAt));
       case _SortOrder.priority:
-        const order = {TaskPriority.high: 0, TaskPriority.medium: 1, TaskPriority.low: 2};
-        sorted.sort((a, b) => (order[a.priority] ?? 1).compareTo(order[b.priority] ?? 1));
+        const order = {
+          TaskPriority.high: 0,
+          TaskPriority.medium: 1,
+          TaskPriority.low: 2
+        };
+        sorted.sort((a, b) =>
+            (order[a.priority] ?? 1).compareTo(order[b.priority] ?? 1));
       case _SortOrder.title:
-        sorted.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+        sorted.sort(
+            (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
     }
     return sorted;
   }
@@ -443,29 +496,36 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     tasks = _applySort(tasks);
 
     // Split into sections
+    // Recently completed tasks stay in their section for animation
+    bool isVisible(Task t) =>
+        !t.isCompleted || _recentlyCompleted.contains(t.id);
+
     final overdueTasks = tasks
-        .where((t) => !t.isCompleted && t.isOverdue)
+        .where((t) => isVisible(t) && t.isOverdue)
         .toList()
-      ..sort((a, b) => (a.dueDate ?? DateTime(2099))
-          .compareTo(b.dueDate ?? DateTime(2099)));
+      ..sort((a, b) =>
+          (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099)));
 
     final todayTasks = tasks
-        .where((t) => !t.isCompleted && t.isDueToday && !t.isOverdue)
+        .where((t) => isVisible(t) && t.isDueToday && !t.isOverdue)
         .toList()
-      ..sort((a, b) => (a.dueDate ?? DateTime(2099))
-          .compareTo(b.dueDate ?? DateTime(2099)));
+      ..sort((a, b) =>
+          (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099)));
 
     final upcomingTasks = tasks
-        .where((t) => !t.isCompleted && t.isUpcoming)
+        .where((t) => isVisible(t) && t.isUpcoming)
         .toList()
-      ..sort((a, b) => (a.dueDate ?? DateTime(2099))
-          .compareTo(b.dueDate ?? DateTime(2099)));
+      ..sort((a, b) =>
+          (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099)));
 
     final otherTasks = tasks
-        .where((t) => !t.isCompleted && !t.isDueToday && !t.isUpcoming && !t.isOverdue)
+        .where((t) =>
+            isVisible(t) && !t.isDueToday && !t.isUpcoming && !t.isOverdue)
         .toList();
 
-    final completedTasks = tasks.where((t) => t.isCompleted).toList();
+    final completedTasks = tasks
+        .where((t) => t.isCompleted && !_recentlyCompleted.contains(t.id))
+        .toList();
 
     if (tasks.isEmpty) {
       return _searchQuery.isNotEmpty
@@ -540,9 +600,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               onTap: () => setState(() => _showCompleted = !_showCompleted),
               borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
               child: _buildSectionHeader(
-                icon: _showCompleted
-                    ? Icons.expand_less
-                    : Icons.expand_more,
+                icon: _showCompleted ? Icons.expand_less : Icons.expand_more,
                 title: isArabic ? 'المكتملة' : 'Completed',
                 count: completedTasks.length,
                 color: Colors.green,
@@ -632,9 +690,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            isArabic
-                ? 'جرب كلمة بحث مختلفة'
-                : 'Try a different search term',
+            isArabic ? 'جرب كلمة بحث مختلفة' : 'Try a different search term',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
@@ -664,7 +720,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            isArabic ? 'اضغط + لإضافة مهمتك الأولى' : 'Tap + to add your first task',
+            isArabic
+                ? 'اضغط + لإضافة مهمتك الأولى'
+                : 'Tap + to add your first task',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
@@ -678,12 +736,22 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   // ─── Actions ─────────────────────────────────────────────────────────────
 
   Future<void> _toggleTask(Task task) async {
+    final wasCompleted = task.isCompleted;
     final userId = ref.read(currentUserIdProvider);
     try {
       await TaskService.instance.toggleTaskCompletion(
         userId: userId,
         taskId: task.id,
       );
+      // If task was just completed, keep it visible for animation
+      if (!wasCompleted) {
+        setState(() => _recentlyCompleted.add(task.id));
+        Future.delayed(const Duration(milliseconds: 1500), () {
+          if (mounted) {
+            setState(() => _recentlyCompleted.remove(task.id));
+          }
+        });
+      }
     } catch (e) {
       debugPrint('Error toggling task: $e');
     }
@@ -728,7 +796,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     }
   }
 
-  Future<void> _showQuickAdd(BuildContext context, bool isArabic, bool isDark) async {
+  Future<void> _showQuickAdd(
+      BuildContext context, bool isArabic, bool isDark) async {
     final controller = TextEditingController();
     TaskPriority priority = TaskPriority.medium;
     DateTime? dueDate;
@@ -747,7 +816,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
               decoration: BoxDecoration(
                 color: isDark ? AppConstants.darkSurface : Colors.white,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20)),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -756,10 +826,13 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                   // Handle bar
                   Center(
                     child: Container(
-                      width: 40, height: 4,
+                      width: 40,
+                      height: 4,
                       margin: const EdgeInsets.only(bottom: 16),
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.grey.shade600 : Colors.grey.shade300,
+                        color: isDark
+                            ? Colors.grey.shade600
+                            : Colors.grey.shade300,
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -783,15 +856,20 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                     decoration: InputDecoration(
                       hintText: isArabic ? 'عنوان المهمة...' : 'Task title...',
                       filled: true,
-                      fillColor: isDark ? AppConstants.darkCard : const Color(0xFFF5F7FA),
+                      fillColor: isDark
+                          ? AppConstants.darkCard
+                          : const Color(0xFFF5F7FA),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
                       ),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
                     ),
-                    style: TextStyle(color: isDark ? Colors.white : Colors.black87),
-                    onSubmitted: (_) => _submitQuickAdd(controller, priority, dueDate, ctx, isArabic),
+                    style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black87),
+                    onSubmitted: (_) => _submitQuickAdd(
+                        controller, priority, dueDate, ctx, isArabic),
                   ),
                   const SizedBox(height: 12),
 
@@ -800,9 +878,21 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                     children: [
                       // Priority chips
                       ...[
-                        (TaskPriority.high, isArabic ? 'عالية' : 'High', Colors.orange),
-                        (TaskPriority.medium, isArabic ? 'متوسطة' : 'Medium', Colors.amber),
-                        (TaskPriority.low, isArabic ? 'منخفضة' : 'Low', Colors.green),
+                        (
+                          TaskPriority.high,
+                          isArabic ? 'عالية' : 'High',
+                          Colors.orange
+                        ),
+                        (
+                          TaskPriority.medium,
+                          isArabic ? 'متوسطة' : 'Medium',
+                          Colors.amber
+                        ),
+                        (
+                          TaskPriority.low,
+                          isArabic ? 'منخفضة' : 'Low',
+                          Colors.green
+                        ),
                       ].map((entry) {
                         final (p, label, color) = entry;
                         final selected = priority == p;
@@ -811,20 +901,33 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                           child: GestureDetector(
                             onTap: () => setModalState(() => priority = p),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
                               decoration: BoxDecoration(
-                                color: selected ? color.withOpacity(0.2) : Colors.transparent,
+                                color: selected
+                                    ? color.withOpacity(0.2)
+                                    : Colors.transparent,
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
-                                  color: selected ? color : (isDark ? Colors.grey.shade600 : Colors.grey.shade300),
+                                  color: selected
+                                      ? color
+                                      : (isDark
+                                          ? Colors.grey.shade600
+                                          : Colors.grey.shade300),
                                 ),
                               ),
                               child: Text(
                                 label,
                                 style: TextStyle(
                                   fontSize: 12,
-                                  fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                                  color: selected ? color : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                                  fontWeight: selected
+                                      ? FontWeight.bold
+                                      : FontWeight.normal,
+                                  color: selected
+                                      ? color
+                                      : (isDark
+                                          ? Colors.grey.shade400
+                                          : Colors.grey.shade600),
                                 ),
                               ),
                             ),
@@ -841,12 +944,15 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                             context: ctx,
                             initialDate: DateTime.now(),
                             firstDate: DateTime.now(),
-                            lastDate: DateTime.now().add(const Duration(days: 365)),
+                            lastDate:
+                                DateTime.now().add(const Duration(days: 365)),
                           );
-                          if (picked != null) setModalState(() => dueDate = picked);
+                          if (picked != null)
+                            setModalState(() => dueDate = picked);
                         },
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
                             color: dueDate != null
                                 ? AppConstants.primaryColor.withOpacity(0.1)
@@ -855,7 +961,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                             border: Border.all(
                               color: dueDate != null
                                   ? AppConstants.primaryColor
-                                  : (isDark ? Colors.grey.shade600 : Colors.grey.shade300),
+                                  : (isDark
+                                      ? Colors.grey.shade600
+                                      : Colors.grey.shade300),
                             ),
                           ),
                           child: Row(
@@ -865,7 +973,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                   size: 14,
                                   color: dueDate != null
                                       ? AppConstants.primaryColor
-                                      : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+                                      : (isDark
+                                          ? Colors.grey.shade400
+                                          : Colors.grey.shade600)),
                               const SizedBox(width: 4),
                               Text(
                                 dueDate != null
@@ -875,7 +985,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                                   fontSize: 12,
                                   color: dueDate != null
                                       ? AppConstants.primaryColor
-                                      : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                                      : (isDark
+                                          ? Colors.grey.shade400
+                                          : Colors.grey.shade600),
                                 ),
                               ),
                             ],
@@ -891,7 +1003,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: () => _submitQuickAdd(controller, priority, dueDate, ctx, isArabic),
+                      onPressed: () => _submitQuickAdd(
+                          controller, priority, dueDate, ctx, isArabic),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppConstants.primaryColor,
                         foregroundColor: Colors.white,
@@ -902,7 +1015,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                       ),
                       child: Text(
                         isArabic ? 'إضافة' : 'Add Task',
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 15),
                       ),
                     ),
                   ),
