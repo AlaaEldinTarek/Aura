@@ -19,6 +19,7 @@ enum _SortOrder { dateDesc, dateAsc, priority, title }
 
 class _TasksScreenState extends ConsumerState<TasksScreen> {
   TaskCategory? _selectedCategory;
+  String? _selectedTag;
   bool _showCompleted = false;
   bool _showSearch = false;
   String _searchQuery = '';
@@ -156,6 +157,15 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
               child: _buildCategoryChips(isDark, isArabic),
             ),
 
+            // Tag Filter Chips (only if tags exist)
+            SliverToBoxAdapter(
+              child: allTasksAsync.when(
+                data: (tasks) => _buildTagChips(tasks, isDark, isArabic),
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+            ),
+
             // Task Sections
             SliverToBoxAdapter(
               child: allTasksAsync.when(
@@ -276,7 +286,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     ];
 
     return SizedBox(
-      height: 48,
+      height: 38,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -285,37 +295,105 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
         itemBuilder: (context, index) {
           final (category, label, icon) = categories[index];
           final isSelected = _selectedCategory == category;
-          return FilterChip(
-            avatar: Icon(
-              icon,
-              size: 16,
-              color: isSelected
-                  ? AppConstants.primaryColor
-                  : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
-            ),
-            label: Text(label),
-            selected: isSelected,
-            onSelected: (_) => setState(() {
+          return GestureDetector(
+            onTap: () => setState(() {
               _selectedCategory = isSelected ? null : category;
             }),
-            backgroundColor: isDark ? AppConstants.darkCard : Colors.white,
-            selectedColor: AppConstants.primaryColor.withOpacity(0.15),
-            checkmarkColor: AppConstants.primaryColor,
-            labelStyle: TextStyle(
-              fontSize: 12,
-              color: isSelected
-                  ? AppConstants.primaryColor
-                  : (isDark ? Colors.grey.shade300 : Colors.grey.shade700),
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? AppConstants.primaryColor.withOpacity(0.12)
+                    : (isDark ? AppConstants.darkCard : Colors.white),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isSelected
+                      ? AppConstants.primaryColor
+                      : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icon,
+                    size: 14,
+                    color: isSelected
+                        ? AppConstants.primaryColor
+                        : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isSelected
+                          ? AppConstants.primaryColor
+                          : (isDark ? Colors.grey.shade300 : Colors.grey.shade700),
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            side: BorderSide(
-              color: isSelected
-                  ? AppConstants.primaryColor
-                  : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 4),
           );
         },
+      ),
+    );
+  }
+
+  // ─── Tag Filter Chips ─────────────────────────────────────────────────────
+
+  Widget _buildTagChips(List<Task> allTasks, bool isDark, bool isArabic) {
+    // Collect all unique tags from tasks
+    final allTags = <String>{};
+    for (final t in allTasks) {
+      if (t.tags != null) allTags.addAll(t.tags!);
+    }
+    if (allTags.isEmpty) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      child: SizedBox(
+        height: 36,
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          children: allTags.map((tag) {
+            final isSelected = _selectedTag == tag;
+            return Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: GestureDetector(
+                onTap: () => setState(() {
+                  _selectedTag = isSelected ? null : tag;
+                }),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppConstants.primaryColor.withOpacity(0.15)
+                        : (isDark ? AppConstants.darkCard : Colors.white),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppConstants.primaryColor
+                          : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+                    ),
+                  ),
+                  child: Text(
+                    '#$tag',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                      color: isSelected
+                          ? AppConstants.primaryColor
+                          : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
       ),
     );
   }
@@ -343,6 +421,13 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     var tasks = _selectedCategory == null
         ? allTasks
         : allTasks.where((t) => t.category == _selectedCategory).toList();
+
+    // Apply tag filter
+    if (_selectedTag != null) {
+      tasks = tasks
+          .where((t) => t.tags != null && t.tags!.contains(_selectedTag))
+          .toList();
+    }
 
     // Apply search filter
     if (_searchQuery.isNotEmpty) {

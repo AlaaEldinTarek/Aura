@@ -339,7 +339,8 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
   }
 
   Widget _buildTodayTasksPreview(BuildContext context, bool isDark, bool isArabic) {
-    final tasksAsync = ref.watch(todayTasksProvider);
+    final allTasksAsync = ref.watch(allTasksProvider);
+    final statsAsync = ref.watch(taskStatisticsProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -348,23 +349,73 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              isArabic ? 'مهام اليوم' : 'Today\'s Tasks',
+              isArabic ? 'مهام اليوم' : "Today's Tasks",
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
             ),
             TextButton(
-              onPressed: () {
-                _tabController.animateTo(2); // Switch to tasks tab
-              },
+              onPressed: () => _tabController.animateTo(2),
               child: Text(isArabic ? 'عرض الكل' : 'View All'),
             ),
           ],
         ),
-        const SizedBox(height: AppConstants.paddingSmall),
-        tasksAsync.when(
-          data: (tasks) {
-            if (tasks.isEmpty) {
+
+        // Progress bar
+        statsAsync.when(
+          data: (stats) {
+            if (stats.dueToday == 0) return const SizedBox.shrink();
+            final total = stats.dueToday;
+            final done = stats.completed.clamp(0, total);
+            final progress = total > 0 ? done / total : 0.0;
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(4),
+                    child: LinearProgressIndicator(
+                      value: progress,
+                      minHeight: 6,
+                      backgroundColor:
+                          isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                          progress == 1.0 ? Colors.green : AppConstants.primaryColor),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    isArabic
+                        ? '$done من $total مكتملة'
+                        : '$done of $total completed',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => const SizedBox.shrink(),
+        ),
+
+        const SizedBox(height: 4),
+
+        allTasksAsync.when(
+          data: (allTasks) {
+            final todayTasks =
+                allTasks.where((t) => !t.isCompleted && t.isDueToday).toList();
+            final upcomingTasks =
+                allTasks.where((t) => !t.isCompleted && t.isUpcoming).toList();
+
+            // Show today's tasks, or upcoming if none today
+            final List<Task> toShow =
+                todayTasks.isNotEmpty ? todayTasks : upcomingTasks;
+
+            if (toShow.isEmpty) {
               return Container(
                 padding: const EdgeInsets.all(AppConstants.paddingLarge),
                 decoration: BoxDecoration(
@@ -374,16 +425,14 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
                     color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
                   ),
                 ),
-                child: Column(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.check_circle_outline,
-                      size: 48,
-                      color: Colors.green.shade400,
-                    ),
-                    const SizedBox(height: 16),
+                    Icon(Icons.check_circle_outline,
+                        size: 28, color: Colors.green.shade400),
+                    const SizedBox(width: 12),
                     Text(
-                      isArabic ? 'لا توجد مهام لليوم' : 'No tasks for today',
+                      isArabic ? 'أنجزت كل مهام اليوم!' : 'All done for today!',
                       style: TextStyle(
                         color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                       ),
@@ -393,14 +442,29 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
               );
             }
 
+            // Show label if falling back to upcoming
             return Column(
-              children: tasks.take(3).map((task) {
-                return TaskCard(
-                  key: ValueKey(task.id),
-                  task: task,
-                  onToggle: () => _toggleTask(task.id),
-                );
-              }).toList(),
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (todayTasks.isEmpty && upcomingTasks.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      isArabic ? 'قريباً' : 'Upcoming',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.orange.shade700,
+                      ),
+                    ),
+                  ),
+                ...toShow.take(3).map((task) => TaskCard(
+                      key: ValueKey(task.id),
+                      task: task,
+                      onToggle: () => _toggleTask(task.id),
+                      onTap: () => _editTask(task),
+                    )),
+              ],
             );
           },
           loading: () => const ShimmerListTile(),
@@ -485,137 +549,149 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
     );
   }
 
-  /// Tasks Tab - Shows all tasks
+  /// Tasks Tab - Shows tasks split into sections
   Widget _buildTasksTab(BuildContext context, bool isDark, bool isArabic) {
-    final filterParams = const TaskFilterParams(limit: 50);
-    final tasksAsync = ref.watch(tasksProvider(filterParams));
+    final allTasksAsync = ref.watch(allTasksProvider);
 
     return RefreshIndicator(
       onRefresh: () async {
-        await ref.read(prayerTimesProvider.notifier).loadPrayerTimes(DateTime.now());
+        ref.invalidate(allTasksProvider);
+        ref.invalidate(taskStatisticsProvider);
       },
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(AppConstants.paddingMedium),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Filter chips
-            _buildFilterChips(context, isDark, isArabic),
-
-            const SizedBox(height: AppConstants.paddingMedium),
-
-            // Add task FAB hint
-            Container(
-              padding: const EdgeInsets.all(AppConstants.paddingMedium),
-              decoration: BoxDecoration(
-                color: AppConstants.primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.add_circle, color: AppConstants.primaryColor),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      isArabic ? 'اضغط على + لإضافة مهمة جديدة' : 'Tap + to add a new task',
-                      style: TextStyle(
-                        color: AppConstants.primaryColor,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
-            const SizedBox(height: AppConstants.paddingMedium),
-
-            // Tasks list
-            tasksAsync.when(
-              data: (tasks) {
-                if (tasks.isEmpty) {
-                  return _buildEmptyTasksState(context, isDark, isArabic);
-                }
-
-                return Column(
-                  children: tasks.map((task) {
-                    return TaskCard(
-                      key: ValueKey(task.id),
-                      task: task,
-                      onToggle: () => _toggleTask(task.id),
-                      onTap: () => _editTask(task),
-                      onDelete: () => _deleteTask(task.id),
-                    );
-                  }).toList(),
-                );
-              },
-              loading: () => const ShimmerListTile(),
-              error: (error, _) => Center(
-                child: Text(isArabic ? 'خطأ: $error' : 'Error: $error'),
-              ),
-            ),
-
-            const SizedBox(height: 100), // Extra space for FAB
-          ],
+      child: allTasksAsync.when(
+        data: (allTasks) => SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 100),
+          child: _buildTaskSections(allTasks, isDark, isArabic),
+        ),
+        loading: () => const Center(child: ShimmerListTile()),
+        error: (e, _) => Center(
+          child: Text(isArabic ? 'خطأ في تحميل المهام' : 'Error loading tasks'),
         ),
       ),
     );
   }
 
-  Widget _buildFilterChips(BuildContext context, bool isDark, bool isArabic) {
-    return Wrap(
-      spacing: 8,
+  Widget _buildTaskSections(List<Task> allTasks, bool isDark, bool isArabic) {
+    final todayTasks = allTasks
+        .where((t) => !t.isCompleted && t.isDueToday)
+        .toList()
+      ..sort((a, b) =>
+          (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099)));
+
+    final upcomingTasks = allTasks
+        .where((t) => !t.isCompleted && t.isUpcoming)
+        .toList()
+      ..sort((a, b) =>
+          (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099)));
+
+    final otherTasks = allTasks
+        .where((t) => !t.isCompleted && !t.isDueToday && !t.isUpcoming)
+        .toList();
+
+    if (allTasks.where((t) => !t.isCompleted).isEmpty && allTasks.isEmpty) {
+      return Column(
+        children: [
+          const SizedBox(height: 64),
+          Icon(Icons.task_alt_outlined,
+              size: 72,
+              color: isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+          const SizedBox(height: 16),
+          Text(
+            isArabic ? 'لا توجد مهام' : 'No tasks yet',
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(color: isDark ? Colors.white70 : Colors.black54),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            isArabic ? 'اضغط + لإضافة مهمتك الأولى' : 'Tap + to add your first task',
+            style: TextStyle(
+                color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        FilterChip(
-          label: Text(isArabic ? 'الكل' : 'All'),
-          selected: true,
-          onSelected: (_) {},
-          backgroundColor: isDark ? AppConstants.darkCard : Colors.white,
-          selectedColor: AppConstants.primaryColor.withOpacity(0.2),
-          checkmarkColor: AppConstants.primaryColor,
-        ),
-        FilterChip(
-          label: Text(isArabic ? 'اليوم' : 'Today'),
-          selected: false,
-          onSelected: (_) {},
-          backgroundColor: isDark ? AppConstants.darkCard : Colors.white,
-          selectedColor: AppConstants.primaryColor.withOpacity(0.2),
-        ),
-        FilterChip(
-          label: Text(isArabic ? 'أولوية عالية' : 'High Priority'),
-          selected: false,
-          onSelected: (_) {},
-          backgroundColor: isDark ? AppConstants.darkCard : Colors.white,
-          selectedColor: Colors.red.withOpacity(0.2),
+        if (todayTasks.isNotEmpty) ...[
+          _buildSectionLabel(
+              icon: Icons.today,
+              title: isArabic ? 'مهام اليوم' : "Today's Tasks",
+              count: todayTasks.length,
+              color: AppConstants.primaryColor,
+              isDark: isDark),
+          const SizedBox(height: 8),
+          ...todayTasks.map((t) => _buildHomeTaskCard(t)),
+          const SizedBox(height: 20),
+        ],
+        if (upcomingTasks.isNotEmpty) ...[
+          _buildSectionLabel(
+              icon: Icons.upcoming,
+              title: isArabic ? 'قريباً' : 'Upcoming',
+              count: upcomingTasks.length,
+              color: Colors.orange,
+              isDark: isDark),
+          const SizedBox(height: 8),
+          ...upcomingTasks.map((t) => _buildHomeTaskCard(t)),
+          const SizedBox(height: 20),
+        ],
+        if (otherTasks.isNotEmpty) ...[
+          _buildSectionLabel(
+              icon: Icons.task_alt,
+              title: isArabic ? 'كل المهام' : 'All Tasks',
+              count: otherTasks.length,
+              color: Colors.purple,
+              isDark: isDark),
+          const SizedBox(height: 8),
+          ...otherTasks.map((t) => _buildHomeTaskCard(t)),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildSectionLabel({
+    required IconData icon,
+    required String title,
+    required int count,
+    required Color color,
+    required bool isDark,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: color),
+        const SizedBox(width: 8),
+        Text(title,
+            style: TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : Colors.black87)),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(12)),
+          child: Text('$count',
+              style: TextStyle(
+                  fontSize: 12, fontWeight: FontWeight.bold, color: color)),
         ),
       ],
     );
   }
 
-  Widget _buildEmptyTasksState(BuildContext context, bool isDark, bool isArabic) {
-    return Container(
-      padding: const EdgeInsets.all(AppConstants.paddingLarge * 2),
-      child: Column(
-        children: [
-          Icon(
-            Icons.task_alt_outlined,
-            size: 64,
-            color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
-          ),
-          const SizedBox(height: 16),
-          Text(
-            isArabic ? 'لا توجد مهام' : 'No tasks yet',
-            style: Theme.of(context).textTheme.titleLarge,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            isArabic ? 'ابدأ بإضافة مهمتك الأولى' : 'Start by adding your first task',
-            style: TextStyle(
-              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-            ),
-          ),
-        ],
+  Widget _buildHomeTaskCard(Task task) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: TaskCard(
+        key: ValueKey(task.id),
+        task: task,
+        onToggle: () => _toggleTask(task.id),
+        onTap: () => _editTask(task),
+        onDelete: () => _deleteTask(task.id),
       ),
     );
   }
@@ -695,7 +771,7 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
   }
 
   Future<void> _toggleTask(String taskId) async {
-    const userId = 'guest_user';
+    final userId = ref.read(currentUserIdProvider);
     try {
       await TaskService.instance.toggleTaskCompletion(
         userId: userId,
@@ -719,7 +795,7 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
   }
 
   Future<void> _deleteTask(String taskId) async {
-    const userId = 'guest_user';
+    final userId = ref.read(currentUserIdProvider);
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     try {

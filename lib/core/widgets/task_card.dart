@@ -3,7 +3,6 @@ import '../models/task.dart';
 import '../constants/app_constants.dart';
 
 /// Performance-optimized task card widget
-/// Uses const constructors where possible and avoids unnecessary rebuilds
 class TaskCard extends StatelessWidget {
   final Task task;
   final VoidCallback? onTap;
@@ -24,70 +23,39 @@ class TaskCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-
     final isOverdue = task.isOverdue && !task.isCompleted;
 
-    // Left accent color: overdue > selected > priority (completed = none)
+    // Left accent color
     final Color leftAccent;
-    final double leftWidth;
     if (task.isCompleted) {
       leftAccent = Colors.transparent;
-      leftWidth = 0;
     } else if (isOverdue) {
       leftAccent = Colors.red;
-      leftWidth = 3;
     } else if (isSelected) {
       leftAccent = AppConstants.primaryColor;
-      leftWidth = 3;
     } else {
       switch (task.priority) {
         case TaskPriority.high:
           leftAccent = Colors.orange;
-          leftWidth = 3;
         case TaskPriority.medium:
           leftAccent = Colors.amber;
-          leftWidth = 3;
         case TaskPriority.low:
           leftAccent = Colors.green;
-          leftWidth = 3;
       }
     }
+    final showAccent = !task.isCompleted;
 
     final card = Container(
       decoration: BoxDecoration(
         color: isOverdue
-            ? (isDark
-                ? Colors.red.withOpacity(0.07)
-                : Colors.red.withOpacity(0.04))
+            ? (isDark ? Colors.red.withOpacity(0.07) : Colors.red.withOpacity(0.04))
             : (isDark ? AppConstants.darkCard : Colors.white),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-        border: Border(
-          left: BorderSide(color: leftAccent, width: leftWidth),
-          top: BorderSide(
-            color: isSelected
-                ? AppConstants.primaryColor
-                : isDark
-                    ? AppConstants.darkBorder
-                    : AppConstants.lightBorder,
-            width: isSelected ? 2 : 1,
-          ),
-          right: BorderSide(
-            color: isSelected
-                ? AppConstants.primaryColor
-                : isDark
-                    ? AppConstants.darkBorder
-                    : AppConstants.lightBorder,
-            width: isSelected ? 2 : 1,
-          ),
-          bottom: BorderSide(
-            color: isSelected
-                ? AppConstants.primaryColor
-                : isDark
-                    ? AppConstants.darkBorder
-                    : AppConstants.lightBorder,
-            width: isSelected ? 2 : 1,
-          ),
-        ),
+        border: isSelected
+            ? Border.all(color: AppConstants.primaryColor, width: 2)
+            : Border.all(
+                color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+              ),
         boxShadow: [
           BoxShadow(
             color: isOverdue
@@ -98,123 +66,134 @@ class TaskCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-          child: Padding(
-            padding: const EdgeInsets.all(AppConstants.paddingMedium),
-            child: Row(
-              children: [
-                // Checkbox/Status indicator
-                _buildCheckbox(context, isDark),
-                const SizedBox(width: AppConstants.paddingMedium),
-
-                // Task content
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Title
-                      Text(
-                        task.title,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: task.isCompleted
-                              ? (isDark
-                                  ? Colors.grey.shade600
-                                  : Colors.grey.shade400)
-                              : (isDark ? Colors.white : Colors.black87),
-                          decoration: task.isCompleted
-                              ? TextDecoration.lineThrough
-                              : null,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-
-                      // Description (if exists)
-                      if (task.description != null && task.description!.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Text(
-                            task.description!,
+      child: Stack(
+        children: [
+          // Main content
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+              child: Padding(
+                padding: const EdgeInsets.all(AppConstants.paddingMedium),
+                child: Row(
+                  children: [
+                    _buildCheckbox(context, isDark),
+                    const SizedBox(width: AppConstants.paddingMedium),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            task.title,
                             style: TextStyle(
-                              fontSize: 13,
-                              color: isDark
-                                  ? Colors.grey.shade400
-                                  : Colors.grey.shade600,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: task.isCompleted
+                                  ? (isDark ? Colors.grey.shade600 : Colors.grey.shade400)
+                                  : (isDark ? Colors.white : Colors.black87),
+                              decoration: task.isCompleted ? TextDecoration.lineThrough : null,
                             ),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-
-                      // Metadata row
-                      const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      // Priority badge
-                      _PriorityBadge(priority: task.priority),
-
-                      // Category badge
-                      if (task.category != TaskCategory.other) ...[
-                        const SizedBox(width: 8),
-                        _CategoryBadge(category: task.category),
-                      ],
-
-                      // Due date
-                      if (task.dueDate != null) ...[
-                        const SizedBox(width: 8),
-                        _DueDateBadge(
-                          dueDate: task.dueDate!,
-                          isOverdue: task.isOverdue,
-                        ),
-                      ],
-
-                      // Recurrence badge
-                      if (task.isRecurring) ...[
-                        const SizedBox(width: 8),
-                        _RecurrenceBadge(recurrenceType: task.recurrenceType),
-                      ],
-                    ],
-                  ),
-                ],
+                          if (task.description != null && task.description!.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 4),
+                              child: Text(
+                                task.description!,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: [
+                              _PriorityBadge(priority: task.priority),
+                              if (task.category != TaskCategory.other)
+                                _CategoryBadge(category: task.category),
+                              if (task.dueDate != null)
+                                _DueDateBadge(dueDate: task.dueDate!, isOverdue: task.isOverdue),
+                              if (task.isRecurring)
+                                _RecurrenceBadge(recurrenceType: task.recurrenceType),
+                            ],
+                          ),
+                          if (task.tags != null && task.tags!.isNotEmpty) ...[
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: task.tags!.take(3).map((tag) {
+                                return Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: AppConstants.primaryColor.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(
+                                    '#$tag',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      color: AppConstants.primaryColor,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    if (onDelete != null)
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, size: 20),
+                        color: Colors.red.shade400,
+                        onPressed: onDelete,
+                        tooltip: isArabic ? 'حذف' : 'Delete',
+                      ),
+                  ],
+                ),
+              ),
             ),
           ),
-
-                // Delete button
-                if (onDelete != null)
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 20),
-                    color: Colors.red.shade400,
-                    onPressed: onDelete,
-                    tooltip: isArabic ? 'حذف' : 'Delete',
+          // Left accent bar — top layer
+          if (showAccent)
+            Positioned(
+              left: 0,
+              top: 0,
+              bottom: 0,
+              child: Container(
+                width: 3,
+                decoration: BoxDecoration(
+                  color: leftAccent,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(AppConstants.radiusMedium),
+                    bottomLeft: Radius.circular(AppConstants.radiusMedium),
                   ),
-              ],
+                ),
+              ),
             ),
-          ),
-        ),
+        ],
       ),
     );
 
-    // Wrap with Dismissible only if swipe actions are available
     if (onToggle == null && onDelete == null) return card;
 
     return Dismissible(
       key: ValueKey('dismissible_${task.id}'),
-      // Swipe right → complete/uncomplete
       background: _buildSwipeBackground(
         alignment: Alignment.centerLeft,
         color: task.isCompleted ? Colors.orange : Colors.green,
         icon: task.isCompleted ? Icons.refresh : Icons.check,
-        label: task.isCompleted
-            ? (isArabic ? 'إلغاء الإتمام' : 'Undo')
-            : (isArabic ? 'إتمام' : 'Complete'),
+        label: task.isCompleted ? (isArabic ? 'إلغاء الإتمام' : 'Undo') : (isArabic ? 'إتمام' : 'Complete'),
       ),
-      // Swipe left → delete
       secondaryBackground: _buildSwipeBackground(
         alignment: Alignment.centerRight,
         color: Colors.red,
@@ -223,11 +202,9 @@ class TaskCard extends StatelessWidget {
       ),
       confirmDismiss: (direction) async {
         if (direction == DismissDirection.startToEnd) {
-          // Swipe right: toggle completion, don't remove from list
           onToggle?.call();
           return false;
         } else {
-          // Swipe left: confirm delete
           return onDelete != null;
         }
       },
@@ -237,6 +214,28 @@ class TaskCard extends StatelessWidget {
         }
       },
       child: card,
+    );
+  }
+
+  Widget _buildCheckbox(BuildContext context, bool isDark) {
+    return GestureDetector(
+      onTap: onToggle,
+      child: Container(
+        width: 24,
+        height: 24,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: task.isCompleted
+              ? AppConstants.primaryColor
+              : (isDark ? Colors.grey.shade800 : Colors.grey.shade200),
+          border: Border.all(
+            color: task.isCompleted
+                ? AppConstants.primaryColor
+                : (isDark ? Colors.grey.shade700 : Colors.grey.shade400),
+          ),
+        ),
+        child: task.isCompleted ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
+      ),
     );
   }
 
@@ -259,17 +258,9 @@ class TaskCard extends StatelessWidget {
           if (alignment == Alignment.centerLeft) ...[
             Icon(icon, color: Colors.white, size: 22),
             const SizedBox(width: 8),
-            Text(label,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13)),
+            Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
           ] else ...[
-            Text(label,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13)),
+            Text(label, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13)),
             const SizedBox(width: 8),
             Icon(icon, color: Colors.white, size: 22),
           ],
@@ -277,36 +268,10 @@ class TaskCard extends StatelessWidget {
       ),
     );
   }
-
-  Widget _buildCheckbox(BuildContext context, bool isDark) {
-    return GestureDetector(
-      onTap: onToggle,
-      child: Container(
-        width: 24,
-        height: 24,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: task.isCompleted
-              ? AppConstants.primaryColor
-              : (isDark ? Colors.grey.shade800 : Colors.grey.shade200),
-          border: Border.all(
-            color: task.isCompleted
-                ? AppConstants.primaryColor
-                : (isDark ? Colors.grey.shade700 : Colors.grey.shade400),
-          ),
-        ),
-        child: task.isCompleted
-            ? const Icon(Icons.check, size: 16, color: Colors.white)
-            : null,
-      ),
-    );
-  }
 }
 
-/// Priority badge widget
 class _PriorityBadge extends StatelessWidget {
   final TaskPriority priority;
-
   const _PriorityBadge({required this.priority});
 
   @override
@@ -317,37 +282,22 @@ class _PriorityBadge extends StatelessWidget {
       TaskPriority.medium: Colors.orange,
       TaskPriority.low: Colors.green,
     };
-
     final labels = {
       TaskPriority.high: isArabic ? 'عالية' : 'High',
       TaskPriority.medium: isArabic ? 'متوسطة' : 'Medium',
       TaskPriority.low: isArabic ? 'منخفضة' : 'Low',
     };
-
     final color = colors[priority]!;
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        labels[priority]!,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
-      ),
+      decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(4)),
+      child: Text(labels[priority]!, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
     );
   }
 }
 
-/// Category badge widget
 class _CategoryBadge extends StatelessWidget {
   final TaskCategory category;
-
   const _CategoryBadge({required this.category});
 
   @override
@@ -361,29 +311,17 @@ class _CategoryBadge extends StatelessWidget {
       TaskCategory.study: isArabic ? 'دراسة' : 'Study',
       TaskCategory.prayer: isArabic ? 'صلاة' : 'Prayer',
     };
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: AppConstants.primaryColor.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        labels[category] ?? category.value,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: AppConstants.primaryColor,
-        ),
-      ),
+      decoration: BoxDecoration(color: AppConstants.primaryColor.withOpacity(0.15), borderRadius: BorderRadius.circular(4)),
+      child: Text(labels[category] ?? category.value,
+          style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppConstants.primaryColor)),
     );
   }
 }
 
-/// Recurrence badge widget
 class _RecurrenceBadge extends StatelessWidget {
   final RecurrenceType recurrenceType;
-
   const _RecurrenceBadge({required this.recurrenceType});
 
   @override
@@ -394,48 +332,31 @@ class _RecurrenceBadge extends StatelessWidget {
       RecurrenceType.weekly: isArabic ? 'أسبوعي' : 'Weekly',
       RecurrenceType.monthly: isArabic ? 'شهري' : 'Monthly',
     };
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.purple.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(4),
-      ),
+      decoration: BoxDecoration(color: Colors.purple.withOpacity(0.15), borderRadius: BorderRadius.circular(4)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(Icons.repeat, size: 11, color: Colors.purple),
           const SizedBox(width: 4),
-          Text(
-            labels[recurrenceType] ?? '',
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: Colors.purple,
-            ),
-          ),
+          Text(labels[recurrenceType] ?? '',
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.purple)),
         ],
       ),
     );
   }
 }
 
-/// Due date badge widget
 class _DueDateBadge extends StatelessWidget {
   final DateTime dueDate;
   final bool isOverdue;
-
-  const _DueDateBadge({
-    required this.dueDate,
-    required this.isOverdue,
-  });
+  const _DueDateBadge({required this.dueDate, required this.isOverdue});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-
-    // Format date
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final dueDay = DateTime(dueDate.year, dueDate.month, dueDate.day);
@@ -445,40 +366,24 @@ class _DueDateBadge extends StatelessWidget {
       label = isArabic ? 'اليوم' : 'Today';
     } else {
       final tomorrow = today.add(const Duration(days: 1));
-      if (dueDay == tomorrow) {
-        label = isArabic ? 'غداً' : 'Tomorrow';
-      } else {
-        label = '${dueDate.day}/${dueDate.month}';
-      }
+      label = dueDay == tomorrow
+          ? (isArabic ? 'غداً' : 'Tomorrow')
+          : '${dueDate.day}/${dueDate.month}';
     }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: isOverdue
-            ? Colors.red.withOpacity(0.15)
-            : (isDark
-                ? Colors.grey.shade800
-                : Colors.grey.shade200),
+        color: isOverdue ? Colors.red.withOpacity(0.15) : (isDark ? Colors.grey.shade800 : Colors.grey.shade200),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            isOverdue ? Icons.warning : Icons.schedule,
-            size: 11,
-            color: isOverdue ? Colors.red : Colors.grey,
-          ),
+          Icon(isOverdue ? Icons.warning : Icons.schedule, size: 11, color: isOverdue ? Colors.red : Colors.grey),
           const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: isOverdue ? Colors.red : Colors.grey.shade600,
-            ),
-          ),
+          Text(label,
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: isOverdue ? Colors.red : Colors.grey.shade600)),
         ],
       ),
     );

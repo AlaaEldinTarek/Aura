@@ -61,6 +61,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _tagController.dispose();
     super.dispose();
   }
 
@@ -597,6 +598,11 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
             // Recurrence Card
             _buildRecurrenceCard(isDark, isArabic),
 
+            const SizedBox(height: AppConstants.paddingMedium),
+
+            // Tags Card
+            _buildTagsCard(isDark, isArabic),
+
             const SizedBox(height: AppConstants.paddingLarge * 2),
           ],
         ),
@@ -838,6 +844,125 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     if (picked != null) {
       setState(() => _recurrenceEndDate = picked);
     }
+  }
+
+  // ─── Tags ────────────────────────────────────────────────────────────────
+
+  final TextEditingController _tagController = TextEditingController();
+
+  Widget _buildTagsCard(bool isDark, bool isArabic) {
+    final borderColor = isDark ? AppConstants.darkBorder : AppConstants.lightBorder;
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: borderColor),
+        borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.paddingMedium),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.label_outline,
+                    size: 20,
+                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                const SizedBox(width: 8),
+                Text(
+                  isArabic ? 'التصنيفات' : 'Tags',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Tag input row
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _tagController,
+                    decoration: InputDecoration(
+                      hintText: isArabic ? 'أضف تصنيفاً...' : 'Add a tag...',
+                      hintStyle: TextStyle(
+                          color: isDark
+                              ? Colors.grey.shade500
+                              : Colors.grey.shade400),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      filled: true,
+                      fillColor:
+                          isDark ? AppConstants.darkCard : Colors.grey.shade50,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black87,
+                        fontSize: 14),
+                    onSubmitted: (value) => _addTag(value),
+                    textInputAction: TextInputAction.done,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => _addTag(_tagController.text),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppConstants.primaryColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child:
+                        const Icon(Icons.add, color: Colors.white, size: 18),
+                  ),
+                ),
+              ],
+            ),
+
+            // Existing tags
+            if (_tags.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: _tags.map((tag) {
+                  return Chip(
+                    label: Text(tag,
+                        style:
+                            const TextStyle(fontSize: 12, color: Colors.white)),
+                    backgroundColor: AppConstants.primaryColor,
+                    deleteIconColor: Colors.white70,
+                    onDeleted: () => setState(() => _tags.remove(tag)),
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    visualDensity: VisualDensity.compact,
+                  );
+                }).toList(),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _addTag(String value) {
+    final tag = value.trim().toLowerCase();
+    if (tag.isEmpty || _tags.contains(tag)) {
+      _tagController.clear();
+      return;
+    }
+    setState(() {
+      _tags.add(tag);
+      _tagController.clear();
+    });
   }
 
   Color _getPriorityColor(TaskPriority priority) {
