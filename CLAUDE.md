@@ -16,7 +16,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Digital Dhikr/Tasbeeh counter with 6 presets + custom, haptic feedback
 - Prayer tracking (on-time/late/missed/excused) with daily stats
 - Daily Islamic content (Hadith, Ayah, Dua) from Firestore
-- Task management with priorities, categories, due dates, and Firestore sync
+- Task management with priorities, categories, due dates, subtasks, pin-to-top, recurring tasks, and Firestore sync
 - Multi-language support (English/Arabic) with full RTL support
 - Firebase authentication (Email/Password, Google Sign-In) + guest mode
 - Hijri date display with Gregorian-to-Hijri conversion
@@ -178,7 +178,7 @@ lib/
     ├── settings/                      # SettingsScreen, IqamaSettingsScreen, AdhanDownloadsScreen
     │                                  # AdhanCalculationMethod, AsrMadhabSelection, PrayerCalculationSettingsDialog
     ├── qibla/                         # QiblaScreen (compass to Kaaba 21.4225, 39.8262)
-    ├── tasks/                         # TaskFormScreen
+    ├── tasks/                         # TaskFormScreen, TaskStatsScreen
     ├── dhikl/                         # DhikrScreen (tasbeeh counter with haptic + animations)
     └── daily_content/                 # DailyIslamicContentScreen (Hadith, Ayah, Dua)
 ```
@@ -235,8 +235,8 @@ Located at `android/app/src/main/kotlin/com/aura/hala/`:
 9. `BackgroundServiceManager.initialize()`
 10. `runApp()` → ProviderScope > AuraApp > EasyLocalization > AuraAppMaterial
 
-### Routes (12 named routes in `_generateRoute`)
-`/` (splash), `/login`, `/signup`, `/onboarding`, `/home`, `/prayer`, `/prayer_tracking`, `/task_form`, `/profile`, `/iqama_settings`, `/adhan_downloads`, `/daily_content`
+### Routes (13 named routes in `_generateRoute`)
+`/` (splash), `/login`, `/signup`, `/onboarding`, `/home`, `/prayer`, `/prayer_tracking`, `/task_form`, `/task_stats`, `/profile`, `/iqama_settings`, `/adhan_downloads`, `/daily_content`
 
 ### Prayer Time Calculation Flow
 1. `LocationService.getBestLocation()` — Gets GPS (via geolocator) or manual location
@@ -306,9 +306,14 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 ### Task System
 - **Categories**: work, personal, shopping, health, study, prayer, other
 - **Priorities**: low, medium, high
+- **Recurrence**: none, daily, weekly, monthly — on completion auto-generates next occurrence via `completeRecurringTask()`
+- **Subtasks**: `SubTask` model (id/title/isCompleted) nested inside Task; `subtaskProgress` (0.0–1.0) and `completedSubtasks` are computed properties
+- **Pin to top**: `isPinned` field; `_applySort()` in TasksScreen always floats pinned tasks above all sort orders
 - **Firestore-backed** with pagination, caching, and statistics
-- **Computed properties**: isOverdue, isDueToday
+- **Computed properties**: isOverdue, isDueToday, isRecurring, subtaskProgress, completedSubtasks
 - Stream-based Riverpod provider with family modifier
+- **TasksScreen sections**: Today / Upcoming (next 7 days) / All Tasks — split client-side from `allTasksProvider`
+- **TaskStatsScreen** at `/task_stats` — streak tracking via SharedPreferences (`task_streak_count`, `task_streak_date`)
 
 ### Dhikr/Tasbeeh System
 - **6 built-in presets**: SubhanAllah, Alhamdulillah, Allahu Akbar, La ilaha illallah, Astaghfirullah, Custom
