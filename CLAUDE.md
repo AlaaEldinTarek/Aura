@@ -16,9 +16,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Digital Dhikr/Tasbeeh counter with 6 presets + custom, haptic feedback
 - Prayer tracking (on-time/late/missed/excused) with daily stats
 - Daily Islamic content (Hadith, Ayah, Dua) from Firestore
-- Task management with priorities, categories, due dates, subtasks, pin-to-top, recurring tasks, and Firestore sync
+- Task management with priorities, categories, due dates, subtasks, pin-to-top, recurring tasks, task notifications, and Firestore sync
 - Multi-language support (English/Arabic) with full RTL support
-- Firebase authentication (Email/Password, Google Sign-In) + guest mode
+- Firebase authentication (Email/Password, Google Sign-In, Forgot Password) + guest mode
 - Hijri date display with Gregorian-to-Hijri conversion
 - Foreground service for reliable background prayer alerts
 
@@ -87,7 +87,7 @@ The app uses `flutter_riverpod` for reactive state management with these key pro
 
 | Provider | File | Purpose |
 |----------|------|---------|
-| `authStateNotifierProvider` | `auth_provider.dart` | Auth state, sign-in/up/out, Firestore user sync |
+| `authStateNotifierProvider` | `auth_provider.dart` | Auth state, sign-in/up/out, Firestore user sync, `sendPasswordResetEmail()` |
 | `themeModeProvider` | `preferences_provider.dart` | Theme (light/dark/system) synced with Firestore |
 | `languageProvider` | `preferences_provider.dart` | Language (en/ar) synced with Firestore |
 | `firstLaunchProvider` | `preferences_provider.dart` | First launch detection |
@@ -104,6 +104,7 @@ The app uses `flutter_riverpod` for reactive state management with these key pro
 | `todayTasksProvider` | `task_provider.dart` | Today's tasks |
 | `upcomingTasksProvider` | `task_provider.dart` | Upcoming tasks |
 | `highPriorityTasksProvider` | `task_provider.dart` | High priority tasks |
+| `taskNotificationsEnabledProvider` | `preferences_provider.dart` | Task reminder notifications toggle (key: `task_notifications_enabled`) |
 
 ### Complete Feature Structure
 ```
@@ -169,16 +170,16 @@ lib/
 │       └── task_card.dart             # Task card with priority/category badges
 └── features/
     ├── splash/                        # Lottie splash, auth check → login/onboarding/home
-    ├── auth/                          # LoginScreen, SignupScreen
+    ├── auth/                          # LoginScreen (with forgot password dialog), SignupScreen
     ├── onboarding/                    # PreferenceScreen (language + theme)
     ├── main/                          # MainWrapperScreen (4-tab PageView, back-to-exit)
     ├── home/                          # HomeScreen, CombinedHomeScreen (dashboard + stats)
     ├── prayer/                        # PrayerScreen, PrayerTrackingScreen
-    ├── profile/                       # ProfileScreen
+    ├── profile/                       # ProfileScreen (with task stats summary cards)
     ├── settings/                      # SettingsScreen, IqamaSettingsScreen, AdhanDownloadsScreen
     │                                  # AdhanCalculationMethod, AsrMadhabSelection, PrayerCalculationSettingsDialog
     ├── qibla/                         # QiblaScreen (compass to Kaaba 21.4225, 39.8262)
-    ├── tasks/                         # TaskFormScreen, TaskStatsScreen
+    ├── tasks/                         # TaskFormScreen, TaskStatsScreen, _TaskSettingsSheet (notification toggle)
     ├── dhikl/                         # DhikrScreen (tasbeeh counter with haptic + animations)
     └── daily_content/                 # DailyIslamicContentScreen (Hadith, Ayah, Dua)
 ```
@@ -315,6 +316,9 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 - **TasksScreen sections**: Today / Upcoming (next 7 days) / All Tasks — split client-side from `allTasksProvider`
 - **TaskStatsScreen** at `/task_stats` — streak tracking via SharedPreferences (`task_streak_count`, `task_streak_date`)
 - **Quick-add sheet**: implemented as `_QuickAddSheet` StatefulWidget (not `StatefulBuilder`) so `TextEditingController` is disposed by Flutter after dismiss animation, avoiding `_dependents.isEmpty` assertion crash
+- **Task notifications**: `scheduleTaskReminder()` in `NotificationService` — tasks with time get 30-min-before reminder; tasks without time get 9:00 AM reminder on due date. Controlled by `task_notifications_enabled` pref. Toggled via `_TaskSettingsSheet` (gear icon in TasksScreen AppBar)
+- **Search scope**: covers title, description, tags, and subtask titles
+- **Profile stats**: `_buildTaskStatsSummary()` in ProfileScreen shows Today/Done/Pending cards from `taskStatisticsProvider`
 
 ### Dhikr/Tasbeeh System
 - **6 built-in presets**: SubhanAllah, Alhamdulillah, Allahu Akbar, La ilaha illallah, Astaghfirullah, Custom
@@ -360,6 +364,7 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 - **Backup files**: Original notification layouts and PrayerForegroundService are backed up at `android/app/src/main/layout-backup/` (outside `res/` — backup folders inside `res/` break the Android resource merger).
 - **Notification channel importance**: Android won't downgrade an existing channel's importance. Use `deleteNotificationChannel()` before recreating when upgrading importance.
 - **Dhuhr/Zuhr naming**: SharedPreferences key is always `dhuhr_time`, but UI uses "Zuhr". All switch/map lookups must handle both names.
+- **Language switching**: `MainWrapperScreen.build()` must call `ref.watch(languageProvider)` — without it, bottom nav labels and screen AppBar titles won't rebuild when the locale changes.
 
 ### Translation Files
 - **`assets/translations/en.json`**: 184 English strings
