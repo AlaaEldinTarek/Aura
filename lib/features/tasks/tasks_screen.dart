@@ -5,7 +5,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/task_provider.dart';
-import '../../core/providers/preferences_provider.dart' show taskNotificationsEnabledProvider;
+import '../../core/providers/preferences_provider.dart' show taskNotificationsEnabledProvider, taskReminderMinutesProvider;
 import '../../core/models/task.dart';
 import '../../core/widgets/task_card.dart';
 import '../../core/widgets/shimmer_loading.dart';
@@ -123,7 +123,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
             : Text(
                 'task_management'.tr(),
                 style: const TextStyle(fontWeight: FontWeight.bold),
+                overflow: TextOverflow.ellipsis,
               ),
+        centerTitle: false,
         backgroundColor: isDark ? AppConstants.darkSurface : Colors.white,
         foregroundColor: isDark ? Colors.white : Colors.black87,
         elevation: 0,
@@ -1906,6 +1908,10 @@ class _TaskSettingsSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final notifAsync = ref.watch(taskNotificationsEnabledProvider);
     final isEnabled = notifAsync.valueOrNull ?? true;
+    final minutesAsync = ref.watch(taskReminderMinutesProvider);
+    final reminderMinutes = minutesAsync.valueOrNull ?? 30;
+
+    final options = [5, 10, 15, 30, 45, 60];
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
@@ -1956,6 +1962,55 @@ class _TaskSettingsSheet extends ConsumerWidget {
             onChanged: (val) =>
                 ref.read(taskNotificationsEnabledProvider.notifier).setEnabled(val),
           ),
+          if (isEnabled) ...[
+            const SizedBox(height: 8),
+            Text(
+              isArabic ? 'ذكرني قبل' : 'Remind me before',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: isDark ? Colors.white70 : Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: options.map((mins) {
+                final selected = reminderMinutes == mins;
+                return GestureDetector(
+                  onTap: () => ref
+                      .read(taskReminderMinutesProvider.notifier)
+                      .setMinutes(mins),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? AppConstants.primaryColor.withOpacity(0.12)
+                          : (isDark ? AppConstants.darkCard : Colors.grey.shade100),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: selected
+                            ? AppConstants.primaryColor
+                            : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+                      ),
+                    ),
+                    child: Text(
+                      isArabic ? '$mins دقيقة' : '$mins min',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                        color: selected
+                            ? AppConstants.primaryColor
+                            : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
         ],
       ),
     );

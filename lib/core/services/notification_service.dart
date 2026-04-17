@@ -8,6 +8,7 @@ import '../models/prayer_time.dart';
 import '../models/prayer_record.dart' show kPrayerNames, PrayerStatus, PrayerMethod, getCurrentUserId;
 import '../constants/app_constants.dart';
 import 'prayer_tracking_service.dart';
+import 'task_service.dart';
 
 /// Service for managing prayer time notifications
 class NotificationService {
@@ -74,6 +75,12 @@ class NotificationService {
         } else if (response.actionId != null && response.actionId!.startsWith('mark_prayed_') && response.payload != null) {
           // Handle prayer check "Yes, I prayed" action (mark_prayed_fajr, mark_prayed_zuhr, etc.)
           _handleMarkPrayed(response.payload!);
+        } else if (response.actionId != null && response.actionId!.startsWith('task_done_')) {
+          // Handle task "Mark Done" action
+          _handleTaskDone(response.actionId!.replaceFirst('task_done_', ''));
+        } else if (response.actionId != null && response.actionId!.startsWith('task_snooze_')) {
+          // Handle task "Remind Later" action
+          _handleTaskSnooze(response.actionId!.replaceFirst('task_snooze_', ''));
         } else if (response.actionId == null || response.actionId == '') {
           // Notification was tapped (not an action button)
           debugPrint('🔔 [NOTIFICATION] Notification tapped by user');
@@ -495,6 +502,84 @@ class NotificationService {
     debugPrint('═══════════════════════════════════════');
   }
 
+  // ─── Task Notification Actions ────────────────────────────────────────────
+
+  Future<void> _handleTaskDone(String taskId) async {
+    debugPrint('✅ [TASK_DONE] Marking task $taskId as done from notification');
+    try {
+      final userId = getCurrentUserId();
+      if (userId.isEmpty) return;
+      await TaskService.instance.toggleTaskCompletion(
+        userId: userId,
+        taskId: taskId,
+      );
+      await cancelTaskNotification(taskId);
+      debugPrint('✅ [TASK_DONE] Task $taskId completed');
+    } catch (e) {
+      debugPrint('❌ [TASK_DONE] Error: $e');
+    }
+  }
+
+  Future<void> _handleTaskSnooze(String taskId) async {
+    debugPrint('⏰ [TASK_SNOOZE] Snoozing task $taskId for 30 minutes');
+    try {
+      // Cancel current notification
+      await _notifications.cancel(_taskNotificationId(taskId));
+
+      // Get task details to reschedule
+      final userId = getCurrentUserId();
+      if (userId.isEmpty) return;
+
+      // Schedule a new reminder 30 minutes from now
+      final snoozeTime = DateTime.now().add(const Duration(minutes: 30));
+      final prefs = await SharedPreferences.getInstance();
+      final language = prefs.getString('language') ?? 'en';
+      final isArabic = language == 'ar';
+
+      final notifId = _taskNotificationId(taskId);
+      final androidDetails = AndroidNotificationDetails(
+        _taskChannelId,
+        _taskChannelName,
+        channelDescription: _taskChannelDescription,
+        importance: Importance.high,
+        priority: Priority.high,
+        showWhen: true,
+        icon: '@mipmap/ic_launcher',
+        actions: <AndroidNotificationAction>[
+          AndroidNotificationAction(
+            'task_done_$taskId',
+            isArabic ? 'إتمام' : 'Mark Done',
+            showsUserInterface: true,
+          ),
+          AndroidNotificationAction(
+            'task_snooze_$taskId',
+            isArabic ? 'ذكرني لاحقاً' : 'Remind Later',
+            showsUserInterface: true,
+          ),
+        ],
+      );
+
+      final details = NotificationDetails(android: androidDetails);
+      final scheduledDate = tz.TZDateTime.from(snoozeTime, tz.local);
+
+      await _notifications.zonedSchedule(
+        notifId,
+        isArabic ? 'تذكير بمهمة' : 'Task Reminder',
+        isArabic ? 'لا تزال المهمة معلقة' : 'Your task is still pending',
+        scheduledDate,
+        details,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        payload: 'task|$taskId',
+      );
+
+      debugPrint('⏰ [TASK_SNOOZE] Rescheduled for $snoozeTime');
+    } catch (e) {
+      debugPrint('❌ [TASK_SNOOZE] Error: $e');
+    }
+  }
+
   // ─── Task Notifications ───────────────────────────────────────────────────
 
   /// Convert task ID (Firestore string) to a notification ID in range 4000-4999
@@ -516,12 +601,14 @@ class NotificationService {
     String body;
 
     if (hasDueTime) {
-      // Specific time set — remind 30 min before
-      final thirtyBefore = dueDate.subtract(const Duration(minutes: 30));
-      reminderTime = thirtyBefore.isAfter(now) ? thirtyBefore : dueDate;
+      // Specific time set — remind X minutes before (user setting)
+      final prefs2 = await SharedPreferences.getInstance();
+      final reminderMinutes = prefs2.getInt('task_reminder_minutes') ?? 30;
+      final reminderBefore = dueDate.subtract(Duration(minutes: reminderMinutes));
+      reminderTime = reminderBefore.isAfter(now) ? reminderBefore : dueDate;
       body = isArabic
-          ? (thirtyBefore.isAfter(now) ? 'موعد المهمة بعد 30 دقيقة' : 'حان موعد المهمة الآن')
-          : (thirtyBefore.isAfter(now) ? 'Task due in 30 minutes' : 'Task is due now');
+          ? (reminderBefore.isAfter(now) ? 'موعد المهمة بعد $reminderMinutes دقيقة' : 'حان موعد المهمة الآن')
+          : (reminderBefore.isAfter(now) ? 'Task due in $reminderMinutes minutes' : 'Task is due now');
     } else {
       // No specific time — remind at 9:00 AM on the due date
       reminderTime = DateTime(dueDate.year, dueDate.month, dueDate.day, 9, 0);
@@ -552,6 +639,18 @@ class NotificationService {
       priority: Priority.high,
       showWhen: true,
       icon: '@mipmap/ic_launcher',
+      actions: <AndroidNotificationAction>[
+        AndroidNotificationAction(
+          'task_done_$taskId',
+          isArabic ? 'إتمام' : 'Mark Done',
+          showsUserInterface: true,
+        ),
+        AndroidNotificationAction(
+          'task_snooze_$taskId',
+          isArabic ? 'ذكرني لاحقاً' : 'Remind Later',
+          showsUserInterface: true,
+        ),
+      ],
     );
 
     final details = NotificationDetails(android: androidDetails);

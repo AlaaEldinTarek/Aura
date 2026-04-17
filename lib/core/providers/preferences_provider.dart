@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/shared_preferences_service.dart';
 import '../services/firestore_service.dart';
 import '../services/prayer_widget_service.dart';
@@ -456,3 +457,40 @@ class TaskNotificationsEnabledNotifier extends StateNotifier<AsyncValue<bool>> {
 
 /// Tab navigation provider — allows child screens to request tab switches
 final tabNavigationProvider = StateProvider<int>((ref) => -1);
+
+// Task Reminder Minutes Provider
+final taskReminderMinutesProvider =
+    StateNotifierProvider<TaskReminderMinutesNotifier, AsyncValue<int>>((ref) {
+  final prefsService = ref.watch(sharedPreferencesServiceProvider);
+  return TaskReminderMinutesNotifier(prefsService);
+});
+
+class TaskReminderMinutesNotifier extends StateNotifier<AsyncValue<int>> {
+  final SharedPreferencesService _prefsService;
+
+  TaskReminderMinutesNotifier(this._prefsService)
+      : super(const AsyncValue.data(30)) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final minutes = prefs.getInt('task_reminder_minutes') ?? 30;
+      state = AsyncValue.data(minutes);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> setMinutes(int value) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('task_reminder_minutes', value);
+      state = AsyncValue.data(value);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+}
