@@ -751,6 +751,7 @@ class ProfileScreen extends ConsumerWidget {
                   : null,
               onTap: () {
                 ref.read(languageProvider.notifier).setLanguage('en');
+                context.setLocale(const Locale('en'));
                 Navigator.of(context).pop();
               },
             ),
@@ -762,6 +763,7 @@ class ProfileScreen extends ConsumerWidget {
                   : null,
               onTap: () {
                 ref.read(languageProvider.notifier).setLanguage('ar');
+                context.setLocale(const Locale('ar'));
                 Navigator.of(context).pop();
               },
             ),

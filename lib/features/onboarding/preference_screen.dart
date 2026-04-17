@@ -85,6 +85,7 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
 
     try {
       await ref.read(languageProvider.notifier).setLanguage(_selectedLanguage);
+      context.setLocale(Locale(_selectedLanguage));
       await ref.read(themeModeProvider.notifier).setThemeMode(_selectedTheme);
       await ref.read(firstLaunchProvider.notifier).setFirstLaunch(false);
 
