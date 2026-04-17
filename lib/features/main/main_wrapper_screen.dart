@@ -142,6 +142,9 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
 
   @override
   Widget build(BuildContext context) {
+    // Watch language so wrapper rebuilds when locale changes
+    ref.watch(languageProvider);
+
     return PopScope(
       canPop: false, // We handle the back button manually
       onPopInvoked: (didPop) async {
