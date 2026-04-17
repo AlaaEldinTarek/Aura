@@ -382,7 +382,7 @@ class ProfileScreen extends ConsumerWidget {
           // Name and Email
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: isArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 // Name
                 Text(
@@ -391,7 +391,7 @@ class ProfileScreen extends ConsumerWidget {
                         fontWeight: FontWeight.bold,
                         color: isDark ? Colors.white : AppConstants.primaryColor,
                       ),
-                  textAlign: TextAlign.left,
+                  textAlign: isArabic ? TextAlign.right : TextAlign.left,
                 ),
                 const SizedBox(height: 4),
 
@@ -402,7 +402,7 @@ class ProfileScreen extends ConsumerWidget {
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: isDark ? Colors.white60 : AppConstants.lightTextSecondary,
                         ),
-                    textAlign: TextAlign.left,
+                    textAlign: isArabic ? TextAlign.right : TextAlign.left,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

@@ -245,6 +245,16 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
               fontWeight: FontWeight.w600,
             ),
           ),
+          if (isArabic) ...[
+            const SizedBox(height: 4),
+            const Text(
+              'حتى موعد الأذان',
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 14,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -754,6 +764,16 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
               fontWeight: FontWeight.w600,
             ),
           ),
+          if (isArabic) ...[
+            const SizedBox(height: 4),
+            Text(
+              'حتى موعد الأذان',
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey.shade500,
+              ),
+            ),
+          ],
         ],
       ),
     );
