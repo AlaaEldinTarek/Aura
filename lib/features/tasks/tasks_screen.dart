@@ -5,6 +5,7 @@ import 'package:table_calendar/table_calendar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/task_provider.dart';
+import '../../core/providers/preferences_provider.dart' show taskNotificationsEnabledProvider;
 import '../../core/models/task.dart';
 import '../../core/widgets/task_card.dart';
 import '../../core/widgets/shimmer_loading.dart';
@@ -159,6 +160,12 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                 }
               });
             },
+          ),
+          // Task settings
+          IconButton(
+            icon: const Icon(Icons.tune),
+            tooltip: isArabic ? 'إعدادات المهام' : 'Task settings',
+            onPressed: () => _showTaskSettings(context, isArabic, isDark),
           ),
           // Sort menu
           PopupMenuButton<_SortOrder>(
@@ -1729,6 +1736,14 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     }
   }
 
+  void _showTaskSettings(BuildContext context, bool isArabic, bool isDark) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _TaskSettingsSheet(isArabic: isArabic, isDark: isDark),
+    );
+  }
+
   Future<void> _showQuickAdd(
       BuildContext context, bool isArabic, bool isDark) async {
     await showModalBottomSheet(
@@ -1876,6 +1891,72 @@ class _CelebrationOverlayState extends State<_CelebrationOverlay>
             );
           },
         ),
+      ),
+    );
+  }
+}
+
+class _TaskSettingsSheet extends ConsumerWidget {
+  final bool isArabic;
+  final bool isDark;
+
+  const _TaskSettingsSheet({required this.isArabic, required this.isDark});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notifAsync = ref.watch(taskNotificationsEnabledProvider);
+    final isEnabled = notifAsync.valueOrNull ?? true;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+      decoration: BoxDecoration(
+        color: isDark ? AppConstants.darkSurface : Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40, height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.grey.shade600 : Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          Text(
+            isArabic ? 'إعدادات المهام' : 'Task Settings',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            secondary: Icon(Icons.notifications_outlined,
+                color: isEnabled ? AppConstants.primaryColor : Colors.grey),
+            title: Text(
+              isArabic ? 'تذكير المهام' : 'Task Reminders',
+              style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+            ),
+            subtitle: Text(
+              isArabic ? 'إشعار قبل موعد المهمة' : 'Notify before task due time',
+              style: TextStyle(
+                fontSize: 12,
+                color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+              ),
+            ),
+            value: isEnabled,
+            activeColor: AppConstants.primaryColor,
+            onChanged: (val) =>
+                ref.read(taskNotificationsEnabledProvider.notifier).setEnabled(val),
+          ),
+        ],
       ),
     );
   }

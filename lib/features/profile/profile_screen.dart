@@ -12,7 +12,7 @@ import '../../core/services/prayer_tracking_service.dart';
 import '../../core/services/achievement_service.dart';
 import '../../core/models/prayer_record.dart';
 import '../../core/providers/task_provider.dart';
-import '../../core/providers/preferences_provider.dart' show taskNotificationsEnabledProvider;
+
 import '../../core/widgets/setting_tile.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -202,18 +202,6 @@ class ProfileScreen extends ConsumerWidget {
                   trailing: Icon(Icons.chevron_right, size: 20, color: isDark ? Colors.white60 : Colors.black54),
                   onTap: () => _showThemeDialog(context, ref, isArabic),
                 ),
-              ],
-            ),
-            const SizedBox(height: AppConstants.paddingLarge),
-
-            // Notifications Section
-            SettingsSectionHeader(
-              icon: Icons.notifications_outlined,
-              title: isArabic ? 'الإشعارات' : 'Notifications',
-            ),
-            SettingsCard(
-              children: [
-                _buildTaskNotifToggle(context, ref, isDark, isArabic),
               ],
             ),
             const SizedBox(height: AppConstants.paddingLarge),
@@ -555,26 +543,6 @@ class ProfileScreen extends ConsumerWidget {
           ),
         );
       },
-    );
-  }
-
-  Widget _buildTaskNotifToggle(BuildContext context, WidgetRef ref, bool isDark, bool isArabic) {
-    final notifAsync = ref.watch(taskNotificationsEnabledProvider);
-    final isEnabled = notifAsync.valueOrNull ?? true;
-
-    return SwitchListTile(
-      secondary: Icon(Icons.task_alt_outlined,
-          color: isEnabled ? AppConstants.primaryColor : Colors.grey),
-      title: Text(isArabic ? 'تذكير المهام' : 'Task Reminders'),
-      subtitle: Text(
-        isArabic
-            ? 'إشعار قبل موعد المهمة'
-            : 'Notify before task due time',
-        style: TextStyle(fontSize: 12, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
-      ),
-      value: isEnabled,
-      activeColor: AppConstants.primaryColor,
-      onChanged: (val) => ref.read(taskNotificationsEnabledProvider.notifier).setEnabled(val),
     );
   }
 
