@@ -3,6 +3,7 @@ package com.aura.hala
 import android.animation.ObjectAnimator
 import android.animation.PropertyValuesHolder
 import android.animation.ValueAnimator
+import android.app.KeyguardManager
 import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
@@ -21,24 +22,24 @@ import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 /**
- * Focus Mode Activity - Full screen lock that silences the phone and shows a countdown timer.
+ * Focus Mode Activity - Full screen lock that cannot be dismissed until timer ends.
  *
  * Universal compatibility:
  * - Android 5.0+ (API 21+)
  * - All OEM devices: Huawei, Honor, Xiaomi, Samsung, Oppo, Vivo, Realme, etc.
  *
  * Features:
+ * - Cannot be dismissed until timer finishes (no back, no home, no recents)
+ * - Auto-wakes and unlocks phone when triggered
  * - Full-screen over lock screen and other apps
  * - DND / silent mode with fallback for restricted devices
  * - Countdown timer with circular progress
- * - Emergency exit: volume up 3 times quickly
  * - Immersive sticky mode hides system bars
  * - WakeLock keeps screen on
- * - Mark task as done on completion
+ * - Mark task as done when timer completes
  */
 class FocusModeActivity : AppCompatActivity() {
 
@@ -49,8 +50,6 @@ class FocusModeActivity : AppCompatActivity() {
         const val EXTRA_TASK_DESC = "task_desc"
         const val EXTRA_DURATION_MINUTES = "duration_minutes"
         const val EXTRA_LANGUAGE = "language"
-        private const val VOLUME_EXIT_THRESHOLD = 3
-        private const val VOLUME_EXIT_WINDOW_MS = 1500L
     }
 
     private lateinit var taskId: String
@@ -62,10 +61,8 @@ class FocusModeActivity : AppCompatActivity() {
     private var wasDndEnabled: Boolean = false
     private var countDownTimer: CountDownTimer? = null
     private var pulseAnimator: ObjectAnimator? = null
-
-    // Emergency exit: volume up 3 times
-    private val volumeUpTimes = mutableListOf<Long>()
     private var totalDurationMs: Long = 0
+    private var isTimerFinished = false
 
     private lateinit var wakeLock: PowerManager.WakeLock
 
@@ -84,6 +81,9 @@ class FocusModeActivity : AppCompatActivity() {
         Log.d(TAG, "🎯 [FOCUS] Starting focus mode for: $taskTitle")
         Log.d(TAG, "📱 [FOCUS] Duration: $durationMinutes min, Arabic: $isArabic")
         Log.d(TAG, "📱 [FOCUS] Android SDK: ${Build.VERSION.SDK_INT}")
+
+        // Wake and unlock screen first
+        wakeUpAndUnlockScreen()
 
         // Acquire WakeLock
         acquireWakeLock()
@@ -104,7 +104,43 @@ class FocusModeActivity : AppCompatActivity() {
         // Immersive sticky mode
         setupImmersiveMode()
 
-        Log.d(TAG, "✅ [FOCUS] Focus mode active")
+        // Prevent activity from being killed
+        moveTaskToBack(false)
+
+        Log.d(TAG, "✅ [FOCUS] Focus mode active — CANNOT be dismissed until timer ends")
+    }
+
+    // ─── Wake Up & Unlock Screen ──────────────────────────────────────────
+
+    @Suppress("DEPRECATION")
+    private fun wakeUpAndUnlockScreen() {
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+
+        // Wake up the screen
+        @Suppress("DEPRECATION")
+        val screenLock = powerManager.newWakeLock(
+            PowerManager.SCREEN_BRIGHT_WAKE_LOCK or
+            PowerManager.ACQUIRE_CAUSES_WAKEUP or
+            PowerManager.ON_AFTER_RELEASE,
+            "aura:FocusScreenWake"
+        )
+        screenLock.acquire(5000L)
+        screenLock.release()
+
+        // Dismiss keyguard (unlock screen)
+        val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // On O+ use requestDismissKeyguard
+            keyguardManager.requestDismissKeyguard(this, null)
+        } else {
+            // On older versions, use window flags
+            window.addFlags(
+                WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+            )
+        }
+
+        Log.d(TAG, "✅ [FOCUS] Screen woken and keyguard dismissed")
     }
 
     // ─── Full Screen Setup ────────────────────────────────────────────────
@@ -169,6 +205,80 @@ class FocusModeActivity : AppCompatActivity() {
         }
     }
 
+    // ─── Block All Escape Attempts ────────────────────────────────────────
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        // Block all buttons while timer is running
+        if (!isTimerFinished) {
+            when (keyCode) {
+                KeyEvent.KEYCODE_BACK,
+                KeyEvent.KEYCODE_HOME,
+                KeyEvent.KEYCODE_APP_SWITCH,
+                KeyEvent.KEYCODE_RECENT_APPS -> {
+                    Log.d(TAG, "🚫 [FOCUS] Blocked key: $keyCode")
+                    return true
+                }
+            }
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
+        if (!isTimerFinished) {
+            when (keyCode) {
+                KeyEvent.KEYCODE_BACK,
+                KeyEvent.KEYCODE_HOME,
+                KeyEvent.KEYCODE_APP_SWITCH,
+                KeyEvent.KEYCODE_RECENT_APPS -> return true
+            }
+        }
+        return super.onKeyUp(keyCode, event)
+    }
+
+    // Block back button
+    @Suppress("DEPRECATION")
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        if (!isTimerFinished) {
+            Log.d(TAG, "🚫 [FOCUS] Back button pressed — blocked")
+            return
+        }
+        finishFocusMode()
+    }
+
+    // Re-launch if activity is somehow sent to background
+    override fun onUserLeaveHint() {
+        if (!isTimerFinished) {
+            Log.d(TAG, "🚫 [FOCUS] User tried to leave — relaunching")
+            Handler(Looper.getMainLooper()).postDelayed({
+                if (!isTimerFinished) {
+                    val relaunchIntent = Intent(this, FocusModeActivity::class.java).apply {
+                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or
+                                Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                                Intent.FLAG_ACTIVITY_SINGLE_TOP
+                        putExtra(EXTRA_TASK_ID, taskId)
+                        putExtra(EXTRA_TASK_TITLE, taskTitle)
+                        putExtra(EXTRA_TASK_DESC, taskDesc)
+                        putExtra(EXTRA_DURATION_MINUTES, durationMinutes)
+                        putExtra(EXTRA_LANGUAGE, if (isArabic) "ar" else "en")
+                    }
+                    startActivity(relaunchIntent)
+                }
+            }, 500)
+        }
+        super.onUserLeaveHint()
+    }
+
+    // Prevent being moved to back
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        intent.putExtra(EXTRA_TASK_ID, taskId)
+        intent.putExtra(EXTRA_TASK_TITLE, taskTitle)
+        intent.putExtra(EXTRA_TASK_DESC, taskDesc)
+        intent.putExtra(EXTRA_DURATION_MINUTES, durationMinutes)
+        intent.putExtra(EXTRA_LANGUAGE, if (isArabic) "ar" else "en")
+    }
+
     // ─── WakeLock ─────────────────────────────────────────────────────────
 
     @Suppress("DEPRECATION")
@@ -186,17 +296,13 @@ class FocusModeActivity : AppCompatActivity() {
 
     private fun enableSilentMode() {
         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-
-        // Save current ringer mode
         savedRingerMode = audioManager.ringerMode
 
-        // Try DND first (API 23+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             if (notificationManager.isNotificationPolicyAccessGranted) {
                 wasDndEnabled = true
                 try {
-                    // Save current interruption filter
                     notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
                     Log.d(TAG, "✅ [FOCUS] DND enabled via NotificationManager")
                 } catch (e: Exception) {
@@ -208,7 +314,6 @@ class FocusModeActivity : AppCompatActivity() {
                 fallbackToRingerSilent(audioManager)
             }
         } else {
-            // Pre-Marshmallow: use AudioManager
             fallbackToRingerSilent(audioManager)
         }
     }
@@ -279,28 +384,25 @@ class FocusModeActivity : AppCompatActivity() {
             val timerTextView = findViewById<TextView>(R.id.focusTimerText)
             timerTextView?.text = timeText
 
-            // Update progress bar
             val progressBar = findViewById<ProgressBar>(R.id.focusProgressBar)
             if (progressBar != null) {
                 val progress = ((totalDurationMs - millisRemaining).toFloat() / totalDurationMs.toFloat() * 100).toInt()
                 progressBar.progress = progress
             }
 
-            // Update remaining label
             val remainingLabel = findViewById<TextView>(R.id.focusRemainingLabel)
             if (remainingLabel != null) {
                 remainingLabel.text = if (isArabic) {
-                    "${toArabicNumerals(minutes.toString())} ${if (minutes == 1L) "دقيقة" else "دقائق"} ${if (isArabic) "متبقي" else ""}"
+                    "${toArabicNumerals(minutes.toString())} ${if (minutes == 1L) "دقيقة" else "دقائق"} متبقي"
                 } else {
                     "$minutes min remaining"
                 }
             }
-        } catch (e: Exception) {
-            // Views might not be ready
-        }
+        } catch (_: Exception) {}
     }
 
     private fun onCountdownComplete() {
+        isTimerFinished = true
         Log.d(TAG, "✅ [FOCUS] Countdown complete!")
 
         // Mark task as done via broadcast
@@ -313,7 +415,7 @@ class FocusModeActivity : AppCompatActivity() {
         // Show completion UI
         try {
             val timerTextView = findViewById<TextView>(R.id.focusTimerText)
-            timerTextView?.text = if (isArabic) "!تم" else "Done!"
+            timerTextView?.text = if (isArabic) "تم!" else "Done!"
 
             val titleLabel = findViewById<TextView>(R.id.focusTaskTitle)
             titleLabel?.text = if (isArabic) "انتهت جلسة التركيز!" else "Focus Session Complete!"
@@ -329,61 +431,61 @@ class FocusModeActivity : AppCompatActivity() {
             val progressBar = findViewById<ProgressBar>(R.id.focusProgressBar)
             progressBar?.progress = 100
 
-            // Change close button text
+            // Enable close button now
             val closeBtn = findViewById<Button>(R.id.focusCloseBtn)
-            closeBtn?.text = if (isArabic) "إغلاق" else "Close"
+            closeBtn?.apply {
+                text = if (isArabic) "إغلاق" else "Close"
+                isEnabled = true
+                alpha = 1.0f
+                setBackgroundColor(0xFF4CAF50.toInt()) // Green
+            }
 
             stopPulseAnimation()
         } catch (e: Exception) {
             Log.w(TAG, "⚠️ [FOCUS] Error updating completion UI: ${e.message}")
         }
 
-        // Auto-close after 5 seconds
+        // Auto-close after 10 seconds
         Handler(Looper.getMainLooper()).postDelayed({
             finishFocusMode()
-        }, 5000)
+        }, 10000)
     }
 
     // ─── UI Setup ─────────────────────────────────────────────────────────
 
     private fun setupUI() {
-        // Task title
         val titleLabel = findViewById<TextView>(R.id.focusTaskTitle)
         titleLabel?.text = taskTitle
 
-        // Task description
         val descLabel = findViewById<TextView>(R.id.focusTaskDesc)
         descLabel?.text = if (taskDesc.isNotEmpty()) taskDesc else {
             if (isArabic) "ابقَ مركزاً على مهمتك" else "Stay focused on your task"
         }
 
-        // Focus mode label
         val modeLabel = findViewById<TextView>(R.id.focusModeLabel)
         modeLabel?.text = if (isArabic) "وضع التركيز نشط" else "Focus Mode Active"
 
-        // Duration label
         val durationLabel = findViewById<TextView>(R.id.focusDurationLabel)
         val durStr = if (isArabic) toArabicNumerals(durationMinutes.toString()) else durationMinutes.toString()
         durationLabel?.text = if (isArabic) "$durStr دقيقة" else "$durationMinutes min"
 
-        // Exit hint
+        // Lock icon hint — cannot exit
         val exitHint = findViewById<TextView>(R.id.focusExitHint)
-        exitHint?.text = if (isArabic) "اضغط على زر رفع الصوت 3 مرات للخروج" else "Press volume up 3x to exit"
+        exitHint?.text = if (isArabic) "🔒 لن يمكنك الخروج حتى ينتهي المؤقت" else "🔒 You cannot exit until timer ends"
 
-        // Close / Mark Done button
+        // Close button — DISABLED until timer finishes
         val closeBtn = findViewById<Button>(R.id.focusCloseBtn)
-        closeBtn?.text = if (isArabic) "إتمام المهمة والخروج" else "Mark Done & Exit"
-        closeBtn?.setOnClickListener {
-            // Mark task as done
-            val completeIntent = Intent(this, FocusModeReceiver::class.java).apply {
-                action = "com.aura.hala.FOCUS_TASK_COMPLETE"
-                putExtra(EXTRA_TASK_ID, taskId)
+        closeBtn?.apply {
+            text = if (isArabic) "🔒 مقفل حتى انتهاء الوقت" else "🔒 Locked until timer ends"
+            isEnabled = false
+            alpha = 0.4f
+            setOnClickListener {
+                if (isTimerFinished) {
+                    finishFocusMode()
+                }
             }
-            sendBroadcast(completeIntent)
-            finishFocusMode()
         }
 
-        // Start pulse animation on progress bar
         startPulseAnimation()
     }
 
@@ -400,43 +502,12 @@ class FocusModeActivity : AppCompatActivity() {
                     start()
                 }
             }
-        } catch (e: Exception) {
-            // Not critical
-        }
+        } catch (_: Exception) {}
     }
 
     private fun stopPulseAnimation() {
         pulseAnimator?.cancel()
         pulseAnimator = null
-    }
-
-    // ─── Volume Button Emergency Exit ────────────────────────────────────
-
-    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
-            val now = System.currentTimeMillis()
-            volumeUpTimes.add(now)
-
-            // Remove presses older than threshold
-            volumeUpTimes.removeAll { it < now - VOLUME_EXIT_WINDOW_MS }
-
-            if (volumeUpTimes.size >= VOLUME_EXIT_THRESHOLD) {
-                Log.d(TAG, "🚪 [FOCUS] Emergency exit triggered (volume up 3x)")
-                volumeUpTimes.clear()
-                finishFocusMode()
-                return true
-            }
-        }
-        return super.onKeyDown(keyCode, event)
-    }
-
-    // ─── Back Button Blocked ──────────────────────────────────────────────
-
-    @Suppress("DEPRECATION")
-    @Deprecated("Deprecated in Java")
-    override fun onBackPressed() {
-        // Blocked - do nothing
-        Log.d(TAG, "🚫 [FOCUS] Back button pressed — blocked")
     }
 
     // ─── Finish ───────────────────────────────────────────────────────────
@@ -448,7 +519,7 @@ class FocusModeActivity : AppCompatActivity() {
         stopPulseAnimation()
 
         if (wakeLock.isHeld) {
-            wakeLock.release()
+            try { wakeLock.release() } catch (_: Exception) {}
             Log.d(TAG, "✅ [FOCUS] WakeLock released")
         }
 
@@ -462,6 +533,19 @@ class FocusModeActivity : AppCompatActivity() {
         stopPulseAnimation()
         if (wakeLock.isHeld) {
             try { wakeLock.release() } catch (_: Exception) {}
+        }
+        // If destroyed before timer finished, relaunch
+        if (!isTimerFinished) {
+            Log.w(TAG, "⚠️ [FOCUS] Destroyed before timer — attempting relaunch")
+            val relaunchIntent = Intent(this, FocusModeActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                putExtra(EXTRA_TASK_ID, taskId)
+                putExtra(EXTRA_TASK_TITLE, taskTitle)
+                putExtra(EXTRA_TASK_DESC, taskDesc)
+                putExtra(EXTRA_DURATION_MINUTES, durationMinutes)
+                putExtra(EXTRA_LANGUAGE, if (isArabic) "ar" else "en")
+            }
+            startActivity(relaunchIntent)
         }
         super.onDestroy()
         Log.d(TAG, "📱 [FOCUS] Activity destroyed")
