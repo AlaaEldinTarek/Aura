@@ -94,6 +94,74 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  Future<void> _showForgotPasswordDialog() async {
+    final isRTL = context.locale.languageCode == 'ar';
+    final resetController = TextEditingController(text: _emailController.text.trim());
+
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('auth_forgot_password'.tr()),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              isRTL
+                  ? 'سنرسل لك رابط إعادة تعيين كلمة المرور'
+                  : 'We\'ll send you a password reset link',
+              style: const TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: resetController,
+              keyboardType: TextInputType.emailAddress,
+
+              decoration: InputDecoration(
+                hintText: isRTL ? 'البريد الإلكتروني' : 'Email address',
+                prefixIcon: const Icon(Icons.email_outlined),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(isRTL ? 'إلغاء' : 'Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              final email = resetController.text.trim();
+              if (email.isEmpty) return;
+              Navigator.pop(ctx);
+              try {
+                await ref
+                    .read(authStateNotifierProvider.notifier)
+                    .sendPasswordResetEmail(email);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                    content: Text(isRTL
+                        ? 'تم إرسال رابط إعادة التعيين إلى $email'
+                        : 'Reset link sent to $email'),
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    margin: const EdgeInsets.all(AppConstants.paddingMedium),
+                  ));
+                }
+              } catch (e) {
+                if (mounted) _showErrorSnackBar(e.toString());
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppConstants.primaryColor, foregroundColor: Colors.white),
+            child: Text(isRTL ? 'إرسال' : 'Send'),
+          ),
+        ],
+      ),
+    );
+    resetController.dispose();
+  }
+
   void _showErrorSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -413,11 +481,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           Align(
             alignment: isRTL ? Alignment.centerLeft : Alignment.centerRight,
             child: TextButton(
-              onPressed: _isLoading
-                  ? null
-                  : () {
-                      // TODO: Implement forgot password
-                    },
+              onPressed: _isLoading ? null : _showForgotPasswordDialog,
               child: Text(
                 'auth_forgot_password'.tr(),
                 style: const TextStyle(fontWeight: FontWeight.w500),

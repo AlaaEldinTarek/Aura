@@ -206,6 +206,10 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<User?>> {
       rethrow;
     }
   }
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _authService.sendPasswordResetEmail(email);
+  }
 }
 
 // Auth State Notifier Provider
