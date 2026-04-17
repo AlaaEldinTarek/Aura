@@ -265,10 +265,11 @@ The `getNextPrayer()` method in `PrayerTimesService` handles a critical edge cas
 - **Priority**: `PRIORITY_MAX`, `CATEGORY_ALARM` — always top notification, visible on lock screen
 - **Layout**: Custom `RemoteViews` with 4 variants: `notification_large` (LTR), `notification_large_rtl` (RTL), `notification_large_dark`, `notification_large_dark_rtl`
 - **Timer format**: Digital clock `HH:MM` (no seconds, no emoji). Arabic uses Eastern numerals (٠١٢...)
-- **Icon**: 48dp prayer icon selected by time period (reverse chronological order with `break`):
-  - After Isha → moon, After Maghrib → maghrib, After Asr → afternoon, After Dhuhr/Sunrise → dhuhr, After Fajr → fajr
+- **Icon**: 42dp prayer icon selected by phone clock hour (not prayer times):
+  - 0–4 → Isha (night), 5–6 → Fajr (dawn), 7–11 → Dhuhr (morning), 12–15 → Dhuhr (afternoon), 16–17 → Asr (late afternoon), 18–19 → Maghrib (evening), 20–23 → Isha (night)
 - **Day transition**: Detects stale prayer times, launches `MainActivity` with `refresh_prayer_times` extra to trigger Flutter recalculation
-- **Layout dimensions**: Root padding 4dp top/bottom, 16dp sides; header 14dp icon + 11sp text; 1dp divider; 48dp prayer icon with 12dp gap to text
+- **Layout dimensions**: Root padding 4dp top/bottom, 16dp sides; header 14dp icon + 11sp text; 1dp divider; 42dp prayer icon with 12dp gap to text
+- **RTL layout**: `notification_until` listed before `notification_time` in XML so Arabic reading order is correct; time uses `textDirection="ltr"` to prevent numeral reordering
 
 ### State Sync Pattern
 - **Firestore ↔ SharedPreferences**: Bidirectional sync for logged-in users
@@ -310,12 +311,25 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 - **Recurrence**: none, daily, weekly, monthly — on completion auto-generates next occurrence via `completeRecurringTask()`
 - **Subtasks**: `SubTask` model (id/title/isCompleted) nested inside Task; `subtaskProgress` (0.0–1.0) and `completedSubtasks` are computed properties
 - **Pin to top**: `isPinned` field; `_applySort()` in TasksScreen always floats pinned tasks above all sort orders
+- **Due time**: `hasDueTime` boolean + `TimeOfDay` stored within `dueDate` DateTime; `_DueDateBadge` shows 12h format with ص/م for Arabic
 - **Firestore-backed** with pagination, caching, and statistics
-- **Computed properties**: isOverdue, isDueToday, isRecurring, subtaskProgress, completedSubtasks
+- **Computed properties**: isOverdue, isDueToday, isUpcoming, isRecurring, subtaskProgress, completedSubtasks
 - Stream-based Riverpod provider with family modifier
-- **TasksScreen sections**: Today / Upcoming (next 7 days) / All Tasks — split client-side from `allTasksProvider`
-- **TaskStatsScreen** at `/task_stats` — streak tracking via SharedPreferences (`task_streak_count`, `task_streak_date`)
-- **Quick-add sheet**: implemented as `_QuickAddSheet` StatefulWidget (not `StatefulBuilder`) so `TextEditingController` is disposed by Flutter after dismiss animation, avoiding `_dependents.isEmpty` assertion crash
+- **TasksScreen sections**: Overdue / Today / Upcoming / All Tasks / Completed (collapsible) — split client-side from `allTasksProvider`
+- **Category filter chips**: horizontal scroll with persistence via SharedPreferences (`task_category_filter`)
+- **Tag filter chips**: auto-generated from all task tags
+- **Sort**: dateDesc, dateAsc, priority, title — persisted via SharedPreferences (`task_sort_order`). Pinned tasks always float to top
+- **Search**: live filtering across title, description, tags
+- **Calendar view**: `TableCalendar` with day markers, day selection shows tasks for that day
+- **Context menu**: long-press for Edit, Duplicate, Change Priority, Pin/Unpin, Toggle Complete, Delete
+- **Bulk select mode**: multi-select with bottom action bar for Complete/Delete
+- **Clear completed**: button in completed section header with confirmation dialog
+- **Quick-add sheet**: priority/category/date/time chips with `StatefulBuilder`
+- **Undo delete**: snackbar with undo action, 2-second floating duration
+- **Celebration overlay**: shown when all today's tasks completed; uses `AnimationController` (not flutter_animate)
+- **Task streak**: tracked via SharedPreferences (`task_streak_count`, `task_streak_date`); incremented on home screen when last today task completed
+- **Daily summary notification**: ID 3999, scheduled via `matchDateTimeComponents: DateTimeComponents.time`
+- **Task statistics screen** at `/task_stats` — 2 tabs (Overview/Details), 7-day bar chart, category/priority breakdown, streak, time stats
 - **Task notifications**: `scheduleTaskReminder()` in `NotificationService` — tasks with time get 30-min-before reminder; tasks without time get 9:00 AM reminder on due date. Controlled by `task_notifications_enabled` pref. Toggled via `_TaskSettingsSheet` (gear icon in TasksScreen AppBar)
 - **Search scope**: covers title, description, tags, and subtask titles
 - **Profile stats**: `_buildTaskStatsSummary()` in ProfileScreen shows Today/Done/Pending cards from `taskStatisticsProvider`
