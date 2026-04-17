@@ -11,6 +11,7 @@ import '../../core/utils/number_formatter.dart';
 import '../../core/services/prayer_tracking_service.dart';
 import '../../core/services/achievement_service.dart';
 import '../../core/models/prayer_record.dart';
+import '../../core/providers/task_provider.dart';
 import '../../core/widgets/setting_tile.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -130,6 +131,11 @@ class ProfileScreen extends ConsumerWidget {
 
             // Prayer Stats Summary
             _buildPrayerStatsSummary(context, isDark, isArabic),
+
+            const SizedBox(height: AppConstants.paddingMedium),
+
+            // Task Stats Summary
+            _buildTaskStatsSummary(context, ref, isDark, isArabic),
 
             const SizedBox(height: AppConstants.paddingMedium),
 
@@ -534,6 +540,74 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ],
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildTaskStatsSummary(BuildContext context, WidgetRef ref, bool isDark, bool isArabic) {
+    final statsAsync = ref.watch(taskStatisticsProvider);
+
+    return statsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (stats) {
+        if (stats.total == 0) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
+              child: Text(
+                isArabic ? 'المهام' : 'Tasks',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _ProfileStatCard(
+                      icon: Icons.today,
+                      value: NumberFormatter.withArabicNumeralsByLanguage(
+                          '${stats.dueToday}', isArabic ? 'ar' : 'en'),
+                      label: isArabic ? 'اليوم' : 'Today',
+                      color: AppConstants.primaryColor,
+                      isDark: isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _ProfileStatCard(
+                      icon: Icons.task_alt,
+                      value: NumberFormatter.withArabicNumeralsByLanguage(
+                          '${stats.completed}', isArabic ? 'ar' : 'en'),
+                      label: isArabic ? 'مكتملة' : 'Done',
+                      color: Colors.green,
+                      isDark: isDark,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _ProfileStatCard(
+                      icon: Icons.pending_actions,
+                      value: NumberFormatter.withArabicNumeralsByLanguage(
+                          '${stats.pending}', isArabic ? 'ar' : 'en'),
+                      label: isArabic ? 'معلقة' : 'Pending',
+                      color: Colors.orange,
+                      isDark: isDark,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         );
       },
     );
