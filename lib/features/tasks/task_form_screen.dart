@@ -876,6 +876,14 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
             activeColor: AppConstants.primaryColor,
             onChanged: (val) async {
               if (val) {
+                // Check and request permissions first
+                final hasOverlay = await NotificationService.instance.canDrawOverlays();
+                final hasDnd = await NotificationService.instance.hasDndAccess();
+                if (!hasOverlay || !hasDnd) {
+                  if (!mounted) return;
+                  await _showFocusPermissionDialog(isArabic, hasOverlay, hasDnd);
+                  return;
+                }
                 final confirmed = await _showFocusModeConfirmation(isArabic);
                 if (!confirmed) return;
               }
@@ -906,6 +914,54 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                       _buildDurationChip(45, isArabic ? '٤٥' : '45', isDark),
                       const SizedBox(width: 8),
                       _buildDurationChip(60, isArabic ? '٦٠' : '60', isDark),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // Custom duration input
+                  Row(
+                    children: [
+                      Text(
+                        isArabic ? 'أو أدخل يدوياً:' : 'Custom:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      SizedBox(
+                        width: 70,
+                        child: TextFormField(
+                          initialValue: _focusDurationMinutes.toString(),
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          decoration: InputDecoration(
+                            isDense: true,
+                            contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                            border: const OutlineInputBorder(),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(color: AppConstants.primaryColor),
+                            ),
+                          ),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                          onChanged: (val) {
+                            final n = int.tryParse(val);
+                            if (n != null && n > 0 && n <= 180) {
+                              setState(() => _focusDurationMinutes = n);
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        isArabic ? 'دقيقة' : 'min',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -981,6 +1037,54 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
         ],
       ),
     ) ?? false;
+  }
+
+  Future<void> _showFocusPermissionDialog(bool isArabic, bool hasOverlay, bool hasDnd) async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
+        ),
+        title: Text(
+          isArabic ? 'أذونات مطلوبة' : 'Permissions Required',
+        ),
+        content: Text(
+          isArabic
+              ? 'يتطلب وضع التركيز إذن الرسم فوق التطبيقات الأخرى والوصول إلى وضع عدم الإزعاج.'
+              : 'Focus Mode requires permission to draw over other apps and access Do Not Disturb.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(isArabic ? 'إلغاء' : 'Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              if (!hasOverlay) {
+                await NotificationService.instance.requestOverlayPermission();
+              }
+              if (!hasDnd) {
+                await NotificationService.instance.requestDndAccess();
+              }
+              // Re-check and enable if both granted
+              final overlayOk = await NotificationService.instance.canDrawOverlays();
+              final dndOk = await NotificationService.instance.hasDndAccess();
+              if (overlayOk && dndOk) {
+                final confirmed = await _showFocusModeConfirmation(isArabic);
+                if (confirmed) setState(() => _focusModeEnabled = true);
+              }
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: AppConstants.primaryColor,
+            ),
+            child: Text(isArabic ? 'منح الأذونات' : 'Grant Permissions'),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildFrequencyChip(RecurrenceType type, String label, bool isDark) {
