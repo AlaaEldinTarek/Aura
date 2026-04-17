@@ -819,7 +819,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
       tasks = tasks
           .where((t) =>
               t.title.toLowerCase().contains(q) ||
-              (t.description?.toLowerCase().contains(q) ?? false))
+              (t.description?.toLowerCase().contains(q) ?? false) ||
+              (t.tags?.any((tag) => tag.toLowerCase().contains(q)) ?? false) ||
+              t.subtasks.any((s) => s.title.toLowerCase().contains(q)))
           .toList();
     }
 
