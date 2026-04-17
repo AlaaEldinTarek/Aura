@@ -259,6 +259,16 @@ The `getNextPrayer()` method in `PrayerTimesService` handles a critical edge cas
 1. **Flutter NotificationService** — 10-minute reminder notifications BEFORE prayer via `flutter_local_notifications` with timezone support and "Remind Me Again" action (5 min before)
 2. **Native PrayerAlarmReceiver** — Exact prayer time notifications via AlarmManager, triggers adhan playback, full-screen intent, and optional silent mode
 
+### Foreground Service Notification (PrayerForegroundService)
+- **Channel**: `prayer_foreground_channel`, `IMPORTANCE_HIGH`, `VISIBILITY_PUBLIC`
+- **Priority**: `PRIORITY_MAX`, `CATEGORY_ALARM` — always top notification, visible on lock screen
+- **Layout**: Custom `RemoteViews` with 4 variants: `notification_large` (LTR), `notification_large_rtl` (RTL), `notification_large_dark`, `notification_large_dark_rtl`
+- **Timer format**: Digital clock `HH:MM` (no seconds, no emoji). Arabic uses Eastern numerals (٠١٢...)
+- **Icon**: 48dp prayer icon selected by time period (reverse chronological order with `break`):
+  - After Isha → moon, After Maghrib → maghrib, After Asr → afternoon, After Dhuhr/Sunrise → dhuhr, After Fajr → fajr
+- **Day transition**: Detects stale prayer times, launches `MainActivity` with `refresh_prayer_times` extra to trigger Flutter recalculation
+- **Layout dimensions**: Root padding 4dp top/bottom, 16dp sides; header 14dp icon + 11sp text; 1dp divider; 48dp prayer icon with 12dp gap to text
+
 ### State Sync Pattern
 - **Firestore ↔ SharedPreferences**: Bidirectional sync for logged-in users
 - **Sync on login**: Firestore data → SharedPreferences (returning users)
@@ -280,6 +290,18 @@ The `getNextPrayer()` method in `PrayerTimesService` handles a critical edge cas
 - Native → Flutter: Result callbacks and broadcast intents
 - **Always use try-catch** around platform channel calls
 - **Log extensively** with emoji prefixes for easy filtering (e.g., `🕌`, `📱`, `🔔`, `✅`, `🔄`)
+
+### Critical: Native SharedPreferences File Names
+Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native code must use these specific file names:
+
+| SharedPreferences File | Used By | Contains |
+|------------------------|---------|----------|
+| `aura_prayer_times` | PrayerForegroundService, PrayerAlarmReceiver, AdhanFullScreenActivity, StopAdhanReceiver | Prayer times, next prayer name/Arabic/time, language |
+| `aura_silent_mode` | SilentModeAutomation, PrayerAlarmReceiver, AdhanFullScreenActivity | silent_mode_enabled, is_silent_active, saved_ringer_mode |
+| `aura_prefs` | AdhanPlayer | adhan_enabled |
+| `${packageName}_preferences` | Flutter's shared_preferences package | Default Flutter prefs |
+
+**NEVER use `${packageName}_preferences` in Kotlin code** — Flutter writes to it but native should read from the `aura_*` files above. This was the root cause of Arabic text not showing in full-screen azan and silent mode not working.
 
 ### Task System
 - **Categories**: work, personal, shopping, health, study, prayer, other
@@ -326,6 +348,12 @@ The `getNextPrayer()` method in `PrayerTimesService` handles a critical edge cas
 - **`lib/core/services/location_service.dart`**: GPS/manual location with 50+ city translations
 - **`lib/core/providers/prayer_times_provider.dart`**: State management, auto-refresh timer, alarm/notification/widget scheduling
 - **`android/.../PrayerAlarmReceiver.kt`**: Native alarm handling — DO NOT modify notification IDs (1001-1006, 2001-2006)
+
+### Native Code Gotchas
+- **RemoteViews limitations**: Cannot use `<View>` elements (crashes on Android 10). Use `<FrameLayout>` for dividers instead.
+- **Backup files**: Original notification layouts and PrayerForegroundService are backed up at `android/app/src/main/layout-backup/` (outside `res/` — backup folders inside `res/` break the Android resource merger).
+- **Notification channel importance**: Android won't downgrade an existing channel's importance. Use `deleteNotificationChannel()` before recreating when upgrading importance.
+- **Dhuhr/Zuhr naming**: SharedPreferences key is always `dhuhr_time`, but UI uses "Zuhr". All switch/map lookups must handle both names.
 
 ### Translation Files
 - **`assets/translations/en.json`**: 184 English strings

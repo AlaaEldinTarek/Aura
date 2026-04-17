@@ -8,6 +8,7 @@ class TaskCard extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onToggle;
   final VoidCallback? onDelete;
+  final VoidCallback? onLongPress;
   final bool isSelected;
 
   const TaskCard({
@@ -16,6 +17,7 @@ class TaskCard extends StatelessWidget {
     this.onTap,
     this.onToggle,
     this.onDelete,
+    this.onLongPress,
     this.isSelected = false,
   });
 
@@ -76,6 +78,7 @@ class TaskCard extends StatelessWidget {
             color: Colors.transparent,
             child: InkWell(
               onTap: onTap,
+              onLongPress: onLongPress,
               borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
               child: Padding(
                 padding: const EdgeInsets.all(AppConstants.paddingMedium),
@@ -131,7 +134,8 @@ class TaskCard extends StatelessWidget {
                               if (task.dueDate != null)
                                 _DueDateBadge(
                                     dueDate: task.dueDate!,
-                                    isOverdue: task.isOverdue),
+                                    isOverdue: task.isOverdue,
+                                    hasDueTime: task.hasDueTime),
                               if (task.isRecurring)
                                 _RecurrenceBadge(
                                     recurrenceType: task.recurrenceType),
@@ -402,7 +406,8 @@ class _RecurrenceBadge extends StatelessWidget {
 class _DueDateBadge extends StatelessWidget {
   final DateTime dueDate;
   final bool isOverdue;
-  const _DueDateBadge({required this.dueDate, required this.isOverdue});
+  final bool hasDueTime;
+  const _DueDateBadge({required this.dueDate, required this.isOverdue, required this.hasDueTime});
 
   @override
   Widget build(BuildContext context) {
@@ -420,6 +425,16 @@ class _DueDateBadge extends StatelessWidget {
       label = dueDay == tomorrow
           ? (isArabic ? 'غداً' : 'Tomorrow')
           : '${dueDate.day}/${dueDate.month}';
+    }
+
+    // Append time if set
+    if (hasDueTime) {
+      final hour = dueDate.hour;
+      final minute = dueDate.minute;
+      final period = hour >= 12 ? (isArabic ? 'م' : 'PM') : (isArabic ? 'ص' : 'AM');
+      final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+      final timeStr = '$displayHour:${minute.toString().padLeft(2, '0')} $period';
+      label = isArabic ? '$label $timeStr' : '$label, $timeStr';
     }
 
     return Container(

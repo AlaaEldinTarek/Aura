@@ -6,6 +6,7 @@ import 'package:easy_localization/easy_localization.dart';
 import '../../core/widgets/bottom_nav_bar.dart';
 import '../../core/utils/haptic_feedback.dart' as app_haptic;
 import '../../core/constants/app_constants.dart';
+import '../../core/providers/preferences_provider.dart';
 import '../home/home_screen.dart';
 import '../prayer/prayer_screen.dart';
 import '../profile/profile_screen.dart';
@@ -44,6 +45,17 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     _tabController = TabController(length: 4, vsync: this);
     _tabController.index = _currentIndex;
     _updateCurrentRoute();
+
+    // Listen for tab navigation requests from child screens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.listenManual<int>(tabNavigationProvider, (prev, next) {
+        if (next >= 0 && next != _currentIndex) {
+          _handleTabTap(next);
+          // Reset provider so it can be triggered again
+          ref.read(tabNavigationProvider.notifier).state = -1;
+        }
+      });
+    });
   }
 
   @override

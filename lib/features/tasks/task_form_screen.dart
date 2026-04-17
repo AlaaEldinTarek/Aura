@@ -27,6 +27,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   TaskCategory _selectedCategory = TaskCategory.other;
   DateTime? _selectedDueDate;
   TimeOfDay? _selectedDueTime;
+  bool _hasDueTime = false;
   List<String> _tags = [];
   // Recurrence
   bool _recurrenceEnabled = false;
@@ -48,6 +49,10 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     _selectedPriority = task.priority;
     _selectedCategory = task.category;
     _selectedDueDate = task.dueDate;
+    _hasDueTime = task.hasDueTime;
+    if (task.hasDueTime && task.dueDate != null) {
+      _selectedDueTime = TimeOfDay.fromDateTime(task.dueDate!);
+    }
     _tags = task.tags ?? [];
     _recurrenceEnabled = task.isRecurring;
     _recurrenceType = task.recurrenceType == RecurrenceType.none
@@ -98,6 +103,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           category: _selectedCategory,
           dueDate: effectiveDueDate,
           tags: _tags.isEmpty ? null : _tags,
+          hasDueTime: _hasDueTime,
           recurrenceType: _recurrenceEnabled ? _recurrenceType : RecurrenceType.none,
           recurrenceInterval: _recurrenceInterval,
           recurrenceEndDate: _recurrenceEnabled ? _recurrenceEndDate : null,
@@ -125,6 +131,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           category: _selectedCategory,
           dueDate: effectiveDueDate,
           tags: _tags.isEmpty ? null : _tags,
+          hasDueTime: _hasDueTime,
           recurrenceType: _recurrenceEnabled ? _recurrenceType : RecurrenceType.none,
           recurrenceInterval: _recurrenceInterval,
           recurrenceEndDate: _recurrenceEnabled ? _recurrenceEndDate : null,
@@ -184,8 +191,16 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     if (picked != null) {
       setState(() {
         _selectedDueTime = picked;
+        _hasDueTime = true;
       });
     }
+  }
+
+  void _clearDueTime() {
+    setState(() {
+      _selectedDueTime = null;
+      _hasDueTime = false;
+    });
   }
 
   void _showPrioritySelector() {
@@ -585,8 +600,15 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                           ],
                         ),
                       ),
-                      Icon(Icons.chevron_right,
-                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                      if (_selectedDueTime != null)
+                        GestureDetector(
+                          onTap: _clearDueTime,
+                          child: Icon(Icons.close, size: 18,
+                              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                        )
+                      else
+                        Icon(Icons.chevron_right,
+                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
                     ],
                   ),
                 ),

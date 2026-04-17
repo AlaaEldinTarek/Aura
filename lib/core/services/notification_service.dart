@@ -568,6 +568,82 @@ class NotificationService {
     debugPrint('TaskNotification: Cancelled notification for task $taskId (id=$notifId)');
   }
 
+  // ─── Daily Task Summary ───────────────────────────────────────────────────
+
+  static const int _dailySummaryId = 3999;
+
+  /// Schedule a daily morning notification summarizing today's tasks.
+  /// Called from TaskService when tasks change, or from app init.
+  Future<void> scheduleDailyTaskSummary({
+    required int todayCount,
+    required int overdueCount,
+    String language = 'en',
+    int hour = 8,
+    int minute = 0,
+  }) async {
+    final isArabic = language == 'ar';
+
+    // Cancel existing summary
+    await _notifications.cancel(_dailySummaryId);
+
+    String title;
+    String body;
+    if (todayCount == 0 && overdueCount == 0) {
+      title = isArabic ? 'لا مهام لليوم' : 'No tasks today';
+      body = isArabic ? 'يومك حر! استمتع بوقتك' : 'Your day is free! Enjoy.';
+    } else {
+      title = isArabic ? 'ملخص مهام اليوم' : "Today's Tasks";
+      final parts = <String>[];
+      if (todayCount > 0) {
+        parts.add(isArabic ? '$todayCount مهام لليوم' : '$todayCount task${todayCount > 1 ? "s" : ""} today');
+      }
+      if (overdueCount > 0) {
+        parts.add(isArabic ? '$overdueCount متأخرة' : '$overdueCount overdue');
+      }
+      body = parts.join(isArabic ? '، ' : ', ');
+    }
+
+    final androidDetails = AndroidNotificationDetails(
+      _taskChannelId,
+      _taskChannelName,
+      channelDescription: _taskChannelDescription,
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+      showWhen: true,
+      icon: '@mipmap/ic_launcher',
+    );
+
+    final details = NotificationDetails(android: androidDetails);
+
+    // Schedule for today at the specified time, or tomorrow if already past
+    final now = DateTime.now();
+    var scheduled = DateTime(now.year, now.month, now.day, hour, minute);
+    if (scheduled.isBefore(now)) {
+      scheduled = scheduled.add(const Duration(days: 1));
+    }
+    final tzScheduled = tz.TZDateTime.from(scheduled, tz.local);
+
+    await _notifications.zonedSchedule(
+      _dailySummaryId,
+      title,
+      body,
+      tzScheduled,
+      details,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation:
+          UILocalNotificationDateInterpretation.absoluteTime,
+      payload: 'daily_summary',
+      matchDateTimeComponents: DateTimeComponents.time, // repeats daily
+    );
+
+    debugPrint('TaskSummary: Scheduled daily at $hour:$minute — $todayCount today, $overdueCount overdue');
+  }
+
+  /// Cancel the daily task summary notification
+  Future<void> cancelDailyTaskSummary() async {
+    await _notifications.cancel(_dailySummaryId);
+  }
+
   /// Cancel a specific prayer notification
   Future<void> cancelPrayerNotification(String prayerName) async {
     final notificationId = _getNotificationId(prayerName);

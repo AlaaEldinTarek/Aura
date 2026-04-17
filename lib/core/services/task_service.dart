@@ -146,6 +146,7 @@ class TaskService {
     TaskCategory category = TaskCategory.other,
     DateTime? dueDate,
     List<String>? tags,
+    bool hasDueTime = false,
     RecurrenceType recurrenceType = RecurrenceType.none,
     int recurrenceInterval = 1,
     DateTime? recurrenceEndDate,
@@ -167,6 +168,7 @@ class TaskService {
         dueDate: dueDate,
         createdAt: DateTime.now(),
         tags: tags,
+        hasDueTime: hasDueTime,
         recurrenceType: recurrenceType,
         recurrenceInterval: recurrenceInterval,
         recurrenceEndDate: recurrenceEndDate,
@@ -191,6 +193,7 @@ class TaskService {
       }
 
       debugPrint('TaskService: Added task ${task.id}');
+      _refreshDailySummary(userId);
       return task;
     } catch (e) {
       debugPrint('TaskService: Error adding task - $e');
@@ -209,6 +212,7 @@ class TaskService {
     TaskCategory? category,
     DateTime? dueDate,
     List<String>? tags,
+    bool? hasDueTime,
     RecurrenceType? recurrenceType,
     int? recurrenceInterval,
     DateTime? recurrenceEndDate,
@@ -241,6 +245,7 @@ class TaskService {
         category: category,
         dueDate: dueDate,
         tags: tags,
+        hasDueTime: hasDueTime,
         completedAt: isCompleted == true && !currentTask.isCompleted
             ? DateTime.now()
             : null,
@@ -274,6 +279,7 @@ class TaskService {
       }
 
       debugPrint('TaskService: Updated task $taskId');
+      _refreshDailySummary(userId);
       return true;
     } catch (e) {
       debugPrint('TaskService: Error updating task - $e');
@@ -304,10 +310,19 @@ class TaskService {
 
       final newStatus = !currentTask.isCompleted;
 
-      // For recurring tasks being completed, create next occurrence
-      if (newStatus && currentTask.isRecurring) {
-        await _completeRecurringTask(userId: userId, task: currentTask);
-        return true;
+      if (currentTask.isRecurring) {
+        if (newStatus) {
+          // Completing → create next occurrence
+          await _completeRecurringTask(userId: userId, task: currentTask);
+          return true;
+        } else {
+          // Undoing → delete any children created from this task, then uncomplete
+          await _deleteChildTasks(userId: userId, parentTaskId: currentTask.id);
+          // Also delete children that might point to the root parent
+          if (currentTask.parentTaskId != null) {
+            await _deleteChildTasks(userId: userId, parentTaskId: currentTask.parentTaskId!);
+          }
+        }
       }
 
       return await updateTask(
@@ -318,6 +333,30 @@ class TaskService {
     } catch (e) {
       debugPrint('TaskService: Error toggling task - $e');
       return false;
+    }
+  }
+
+  /// Delete auto-generated child tasks for a recurring task being undone
+  Future<void> _deleteChildTasks({
+    required String userId,
+    required String parentTaskId,
+  }) async {
+    try {
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('tasks')
+          .where('parentTaskId', isEqualTo: parentTaskId)
+          .where('isCompleted', isEqualTo: false)
+          .get();
+
+      for (final doc in snapshot.docs) {
+        await doc.reference.delete();
+        _taskCache.remove(doc.id);
+        debugPrint('TaskService: Deleted child task ${doc.id} of $parentTaskId');
+      }
+    } catch (e) {
+      debugPrint('TaskService: Error deleting child tasks - $e');
     }
   }
 
@@ -344,7 +383,22 @@ class TaskService {
       return;
     }
 
-    // 4. Create next task instance
+    // 4. Check if a child already exists to prevent duplicates
+    final existingChildren = await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('tasks')
+        .where('parentTaskId', isEqualTo: task.id)
+        .where('isCompleted', isEqualTo: false)
+        .limit(1)
+        .get();
+
+    if (existingChildren.docs.isNotEmpty) {
+      debugPrint('TaskService: Child already exists for ${task.id}, skipping');
+      return;
+    }
+
+    // 5. Create next task instance — always use THIS task's ID as parent
     await addTask(
       userId: userId,
       title: task.title,
@@ -353,10 +407,11 @@ class TaskService {
       category: task.category,
       dueDate: nextDate,
       tags: task.tags,
+      hasDueTime: task.hasDueTime,
       recurrenceType: task.recurrenceType,
       recurrenceInterval: task.recurrenceInterval,
       recurrenceEndDate: task.recurrenceEndDate,
-      parentTaskId: task.parentTaskId ?? task.id,
+      parentTaskId: task.id,
     );
 
     debugPrint('TaskService: Created next recurrence for task ${task.id}');
@@ -382,6 +437,7 @@ class TaskService {
       await NotificationService.instance.cancelTaskNotification(taskId);
 
       debugPrint('TaskService: Deleted task $taskId');
+      _refreshDailySummary(userId);
       return true;
     } catch (e) {
       debugPrint('TaskService: Error deleting task - $e');
@@ -420,6 +476,22 @@ class TaskService {
     _taskCache.clear();
     _cachedTaskList = null;
     _lastDocument = null;
+  }
+
+  /// Refresh the daily task summary notification after any task change
+  Future<void> _refreshDailySummary(String userId) async {
+    try {
+      final stats = await getStatistics(userId: userId);
+      final prefs = await SharedPreferences.getInstance();
+      final language = prefs.getString('language') ?? 'en';
+      await NotificationService.instance.scheduleDailyTaskSummary(
+        todayCount: stats.dueToday,
+        overdueCount: stats.overdue,
+        language: language,
+      );
+    } catch (e) {
+      debugPrint('TaskService: Error refreshing daily summary - $e');
+    }
   }
 
   /// Dispose of resources

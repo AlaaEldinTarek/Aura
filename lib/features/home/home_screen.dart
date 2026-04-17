@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/auth_provider.dart';
@@ -16,6 +17,7 @@ import '../../core/widgets/task_card.dart';
 import '../../core/utils/number_formatter.dart';
 import '../../core/services/prayer_tracking_service.dart';
 import '../../core/services/task_service.dart';
+import '../../core/models/task.dart';
 import '../../core/models/prayer_record.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -138,6 +140,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     // Prayer Progress Bar
                     _buildPrayerProgress(context, isDark, isArabic, completedCount, totalPrayers, prayerStatuses)
                         .animate().fadeIn(delay: 200.ms, duration: 400.ms),
+
+                    const SizedBox(height: AppConstants.paddingLarge),
+
+                    // Task Progress Ring
+                    _buildTaskProgress(context, isDark, isArabic),
 
                     const SizedBox(height: AppConstants.paddingLarge),
 
@@ -465,6 +472,123 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
+  Widget _buildTaskProgress(BuildContext context, bool isDark, bool isArabic) {
+    final statsAsync = ref.watch(taskStatisticsProvider);
+
+    return statsAsync.when(
+      data: (stats) {
+        if (stats.total == 0) return const SizedBox.shrink();
+
+        // Show TODAY's task completion progress
+        final allTasksAsync = ref.watch(allTasksProvider);
+        return allTasksAsync.when(
+          data: (allTasks) {
+            final todayTasks = allTasks.where((t) => t.isDueToday).toList();
+            final todayDone = todayTasks.where((t) => t.isCompleted).length;
+            final todayTotal = todayTasks.length;
+            final progress = todayTotal > 0 ? todayDone / todayTotal : 0.0;
+            final percentage = (progress * 100).round();
+
+        return Container(
+          padding: const EdgeInsets.all(AppConstants.paddingMedium),
+          decoration: BoxDecoration(
+            color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+            borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
+            border: Border.all(color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+          ),
+          child: Row(
+            children: [
+              // Progress ring
+              SizedBox(
+                width: 64,
+                height: 64,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    CircularProgressIndicator(
+                      value: progress,
+                      strokeWidth: 5,
+                      backgroundColor: isDark ? Colors.white12 : Colors.black12,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        progress >= 1.0 ? Colors.green : AppConstants.primaryColor,
+                      ),
+                    ),
+                    Center(
+                      child: Text(
+                        '$percentage%',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppConstants.paddingMedium),
+              // Stats
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isArabic ? 'تقدم المهام' : 'Task Progress',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        _buildMiniStat(Icons.today, '$todayTotal',
+                            isArabic ? 'اليوم' : 'Today', AppConstants.primaryColor),
+                        const SizedBox(width: 16),
+                        _buildMiniStat(Icons.check_circle, '$todayDone',
+                            isArabic ? 'مكتمل' : 'Done', Colors.green),
+                        const SizedBox(width: 16),
+                        _buildMiniStat(Icons.warning_amber_rounded, '${stats.overdue}',
+                            isArabic ? 'متأخرة' : 'Late', stats.overdue > 0 ? Colors.red : Colors.grey),
+                        const SizedBox(width: 16),
+                        FutureBuilder<int>(
+                          future: _getStreak(),
+                          builder: (_, snap) => _buildMiniStat(Icons.local_fire_department,
+                              '${snap.data ?? 0}',
+                              isArabic ? 'سلسلة' : 'Streak',
+                              (snap.data ?? 0) > 0 ? Colors.orange : Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+          },
+          loading: () => const SizedBox.shrink(),
+          error: (_, __) => const SizedBox.shrink(),
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
+
+  Widget _buildMiniStat(IconData icon, String value, String label, Color color) {
+    return Column(
+      children: [
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 13, color: color),
+            const SizedBox(width: 3),
+            Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color)),
+          ],
+        ),
+        Text(label, style: TextStyle(fontSize: 10, color: color.withOpacity(0.7))),
+      ],
+    );
+  }
+
   Widget _buildTodayTasksPreview(BuildContext context, bool isDark, bool isArabic) {
     final allTasksAsync = ref.watch(allTasksProvider);
     final statsAsync = ref.watch(taskStatisticsProvider);
@@ -494,8 +618,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               GestureDetector(
                 onTap: () {
                   // Navigate to main Tasks tab (index 2 in bottom nav)
-                  final nav = Navigator.of(context);
-                  nav.pop();
+                  ref.read(tabNavigationProvider.notifier).state = 2;
                 },
                 child: Text(
                   isArabic ? 'عرض الكل' : 'View All',
@@ -603,6 +726,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         child: TaskCard(
                           key: ValueKey(task.id),
                           task: task,
+                          onTap: () => _editTask(task),
                           onToggle: () => _toggleTask(task.id),
                         ),
                       )),
@@ -623,13 +747,81 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Future<void> _toggleTask(String taskId) async {
     final userId = getCurrentUserId();
     try {
+      // Check if this is the last today task before toggling
+      final tasks = ref.read(allTasksProvider).valueOrNull ?? [];
+      final todayIncomplete = tasks.where((t) => t.isDueToday && !t.isCompleted);
+      final wasLastTask = todayIncomplete.length == 1 && todayIncomplete.first.id == taskId;
+
       await TaskService.instance.toggleTaskCompletion(
         userId: userId,
         taskId: taskId,
       );
+
+      // Refresh providers so stats update immediately
+      ref.invalidate(allTasksProvider);
+      ref.invalidate(taskStatisticsProvider);
+
+      // If this was the last today task, increment streak
+      if (wasLastTask) {
+        await _incrementStreak();
+        setState(() {}); // Refresh to show updated streak
+      }
     } catch (e) {
       debugPrint('Error toggling task: $e');
     }
+  }
+
+  Future<void> _editTask(Task task) async {
+    final result = await Navigator.of(context).pushNamed(
+      '/task_form',
+      arguments: task,
+    );
+    if (result == true) {
+      ref.invalidate(allTasksProvider);
+      ref.invalidate(taskStatisticsProvider);
+    }
+  }
+
+  // ─── Task Streak ──────────────────────────────────────────────────────────
+
+  static const _streakKey = 'task_streak_count';
+  static const _streakDateKey = 'task_streak_date';
+
+  Future<int> _getStreak() async {
+    final prefs = await SharedPreferences.getInstance();
+    final count = prefs.getInt(_streakKey) ?? 0;
+    final lastDate = prefs.getString(_streakDateKey);
+    if (lastDate == null) return 0;
+
+    // If last date is not today or yesterday, streak is broken
+    final now = DateTime.now();
+    final today = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final yesterday = now.subtract(const Duration(days: 1));
+    final yesterdayStr = '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
+
+    if (lastDate != today && lastDate != yesterdayStr) {
+      // Streak broken
+      await prefs.setInt(_streakKey, 0);
+      return 0;
+    }
+    return count;
+  }
+
+  Future<void> _incrementStreak() async {
+    final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now();
+    final today = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final lastDate = prefs.getString(_streakDateKey);
+
+    if (lastDate == today) return; // Already counted today
+
+    final count = prefs.getInt(_streakKey) ?? 0;
+    final yesterday = now.subtract(const Duration(days: 1));
+    final yesterdayStr = '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
+
+    final newCount = (lastDate == yesterdayStr) ? count + 1 : 1;
+    await prefs.setInt(_streakKey, newCount);
+    await prefs.setString(_streakDateKey, today);
   }
 
   Widget _buildDailyProgressRing(BuildContext context, bool isDark, bool isArabic, int completed, int total) {

@@ -417,3 +417,6 @@ class SilentModeDurationNotifier extends StateNotifier<AsyncValue<int>> {
     }
   }
 }
+
+/// Tab navigation provider — allows child screens to request tab switches
+final tabNavigationProvider = StateProvider<int>((ref) => -1);

@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:table_calendar/table_calendar.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/task_provider.dart';
 import '../../core/models/task.dart';
 import '../../core/widgets/task_card.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/services/task_service.dart';
+import '../../core/utils/haptic_feedback.dart' as app_haptic;
 
 class TasksScreen extends ConsumerStatefulWidget {
   const TasksScreen({super.key});
@@ -22,12 +25,39 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   String? _selectedTag;
   bool _showCompleted = false;
   bool _showSearch = false;
+  bool _showCalendar = false;
+  DateTime _calendarFocusDay = DateTime.now();
+  DateTime _calendarSelectedDay = DateTime.now();
   String _searchQuery = '';
   _SortOrder _sortOrder = _SortOrder.dateDesc;
   final TextEditingController _searchController = TextEditingController();
+  static const _sortPrefKey = 'task_sort_order';
 
   // Track recently completed tasks so they stay visible for animation
   final Set<String> _recentlyCompleted = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSortOrder();
+  }
+
+  Future<void> _loadSortOrder() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString(_sortPrefKey);
+    if (saved != null) {
+      final order = _SortOrder.values.firstWhere(
+        (e) => e.name == saved,
+        orElse: () => _SortOrder.dateDesc,
+      );
+      if (mounted) setState(() => _sortOrder = order);
+    }
+  }
+
+  Future<void> _saveSortOrder(_SortOrder order) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_sortPrefKey, order.name);
+  }
 
   @override
   void dispose() {
@@ -71,6 +101,14 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
         foregroundColor: isDark ? Colors.white : Colors.black87,
         elevation: 0,
         actions: [
+          // Calendar toggle
+          IconButton(
+            icon: Icon(_showCalendar ? Icons.list : Icons.calendar_month),
+            tooltip: _showCalendar
+                ? (isArabic ? 'عرض القائمة' : 'List view')
+                : (isArabic ? 'عرض التقويم' : 'Calendar view'),
+            onPressed: () => setState(() => _showCalendar = !_showCalendar),
+          ),
           // Search toggle
           IconButton(
             icon: Icon(_showSearch ? Icons.close : Icons.search),
@@ -88,7 +126,10 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           PopupMenuButton<_SortOrder>(
             icon: const Icon(Icons.sort),
             tooltip: isArabic ? 'ترتيب' : 'Sort',
-            onSelected: (order) => setState(() => _sortOrder = order),
+            onSelected: (order) {
+              setState(() => _sortOrder = order);
+              _saveSortOrder(order);
+            },
             itemBuilder: (_) => [
               PopupMenuItem(
                 value: _SortOrder.dateDesc,
@@ -151,7 +192,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           backgroundColor: AppConstants.primaryColor,
         ),
       ),
-      body: RefreshIndicator(
+      body: _showCalendar
+          ? _buildCalendarView(allTasksAsync, isDark, isArabic)
+          : RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(allTasksProvider);
           ref.invalidate(taskStatisticsProvider);
@@ -208,6 +251,237 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
         ),
       ),
     );
+  }
+
+  // ─── Calendar View ─────────────────────────────────────────────────────────
+
+  Widget _buildCalendarView(AsyncValue<List<Task>> allTasksAsync, bool isDark, bool isArabic) {
+    return allTasksAsync.when(
+      data: (allTasks) {
+        // Build map of date -> task count for calendar markers
+        final taskCounts = <DateTime, int>{};
+        for (final t in allTasks) {
+          if (t.dueDate != null) {
+            final day = DateTime(t.dueDate!.year, t.dueDate!.month, t.dueDate!.day);
+            taskCounts[day] = (taskCounts[day] ?? 0) + 1;
+          }
+        }
+
+        // Get tasks for selected day
+        final selectedDay = DateTime(
+          _calendarSelectedDay.year,
+          _calendarSelectedDay.month,
+          _calendarSelectedDay.day,
+        );
+        final dayTasks = allTasks.where((t) {
+          if (t.dueDate == null) return false;
+          final taskDay = DateTime(t.dueDate!.year, t.dueDate!.month, t.dueDate!.day);
+          return taskDay == selectedDay;
+        }).toList()
+          ..sort((a, b) {
+            // Incomplete first, then by priority, then by due time
+            if (a.isCompleted != b.isCompleted) return a.isCompleted ? 1 : -1;
+            const pOrder = {TaskPriority.high: 0, TaskPriority.medium: 1, TaskPriority.low: 2};
+            final pc = (pOrder[a.priority] ?? 1).compareTo(pOrder[b.priority] ?? 1);
+            if (pc != 0) return pc;
+            return (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099));
+          });
+
+        return Column(
+          children: [
+            // Calendar
+            Container(
+              margin: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isDark ? AppConstants.darkCard : Colors.white,
+                borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: TableCalendar(
+                firstDay: DateTime.now().subtract(const Duration(days: 365)),
+                lastDay: DateTime.now().add(const Duration(days: 365)),
+                focusedDay: _calendarFocusDay,
+                selectedDayPredicate: (day) => isSameDay(_calendarSelectedDay, day),
+                onDaySelected: (selected, focused) {
+                  setState(() {
+                    _calendarSelectedDay = selected;
+                    _calendarFocusDay = focused;
+                  });
+                },
+                calendarFormat: CalendarFormat.month,
+                availableCalendarFormats: const {
+                  CalendarFormat.month: '',
+                },
+                headerStyle: HeaderStyle(
+                  titleCentered: true,
+                  formatButtonVisible: false,
+                  titleTextStyle: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                  leftChevronIcon: Icon(Icons.chevron_left,
+                      color: isDark ? Colors.white70 : Colors.black54),
+                  rightChevronIcon: Icon(Icons.chevron_right,
+                      color: isDark ? Colors.white70 : Colors.black54),
+                ),
+                daysOfWeekStyle: DaysOfWeekStyle(
+                  weekdayStyle: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                  ),
+                  weekendStyle: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.red.shade400,
+                  ),
+                ),
+                calendarStyle: CalendarStyle(
+                  todayDecoration: BoxDecoration(
+                    color: AppConstants.primaryColor.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  todayTextStyle: TextStyle(
+                    color: AppConstants.primaryColor,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  selectedDecoration: BoxDecoration(
+                    color: AppConstants.primaryColor,
+                    shape: BoxShape.circle,
+                  ),
+                  selectedTextStyle: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  defaultTextStyle: TextStyle(
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                  weekendTextStyle: TextStyle(
+                    color: isDark ? Colors.red.shade300 : Colors.red.shade400,
+                  ),
+                  outsideTextStyle: TextStyle(
+                    color: isDark ? Colors.grey.shade600 : Colors.grey.shade400,
+                  ),
+                  cellMargin: const EdgeInsets.all(4),
+                ),
+                calendarBuilders: CalendarBuilders(
+                  markerBuilder: (context, date, events) {
+                    final count = taskCounts[DateTime(date.year, date.month, date.day)] ?? 0;
+                    if (count == 0) return null;
+                    return Positioned(
+                      bottom: 1,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(
+                          count.clamp(0, 3),
+                          (_) => Container(
+                            width: 5,
+                            height: 5,
+                            margin: const EdgeInsets.symmetric(horizontal: 1),
+                            decoration: BoxDecoration(
+                              color: AppConstants.primaryColor,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+
+            // Selected day header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                children: [
+                  Text(
+                    _formatDate(_calendarSelectedDay, isArabic),
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppConstants.primaryColor.withOpacity(0.15),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${dayTasks.length}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: AppConstants.primaryColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+
+            // Task list for selected day
+            Expanded(
+              child: dayTasks.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.event_available,
+                              size: 56,
+                              color: isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+                          const SizedBox(height: 12),
+                          Text(
+                            isArabic ? 'لا مهام في هذا اليوم' : 'No tasks on this day',
+                            style: TextStyle(
+                              fontSize: 15,
+                              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                      itemCount: dayTasks.length,
+                      itemBuilder: (_, index) => _buildTaskCard(dayTasks[index]),
+                    ),
+            ),
+          ],
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (_, __) => Center(
+        child: Text(isArabic ? 'خطأ في تحميل المهام' : 'Error loading tasks'),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date, bool isArabic) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final target = DateTime(date.year, date.month, date.day);
+
+    if (target == today) return isArabic ? 'اليوم' : 'Today';
+    if (target == today.add(const Duration(days: 1))) return isArabic ? 'غداً' : 'Tomorrow';
+    if (target == today.subtract(const Duration(days: 1))) return isArabic ? 'أمس' : 'Yesterday';
+
+    final months = isArabic
+        ? ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر']
+        : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return '${date.day} ${months[date.month - 1]} ${date.year}';
   }
 
   // ─── Stats Row ───────────────────────────────────────────────────────────
@@ -666,9 +940,250 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
         task: task,
         onToggle: () => _toggleTask(task),
         onTap: () => _editTask(task),
-        onDelete: () => _deleteTask(task.id, isArabic),
+        onDelete: () => _deleteTask(task, isArabic),
+        onLongPress: () => _showContextMenu(task, isArabic),
       ),
     );
+  }
+
+  void _showContextMenu(Task task, bool isArabic) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppConstants.darkSurface : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.grey.shade600 : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              // Task title
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                child: Text(
+                  task.title,
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              const Divider(height: 20),
+
+              // Edit
+              ListTile(
+                leading: const Icon(Icons.edit_outlined, size: 22),
+                title: Text(isArabic ? 'تعديل' : 'Edit'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _editTask(task);
+                },
+              ),
+
+              // Duplicate
+              ListTile(
+                leading: const Icon(Icons.content_copy_outlined, size: 22),
+                title: Text(isArabic ? 'نسخ' : 'Duplicate'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _duplicateTask(task, isArabic);
+                },
+              ),
+
+              // Change Priority
+              ListTile(
+                leading: Icon(Icons.flag_outlined, size: 22,
+                    color: task.priority == TaskPriority.high ? Colors.orange
+                        : task.priority == TaskPriority.medium ? Colors.amber
+                        : Colors.green),
+                title: Text(isArabic ? 'تغيير الأولوية' : 'Change Priority'),
+                trailing: _buildPriorityLabel(task.priority, isArabic),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showPriorityPicker(task, isArabic);
+                },
+              ),
+
+              // Toggle complete/incomplete
+              ListTile(
+                leading: Icon(
+                  task.isCompleted ? Icons.undo_outlined : Icons.check_circle_outline,
+                  size: 22,
+                  color: task.isCompleted ? Colors.orange : Colors.green,
+                ),
+                title: Text(
+                  task.isCompleted
+                      ? (isArabic ? 'إلغاء الإتمام' : 'Mark Incomplete')
+                      : (isArabic ? 'إتمام' : 'Mark Complete'),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _toggleTask(task);
+                },
+              ),
+
+              // Delete
+              ListTile(
+                leading: Icon(Icons.delete_outline, size: 22, color: Colors.red.shade400),
+                title: Text(isArabic ? 'حذف' : 'Delete',
+                    style: TextStyle(color: Colors.red.shade400)),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _deleteTask(task, isArabic);
+                },
+              ),
+
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriorityLabel(TaskPriority priority, bool isArabic) {
+    final labels = {
+      TaskPriority.high: isArabic ? 'عالية' : 'High',
+      TaskPriority.medium: isArabic ? 'متوسطة' : 'Medium',
+      TaskPriority.low: isArabic ? 'منخفضة' : 'Low',
+    };
+    final colors = {
+      TaskPriority.high: Colors.orange,
+      TaskPriority.medium: Colors.amber,
+      TaskPriority.low: Colors.green,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: colors[priority]!.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(labels[priority]!,
+          style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: colors[priority])),
+    );
+  }
+
+  Future<void> _duplicateTask(Task task, bool isArabic) async {
+    final userId = ref.read(currentUserIdProvider);
+    try {
+      await TaskService.instance.addTask(
+        userId: userId,
+        title: task.title,
+        description: task.description,
+        priority: task.priority,
+        category: task.category,
+        dueDate: task.dueDate,
+        tags: task.tags,
+        hasDueTime: task.hasDueTime,
+      );
+      ref.invalidate(allTasksProvider);
+      ref.invalidate(taskStatisticsProvider);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isArabic ? 'تم نسخ المهمة' : 'Task duplicated'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error duplicating task: $e');
+    }
+  }
+
+  Future<void> _showPriorityPicker(Task task, bool isArabic) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final selected = await showModalBottomSheet<TaskPriority>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        decoration: BoxDecoration(
+          color: isDark ? AppConstants.darkSurface : Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Center(
+                child: Container(
+                  width: 40, height: 4,
+                  margin: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isDark ? Colors.grey.shade600 : Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  isArabic ? 'اختر الأولوية' : 'Select Priority',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+              ),
+              ...[
+                (TaskPriority.high, isArabic ? 'عالية' : 'High', Colors.orange, Icons.flag),
+                (TaskPriority.medium, isArabic ? 'متوسطة' : 'Medium', Colors.amber, Icons.flag),
+                (TaskPriority.low, isArabic ? 'منخفضة' : 'Low', Colors.green, Icons.flag),
+              ].map((entry) {
+                final (p, label, color, icon) = entry;
+                final isSelected = task.priority == p;
+                return ListTile(
+                  leading: Icon(icon, color: color),
+                  title: Text(label),
+                  trailing: isSelected
+                      ? Icon(Icons.check, color: AppConstants.primaryColor)
+                      : null,
+                  onTap: () => Navigator.pop(ctx, p),
+                );
+              }),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (selected != null && selected != task.priority) {
+      final userId = ref.read(currentUserIdProvider);
+      try {
+        await TaskService.instance.updateTask(
+          userId: userId,
+          taskId: task.id,
+          priority: selected,
+        );
+        ref.invalidate(allTasksProvider);
+      } catch (e) {
+        debugPrint('Error updating priority: $e');
+      }
+    }
   }
 
   Widget _buildNoResultsState(bool isDark, bool isArabic) {
@@ -735,26 +1250,69 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
 
   // ─── Actions ─────────────────────────────────────────────────────────────
 
+  bool _isToggling = false;
+
   Future<void> _toggleTask(Task task) async {
+    if (_isToggling) return; // Prevent rapid double-tap
+    _isToggling = true;
+
     final wasCompleted = task.isCompleted;
     final userId = ref.read(currentUserIdProvider);
+
+    // Check BEFORE toggle: is this the last incomplete today task?
+    bool shouldCelebrate = false;
+    if (!wasCompleted) {
+      final currentTasks = ref.read(allTasksProvider).valueOrNull ?? [];
+      final todayIncomplete = currentTasks.where(
+          (t) => t.isDueToday && !t.isCompleted);
+      shouldCelebrate = todayIncomplete.length == 1 && todayIncomplete.first.id == task.id;
+    }
+
+    app_haptic.HapticFeedback.medium();
     try {
       await TaskService.instance.toggleTaskCompletion(
         userId: userId,
         taskId: task.id,
       );
-      // If task was just completed, keep it visible for animation
+
       if (!wasCompleted) {
+        // Task was just completed — keep visible for animation
         setState(() => _recentlyCompleted.add(task.id));
         Future.delayed(const Duration(milliseconds: 1500), () {
           if (mounted) {
             setState(() => _recentlyCompleted.remove(task.id));
           }
         });
+
+        if (shouldCelebrate) {
+          Future.delayed(const Duration(milliseconds: 800), () {
+            if (mounted) _showCelebration();
+          });
+        }
+      } else {
+        // Task was undone — immediately clean up any stale animation state
+        setState(() => _recentlyCompleted.remove(task.id));
       }
     } catch (e) {
       debugPrint('Error toggling task: $e');
+    } finally {
+      _isToggling = false;
     }
+  }
+
+  void _showCelebration() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    app_haptic.HapticFeedback.success();
+
+    final overlay = OverlayEntry(
+      builder: (_) => _CelebrationOverlay(
+        isDark: isDark,
+        isArabic: isArabic,
+      ),
+    );
+    Overlay.of(context).insert(overlay);
+    Future.delayed(const Duration(seconds: 3), () => overlay.remove());
   }
 
   Future<void> _editTask(Task task) async {
@@ -768,20 +1326,50 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     }
   }
 
-  Future<void> _deleteTask(String taskId, bool isArabic) async {
+  Future<void> _deleteTask(Task task, bool isArabic) async {
     final userId = ref.read(currentUserIdProvider);
+
     try {
       await TaskService.instance.deleteTask(
         userId: userId,
-        taskId: taskId,
+        taskId: task.id,
       );
+      ref.invalidate(allTasksProvider);
+      ref.invalidate(taskStatisticsProvider);
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isArabic ? 'تم حذف المهمة' : 'Task deleted'),
-            backgroundColor: Colors.green,
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(
+            isArabic ? 'تم حذف المهمة' : 'Task deleted',
+            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
           ),
-        );
+          backgroundColor: Colors.black87,
+          duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+          action: SnackBarAction(
+            label: isArabic ? 'تراجع' : 'Undo',
+            textColor: Colors.white,
+            onPressed: () async {
+              try {
+                await TaskService.instance.addTask(
+                  userId: userId,
+                  title: task.title,
+                  description: task.description,
+                  priority: task.priority,
+                  category: task.category,
+                  dueDate: task.dueDate,
+                  tags: task.tags,
+                );
+                ref.invalidate(allTasksProvider);
+                ref.invalidate(taskStatisticsProvider);
+              } catch (e) {
+                debugPrint('Error restoring task: $e');
+              }
+            },
+          ),
+        ));
       }
     } catch (e) {
       debugPrint('Error deleting task: $e');
@@ -800,7 +1388,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
       BuildContext context, bool isArabic, bool isDark) async {
     final controller = TextEditingController();
     TaskPriority priority = TaskPriority.medium;
+    TaskCategory category = TaskCategory.other;
     DateTime? dueDate;
+    TimeOfDay? dueTime;
 
     await showModalBottomSheet(
       context: context,
@@ -869,11 +1459,12 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                     style: TextStyle(
                         color: isDark ? Colors.white : Colors.black87),
                     onSubmitted: (_) => _submitQuickAdd(
-                        controller, priority, dueDate, ctx, isArabic),
+                        controller, priority, category, dueDate, dueTime,
+                        dueTime != null, ctx, isArabic),
                   ),
                   const SizedBox(height: 12),
 
-                  // Priority + due date row
+                  // Row 1: Priority chips + date + time
                   Row(
                     children: [
                       // Priority chips
@@ -885,7 +1476,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                         ),
                         (
                           TaskPriority.medium,
-                          isArabic ? 'متوسطة' : 'Medium',
+                          isArabic ? 'متوسطة' : 'Med',
                           Colors.amber
                         ),
                         (
@@ -897,12 +1488,12 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                         final (p, label, color) = entry;
                         final selected = priority == p;
                         return Padding(
-                          padding: const EdgeInsets.only(right: 8),
+                          padding: const EdgeInsets.only(right: 6),
                           child: GestureDetector(
                             onTap: () => setModalState(() => priority = p),
                             child: Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 6),
+                                  horizontal: 10, vertical: 5),
                               decoration: BoxDecoration(
                                 color: selected
                                     ? color.withOpacity(0.2)
@@ -919,7 +1510,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                               child: Text(
                                 label,
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   fontWeight: selected
                                       ? FontWeight.bold
                                       : FontWeight.normal,
@@ -952,7 +1543,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
+                              horizontal: 8, vertical: 5),
                           decoration: BoxDecoration(
                             color: dueDate != null
                                 ? AppConstants.primaryColor.withOpacity(0.1)
@@ -970,19 +1561,19 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(Icons.calendar_today,
-                                  size: 14,
+                                  size: 13,
                                   color: dueDate != null
                                       ? AppConstants.primaryColor
                                       : (isDark
                                           ? Colors.grey.shade400
                                           : Colors.grey.shade600)),
-                              const SizedBox(width: 4),
+                              const SizedBox(width: 3),
                               Text(
                                 dueDate != null
                                     ? '${dueDate!.day}/${dueDate!.month}'
                                     : (isArabic ? 'التاريخ' : 'Date'),
                                 style: TextStyle(
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   color: dueDate != null
                                       ? AppConstants.primaryColor
                                       : (isDark
@@ -994,7 +1585,124 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                           ),
                         ),
                       ),
+
+                      if (dueDate != null) ...[
+                        const SizedBox(width: 6),
+                        // Time picker
+                        GestureDetector(
+                          onTap: () async {
+                            final picked = await showTimePicker(
+                              context: ctx,
+                              initialTime: dueTime ?? TimeOfDay.now(),
+                            );
+                            if (picked != null)
+                              setModalState(() => dueTime = picked);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: dueTime != null
+                                  ? AppConstants.primaryColor.withOpacity(0.1)
+                                  : Colors.transparent,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: dueTime != null
+                                    ? AppConstants.primaryColor
+                                    : (isDark
+                                        ? Colors.grey.shade600
+                                        : Colors.grey.shade300),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.access_time,
+                                    size: 13,
+                                    color: dueTime != null
+                                        ? AppConstants.primaryColor
+                                        : (isDark
+                                            ? Colors.grey.shade400
+                                            : Colors.grey.shade600)),
+                                const SizedBox(width: 3),
+                                Text(
+                                  dueTime != null
+                                      ? dueTime!.format(ctx)
+                                      : (isArabic ? 'الوقت' : 'Time'),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: dueTime != null
+                                        ? AppConstants.primaryColor
+                                        : (isDark
+                                            ? Colors.grey.shade400
+                                            : Colors.grey.shade600),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
+                  ),
+
+                  const SizedBox(height: 10),
+
+                  // Row 2: Category chips
+                  SizedBox(
+                    height: 30,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        (TaskCategory.work, Icons.work_outline, isArabic ? 'عمل' : 'Work'),
+                        (TaskCategory.personal, Icons.person_outline, isArabic ? 'شخصي' : 'Personal'),
+                        (TaskCategory.shopping, Icons.shopping_cart_outlined, isArabic ? 'تسوق' : 'Shop'),
+                        (TaskCategory.health, Icons.favorite_outline, isArabic ? 'صحة' : 'Health'),
+                        (TaskCategory.study, Icons.school_outlined, isArabic ? 'دراسة' : 'Study'),
+                        (TaskCategory.prayer, Icons.mosque_outlined, isArabic ? 'صلاة' : 'Prayer'),
+                      ].map((entry) {
+                        final (cat, icon, label) = entry;
+                        final selected = category == cat;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 6),
+                          child: GestureDetector(
+                            onTap: () => setModalState(() => category = cat),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: selected
+                                    ? AppConstants.primaryColor.withOpacity(0.12)
+                                    : Colors.transparent,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: selected
+                                      ? AppConstants.primaryColor
+                                      : (isDark ? Colors.grey.shade600 : Colors.grey.shade300),
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(icon, size: 12,
+                                      color: selected
+                                          ? AppConstants.primaryColor
+                                          : (isDark ? Colors.grey.shade500 : Colors.grey.shade600)),
+                                  const SizedBox(width: 3),
+                                  Text(label,
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+                                        color: selected
+                                            ? AppConstants.primaryColor
+                                            : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                                      )),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   ),
 
                   const SizedBox(height: 16),
@@ -1004,7 +1712,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () => _submitQuickAdd(
-                          controller, priority, dueDate, ctx, isArabic),
+                          controller, priority, category, dueDate, dueTime,
+                          dueTime != null, ctx, isArabic),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppConstants.primaryColor,
                         foregroundColor: Colors.white,
@@ -1033,7 +1742,10 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   Future<void> _submitQuickAdd(
     TextEditingController controller,
     TaskPriority priority,
+    TaskCategory category,
     DateTime? dueDate,
+    TimeOfDay? dueTime,
+    bool hasDueTime,
     BuildContext sheetContext,
     bool isArabic,
   ) async {
@@ -1042,12 +1754,23 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
 
     Navigator.of(sheetContext).pop();
 
+    // Combine date + time if both set
+    DateTime? effectiveDueDate = dueDate;
+    if (dueDate != null && dueTime != null) {
+      effectiveDueDate = DateTime(
+        dueDate.year, dueDate.month, dueDate.day,
+        dueTime.hour, dueTime.minute,
+      );
+    }
+
     final userId = ref.read(currentUserIdProvider);
     await TaskService.instance.addTask(
       userId: userId,
       title: title,
       priority: priority,
-      dueDate: dueDate,
+      category: category,
+      dueDate: effectiveDueDate,
+      hasDueTime: hasDueTime,
     );
 
     ref.invalidate(allTasksProvider);
@@ -1062,5 +1785,109 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
         ),
       );
     }
+  }
+}
+
+/// Full-screen celebration overlay shown when all today's tasks are completed
+class _CelebrationOverlay extends StatefulWidget {
+  final bool isDark;
+  final bool isArabic;
+  const _CelebrationOverlay({required this.isDark, required this.isArabic});
+
+  @override
+  State<_CelebrationOverlay> createState() => _CelebrationOverlayState();
+}
+
+class _CelebrationOverlayState extends State<_CelebrationOverlay>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnim;
+  late Animation<double> _opacityAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2800),
+    );
+    _scaleAnim = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+    _opacityAnim = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 10),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 75),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 15),
+    ]).animate(_controller);
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, _) {
+            return Container(
+              color: Colors.black.withOpacity(0.3 * _opacityAnim.value),
+              alignment: Alignment.center,
+              child: Opacity(
+                opacity: _opacityAnim.value,
+                child: Transform.scale(
+                  scale: _scaleAnim.value,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+                    decoration: BoxDecoration(
+                      color: widget.isDark ? AppConstants.darkCard : Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 20,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.celebration, size: 56, color: Colors.amber),
+                        const SizedBox(height: 16),
+                        Text(
+                          widget.isArabic ? 'أحسنت!' : 'Well Done!',
+                          style: TextStyle(
+                            fontSize: 28,
+                            fontWeight: FontWeight.bold,
+                            color: widget.isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          widget.isArabic
+                              ? 'لقد أكملت جميع مهام اليوم'
+                              : 'You completed all tasks for today!',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: widget.isDark ? Colors.grey.shade300 : Colors.grey.shade600,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 }
