@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Focus Mode Activity Layout - Full screen countdown with task info -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0D1117">
+
+    <!-- Center content -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:layout_centerInParent="true"
+        android:paddingStart="40dp"
+        android:paddingEnd="40dp">
+
+        <!-- Focus Mode Label -->
+        <TextView
+            android:id="@+id/focusModeLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Focus Mode Active"
+            android:textSize="14sp"
+            android:textColor="#80FFFFFF"
+            android:letterSpacing="0.15"
+            android:textAllCaps="true"
+            android:layout_marginBottom="32dp" />
+
+        <!-- Circular progress with timer -->
+        <FrameLayout
+            android:layout_width="240dp"
+            android:layout_height="240dp"
+            android:layout_marginBottom="32dp">
+
+            <!-- Progress bar (circular) -->
+            <ProgressBar
+                android:id="@+id/focusProgressBar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:max="100"
+                android:progress="0"
+                android:progressDrawable="@drawable/focus_progress_ring"
+                android:rotation="-90" />
+
+            <!-- Timer text in center -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:gravity="center"
+                android:layout_gravity="center">
+
+                <TextView
+                    android:id="@+id/focusTimerText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="25:00"
+                    android:textSize="56sp"
+                    android:textColor="#FFFFFF"
+                    android:fontFamily="monospace"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/focusRemainingLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="25 min remaining"
+                    android:textSize="13sp"
+                    android:textColor="#80FFFFFF"
+                    android:layout_marginTop="4dp" />
+
+            </LinearLayout>
+
+        </FrameLayout>
+
+        <!-- Task Title -->
+        <TextView
+            android:id="@+id/focusTaskTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Task Title"
+            android:textSize="24sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:maxWidth="320dp"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Task Description -->
+        <TextView
+            android:id="@+id/focusTaskDesc"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Stay focused on your task"
+            android:textSize="15sp"
+            android:textColor="#80FFFFFF"
+            android:gravity="center"
+            android:maxWidth="320dp"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Duration label -->
+        <TextView
+            android:id="@+id/focusDurationLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="25 min"
+            android:textSize="13sp"
+            android:textColor="#4DFFFFFF"
+            android:layout_marginBottom="32dp" />
+
+    </LinearLayout>
+
+    <!-- Exit hint at top -->
+    <TextView
+        android:id="@+id/focusExitHint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="48dp"
+        android:text="Press volume up 3x to exit"
+        android:textSize="12sp"
+        android:textColor="#33FFFFFF" />
+
+    <!-- Close button at bottom -->
+    <Button
+        android:id="@+id/focusCloseBtn"
+        android:layout_width="match_parent"
+        android:layout_height="52dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginBottom="48dp"
+        android:layout_marginStart="32dp"
+        android:layout_marginEnd="32dp"
+        android:text="Mark Done &amp; Exit"
+        android:textSize="16sp"
+        android:textColor="#FFFFFF"
+        android:background="@drawable/btn_close"
+        android:textAllCaps="false" />
+
+</RelativeLayout>

@@ -51,6 +51,8 @@ class Task {
   final String? parentTaskId;
   final List<SubTask> subtasks;
   final bool isPinned;
+  final bool focusMode;
+  final int focusDurationMinutes;
 
   Task({
     required this.id,
@@ -70,6 +72,8 @@ class Task {
     this.parentTaskId,
     this.subtasks = const [],
     this.isPinned = false,
+    this.focusMode = false,
+    this.focusDurationMinutes = 25,
   });
 
   bool get isRecurring => recurrenceType != RecurrenceType.none;
@@ -119,6 +123,8 @@ class Task {
               .toList()
           : [],
       isPinned: data['isPinned'] as bool? ?? false,
+      focusMode: data['focusMode'] as bool? ?? false,
+      focusDurationMinutes: data['focusDurationMinutes'] as int? ?? 25,
     );
   }
 
@@ -141,6 +147,8 @@ class Task {
       'parentTaskId': parentTaskId,
       'subtasks': subtasks.map((s) => s.toMap()).toList(),
       'isPinned': isPinned,
+      'focusMode': focusMode,
+      'focusDurationMinutes': focusDurationMinutes,
     };
   }
 
@@ -163,6 +171,8 @@ class Task {
     String? parentTaskId,
     List<SubTask>? subtasks,
     bool? isPinned,
+    bool? focusMode,
+    int? focusDurationMinutes,
     bool clearDueDate = false,
     bool clearCompletedAt = false,
     bool clearRecurrenceEndDate = false,
@@ -190,6 +200,8 @@ class Task {
           : (parentTaskId ?? this.parentTaskId),
       subtasks: subtasks ?? this.subtasks,
       isPinned: isPinned ?? this.isPinned,
+      focusMode: focusMode ?? this.focusMode,
+      focusDurationMinutes: focusDurationMinutes ?? this.focusDurationMinutes,
     );
   }
 

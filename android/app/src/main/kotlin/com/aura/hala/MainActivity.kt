@@ -27,6 +27,7 @@ class MainActivity : FlutterActivity() {
     private val ADHAN_CHANNEL = "com.aura.hala/adhan"
     private val PRAYER_CHANNEL = "com.aura.hala/prayer_alarms"
     private val BACKGROUND_SERVICE_CHANNEL = "com.aura.hala/background_service"
+    private val FOCUS_MODE_CHANNEL = "com.aura.hala/focus_mode"
 
     private var currentRoute: String = "/"
 
@@ -430,6 +431,79 @@ class MainActivity : FlutterActivity() {
                     }
 
                     result.success(true)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        // Focus Mode Channel - for scheduling focus mode at task time
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, FOCUS_MODE_CHANNEL).setMethodCallHandler { call, result ->
+            when (call.method) {
+                "scheduleFocusAlarm" -> {
+                    val taskId = call.argument<String>("taskId") ?: return@setMethodCallHandler result.error("INVALID_ARGUMENT", "taskId required", null)
+                    val taskTitle = call.argument<String>("taskTitle") ?: "Focus Mode"
+                    val taskDesc = call.argument<String>("taskDesc") ?: ""
+                    val triggerTime = call.argument<Long>("triggerTime") ?: return@setMethodCallHandler result.error("INVALID_ARGUMENT", "triggerTime required", null)
+                    val durationMinutes = call.argument<Int>("durationMinutes") ?: 25
+                    val language = call.argument<String>("language") ?: "en"
+
+                    Log.d("FocusModeChannel", "🎯 Scheduling focus mode for '$taskTitle' at $triggerTime")
+                    FocusModeReceiver.scheduleFocusAlarm(this, taskId, taskTitle, taskDesc, triggerTime, durationMinutes, language)
+                    result.success(true)
+                }
+                "cancelFocusAlarm" -> {
+                    val taskId = call.argument<String>("taskId") ?: return@setMethodCallHandler result.error("INVALID_ARGUMENT", "taskId required", null)
+                    Log.d("FocusModeChannel", "🗑️ Cancelling focus alarm for task $taskId")
+                    FocusModeReceiver.cancelFocusAlarm(this, taskId)
+                    result.success(true)
+                }
+                "canDrawOverlays" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        result.success(Settings.canDrawOverlays(this))
+                    } else {
+                        result.success(true)
+                    }
+                }
+                "requestOverlayPermission" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        try {
+                            val intent = Intent(
+                                Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                                Uri.parse("package:$packageName")
+                            )
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            startActivity(intent)
+                            result.success(true)
+                        } catch (e: Exception) {
+                            Log.e("FocusModeChannel", "❌ Failed to open overlay settings: ${e.message}")
+                            result.success(false)
+                        }
+                    } else {
+                        result.success(true)
+                    }
+                }
+                "hasDndAccess" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+                        result.success(notificationManager.isNotificationPolicyAccessGranted)
+                    } else {
+                        result.success(true)
+                    }
+                }
+                "requestDndAccess" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        try {
+                            val intent = Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            startActivity(intent)
+                            result.success(true)
+                        } catch (e: Exception) {
+                            Log.e("FocusModeChannel", "❌ Failed to open DND settings: ${e.message}")
+                            result.success(false)
+                        }
+                    } else {
+                        result.success(true)
+                    }
                 }
                 else -> result.notImplemented()
             }

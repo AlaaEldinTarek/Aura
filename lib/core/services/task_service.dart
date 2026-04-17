@@ -151,6 +151,8 @@ class TaskService {
     DateTime? recurrenceEndDate,
     String? parentTaskId,
     List<SubTask> subtasks = const [],
+    bool focusMode = false,
+    int focusDurationMinutes = 25,
   }) async {
     try {
       final docRef = _firestore
@@ -174,6 +176,8 @@ class TaskService {
         recurrenceEndDate: recurrenceEndDate,
         parentTaskId: parentTaskId,
         subtasks: subtasks,
+        focusMode: focusMode,
+        focusDurationMinutes: focusDurationMinutes,
       );
 
       await docRef.set(task.toFirestore());
@@ -220,6 +224,8 @@ class TaskService {
     DateTime? recurrenceEndDate,
     List<SubTask>? subtasks,
     bool? isPinned,
+    bool? focusMode,
+    int? focusDurationMinutes,
   }) async {
     try {
       // Get current task from cache or Firestore
@@ -258,6 +264,8 @@ class TaskService {
         recurrenceEndDate: recurrenceEndDate,
         subtasks: subtasks,
         isPinned: isPinned,
+        focusMode: focusMode,
+        focusDurationMinutes: focusDurationMinutes,
       );
 
       await _firestore

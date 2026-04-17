@@ -188,5 +188,23 @@
   "notification_permission_title": "الإشعارات",
   "notification_permission_desc": "مطلوب لإشعارات أوقات الصلاة",
   "dnd_permission_title": "وضع عدم الإزعاج",
-  "dnd_permission_desc": "مطلوب لتفعيل الوضع الصامت أثناء الصلاة"
+  "dnd_permission_desc": "مطلوب لتفعيل الوضع الصامت أثناء الصلاة",
+
+  "focus_mode": "وضع التركيز",
+  "focus_mode_subtitle": "قفل الشاشة وكتم الإشعارات أثناء العمل على هذه المهمة",
+  "focus_mode_duration": "مدة التركيز",
+  "focus_mode_minutes": "دقائق",
+  "focus_mode_confirm_title": "تفعيل وضع التركيز؟",
+  "focus_mode_confirm_message": "سيتم قفل هاتفك وكتم جميع الإشعارات لمدة %d دقيقة. يمكنك الخروج بالضغط على زر رفع الصوت 3 مرات بسرعة.",
+  "focus_mode_active": "وضع التركيز نشط",
+  "focus_mode_remaining": "متبقي",
+  "focus_mode_complete": "انتهت جلسة التركيز!",
+  "focus_mode_complete_desc": "أحسنت! بقيت مركزاً لمدة %d دقيقة.",
+  "focus_mode_cancelled": "تم إلغاء جلسة التركيز",
+  "focus_mode_permission_title": "أذونات مطلوبة",
+  "focus_mode_permission_message": "يتطلب وضع التركيز إذن الرسم فوق التطبيقات الأخرى والوصول إلى وضع عدم الإزعاج. يرجى منح هذه الأذونات للمتابعة.",
+  "focus_mode_grant_overlay": "منح إذن التراكب",
+  "focus_mode_grant_dnd": "منح إذن عدم الإزعاج",
+  "focus_mode_exit_hint": "اضغط على زر رفع الصوت 3 مرات للخروج",
+  "focus_mode_task_done": "إتمام المهمة والخروج"
 }

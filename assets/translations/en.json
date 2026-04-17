@@ -188,5 +188,23 @@
   "notification_permission_title": "Notifications",
   "notification_permission_desc": "Required for prayer time alerts",
   "dnd_permission_title": "Do Not Disturb",
-  "dnd_permission_desc": "Required for silent mode during prayer"
+  "dnd_permission_desc": "Required for silent mode during prayer",
+
+  "focus_mode": "Focus Mode",
+  "focus_mode_subtitle": "Lock screen and silence notifications while working on this task",
+  "focus_mode_duration": "Focus Duration",
+  "focus_mode_minutes": "minutes",
+  "focus_mode_confirm_title": "Enable Focus Mode?",
+  "focus_mode_confirm_message": "This will lock your phone and silence all notifications for %d minutes. You can exit by pressing volume up 3 times quickly.",
+  "focus_mode_active": "Focus Mode Active",
+  "focus_mode_remaining": "remaining",
+  "focus_mode_complete": "Focus Session Complete!",
+  "focus_mode_complete_desc": "Great job! You stayed focused for %d minutes.",
+  "focus_mode_cancelled": "Focus session cancelled",
+  "focus_mode_permission_title": "Permissions Required",
+  "focus_mode_permission_message": "Focus Mode requires permission to draw over other apps and access Do Not Disturb. Please grant these permissions to continue.",
+  "focus_mode_grant_overlay": "Grant Overlay Permission",
+  "focus_mode_grant_dnd": "Grant DND Permission",
+  "focus_mode_exit_hint": "Press volume up 3 times to exit",
+  "focus_mode_task_done": "Mark Done & Exit"
 }

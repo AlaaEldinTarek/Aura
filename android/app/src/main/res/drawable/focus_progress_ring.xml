@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Circular progress ring for Focus Mode countdown -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Background ring -->
+    <item>
+        <shape
+            android:shape="ring"
+            android:thickness="6dp"
+            android:useLevel="false">
+            <solid android:color="#1AFFFFFF" />
+        </shape>
+    </item>
+    <!-- Progress ring -->
+    <item>
+        <shape
+            android:shape="ring"
+            android:thickness="6dp"
+            android:useLevel="true">
+            <solid android:color="#007DFF" />
+        </shape>
+    </item>
+</layer-list>

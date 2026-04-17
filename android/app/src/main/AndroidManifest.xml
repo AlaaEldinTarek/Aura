@@ -23,6 +23,9 @@
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY"
         android:minSdkVersion="23" />
 
+    <!-- Focus Mode Permissions -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+
     <!-- Storage permissions for downloading adhan files -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="28"/>
@@ -61,6 +64,20 @@
         <!-- Adhan Full-Screen Activity - Shows over lock screen when prayer time arrives -->
         <activity
             android:name=".AdhanFullScreenActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true">
+        </activity>
+
+        <!-- Focus Mode Activity - Full screen lock for task focus -->
+        <activity
+            android:name=".FocusModeActivity"
             android:exported="false"
             android:excludeFromRecents="true"
             android:noHistory="true"
@@ -143,6 +160,16 @@
             android:name=".SilentOffReceiver"
             android:enabled="true"
             android:exported="false"/>
+
+        <!-- Focus Mode Receiver - Triggers focus mode at task time -->
+        <receiver
+            android:name=".FocusModeReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.aura.hala.FOCUS_MODE_ALARM"/>
+            </intent-filter>
+        </receiver>
 
         <!-- Next Prayer Widget -->
         <receiver

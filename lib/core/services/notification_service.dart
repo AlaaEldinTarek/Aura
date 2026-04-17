@@ -9,6 +9,7 @@ import '../models/prayer_record.dart' show kPrayerNames, PrayerStatus, PrayerMet
 import '../constants/app_constants.dart';
 import 'prayer_tracking_service.dart';
 import 'task_service.dart';
+import 'package:flutter/services.dart';
 
 /// Service for managing prayer time notifications
 class NotificationService {
@@ -914,5 +915,81 @@ class NotificationService {
     debugPrint('📋 Notification launched from: ${pendingNotifications?.didNotificationLaunchApp ?? false}');
 
     debugPrint('═══════════════════════════════════════');
+  }
+
+  // ─── Focus Mode ─────────────────────────────────────────────────────────
+
+  static const _focusChannel = MethodChannel('com.aura.hala/focus_mode');
+
+  /// Schedule a focus mode alarm at task time via native MethodChannel
+  Future<void> scheduleFocusMode({
+    required String taskId,
+    required String title,
+    String description = '',
+    required DateTime triggerTime,
+    required int durationMinutes,
+    String language = 'en',
+  }) async {
+    try {
+      await _focusChannel.invokeMethod('scheduleFocusAlarm', {
+        'taskId': taskId,
+        'taskTitle': title,
+        'taskDesc': description,
+        'triggerTime': triggerTime.millisecondsSinceEpoch,
+        'durationMinutes': durationMinutes,
+        'language': language,
+      });
+      debugPrint('FocusMode: Scheduled focus for "$title" at $triggerTime');
+    } on PlatformException catch (e) {
+      debugPrint('FocusMode: Error scheduling - ${e.message}');
+    }
+  }
+
+  /// Cancel a focus mode alarm
+  Future<void> cancelFocusMode(String taskId) async {
+    try {
+      await _focusChannel.invokeMethod('cancelFocusAlarm', {
+        'taskId': taskId,
+      });
+      debugPrint('FocusMode: Cancelled focus alarm for task $taskId');
+    } on PlatformException catch (e) {
+      debugPrint('FocusMode: Error cancelling - ${e.message}');
+    }
+  }
+
+  /// Check if overlay permission is granted
+  Future<bool> canDrawOverlays() async {
+    try {
+      return await _focusChannel.invokeMethod('canDrawOverlays') ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  /// Request overlay permission (opens system settings)
+  Future<void> requestOverlayPermission() async {
+    try {
+      await _focusChannel.invokeMethod('requestOverlayPermission');
+    } on PlatformException catch (e) {
+      debugPrint('FocusMode: Error requesting overlay - ${e.message}');
+    }
+  }
+
+  /// Check if DND access is granted
+  Future<bool> hasDndAccess() async {
+    try {
+      return await _focusChannel.invokeMethod('hasDndAccess') ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  /// Request DND access (opens system settings)
+  Future<void> requestDndAccess() async {
+    try {
+      await _focusChannel.invokeMethod('requestDndAccess');
+    } on PlatformException catch (e) {
+      debugPrint('FocusMode: Error requesting DND - ${e.message}');
+    }
   }
 }

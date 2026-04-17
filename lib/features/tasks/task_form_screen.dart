@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/models/task.dart';
 import '../../core/services/task_service.dart';
+import '../../core/services/notification_service.dart';
 import '../../core/providers/task_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Task Form Screen - Add or Edit a task
 class TaskFormScreen extends ConsumerStatefulWidget {
@@ -36,6 +38,9 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   RecurrenceType _recurrenceType = RecurrenceType.daily;
   int _recurrenceInterval = 1;
   DateTime? _recurrenceEndDate;
+  // Focus Mode
+  bool _focusModeEnabled = false;
+  int _focusDurationMinutes = 25;
 
   @override
   void initState() {
@@ -63,6 +68,8 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     _recurrenceInterval = task.recurrenceInterval;
     _recurrenceEndDate = task.recurrenceEndDate;
     _subtasks = List<SubTask>.from(task.subtasks);
+    _focusModeEnabled = task.focusMode;
+    _focusDurationMinutes = task.focusDurationMinutes;
   }
 
   @override
@@ -112,9 +119,24 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           recurrenceInterval: _recurrenceInterval,
           recurrenceEndDate: _recurrenceEnabled ? _recurrenceEndDate : null,
           subtasks: _subtasks,
+          focusMode: _focusModeEnabled,
+          focusDurationMinutes: _focusDurationMinutes,
         );
 
         if (task != null && mounted) {
+          // Schedule focus mode alarm if enabled
+          if (_focusModeEnabled && effectiveDueDate != null) {
+            final prefs = await SharedPreferences.getInstance();
+            final language = prefs.getString('language') ?? 'en';
+            await NotificationService.instance.scheduleFocusMode(
+              taskId: task.id,
+              title: task.title,
+              description: task.description ?? '',
+              triggerTime: effectiveDueDate!,
+              durationMinutes: _focusDurationMinutes,
+              language: language,
+            );
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(isArabic ? 'تمت إضافة المهمة' : 'Task added'),
@@ -141,9 +163,26 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           recurrenceInterval: _recurrenceInterval,
           recurrenceEndDate: _recurrenceEnabled ? _recurrenceEndDate : null,
           subtasks: _subtasks,
+          focusMode: _focusModeEnabled,
+          focusDurationMinutes: _focusDurationMinutes,
         );
 
         if (success && mounted) {
+          // Update focus mode alarm
+          if (_focusModeEnabled && effectiveDueDate != null) {
+            final prefs = await SharedPreferences.getInstance();
+            final language = prefs.getString('language') ?? 'en';
+            await NotificationService.instance.scheduleFocusMode(
+              taskId: widget.task!.id,
+              title: _titleController.text.trim(),
+              description: _descriptionController.text.trim(),
+              triggerTime: effectiveDueDate!,
+              durationMinutes: _focusDurationMinutes,
+              language: language,
+            );
+          } else {
+            await NotificationService.instance.cancelFocusMode(widget.task!.id);
+          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(isArabic ? 'تمت تحديث المهمة' : 'Task updated'),
@@ -628,6 +667,11 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
 
             const SizedBox(height: AppConstants.paddingMedium),
 
+            // Focus Mode Card
+            _buildFocusModeCard(isDark, isArabic),
+
+            const SizedBox(height: AppConstants.paddingMedium),
+
             // Tags Card
             _buildTagsCard(isDark, isArabic),
 
@@ -793,6 +837,150 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
         ],
       ),
     );
+  }
+
+  // ─── Focus Mode ────────────────────────────────────────────────────────
+
+  Widget _buildFocusModeCard(bool isDark, bool isArabic) {
+    final borderColor = isDark ? AppConstants.darkBorder : AppConstants.lightBorder;
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: borderColor),
+        borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+      ),
+      child: Column(
+        children: [
+          SwitchListTile(
+            secondary: Icon(
+              Icons.center_focus_strong,
+              color: _focusModeEnabled ? AppConstants.primaryColor : Colors.grey,
+            ),
+            title: Text(isArabic ? 'وضع التركيز' : 'Focus Mode'),
+            subtitle: Text(
+              _focusModeEnabled
+                  ? (isArabic
+                      ? '${_focusDurationMinutes} دقيقة'
+                      : '$_focusDurationMinutes min')
+                  : (isArabic
+                      ? 'قفل الشاشة وكتم الإشعارات'
+                      : 'Lock screen & silence notifications'),
+              style: TextStyle(
+                fontSize: 12,
+                color: _focusModeEnabled
+                    ? AppConstants.primaryColor
+                    : Colors.grey,
+              ),
+            ),
+            value: _focusModeEnabled,
+            activeColor: AppConstants.primaryColor,
+            onChanged: (val) async {
+              if (val) {
+                final confirmed = await _showFocusModeConfirmation(isArabic);
+                if (!confirmed) return;
+              }
+              setState(() => _focusModeEnabled = val);
+            },
+          ),
+          if (_focusModeEnabled) ...[
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(AppConstants.paddingMedium),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isArabic ? 'مدة التركيز' : 'Focus Duration',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      _buildDurationChip(15, isArabic ? '١٥' : '15', isDark),
+                      const SizedBox(width: 8),
+                      _buildDurationChip(25, isArabic ? '٢٥' : '25', isDark),
+                      const SizedBox(width: 8),
+                      _buildDurationChip(45, isArabic ? '٤٥' : '45', isDark),
+                      const SizedBox(width: 8),
+                      _buildDurationChip(60, isArabic ? '٦٠' : '60', isDark),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDurationChip(int minutes, String label, bool isDark) {
+    final isSelected = _focusDurationMinutes == minutes;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _focusDurationMinutes = minutes),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppConstants.primaryColor
+                : (isDark ? AppConstants.darkCard : Colors.grey.shade100),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: isSelected
+                  ? AppConstants.primaryColor
+                  : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
+            ),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: isSelected
+                  ? Colors.white
+                  : (isDark ? Colors.grey.shade300 : Colors.grey.shade700),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<bool> _showFocusModeConfirmation(bool isArabic) async {
+    return await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
+        ),
+        title: Text(
+          isArabic ? 'تفعيل وضع التركيز؟' : 'Enable Focus Mode?',
+        ),
+        content: Text(
+          isArabic
+              ? 'سيتم قفل هاتفك وكتم جميع الإشعارات لمدة $_focusDurationMinutes دقيقة. يمكنك الخروج بالضغط على زر رفع الصوت 3 مرات بسرعة.'
+              : 'This will lock your phone and silence all notifications for $_focusDurationMinutes minutes. You can exit by pressing volume up 3 times quickly.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(isArabic ? 'إلغاء' : 'Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: AppConstants.primaryColor,
+            ),
+            child: Text(isArabic ? 'تفعيل' : 'Enable'),
+          ),
+        ],
+      ),
+    ) ?? false;
   }
 
   Widget _buildFrequencyChip(RecurrenceType type, String label, bool isDark) {
