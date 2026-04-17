@@ -189,6 +189,7 @@ class TaskService {
           taskId: task.id,
           title: task.title,
           dueDate: task.dueDate!,
+          hasDueTime: task.hasDueTime,
           language: language,
         );
       }
@@ -279,6 +280,7 @@ class TaskService {
           taskId: taskId,
           title: updatedTask.title,
           dueDate: updatedTask.dueDate!,
+          hasDueTime: updatedTask.hasDueTime,
           language: language,
         );
       }

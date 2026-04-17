@@ -506,32 +506,35 @@ class NotificationService {
     required String taskId,
     required String title,
     required DateTime dueDate,
+    bool hasDueTime = false,
     String language = 'en',
   }) async {
     final isArabic = language == 'ar';
     final now = DateTime.now();
 
-    // Decide reminder time: 30 min before due, but no earlier than now
-    final thirtyBefore = dueDate.subtract(const Duration(minutes: 30));
-    final reminderTime = thirtyBefore.isAfter(now) ? thirtyBefore : dueDate;
+    DateTime reminderTime;
+    String body;
+
+    if (hasDueTime) {
+      // Specific time set — remind 30 min before
+      final thirtyBefore = dueDate.subtract(const Duration(minutes: 30));
+      reminderTime = thirtyBefore.isAfter(now) ? thirtyBefore : dueDate;
+      body = isArabic
+          ? (thirtyBefore.isAfter(now) ? 'موعد المهمة بعد 30 دقيقة' : 'حان موعد المهمة الآن')
+          : (thirtyBefore.isAfter(now) ? 'Task due in 30 minutes' : 'Task is due now');
+    } else {
+      // No specific time — remind at 9:00 AM on the due date
+      reminderTime = DateTime(dueDate.year, dueDate.month, dueDate.day, 9, 0);
+      body = isArabic ? 'لديك مهمة مستحقة اليوم' : 'You have a task due today';
+    }
 
     if (reminderTime.isBefore(now)) {
-      debugPrint('TaskNotification: Due date already passed for "$title" — skipping');
+      debugPrint('TaskNotification: Reminder time already passed for "$title" — skipping');
       return;
     }
 
     final notifId = _taskNotificationId(taskId);
-
-    // Cancel any existing reminder for this task first
     await _notifications.cancel(notifId);
-
-    final body = isArabic
-        ? thirtyBefore.isAfter(now)
-            ? 'موعد المهمة بعد 30 دقيقة'
-            : 'حان موعد المهمة الآن'
-        : thirtyBefore.isAfter(now)
-            ? 'Task due in 30 minutes'
-            : 'Task is due now';
 
     final androidDetails = AndroidNotificationDetails(
       _taskChannelId,
