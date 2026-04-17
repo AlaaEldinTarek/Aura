@@ -29,6 +29,8 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   TimeOfDay? _selectedDueTime;
   bool _hasDueTime = false;
   List<String> _tags = [];
+  List<SubTask> _subtasks = [];
+  final TextEditingController _subtaskController = TextEditingController();
   // Recurrence
   bool _recurrenceEnabled = false;
   RecurrenceType _recurrenceType = RecurrenceType.daily;
@@ -60,6 +62,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
         : task.recurrenceType;
     _recurrenceInterval = task.recurrenceInterval;
     _recurrenceEndDate = task.recurrenceEndDate;
+    _subtasks = List<SubTask>.from(task.subtasks);
   }
 
   @override
@@ -67,6 +70,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     _titleController.dispose();
     _descriptionController.dispose();
     _tagController.dispose();
+    _subtaskController.dispose();
     super.dispose();
   }
 
@@ -107,6 +111,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           recurrenceType: _recurrenceEnabled ? _recurrenceType : RecurrenceType.none,
           recurrenceInterval: _recurrenceInterval,
           recurrenceEndDate: _recurrenceEnabled ? _recurrenceEndDate : null,
+          subtasks: _subtasks,
         );
 
         if (task != null && mounted) {
@@ -135,6 +140,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           recurrenceType: _recurrenceEnabled ? _recurrenceType : RecurrenceType.none,
           recurrenceInterval: _recurrenceInterval,
           recurrenceEndDate: _recurrenceEnabled ? _recurrenceEndDate : null,
+          subtasks: _subtasks,
         );
 
         if (success && mounted) {
@@ -625,6 +631,11 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
             // Tags Card
             _buildTagsCard(isDark, isArabic),
 
+            const SizedBox(height: AppConstants.paddingMedium),
+
+            // Subtasks Card
+            _buildSubtasksCard(isDark, isArabic),
+
             const SizedBox(height: AppConstants.paddingLarge * 2),
           ],
         ),
@@ -866,6 +877,203 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     if (picked != null) {
       setState(() => _recurrenceEndDate = picked);
     }
+  }
+
+  // ─── Subtasks ────────────────────────────────────────────────────────────
+
+  Widget _buildSubtasksCard(bool isDark, bool isArabic) {
+    final borderColor = isDark ? AppConstants.darkBorder : AppConstants.lightBorder;
+    final completedCount = _subtasks.where((s) => s.isCompleted).length;
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(color: borderColor),
+        borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppConstants.paddingMedium),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.checklist,
+                    size: 20,
+                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                const SizedBox(width: 8),
+                Text(
+                  isArabic ? 'الخطوات الفرعية' : 'Checklist',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                if (_subtasks.isNotEmpty) ...[
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppConstants.primaryColor.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      '$completedCount/${_subtasks.length}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                        color: AppConstants.primaryColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Subtask input row
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _subtaskController,
+                    decoration: InputDecoration(
+                      hintText: isArabic ? 'أضف خطوة...' : 'Add a step...',
+                      hintStyle: TextStyle(
+                          color: isDark
+                              ? Colors.grey.shade500
+                              : Colors.grey.shade400),
+                      isDense: true,
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      filled: true,
+                      fillColor:
+                          isDark ? AppConstants.darkCard : Colors.grey.shade50,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    style: TextStyle(
+                        color: isDark ? Colors.white : Colors.black87,
+                        fontSize: 14),
+                    onSubmitted: (value) => _addSubtask(value),
+                    textInputAction: TextInputAction.done,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => _addSubtask(_subtaskController.text),
+                  child: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppConstants.primaryColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.add, color: Colors.white, size: 18),
+                  ),
+                ),
+              ],
+            ),
+
+            // Subtask list
+            if (_subtasks.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  value: _subtasks.isEmpty ? 0 : completedCount / _subtasks.length,
+                  backgroundColor: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                  color: completedCount == _subtasks.length
+                      ? Colors.green
+                      : AppConstants.primaryColor,
+                  minHeight: 3,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...List.generate(_subtasks.length, (index) {
+                final subtask = _subtasks[index];
+                return Dismissible(
+                  key: ValueKey(subtask.id),
+                  direction: DismissDirection.endToStart,
+                  onDismissed: (_) => setState(() => _subtasks.removeAt(index)),
+                  background: Container(
+                    alignment: Alignment.centerRight,
+                    padding: const EdgeInsets.only(right: 16),
+                    color: Colors.red,
+                    child: const Icon(Icons.delete, color: Colors.white, size: 20),
+                  ),
+                  child: InkWell(
+                    onTap: () => setState(() {
+                      _subtasks[index] = subtask.copyWith(
+                          isCompleted: !subtask.isCompleted);
+                    }),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      child: Row(
+                        children: [
+                          // Checkbox
+                          AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: 22,
+                            height: 22,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: subtask.isCompleted
+                                  ? AppConstants.primaryColor
+                                  : Colors.transparent,
+                              border: Border.all(
+                                color: subtask.isCompleted
+                                    ? AppConstants.primaryColor
+                                    : (isDark ? Colors.grey.shade600 : Colors.grey.shade400),
+                                width: 1.5,
+                              ),
+                            ),
+                            child: subtask.isCompleted
+                                ? const Icon(Icons.check, size: 14, color: Colors.white)
+                                : null,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              subtask.title,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: subtask.isCompleted
+                                    ? (isDark ? Colors.grey.shade600 : Colors.grey.shade400)
+                                    : (isDark ? Colors.white : Colors.black87),
+                                decoration: subtask.isCompleted
+                                    ? TextDecoration.lineThrough
+                                    : null,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _addSubtask(String value) {
+    final title = value.trim();
+    if (title.isEmpty) {
+      _subtaskController.clear();
+      return;
+    }
+    setState(() {
+      _subtasks.add(SubTask(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: title,
+      ));
+      _subtaskController.clear();
+    });
   }
 
   // ─── Tags ────────────────────────────────────────────────────────────────

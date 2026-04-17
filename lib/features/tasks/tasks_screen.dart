@@ -26,12 +26,13 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   bool _showCompleted = false;
   bool _showSearch = false;
   bool _showCalendar = false;
+  bool _selectMode = false;
+  final Set<String> _selectedTaskIds = {};
   DateTime _calendarFocusDay = DateTime.now();
   DateTime _calendarSelectedDay = DateTime.now();
   String _searchQuery = '';
   _SortOrder _sortOrder = _SortOrder.dateDesc;
   final TextEditingController _searchController = TextEditingController();
-  static const _sortPrefKey = 'task_sort_order';
 
   // Track recently completed tasks so they stay visible for animation
   final Set<String> _recentlyCompleted = {};
@@ -40,7 +41,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   void initState() {
     super.initState();
     _loadSortOrder();
+    _loadCategoryFilter();
   }
+
+  static const _sortPrefKey = 'task_sort_order';
+  static const _categoryPrefKey = 'task_category_filter';
 
   Future<void> _loadSortOrder() async {
     final prefs = await SharedPreferences.getInstance();
@@ -51,6 +56,27 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
         orElse: () => _SortOrder.dateDesc,
       );
       if (mounted) setState(() => _sortOrder = order);
+    }
+  }
+
+  Future<void> _loadCategoryFilter() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getString(_categoryPrefKey);
+    if (saved != null && saved.isNotEmpty) {
+      final category = TaskCategory.values.firstWhere(
+        (e) => e.value == saved,
+        orElse: () => TaskCategory.other,
+      );
+      if (mounted) setState(() => _selectedCategory = category);
+    }
+  }
+
+  Future<void> _saveCategoryFilter(TaskCategory? category) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (category == null) {
+      await prefs.remove(_categoryPrefKey);
+    } else {
+      await prefs.setString(_categoryPrefKey, category.value);
     }
   }
 
@@ -101,6 +127,18 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
         foregroundColor: isDark ? Colors.white : Colors.black87,
         elevation: 0,
         actions: [
+          // Select mode toggle (hide in search/calendar mode)
+          if (!_showSearch && !_showCalendar)
+            IconButton(
+              icon: Icon(_selectMode ? Icons.close : Icons.checklist),
+              tooltip: _selectMode
+                  ? (isArabic ? 'إلغاء التحديد' : 'Cancel')
+                  : (isArabic ? 'تحديد متعدد' : 'Select'),
+              onPressed: () => setState(() {
+                _selectMode = !_selectMode;
+                _selectedTaskIds.clear();
+              }),
+            ),
           // Calendar toggle
           IconButton(
             icon: Icon(_showCalendar ? Icons.list : Icons.calendar_month),
@@ -183,7 +221,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           ),
         ],
       ),
-      floatingActionButton: GestureDetector(
+      floatingActionButton: _selectMode
+          ? null
+          : GestureDetector(
         onLongPress: () => _navigateToTaskForm(context),
         child: FloatingActionButton.extended(
           onPressed: () => _showQuickAdd(context, isArabic, isDark),
@@ -192,6 +232,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           backgroundColor: AppConstants.primaryColor,
         ),
       ),
+      bottomNavigationBar: _selectMode && _selectedTaskIds.isNotEmpty
+          ? _buildBulkActionBar(isDark, isArabic)
+          : null,
       body: _showCalendar
           ? _buildCalendarView(allTasksAsync, isDark, isArabic)
           : RefreshIndicator(
@@ -487,34 +530,41 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   // ─── Stats Row ───────────────────────────────────────────────────────────
 
   Widget _buildStatsRow(TaskStatistics stats, bool isDark, bool isArabic) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Row(
-        children: [
-          _buildStatCard(
-            icon: Icons.today,
-            label: isArabic ? 'اليوم' : 'Today',
-            value: '${stats.dueToday}',
-            color: AppConstants.primaryColor,
-            isDark: isDark,
-          ),
-          const SizedBox(width: 10),
-          _buildStatCard(
-            icon: Icons.warning_amber_rounded,
-            label: isArabic ? 'متأخرة' : 'Overdue',
-            value: '${stats.overdue}',
-            color: Colors.red,
-            isDark: isDark,
-          ),
-          const SizedBox(width: 10),
-          _buildStatCard(
-            icon: Icons.check_circle,
-            label: isArabic ? 'مكتمل' : 'Done',
-            value: '${stats.completed}',
-            color: Colors.green,
-            isDark: isDark,
-          ),
-        ],
+    return GestureDetector(
+      onTap: () => Navigator.of(context).pushNamed('/task_stats'),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: Row(
+          children: [
+            _buildStatCard(
+              icon: Icons.today,
+              label: isArabic ? 'اليوم' : 'Today',
+              value: '${stats.dueToday}',
+              color: AppConstants.primaryColor,
+              isDark: isDark,
+            ),
+            const SizedBox(width: 10),
+            _buildStatCard(
+              icon: Icons.warning_amber_rounded,
+              label: isArabic ? 'متأخرة' : 'Overdue',
+              value: '${stats.overdue}',
+              color: Colors.red,
+              isDark: isDark,
+            ),
+            const SizedBox(width: 10),
+            _buildStatCard(
+              icon: Icons.check_circle,
+              label: isArabic ? 'مكتمل' : 'Done',
+              value: '${stats.completed}',
+              color: Colors.green,
+              isDark: isDark,
+            ),
+            const SizedBox(width: 6),
+            Icon(Icons.chevron_right,
+                size: 20,
+                color: isDark ? Colors.grey.shade600 : Colors.grey.shade400),
+          ],
+        ),
       ),
     );
   }
@@ -606,9 +656,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
           final (category, label, icon) = categories[index];
           final isSelected = _selectedCategory == category;
           return GestureDetector(
-            onTap: () => setState(() {
-              _selectedCategory = isSelected ? null : category;
-            }),
+            onTap: () {
+              final newCat = isSelected ? null : category;
+              setState(() => _selectedCategory = newCat);
+              _saveCategoryFilter(newCat);
+            },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
@@ -870,16 +922,32 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
 
           // Completed Section (collapsible)
           if (completedTasks.isNotEmpty) ...[
-            InkWell(
-              onTap: () => setState(() => _showCompleted = !_showCompleted),
-              borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-              child: _buildSectionHeader(
-                icon: _showCompleted ? Icons.expand_less : Icons.expand_more,
-                title: isArabic ? 'المكتملة' : 'Completed',
-                count: completedTasks.length,
-                color: Colors.green,
-                isDark: isDark,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => _showCompleted = !_showCompleted),
+                    borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+                    child: _buildSectionHeader(
+                      icon: _showCompleted ? Icons.expand_less : Icons.expand_more,
+                      title: isArabic ? 'المكتملة' : 'Completed',
+                      count: completedTasks.length,
+                      color: Colors.green,
+                      isDark: isDark,
+                    ),
+                  ),
+                ),
+                if (_showCompleted)
+                  TextButton.icon(
+                    onPressed: () => _clearCompleted(completedTasks, isArabic),
+                    icon: const Icon(Icons.delete_sweep_outlined, size: 18),
+                    label: Text(
+                      isArabic ? 'مسح الكل' : 'Clear',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    style: TextButton.styleFrom(foregroundColor: Colors.red.shade400),
+                  ),
+              ],
             ),
             if (_showCompleted) ...[
               const SizedBox(height: 8),
@@ -933,6 +1001,65 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
 
   Widget _buildTaskCard(Task task) {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final isSelected = _selectedTaskIds.contains(task.id);
+
+    if (_selectMode) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: GestureDetector(
+          onTap: () => setState(() {
+            if (isSelected) {
+              _selectedTaskIds.remove(task.id);
+            } else {
+              _selectedTaskIds.add(task.id);
+            }
+          }),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+              border: Border.all(
+                color: isSelected ? AppConstants.primaryColor : Colors.transparent,
+                width: 2,
+              ),
+            ),
+            child: Stack(
+              children: [
+                TaskCard(
+                  key: ValueKey(task.id),
+                  task: task,
+                  onToggle: null,
+                  onTap: null,
+                  onDelete: null,
+                ),
+                if (isSelected)
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppConstants.primaryColor.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+                      ),
+                    ),
+                  ),
+                Positioned(
+                  top: 8, right: 8,
+                  child: AnimatedScale(
+                    scale: isSelected ? 1.0 : 0.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: CircleAvatar(
+                      radius: 14,
+                      backgroundColor: AppConstants.primaryColor,
+                      child: const Icon(Icons.check, color: Colors.white, size: 18),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: TaskCard(
@@ -995,6 +1122,24 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                 onTap: () {
                   Navigator.pop(ctx);
                   _editTask(task);
+                },
+              ),
+
+              // Pin/Unpin
+              ListTile(
+                leading: Icon(
+                  task.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+                  size: 22,
+                  color: task.isPinned ? Colors.amber : null,
+                ),
+                title: Text(
+                  task.isPinned
+                      ? (isArabic ? 'إلغاء التثبيت' : 'Unpin')
+                      : (isArabic ? 'تثبيت في الأعلى' : 'Pin to Top'),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _togglePin(task);
                 },
               ),
 
@@ -1110,6 +1255,185 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
       }
     } catch (e) {
       debugPrint('Error duplicating task: $e');
+    }
+  }
+
+  // ─── Bulk Actions ─────────────────────────────────────────────────────────
+
+  Widget _buildBulkActionBar(bool isDark, bool isArabic) {
+    final count = _selectedTaskIds.length;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: isDark ? AppConstants.darkSurface : Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Row(
+          children: [
+            Text(
+              isArabic ? '$count محدد' : '$count selected',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
+            const Spacer(),
+            // Complete all
+            TextButton.icon(
+              onPressed: () => _bulkComplete(isArabic),
+              icon: const Icon(Icons.check_circle_outline, size: 18),
+              label: Text(isArabic ? 'إتمام' : 'Complete',
+                  style: const TextStyle(fontSize: 13)),
+              style: TextButton.styleFrom(foregroundColor: Colors.green),
+            ),
+            const SizedBox(width: 8),
+            // Delete all
+            TextButton.icon(
+              onPressed: () => _bulkDelete(isArabic),
+              icon: const Icon(Icons.delete_outline, size: 18),
+              label: Text(isArabic ? 'حذف' : 'Delete',
+                  style: const TextStyle(fontSize: 13)),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _bulkComplete(bool isArabic) async {
+    final userId = ref.read(currentUserIdProvider);
+    final ids = Set<String>.from(_selectedTaskIds);
+    int completed = 0;
+
+    for (final id in ids) {
+      try {
+        await TaskService.instance.toggleTaskCompletion(
+          userId: userId,
+          taskId: id,
+        );
+        completed++;
+      } catch (e) {
+        debugPrint('Error completing task $id: $e');
+      }
+    }
+
+    setState(() {
+      _selectMode = false;
+      _selectedTaskIds.clear();
+    });
+    ref.invalidate(allTasksProvider);
+    ref.invalidate(taskStatisticsProvider);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+          isArabic ? 'تم إتمام $completed مهام' : '$completed tasks completed',
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+      ));
+    }
+  }
+
+  Future<void> _bulkDelete(bool isArabic) async {
+    final userId = ref.read(currentUserIdProvider);
+    final ids = Set<String>.from(_selectedTaskIds);
+    int deleted = 0;
+
+    for (final id in ids) {
+      try {
+        await TaskService.instance.deleteTask(
+          userId: userId,
+          taskId: id,
+        );
+        deleted++;
+      } catch (e) {
+        debugPrint('Error deleting task $id: $e');
+      }
+    }
+
+    setState(() {
+      _selectMode = false;
+      _selectedTaskIds.clear();
+    });
+    ref.invalidate(allTasksProvider);
+    ref.invalidate(taskStatisticsProvider);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+          isArabic ? 'تم حذف $deleted مهام' : '$deleted tasks deleted',
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+      ));
+    }
+  }
+
+  Future<void> _clearCompleted(List<Task> tasks, bool isArabic) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(isArabic ? 'مسح المهام المكتملة' : 'Clear Completed'),
+        content: Text(isArabic
+            ? 'هل تريد حذف ${tasks.length} مهام مكتملة؟'
+            : 'Delete ${tasks.length} completed tasks?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(isArabic ? 'إلغاء' : 'Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(isArabic ? 'مسح' : 'Clear'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final userId = ref.read(currentUserIdProvider);
+    int deleted = 0;
+    for (final task in tasks) {
+      try {
+        await TaskService.instance.deleteTask(
+          userId: userId,
+          taskId: task.id,
+        );
+        deleted++;
+      } catch (e) {
+        debugPrint('Error clearing task ${task.id}: $e');
+      }
+    }
+
+    ref.invalidate(allTasksProvider);
+    ref.invalidate(taskStatisticsProvider);
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).clearSnackBars();
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(
+          isArabic ? 'تم حذف $deleted مهام' : '$deleted tasks cleared',
+          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        ),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+      ));
     }
   }
 
@@ -1323,6 +1647,20 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     if (result == true) {
       ref.invalidate(allTasksProvider);
       ref.invalidate(taskStatisticsProvider);
+    }
+  }
+
+  Future<void> _togglePin(Task task) async {
+    final userId = ref.read(currentUserIdProvider);
+    try {
+      await TaskService.instance.updateTask(
+        userId: userId,
+        taskId: task.id,
+        isPinned: !task.isPinned,
+      );
+      ref.invalidate(allTasksProvider);
+    } catch (e) {
+      debugPrint('Error toggling pin: $e');
     }
   }
 

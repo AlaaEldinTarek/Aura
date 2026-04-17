@@ -29,6 +29,7 @@ import 'features/dhikl/dhikr_screen.dart';
 import 'features/achievements/achievements_screen.dart';
 import 'core/services/offline_queue_service.dart';
 import 'features/tasks/task_form_screen.dart';
+import 'features/tasks/task_stats_screen.dart';
 import 'core/models/task.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/settings/iqama_settings_screen.dart';
@@ -380,6 +381,11 @@ class AuraAppMaterial extends ConsumerWidget {
       case '/achievements':
         return MaterialPageRoute(
           builder: (_) => const AchievementsScreen(),
+          settings: settings,
+        );
+      case '/task_stats':
+        return MaterialPageRoute(
+          builder: (_) => const TaskStatsScreen(),
           settings: settings,
         );
       case '/task_form':

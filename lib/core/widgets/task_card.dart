@@ -47,6 +47,9 @@ class TaskCard extends StatelessWidget {
     }
     final showAccent = !task.isCompleted;
 
+    // Pin icon color
+    final pinColor = isDark ? Colors.amber.shade300 : Colors.amber.shade700;
+
     final card = Container(
       decoration: BoxDecoration(
         color: isOverdue
@@ -139,8 +142,29 @@ class TaskCard extends StatelessWidget {
                               if (task.isRecurring)
                                 _RecurrenceBadge(
                                     recurrenceType: task.recurrenceType),
+                              if (task.subtasks.isNotEmpty)
+                                _SubtaskBadge(
+                                  completed: task.completedSubtasks,
+                                  total: task.subtasks.length,
+                                ),
                             ],
                           ),
+                          if (task.subtasks.isNotEmpty) ...[
+                            const SizedBox(height: 6),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(3),
+                              child: LinearProgressIndicator(
+                                value: task.subtaskProgress,
+                                backgroundColor: isDark
+                                    ? Colors.grey.shade800
+                                    : Colors.grey.shade200,
+                                color: task.completedSubtasks == task.subtasks.length
+                                    ? Colors.green
+                                    : AppConstants.primaryColor,
+                                minHeight: 3,
+                              ),
+                            ),
+                          ],
                           if (task.tags != null && task.tags!.isNotEmpty) ...[
                             const SizedBox(height: 6),
                             Wrap(
@@ -176,6 +200,11 @@ class TaskCard extends StatelessWidget {
                         color: Colors.red.shade400,
                         onPressed: onDelete,
                         tooltip: isArabic ? 'حذف' : 'Delete',
+                      ),
+                    if (task.isPinned && !task.isCompleted)
+                      Padding(
+                        padding: const EdgeInsets.only(left: 4),
+                        child: Icon(Icons.push_pin, size: 16, color: pinColor),
                       ),
                   ],
                 ),
@@ -241,31 +270,35 @@ class TaskCard extends StatelessWidget {
   Widget _buildCheckbox(BuildContext context, bool isDark) {
     return GestureDetector(
       onTap: onToggle,
-      child: AnimatedScale(
-        scale: task.isCompleted ? 1.3 : 1.0,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutBack,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeInOut,
-          width: 24,
-          height: 24,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: task.isCompleted
-                ? AppConstants.primaryColor
-                : (isDark ? Colors.grey.shade800 : Colors.grey.shade200),
-            border: Border.all(
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.all(8), // Extra tap area (40x40 total)
+        child: AnimatedScale(
+          scale: task.isCompleted ? 1.2 : 1.0,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutBack,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeInOut,
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
               color: task.isCompleted
                   ? AppConstants.primaryColor
-                  : (isDark ? Colors.grey.shade700 : Colors.grey.shade400),
-              width: task.isCompleted ? 2 : 1,
+                  : (isDark ? Colors.grey.shade800 : Colors.grey.shade200),
+              border: Border.all(
+                color: task.isCompleted
+                    ? AppConstants.primaryColor
+                    : (isDark ? Colors.grey.shade700 : Colors.grey.shade400),
+                width: task.isCompleted ? 2 : 1.5,
+              ),
             ),
-          ),
-          child: AnimatedOpacity(
-            duration: const Duration(milliseconds: 200),
-            opacity: task.isCompleted ? 1.0 : 0.0,
-            child: const Icon(Icons.check, size: 16, color: Colors.white),
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 200),
+              opacity: task.isCompleted ? 1.0 : 0.0,
+              child: const Icon(Icons.check, size: 18, color: Colors.white),
+            ),
           ),
         ),
       ),
@@ -456,6 +489,38 @@ class _DueDateBadge extends StatelessWidget {
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
                   color: isOverdue ? Colors.red : Colors.grey.shade600)),
+        ],
+      ),
+    );
+  }
+}
+
+class _SubtaskBadge extends StatelessWidget {
+  final int completed;
+  final int total;
+  const _SubtaskBadge({required this.completed, required this.total});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+          color: completed == total
+              ? Colors.green.withOpacity(0.15)
+              : Colors.blue.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(4)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.checklist,
+              size: 11,
+              color: completed == total ? Colors.green : Colors.blue),
+          const SizedBox(width: 4),
+          Text('$completed/$total',
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: completed == total ? Colors.green : Colors.blue)),
         ],
       ),
     );

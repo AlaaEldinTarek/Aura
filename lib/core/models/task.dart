@@ -1,5 +1,36 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// Subtask item within a task
+class SubTask {
+  final String id;
+  final String title;
+  final bool isCompleted;
+
+  const SubTask({
+    required this.id,
+    required this.title,
+    this.isCompleted = false,
+  });
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'title': title,
+        'isCompleted': isCompleted,
+      };
+
+  factory SubTask.fromMap(Map<String, dynamic> map) => SubTask(
+        id: map['id'] as String? ?? '',
+        title: map['title'] as String? ?? '',
+        isCompleted: map['isCompleted'] as bool? ?? false,
+      );
+
+  SubTask copyWith({String? title, bool? isCompleted}) => SubTask(
+        id: id,
+        title: title ?? this.title,
+        isCompleted: isCompleted ?? this.isCompleted,
+      );
+}
+
 /// Task model for task management feature
 class Task {
   final String id;
@@ -18,6 +49,8 @@ class Task {
   final int recurrenceInterval;
   final DateTime? recurrenceEndDate;
   final String? parentTaskId;
+  final List<SubTask> subtasks;
+  final bool isPinned;
 
   Task({
     required this.id,
@@ -35,9 +68,20 @@ class Task {
     this.recurrenceInterval = 1,
     this.recurrenceEndDate,
     this.parentTaskId,
+    this.subtasks = const [],
+    this.isPinned = false,
   });
 
   bool get isRecurring => recurrenceType != RecurrenceType.none;
+
+  /// Subtask progress (0.0 to 1.0)
+  double get subtaskProgress {
+    if (subtasks.isEmpty) return 0;
+    return subtasks.where((s) => s.isCompleted).length / subtasks.length;
+  }
+
+  /// Number of completed subtasks
+  int get completedSubtasks => subtasks.where((s) => s.isCompleted).length;
 
   /// Create Task from Firestore document
   factory Task.fromFirestore(DocumentSnapshot doc) {
@@ -69,6 +113,12 @@ class Task {
           ? DateTime.parse(data['recurrenceEndDate'] as String)
           : null,
       parentTaskId: data['parentTaskId'] as String?,
+      subtasks: data['subtasks'] != null
+          ? (data['subtasks'] as List)
+              .map((e) => SubTask.fromMap(e as Map<String, dynamic>))
+              .toList()
+          : [],
+      isPinned: data['isPinned'] as bool? ?? false,
     );
   }
 
@@ -89,6 +139,8 @@ class Task {
       'recurrenceInterval': recurrenceInterval,
       'recurrenceEndDate': recurrenceEndDate?.toIso8601String(),
       'parentTaskId': parentTaskId,
+      'subtasks': subtasks.map((s) => s.toMap()).toList(),
+      'isPinned': isPinned,
     };
   }
 
@@ -109,6 +161,8 @@ class Task {
     int? recurrenceInterval,
     DateTime? recurrenceEndDate,
     String? parentTaskId,
+    List<SubTask>? subtasks,
+    bool? isPinned,
     bool clearDueDate = false,
     bool clearCompletedAt = false,
     bool clearRecurrenceEndDate = false,
@@ -134,6 +188,8 @@ class Task {
       parentTaskId: clearParentTaskId
           ? null
           : (parentTaskId ?? this.parentTaskId),
+      subtasks: subtasks ?? this.subtasks,
+      isPinned: isPinned ?? this.isPinned,
     );
   }
 
