@@ -533,6 +533,14 @@ class NotificationService {
       return;
     }
 
+    // Check if task notifications are enabled
+    final prefs = await SharedPreferences.getInstance();
+    final notifEnabled = prefs.getBool('task_notifications_enabled') ?? true;
+    if (!notifEnabled) {
+      debugPrint('TaskNotification: Task notifications disabled — skipping "$title"');
+      return;
+    }
+
     final notifId = _taskNotificationId(taskId);
     await _notifications.cancel(notifId);
 

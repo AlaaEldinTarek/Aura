@@ -418,5 +418,41 @@ class SilentModeDurationNotifier extends StateNotifier<AsyncValue<int>> {
   }
 }
 
+// Task Notifications Provider
+final taskNotificationsEnabledProvider =
+    StateNotifierProvider<TaskNotificationsEnabledNotifier, AsyncValue<bool>>((ref) {
+  final prefsService = ref.watch(sharedPreferencesServiceProvider);
+  return TaskNotificationsEnabledNotifier(prefsService);
+});
+
+class TaskNotificationsEnabledNotifier extends StateNotifier<AsyncValue<bool>> {
+  final SharedPreferencesService _prefsService;
+
+  TaskNotificationsEnabledNotifier(this._prefsService)
+      : super(const AsyncValue.data(true)) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    try {
+      final isEnabled = await _prefsService.isTaskNotificationsEnabled();
+      state = AsyncValue.data(isEnabled);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<void> setEnabled(bool value) async {
+    state = const AsyncValue.loading();
+    try {
+      await _prefsService.setTaskNotificationsEnabled(value);
+      state = AsyncValue.data(value);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+}
+
 /// Tab navigation provider — allows child screens to request tab switches
 final tabNavigationProvider = StateProvider<int>((ref) => -1);

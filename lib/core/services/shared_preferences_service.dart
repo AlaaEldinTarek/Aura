@@ -137,6 +137,15 @@ class SharedPreferencesService {
     return await _prefsInstance.setInt('silent_mode_duration', value);
   }
 
+  // Task Reminder Notifications
+  Future<bool> isTaskNotificationsEnabled() async {
+    return _prefsInstance.getBool('task_notifications_enabled') ?? true;
+  }
+
+  Future<bool> setTaskNotificationsEnabled(bool value) async {
+    return await _prefsInstance.setBool('task_notifications_enabled', value);
+  }
+
   // Clear all (except guest mode and first launch)
   Future<bool> clearUserData() async {
     await _prefsInstance.remove(AppConstants.keyThemeMode);
