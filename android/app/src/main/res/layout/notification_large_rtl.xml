@@ -74,23 +74,13 @@
                 android:textColor="#DE000000"
                 android:textDirection="rtl" />
 
-            <!-- Timer + Until Azan on same line -->
+            <!-- Timer + Until Azan: label first (right in RTL), time after (left) -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:layoutDirection="rtl">
-
-                <TextView
-                    android:id="@+id/notification_time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="٢ س ١٥ د ٣٠ ث"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="#007DFF"
-                    android:textDirection="rtl" />
 
                 <TextView
                     android:id="@+id/notification_until"
@@ -102,14 +92,24 @@
                     android:paddingEnd="8dp"
                     android:textDirection="rtl" />
 
+                <TextView
+                    android:id="@+id/notification_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="٢:١٥"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#007DFF"
+                    android:textDirection="ltr" />
+
             </LinearLayout>
 
         </LinearLayout>
 
         <ImageView
             android:id="@+id/notification_logo"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
             android:src="@mipmap/ic_launcher"
             android:scaleType="centerCrop"
             android:contentDescription="Prayer Icon" />

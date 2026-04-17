@@ -350,7 +350,7 @@ class PrayerForegroundService : Service() {
             }
 
             val untilText = if (currentLanguage == "ar") {
-                "حتى موعد الأذان"
+                "حتى الأذان"
             } else {
                 "Until Azan"
             }
@@ -373,6 +373,7 @@ class PrayerForegroundService : Service() {
             // Prayer info
             contentView.setTextViewText(R.id.notification_title, prayerName)
             contentView.setTextViewText(R.id.notification_time, timeString)
+            contentView.setViewVisibility(R.id.notification_until, android.view.View.VISIBLE)
             contentView.setTextViewText(R.id.notification_until, untilText)
 
             notificationBuilder
@@ -387,29 +388,18 @@ class PrayerForegroundService : Service() {
     }
 
     private fun loadPrayerIcon(): Bitmap? {
-        // Icon changes based on which prayer time has started
-        // After Isha→Fajr: Night, After Fajr→Sunrise: Fajr, After Sunrise→Zuhr: Sun,
-        // After Zuhr→Asr: Zuhr, After Asr→Maghrib: Afternoon, After Maghrib→Isha: Moon
-        // Reverse chronological order — first match is the most recent prayer that started
-        val timeSlots = listOf(
-            Pair("isha_time", R.drawable.ic_prayer_isha),        // Night (after Isha)
-            Pair("maghrib_time", R.drawable.ic_prayer_maghrib),  // Maghrib (after Maghrib)
-            Pair("asr_time", R.drawable.ic_prayer_afternoon),    // Afternoon (after Asr)
-            Pair("dhuhr_time", R.drawable.ic_prayer_dhuhr),      // Zuhr (after Zuhr)
-            Pair("sunrise_time", R.drawable.ic_prayer_dhuhr),    // Morning (after Sunrise)
-            Pair("fajr_time", R.drawable.ic_prayer_fajr)         // Fajr (after Fajr)
-        )
+        // Icon based on phone clock time, not prayer times
+        val calendar = java.util.Calendar.getInstance()
+        val hour = calendar.get(java.util.Calendar.HOUR_OF_DAY)
 
-        val now = System.currentTimeMillis()
-        var resId = R.drawable.ic_prayer_isha // default: Night (before Fajr)
-
-        // Find the most recent prayer that has started
-        for (slot in timeSlots) {
-            val slotTime = prayerTimes[slot.first]
-            if (slotTime != null && slotTime <= now) {
-                resId = slot.second
-                break
-            }
+        val resId = when (hour) {
+            in 0..4 -> R.drawable.ic_prayer_isha       // Night (midnight–4:59)
+            in 5..6 -> R.drawable.ic_prayer_fajr        // Dawn (5:00–6:59)
+            in 7..11 -> R.drawable.ic_prayer_dhuhr      // Morning (7:00–11:59)
+            in 12..15 -> R.drawable.ic_prayer_dhuhr     // Afternoon (12:00–15:59)
+            in 16..17 -> R.drawable.ic_prayer_afternoon  // Late afternoon (16:00–17:59)
+            in 18..19 -> R.drawable.ic_prayer_maghrib    // Evening (18:00–19:59)
+            else -> R.drawable.ic_prayer_isha            // Night (20:00–23:59)
         }
 
         return try {
