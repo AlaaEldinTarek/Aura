@@ -792,6 +792,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
         sorted.sort(
             (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
     }
+    // Pinned tasks always float to top
+    sorted.sort((a, b) {
+      if (a.isPinned == b.isPinned) return 0;
+      return a.isPinned ? -1 : 1;
+    });
     return sorted;
   }
 

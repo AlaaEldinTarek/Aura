@@ -16,7 +16,6 @@ class TaskService {
 
   // Cache for performance
   final Map<String, Task> _taskCache = {};
-  List<Task>? _cachedTaskList;
 
   // Pagination settings
   static const int _pageSize = 20;
@@ -63,7 +62,7 @@ class TaskService {
           .toList();
 
       // Update cache
-      _cachedTaskList = tasks;
+      
       for (var task in tasks) {
         _taskCache[task.id] = task;
       }
@@ -91,7 +90,7 @@ class TaskService {
           .toList();
 
       // Update cache
-      _cachedTaskList = tasks;
+      
       for (var task in tasks) {
         _taskCache[task.id] = task;
       }
@@ -480,7 +479,7 @@ class TaskService {
   /// Clear cache
   void clearCache() {
     _taskCache.clear();
-    _cachedTaskList = null;
+    
     _lastDocument = null;
   }
 
