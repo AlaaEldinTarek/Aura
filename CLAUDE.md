@@ -314,6 +314,7 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 - Stream-based Riverpod provider with family modifier
 - **TasksScreen sections**: Today / Upcoming (next 7 days) / All Tasks — split client-side from `allTasksProvider`
 - **TaskStatsScreen** at `/task_stats` — streak tracking via SharedPreferences (`task_streak_count`, `task_streak_date`)
+- **Quick-add sheet**: implemented as `_QuickAddSheet` StatefulWidget (not `StatefulBuilder`) so `TextEditingController` is disposed by Flutter after dismiss animation, avoiding `_dependents.isEmpty` assertion crash
 
 ### Dhikr/Tasbeeh System
 - **6 built-in presets**: SubhanAllah, Alhamdulillah, Allahu Akbar, La ilaha illallah, Astaghfirullah, Custom
