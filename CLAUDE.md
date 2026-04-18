@@ -321,7 +321,7 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 - **Firestore-backed** with pagination, caching, and statistics
 - **Computed properties**: isOverdue, isDueToday, isUpcoming, isRecurring, subtaskProgress, completedSubtasks
 - Stream-based Riverpod provider with family modifier
-- **TasksScreen sections**: Overdue / Today / Upcoming / All Tasks / Completed (collapsible) — split client-side from `allTasksProvider`
+- **TasksScreen sections**: Overdue / Today / Upcoming / All Tasks / Completed (collapsible) — split client-side from `allTasksProvider`. Midnight timer fires at 00:00 to refresh sections. Resume date-change detection refreshes if day changed while app was in background
 - **Category filter chips**: horizontal scroll with persistence via SharedPreferences (`task_category_filter`)
 - **Tag filter chips**: auto-generated from all task tags
 - **Sort**: dateDesc, dateAsc, priority, title — persisted via SharedPreferences (`task_sort_order`). Pinned tasks always float to top

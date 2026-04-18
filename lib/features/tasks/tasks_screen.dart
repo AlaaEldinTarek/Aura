@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -39,6 +40,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
   // Track recently completed tasks so they stay visible for animation
   final Set<String> _recentlyCompleted = {};
 
+  Timer? _midnightTimer;
+  DateTime _lastActiveDate = DateTime.now();
+
   @override
   void initState() {
     super.initState();
@@ -46,19 +50,51 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
     _loadSortOrder();
     _loadCategoryFilter();
     _checkFocusTaskCompleted();
+    _scheduleMidnightRefresh();
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _searchController.dispose();
+    _midnightTimer?.cancel();
     super.dispose();
+  }
+
+  void _scheduleMidnightRefresh() {
+    _midnightTimer?.cancel();
+    final now = DateTime.now();
+    final midnight = DateTime(now.year, now.month, now.day + 1);
+    final delay = midnight.difference(now);
+    _midnightTimer = Timer(delay, () {
+      if (!mounted) return;
+      _refreshForNewDay();
+      _scheduleMidnightRefresh(); // schedule next midnight
+    });
+  }
+
+  void _refreshForNewDay() {
+    final today = DateTime.now();
+    _lastActiveDate = DateTime(today.year, today.month, today.day);
+    ref.invalidate(allTasksProvider);
+    ref.invalidate(taskStatisticsProvider);
+    if (mounted) setState(() {});
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _checkFocusTaskCompleted();
+      // Refresh if date changed while app was in background
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final lastDate = DateTime(_lastActiveDate.year, _lastActiveDate.month, _lastActiveDate.day);
+      if (today != lastDate) {
+        _refreshForNewDay();
+      }
+    } else if (state == AppLifecycleState.paused) {
+      final now = DateTime.now();
+      _lastActiveDate = DateTime(now.year, now.month, now.day);
     }
   }
 
