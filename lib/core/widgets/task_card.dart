@@ -543,18 +543,18 @@ class _EstimateBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
-          color: Colors.teal.withOpacity(0.12),
+          color: AppConstants.primaryColor.withOpacity(0.12),
           borderRadius: BorderRadius.circular(4)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.timer_outlined, size: 11, color: Colors.teal),
+          const Icon(Icons.timer_outlined, size: 11, color: AppConstants.primaryColor),
           const SizedBox(width: 3),
           Text(label,
               style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
-                  color: Colors.teal)),
+                  color: AppConstants.primaryColor)),
         ],
       ),
     );

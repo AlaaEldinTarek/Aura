@@ -12,6 +12,7 @@ import '../services/notification_service.dart';
 import '../services/prayer_alarm_service.dart';
 import '../services/background_service_manager.dart';
 import '../services/prayer_tracking_service.dart';
+import '../services/task_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Prayer times state
@@ -243,6 +244,22 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
           );
         } catch (e) {
           debugPrint('PrayerTimesNotifier: Error scheduling prayer check reminders - $e');
+        }
+
+        // Schedule daily 8 AM task digest notification
+        try {
+          final userId = getCurrentUserId();
+          if (userId.isNotEmpty) {
+            final tasks = await TaskService.instance.getTasksOnce(userId: userId, limit: 500);
+            final today = tasks.where((t) => t.isDueToday && !t.isCompleted).length;
+            final overdue = tasks.where((t) => t.isOverdue && !t.isCompleted).length;
+            await NotificationService.instance.scheduleDailyTaskDigest(
+              todayCount: today,
+              overdueCount: overdue,
+            );
+          }
+        } catch (e) {
+          debugPrint('PrayerTimesNotifier: Error scheduling task digest - $e');
         }
 
         // Schedule native alarms for adhan playback at exact prayer times

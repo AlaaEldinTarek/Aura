@@ -346,13 +346,13 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                     child: Row(
                       children: [
-                        Icon(Icons.timer_outlined, size: 14, color: Colors.teal),
+                        Icon(Icons.timer_outlined, size: 14, color: AppConstants.primaryColor),
                         const SizedBox(width: 4),
                         Text(
                           label,
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.teal,
+                            color: AppConstants.primaryColor,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -1084,7 +1084,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               icon: Icons.date_range,
               title: isArabic ? 'هذا الأسبوع' : 'This Week',
               count: thisWeekTasks.length,
-              color: Colors.teal,
+              color: AppConstants.primaryColor,
               isDark: isDark,
             ),
             const SizedBox(height: 8),
@@ -1276,19 +1276,78 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: _InlineSubtaskCard(
-        key: ValueKey('inline_${task.id}'),
-        task: task,
-        onToggle: () => _toggleTask(task),
-        onTap: () => _editTask(task),
-        onDelete: () => _deleteTask(task, isArabic),
-        onLongPress: () => _showContextMenu(task, isArabic),
-        userId: ref.read(currentUserIdProvider),
-        onChanged: () {
-          ref.invalidate(allTasksProvider);
-          ref.invalidate(taskStatisticsProvider);
-        },
+      child: Stack(
+        children: [
+          _InlineSubtaskCard(
+            key: ValueKey('inline_${task.id}'),
+            task: task,
+            onToggle: () => _toggleTask(task),
+            onTap: () => _editTask(task),
+            onDelete: () => _deleteTask(task, isArabic),
+            onLongPress: () => _showContextMenu(task, isArabic),
+            userId: ref.read(currentUserIdProvider),
+            onChanged: () {
+              ref.invalidate(allTasksProvider);
+              ref.invalidate(taskStatisticsProvider);
+            },
+          ),
+          // Focus Mode shortcut — only on tasks with focusMode enabled
+          if (task.focusMode && !task.isCompleted)
+            PositionedDirectional(
+              top: 8,
+              end: 8,
+              child: GestureDetector(
+                onTap: () => _startFocusNow(task),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppConstants.primaryColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('🎯', style: TextStyle(fontSize: 11)),
+                      const SizedBox(width: 3),
+                      Text(
+                        isArabic ? 'تركيز' : 'Focus',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
+    );
+  }
+
+  Future<void> _startFocusNow(Task task) async {
+    final prefs = await SharedPreferences.getInstance();
+    final language = prefs.getString('language') ?? 'en';
+    final isArabic = language == 'ar';
+    final granted = await NotificationService.instance.canDrawOverlays();
+    if (!granted && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text(isArabic ? 'يرجى منح إذن العرض فوق التطبيقات' : 'Please grant overlay permission'),
+        action: SnackBarAction(
+          label: isArabic ? 'منح' : 'Grant',
+          onPressed: () => NotificationService.instance.requestOverlayPermission(),
+        ),
+      ));
+      return;
+    }
+    await NotificationService.instance.startFocusService(
+      taskId: task.id,
+      taskTitle: task.title,
+      taskDesc: task.description ?? '',
+      durationMinutes: task.focusDurationMinutes,
+      language: language,
     );
   }
 
@@ -2573,10 +2632,10 @@ class _InlineSubtaskCardState extends State<_InlineSubtaskCard> {
               onDelete: widget.onDelete,
               onLongPress: widget.onLongPress,
             ),
-            // Expand button — bottom-right of card
-            Positioned(
+            // Expand button — bottom-end of card (auto-flips in RTL)
+            PositionedDirectional(
               bottom: 8,
-              right: 8,
+              end: 8,
               child: GestureDetector(
                 onTap: () => setState(() => _expanded = !_expanded),
                 child: AnimatedContainer(

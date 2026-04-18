@@ -876,17 +876,17 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
         children: [
           Row(
             children: [
-              Icon(Icons.timer_outlined, size: 18, color: Colors.teal),
+              Icon(Icons.timer_outlined, size: 18, color: AppConstants.primaryColor),
               const SizedBox(width: 8),
               Text(
-                isArabic ? 'الوقت المقدر' : 'Estimated Duration',
+                isArabic ? 'كم تحتاج من وقت؟' : 'Time Needed',
                 style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
               ),
               const Spacer(),
               Text(
                 _formatMins(_estimatedMinutes),
                 style: TextStyle(
-                  color: Colors.teal,
+                  color: AppConstants.primaryColor,
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),
@@ -905,8 +905,8 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                   decoration: BoxDecoration(
                     color: _estimatedMinutes == 0
-                        ? Colors.teal
-                        : Colors.teal.withOpacity(0.1),
+                        ? AppConstants.primaryColor
+                        : AppConstants.primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -914,7 +914,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: _estimatedMinutes == 0 ? Colors.white : Colors.teal,
+                      color: _estimatedMinutes == 0 ? Colors.white : AppConstants.primaryColor,
                     ),
                   ),
                 ),
@@ -926,8 +926,8 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                   decoration: BoxDecoration(
                     color: _estimatedMinutes == mins
-                        ? Colors.teal
-                        : Colors.teal.withOpacity(0.1),
+                        ? AppConstants.primaryColor
+                        : AppConstants.primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -935,7 +935,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: _estimatedMinutes == mins ? Colors.white : Colors.teal,
+                      color: _estimatedMinutes == mins ? Colors.white : AppConstants.primaryColor,
                     ),
                   ),
                 ),

@@ -857,6 +857,62 @@ class NotificationService {
     }
   }
 
+  /// Schedule a daily morning task digest at 8:00 AM
+  Future<void> scheduleDailyTaskDigest({
+    required int todayCount,
+    required int overdueCount,
+  }) async {
+    const notificationId = 4001;
+    try {
+      final isArabic = await _getLanguagePreference() == 'ar';
+
+      final title = isArabic ? 'ملخص مهامك اليوم' : "Today's Tasks";
+      String body;
+      if (overdueCount > 0 && todayCount > 0) {
+        body = isArabic
+            ? '$todayCount مهمة اليوم · $overdueCount متأخرة'
+            : '$todayCount tasks today · $overdueCount overdue';
+      } else if (todayCount > 0) {
+        body = isArabic
+            ? 'لديك $todayCount مهمة اليوم — ابدأ يومك!'
+            : 'You have $todayCount tasks today — let\'s go!';
+      } else {
+        body = isArabic ? 'يوم نظيف! لا مهام اليوم 🎉' : 'Clean day! No tasks due today 🎉';
+      }
+
+      await _notifications.cancel(notificationId);
+
+      final now = DateTime.now();
+      var scheduledTime = tz.TZDateTime(tz.local, now.year, now.month, now.day, 8, 0);
+      if (scheduledTime.isBefore(tz.TZDateTime.now(tz.local))) {
+        scheduledTime = scheduledTime.add(const Duration(days: 1));
+      }
+
+      final androidDetails = AndroidNotificationDetails(
+        'task_digest',
+        'Daily Task Digest',
+        channelDescription: 'Morning summary of your tasks',
+        importance: Importance.defaultImportance,
+        priority: Priority.defaultPriority,
+        icon: '@mipmap/ic_launcher',
+      );
+
+      await _notifications.zonedSchedule(
+        notificationId,
+        title,
+        body,
+        scheduledTime,
+        NotificationDetails(android: androidDetails),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+      );
+      debugPrint('✅ [DIGEST] Scheduled daily task digest at 8 AM — $todayCount today, $overdueCount overdue');
+    } catch (e) {
+      debugPrint('❌ [DIGEST] Error scheduling digest: $e');
+    }
+  }
+
   /// Get language preference
   Future<String> _getLanguagePreference() async {
     if (_prefs == null) return 'en';
