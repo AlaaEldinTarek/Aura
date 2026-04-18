@@ -25,6 +25,7 @@
 
     <!-- Focus Mode Permissions -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.REORDER_TASKS" />
 
     <!-- Storage permissions for downloading adhan files -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
@@ -79,11 +80,10 @@
         <activity
             android:name=".FocusModeActivity"
             android:exported="false"
-            android:excludeFromRecents="true"
-            android:noHistory="true"
             android:showOnLockScreen="true"
             android:turnScreenOn="true"
             android:launchMode="singleTop"
+            android:taskAffinity="com.aura.hala.focus"
             android:theme="@style/Theme.AppCompat.NoActionBar"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true">
@@ -170,6 +170,14 @@
                 <action android:name="com.aura.hala.FOCUS_MODE_ALARM"/>
             </intent-filter>
         </receiver>
+
+        <!-- Focus Mode Service - Foreground service that prevents focus mode dismissal -->
+        <service
+            android:name=".FocusModeService"
+            android:enabled="true"
+            android:exported="false"
+            android:stopWithTask="false"
+            android:foregroundServiceType="dataSync"/>
 
         <!-- Next Prayer Widget -->
         <receiver

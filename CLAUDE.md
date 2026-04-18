@@ -184,7 +184,7 @@ lib/
     └── daily_content/                 # DailyIslamicContentScreen (Hadith, Ayah, Dua)
 ```
 
-### Platform Channel Architecture (6 MethodChannels)
+### Platform Channel Architecture (7 MethodChannels)
 
 | Channel Name | Purpose | Flutter Service | Native Kotlin File |
 |--------------|---------|-----------------|-------------------|
@@ -194,14 +194,15 @@ lib/
 | `com.aura.hala/widgets` | Widget data updates | PrayerWidgetService | WidgetUpdateService.kt |
 | `com.aura.hala/ringer_mode` | Silent/vibrate mode control | SilentModeService | SilentModeAutomation.kt |
 | `com.aura.hala/navigation` | Route tracking | NavigationService | MainActivity.kt |
+| `com.aura.hala/focus_mode` | Focus mode scheduling, overlay/DND permissions, service control | NotificationService | FocusModeService.kt |
 
-### Native Android Architecture (13 Kotlin files)
+### Native Android Architecture (16 Kotlin files)
 
 Located at `android/app/src/main/kotlin/com/aura/hala/`:
 
 | File | Purpose |
 |------|---------|
-| `MainActivity.kt` | FlutterActivity, 7 MethodChannel handlers, notification channels |
+| `MainActivity.kt` | FlutterActivity, 8 MethodChannel handlers, notification channels |
 | `PrayerAlarmReceiver.kt` | BroadcastReceiver at prayer times, triggers adhan + notification + silent mode. Notification IDs: 1001-1006 (prayers), 2001-2006 (reminders) |
 | `AdhanPlayer.kt` | Singleton MediaPlayer adhan playback, per-prayer audio, vibration, thread-safe |
 | `SilentModeAutomation.kt` | AudioManager silent mode scheduling with configurable duration |
@@ -209,6 +210,9 @@ Located at `android/app/src/main/kotlin/com/aura/hala/`:
 | `PrayerWidgets.kt` | NextPrayerWidget + AllPrayersWidget, light/dark/LTR/RTL layouts |
 | `WidgetUpdateService.kt` | Updates widget views from SharedPreferences prayer data |
 | `AdhanFullScreenActivity.kt` | Full-screen intent over lock screen when adhan fires |
+| `FocusModeService.kt` | START_STICKY foreground service with system overlay (TYPE_APPLICATION_OVERLAY) for inescapable focus mode. Blocks notification shade via second overlay. Shows countdown timer, task completion prompt, and restart options. Restores sound mode on timer end |
+| `FocusModeActivity.kt` | Full-screen activity for focus mode (fallback). Blocks all navigation, auto-wakes screen |
+| `FocusModeReceiver.kt` | BroadcastReceiver for focus mode alarm, starts FocusModeService |
 | `PrayerBootReceiver.kt` | Reschedules alarms after device boot or app update |
 | `PrayerRescheduleService.kt` | Service for post-boot alarm rescheduling |
 | `StopAdhanReceiver.kt` | Stops adhan from notification action button |
@@ -216,8 +220,8 @@ Located at `android/app/src/main/kotlin/com/aura/hala/`:
 | `BackgroundServiceHandler.kt` | Handler for background service operations |
 
 **AndroidManifest.xml declares:**
-- 16 permissions (location, internet, vibration, wake lock, boot, exact alarms, notifications, foreground service, audio, battery, DND, storage)
-- 7 receivers, 2 services, 2 activities (MainActivity + AdhanFullScreenActivity with lock screen)
+- 18 permissions (location, internet, vibration, wake lock, boot, exact alarms, notifications, foreground service, audio, battery, DND, storage, SYSTEM_ALERT_WINDOW, REORDER_TASKS)
+- 8 receivers, 3 services, 3 activities (MainActivity + AdhanFullScreenActivity + FocusModeActivity with lock screen)
 - 70+ drawable XMLs, 10 layout XMLs, widget info XMLs
 
 ---
@@ -301,7 +305,8 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 | `aura_prayer_times` | PrayerForegroundService, PrayerAlarmReceiver, AdhanFullScreenActivity, StopAdhanReceiver | Prayer times, next prayer name/Arabic/time, language |
 | `aura_silent_mode` | SilentModeAutomation, PrayerAlarmReceiver, AdhanFullScreenActivity | silent_mode_enabled, is_silent_active, saved_ringer_mode |
 | `aura_prefs` | AdhanPlayer | adhan_enabled |
-| `${packageName}_preferences` | Flutter's shared_preferences package | Default Flutter prefs |
+| `aura_focus_mode` | FocusModeReceiver | completed_task_id, completed_at |
+| `${packageName}_preferences` | Flutter's shared_preferences package, FocusModeService (writes `focus_completed_task_id`, `focus_task_was_completed`) | Default Flutter prefs + focus task completion |
 
 **NEVER use `${packageName}_preferences` in Kotlin code** — Flutter writes to it but native should read from the `aura_*` files above. This was the root cause of Arabic text not showing in full-screen azan and silent mode not working.
 
@@ -331,6 +336,7 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 - **Daily summary notification**: ID 3999, scheduled via `matchDateTimeComponents: DateTimeComponents.time`
 - **Task statistics screen** at `/task_stats` — 2 tabs (Overview/Details), 7-day bar chart, category/priority breakdown, streak, time stats
 - **Task notifications**: `scheduleTaskReminder()` in `NotificationService` — tasks with time get 30-min-before reminder; tasks without time get 9:00 AM reminder on due date. Controlled by `task_notifications_enabled` pref. Toggled via `_TaskSettingsSheet` (gear icon in TasksScreen AppBar)
+- **Focus Mode**: System overlay approach using `TYPE_APPLICATION_OVERLAY` via `FocusModeService` (foreground service). Not an activity — immune to OEM battery management (Huawei EMUI, Xiaomi MIUI, etc.). Blocks notification shade with second overlay. Flow: alarm fires → `FocusModeReceiver` → starts `FocusModeService` → overlay covers entire screen with countdown timer. After timer: restores sound immediately, shows "Did you complete?" prompt. Yes → marks task done via SharedPreferences (`focus_completed_task_id`). No → offers restart with duration presets (5/10/15/25/45/60 min) + custom input. Requires `SYSTEM_ALERT_WINDOW` permission. Task fields: `focusMode` (bool), `focusDurationMinutes` (int, default 25)
 - **Search scope**: covers title, description, tags, and subtask titles
 - **Profile stats**: `_buildTaskStatsSummary()` in ProfileScreen shows Today/Done/Pending cards from `taskStatisticsProvider`
 

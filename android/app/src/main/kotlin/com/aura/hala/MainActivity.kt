@@ -505,6 +505,24 @@ class MainActivity : FlutterActivity() {
                         result.success(true)
                     }
                 }
+                "startFocusService" -> {
+                    val taskId = call.argument<String>("taskId") ?: return@setMethodCallHandler result.error("INVALID_ARGUMENT", "taskId required", null)
+                    val taskTitle = call.argument<String>("taskTitle") ?: "Focus Mode"
+                    val taskDesc = call.argument<String>("taskDesc") ?: ""
+                    val durationMinutes = call.argument<Int>("durationMinutes") ?: 25
+                    val language = call.argument<String>("language") ?: "en"
+                    Log.d("FocusModeChannel", "🎯 Starting focus service for '$taskTitle'")
+                    FocusModeService.start(this, taskId, taskTitle, taskDesc, durationMinutes, language)
+                    result.success(true)
+                }
+                "stopFocusService" -> {
+                    Log.d("FocusModeChannel", "⏹️ Stopping focus service")
+                    FocusModeService.stop(this)
+                    result.success(true)
+                }
+                "isFocusServiceRunning" -> {
+                    result.success(FocusModeService.isRunning)
+                }
                 else -> result.notImplemented()
             }
         }

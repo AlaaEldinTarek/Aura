@@ -1,23 +1,24 @@
 package com.aura.hala
 
 import android.app.AlarmManager
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import kotlin.math.abs
 
 /**
  * BroadcastReceiver for Focus Mode.
  *
- * Two roles:
- * 1. Triggered by AlarmManager at task time → launches FocusModeActivity
- * 2. Receives "task complete" broadcast from FocusModeActivity → notifies Flutter
- *
- * Universal compatibility: uses FLAG_IMMUTABLE for Android 12+,
- * setExactAndAllowWhileIdle for reliable wake-up on all OEMs.
+ * Uses notification with fullScreenIntent (same pattern as Adhan)
+ * to reliably show over lock screen on ALL devices including Huawei/EMUI.
+ * Also starts FocusModeService for guaranteed persistence.
  */
 class FocusModeReceiver : BroadcastReceiver() {
 
@@ -32,13 +33,10 @@ class FocusModeReceiver : BroadcastReceiver() {
         private const val ACTION_FOCUS_ALARM = "com.aura.hala.FOCUS_MODE_ALARM"
         const val ACTION_FOCUS_COMPLETE = "com.aura.hala.FOCUS_TASK_COMPLETE"
 
-        // Request code base for focus mode alarms (5000-5999)
         private const val REQUEST_CODE_BASE = 5000
+        private const val FOCUS_NOTIFICATION_CHANNEL = "focus_mode"
+        private const val FOCUS_NOTIFICATION_ID = 5999
 
-        /**
-         * Schedule a focus mode alarm at the given time.
-         * Works on all Android versions and OEM devices.
-         */
         fun scheduleFocusAlarm(
             context: Context,
             taskId: String,
@@ -68,7 +66,6 @@ class FocusModeReceiver : BroadcastReceiver() {
 
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
-            // Use exact alarm that wakes the device
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
@@ -86,9 +83,6 @@ class FocusModeReceiver : BroadcastReceiver() {
             Log.d(TAG, "🎯 [FOCUS] Scheduled alarm for '$taskTitle' at $triggerTimeMillis (duration=${durationMinutes}min)")
         }
 
-        /**
-         * Cancel a scheduled focus mode alarm.
-         */
         fun cancelFocusAlarm(context: Context, taskId: String) {
             val requestCode = REQUEST_CODE_BASE + abs(taskId.hashCode() % 1000)
             val intent = Intent(context, FocusModeReceiver::class.java).apply {
@@ -120,7 +114,15 @@ class FocusModeReceiver : BroadcastReceiver() {
 
                 Log.d(TAG, "🎯 [FOCUS] Alarm triggered for task: $taskTitle")
 
-                // Launch full-screen focus mode activity
+                // 1. Start the foreground service FIRST (most important for persistence)
+                FocusModeService.start(
+                    context, taskId, taskTitle, taskDesc, durationMinutes, language
+                )
+
+                // 2. Create notification channel
+                createNotificationChannel(context)
+
+                // 3. Build full-screen intent (just for the notification, not for launching)
                 val focusIntent = Intent(context, FocusModeActivity::class.java).apply {
                     putExtra(FocusModeActivity.EXTRA_TASK_ID, taskId)
                     putExtra(FocusModeActivity.EXTRA_TASK_TITLE, taskTitle)
@@ -128,26 +130,66 @@ class FocusModeReceiver : BroadcastReceiver() {
                     putExtra(FocusModeActivity.EXTRA_DURATION_MINUTES, durationMinutes)
                     putExtra(FocusModeActivity.EXTRA_LANGUAGE, language)
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                            Intent.FLAG_ACTIVITY_CLEAR_TOP or
-                            Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS
+                            Intent.FLAG_ACTIVITY_CLEAR_TASK
                 }
-                context.startActivity(focusIntent)
 
-                Log.d(TAG, "✅ [FOCUS] FocusModeActivity launched")
+                val fullScreenPendingIntent = PendingIntent.getActivity(
+                    context,
+                    FOCUS_NOTIFICATION_ID,
+                    focusIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+
+                // 4. Build high-priority notification with fullScreenIntent
+                val isArabic = language == "ar"
+                val builder = NotificationCompat.Builder(context, FOCUS_NOTIFICATION_CHANNEL)
+                    .setSmallIcon(R.mipmap.ic_launcher)
+                    .setContentTitle(if (isArabic) "وضع التركيز" else "Focus Mode")
+                    .setContentText(if (isArabic) taskTitle else taskTitle)
+                    .setPriority(NotificationCompat.PRIORITY_MAX)
+                    .setCategory(NotificationCompat.CATEGORY_ALARM)
+                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                    .setAutoCancel(true)
+                    .setFullScreenIntent(fullScreenPendingIntent, true)
+                    .setContentIntent(fullScreenPendingIntent)
+
+                // 5. Show notification
+                val notificationManager = NotificationManagerCompat.from(context)
+                try {
+                    notificationManager.notify(FOCUS_NOTIFICATION_ID, builder.build())
+                    Log.d(TAG, "✅ [FOCUS] Notification with fullScreenIntent shown")
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ [FOCUS] Notification failed: ${e.message}")
+                }
+
+                // 6. Launch directly (belt and suspenders)
+                try {
+                    context.startActivity(focusIntent)
+                    Log.d(TAG, "✅ [FOCUS] FocusModeActivity launched directly")
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ [FOCUS] Direct launch failed: ${e.message}")
+                }
             }
 
             ACTION_FOCUS_COMPLETE -> {
                 val taskId = intent.getStringExtra(EXTRA_TASK_ID) ?: return
                 Log.d(TAG, "✅ [FOCUS] Task completed: $taskId")
 
-                // Notify Flutter via SharedPreferences that task is completed
+                // Stop the foreground service
+                FocusModeService.stop(context)
+
+                // Cancel the notification
+                val notificationManager = NotificationManagerCompat.from(context)
+                notificationManager.cancel(FOCUS_NOTIFICATION_ID)
+
+                // Save completion to SharedPreferences
                 val prefs = context.getSharedPreferences("aura_focus_mode", Context.MODE_PRIVATE)
                 prefs.edit()
                     .putString("completed_task_id", taskId)
                     .putLong("completed_at", System.currentTimeMillis())
                     .apply()
 
-                // Send broadcast to Flutter (via MainActivity)
+                // Send broadcast to Flutter
                 val flutterIntent = Intent("com.aura.hala.FOCUS_TASK_DONE")
                 flutterIntent.setPackage(context.packageName)
                 flutterIntent.putExtra(EXTRA_TASK_ID, taskId)
@@ -155,6 +197,24 @@ class FocusModeReceiver : BroadcastReceiver() {
 
                 Log.d(TAG, "✅ [FOCUS] Task completion broadcast sent")
             }
+        }
+    }
+
+    private fun createNotificationChannel(context: Context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                FOCUS_NOTIFICATION_CHANNEL,
+                "Focus Mode",
+                NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Focus mode notifications"
+                enableVibration(true)
+                lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
+                setBypassDnd(true)
+            }
+            val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            manager.createNotificationChannel(channel)
+            Log.d(TAG, "✅ [FOCUS] Notification channel created")
         }
     }
 }

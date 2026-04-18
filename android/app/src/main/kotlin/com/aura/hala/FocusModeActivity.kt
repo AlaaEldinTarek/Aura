@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit
  * - Immersive sticky mode hides system bars
  * - WakeLock keeps screen on
  * - Mark task as done when timer completes
+ * - Monitored by FocusModeService for guaranteed persistence
  */
 class FocusModeActivity : AppCompatActivity() {
 
@@ -50,6 +51,10 @@ class FocusModeActivity : AppCompatActivity() {
         const val EXTRA_TASK_DESC = "task_desc"
         const val EXTRA_DURATION_MINUTES = "duration_minutes"
         const val EXTRA_LANGUAGE = "language"
+
+        // Static flag so FocusModeService can check if activity is visible
+        var isActivityVisible: Boolean = false
+            private set
     }
 
     private lateinit var taskId: String
@@ -63,6 +68,7 @@ class FocusModeActivity : AppCompatActivity() {
     private var pulseAnimator: ObjectAnimator? = null
     private var totalDurationMs: Long = 0
     private var isTimerFinished = false
+    private var startedAtMs: Long = 0
 
     private lateinit var wakeLock: PowerManager.WakeLock
 
@@ -76,11 +82,15 @@ class FocusModeActivity : AppCompatActivity() {
         isArabic = intent.getStringExtra(EXTRA_LANGUAGE) == "ar"
 
         totalDurationMs = durationMinutes.toLong() * 60 * 1000
+        startedAtMs = System.currentTimeMillis()
 
         Log.d(TAG, "═══════════════════════════════════════")
         Log.d(TAG, "🎯 [FOCUS] Starting focus mode for: $taskTitle")
         Log.d(TAG, "📱 [FOCUS] Duration: $durationMinutes min, Arabic: $isArabic")
         Log.d(TAG, "📱 [FOCUS] Android SDK: ${Build.VERSION.SDK_INT}")
+
+        // Mark activity as visible
+        isActivityVisible = true
 
         // Wake and unlock screen first
         wakeUpAndUnlockScreen()
@@ -104,10 +114,19 @@ class FocusModeActivity : AppCompatActivity() {
         // Immersive sticky mode
         setupImmersiveMode()
 
-        // Prevent activity from being killed
-        moveTaskToBack(false)
-
         Log.d(TAG, "✅ [FOCUS] Focus mode active — CANNOT be dismissed until timer ends")
+    }
+
+    override fun onResume() {
+        super.onResume()
+        isActivityVisible = true
+        Log.d(TAG, "✅ [FOCUS] Activity resumed — visible")
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Don't set invisible here — the service will detect and relaunch
+        Log.d(TAG, "⚠️ [FOCUS] Activity paused")
     }
 
     // ─── Wake Up & Unlock Screen ──────────────────────────────────────────
@@ -130,10 +149,8 @@ class FocusModeActivity : AppCompatActivity() {
         // Dismiss keyguard (unlock screen)
         val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // On O+ use requestDismissKeyguard
             keyguardManager.requestDismissKeyguard(this, null)
         } else {
-            // On older versions, use window flags
             window.addFlags(
                 WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD or
                 WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
@@ -146,7 +163,6 @@ class FocusModeActivity : AppCompatActivity() {
     // ─── Full Screen Setup ────────────────────────────────────────────────
 
     private fun setupFullScreen() {
-        // Turn screen on and show over lock screen
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             try {
                 setTurnScreenOn(true)
@@ -160,10 +176,8 @@ class FocusModeActivity : AppCompatActivity() {
             setupWindowFlags()
         }
 
-        // Keep screen on
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        // Max brightness
         val params = window.attributes
         params.screenBrightness = 1.0f
         window.attributes = params
@@ -180,7 +194,6 @@ class FocusModeActivity : AppCompatActivity() {
     }
 
     private fun setupImmersiveMode() {
-        // Sticky immersive mode — hides status bar and navigation bar
         window.decorView.systemUiVisibility = (
             View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
             or View.SYSTEM_UI_FLAG_FULLSCREEN
@@ -190,7 +203,6 @@ class FocusModeActivity : AppCompatActivity() {
             or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
         )
 
-        // Re-apply on any UI visibility change
         window.decorView.setOnSystemUiVisibilityChangeListener {
             if (it and View.SYSTEM_UI_FLAG_FULLSCREEN == 0) {
                 window.decorView.systemUiVisibility = (
@@ -208,7 +220,6 @@ class FocusModeActivity : AppCompatActivity() {
     // ─── Block All Escape Attempts ────────────────────────────────────────
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        // Block all buttons while timer is running
         if (!isTimerFinished) {
             when (keyCode) {
                 KeyEvent.KEYCODE_BACK,
@@ -235,7 +246,6 @@ class FocusModeActivity : AppCompatActivity() {
         return super.onKeyUp(keyCode, event)
     }
 
-    // Block back button
     @Suppress("DEPRECATION")
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
@@ -246,30 +256,15 @@ class FocusModeActivity : AppCompatActivity() {
         finishFocusMode()
     }
 
-    // Re-launch if activity is somehow sent to background
     override fun onUserLeaveHint() {
         if (!isTimerFinished) {
-            Log.d(TAG, "🚫 [FOCUS] User tried to leave — relaunching")
-            Handler(Looper.getMainLooper()).postDelayed({
-                if (!isTimerFinished) {
-                    val relaunchIntent = Intent(this, FocusModeActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                                Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
-                                Intent.FLAG_ACTIVITY_SINGLE_TOP
-                        putExtra(EXTRA_TASK_ID, taskId)
-                        putExtra(EXTRA_TASK_TITLE, taskTitle)
-                        putExtra(EXTRA_TASK_DESC, taskDesc)
-                        putExtra(EXTRA_DURATION_MINUTES, durationMinutes)
-                        putExtra(EXTRA_LANGUAGE, if (isArabic) "ar" else "en")
-                    }
-                    startActivity(relaunchIntent)
-                }
-            }, 500)
+            Log.d(TAG, "🚫 [FOCUS] User tried to leave — service will relaunch")
+            // No need for manual relaunch — FocusModeService handles it
+            // via the isActivityVisible flag check
         }
         super.onUserLeaveHint()
     }
 
-    // Prevent being moved to back
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         intent.putExtra(EXTRA_TASK_ID, taskId)
@@ -357,7 +352,17 @@ class FocusModeActivity : AppCompatActivity() {
     // ─── Countdown Timer ──────────────────────────────────────────────────
 
     private fun startCountdown() {
-        countDownTimer = object : CountDownTimer(totalDurationMs, 1000) {
+        // Calculate remaining time if activity was relaunched
+        val elapsedMs = System.currentTimeMillis() - startedAtMs
+        val remainingMs = if (elapsedMs > 0 && elapsedMs < totalDurationMs) {
+            totalDurationMs - elapsedMs
+        } else {
+            totalDurationMs
+        }
+
+        Log.d(TAG, "⏱️ [FOCUS] Starting countdown: ${remainingMs / 1000}s remaining (elapsed: ${elapsedMs / 1000}s)")
+
+        countDownTimer = object : CountDownTimer(remainingMs, 1000) {
             override fun onTick(millisUntilFinished: Long) {
                 updateTimerDisplay(millisUntilFinished)
             }
@@ -403,7 +408,11 @@ class FocusModeActivity : AppCompatActivity() {
 
     private fun onCountdownComplete() {
         isTimerFinished = true
+        isActivityVisible = true // Keep visible for completion UI
         Log.d(TAG, "✅ [FOCUS] Countdown complete!")
+
+        // Notify service to stop
+        FocusModeService.stop(this)
 
         // Mark task as done via broadcast
         val completeIntent = Intent(this, FocusModeReceiver::class.java).apply {
@@ -431,13 +440,12 @@ class FocusModeActivity : AppCompatActivity() {
             val progressBar = findViewById<ProgressBar>(R.id.focusProgressBar)
             progressBar?.progress = 100
 
-            // Enable close button now
             val closeBtn = findViewById<Button>(R.id.focusCloseBtn)
             closeBtn?.apply {
                 text = if (isArabic) "إغلاق" else "Close"
                 isEnabled = true
                 alpha = 1.0f
-                setBackgroundColor(0xFF4CAF50.toInt()) // Green
+                setBackgroundColor(0xFF4CAF50.toInt())
             }
 
             stopPulseAnimation()
@@ -469,11 +477,9 @@ class FocusModeActivity : AppCompatActivity() {
         val durStr = if (isArabic) toArabicNumerals(durationMinutes.toString()) else durationMinutes.toString()
         durationLabel?.text = if (isArabic) "$durStr دقيقة" else "$durationMinutes min"
 
-        // Lock icon hint — cannot exit
         val exitHint = findViewById<TextView>(R.id.focusExitHint)
         exitHint?.text = if (isArabic) "🔒 لن يمكنك الخروج حتى ينتهي المؤقت" else "🔒 You cannot exit until timer ends"
 
-        // Close button — DISABLED until timer finishes
         val closeBtn = findViewById<Button>(R.id.focusCloseBtn)
         closeBtn?.apply {
             text = if (isArabic) "🔒 مقفل حتى انتهاء الوقت" else "🔒 Locked until timer ends"
@@ -513,10 +519,14 @@ class FocusModeActivity : AppCompatActivity() {
     // ─── Finish ───────────────────────────────────────────────────────────
 
     private fun finishFocusMode() {
+        isActivityVisible = false
         countDownTimer?.cancel()
         countDownTimer = null
         restoreSoundMode()
         stopPulseAnimation()
+
+        // Stop the foreground service
+        FocusModeService.stop(this)
 
         if (wakeLock.isHeld) {
             try { wakeLock.release() } catch (_: Exception) {}
@@ -534,19 +544,15 @@ class FocusModeActivity : AppCompatActivity() {
         if (wakeLock.isHeld) {
             try { wakeLock.release() } catch (_: Exception) {}
         }
-        // If destroyed before timer finished, relaunch
+
         if (!isTimerFinished) {
-            Log.w(TAG, "⚠️ [FOCUS] Destroyed before timer — attempting relaunch")
-            val relaunchIntent = Intent(this, FocusModeActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                putExtra(EXTRA_TASK_ID, taskId)
-                putExtra(EXTRA_TASK_TITLE, taskTitle)
-                putExtra(EXTRA_TASK_DESC, taskDesc)
-                putExtra(EXTRA_DURATION_MINUTES, durationMinutes)
-                putExtra(EXTRA_LANGUAGE, if (isArabic) "ar" else "en")
-            }
-            startActivity(relaunchIntent)
+            isActivityVisible = false
+            Log.w(TAG, "⚠️ [FOCUS] Destroyed before timer — service will handle relaunch")
+            // FocusModeService detects isActivityVisible=false and relaunches
+        } else {
+            isActivityVisible = false
         }
+
         super.onDestroy()
         Log.d(TAG, "📱 [FOCUS] Activity destroyed")
     }

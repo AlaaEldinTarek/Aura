@@ -10,6 +10,7 @@ import '../../core/models/task.dart';
 import '../../core/widgets/task_card.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/services/task_service.dart';
+import '../../core/services/notification_service.dart';
 import '../../core/utils/haptic_feedback.dart' as app_haptic;
 
 class TasksScreen extends ConsumerStatefulWidget {
@@ -21,7 +22,7 @@ class TasksScreen extends ConsumerStatefulWidget {
 
 enum _SortOrder { dateDesc, dateAsc, priority, title }
 
-class _TasksScreenState extends ConsumerState<TasksScreen> {
+class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingObserver {
   TaskCategory? _selectedCategory;
   String? _selectedTag;
   bool _showCompleted = false;
@@ -41,8 +42,41 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadSortOrder();
     _loadCategoryFilter();
+    _checkFocusTaskCompleted();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _checkFocusTaskCompleted();
+    }
+  }
+
+  /// Check if a focus mode task was completed while app was in background
+  Future<void> _checkFocusTaskCompleted() async {
+    final completedTaskId = await NotificationService.instance.checkFocusTaskCompleted();
+    if (completedTaskId != null && mounted) {
+      debugPrint('FocusMode: Completing task $completedTaskId from focus mode');
+      final userId = ref.read(currentUserIdProvider);
+      if (userId.isNotEmpty) {
+        await TaskService.instance.toggleTaskCompletion(
+          userId: userId,
+          taskId: completedTaskId,
+        );
+        // Refresh tasks
+        ref.invalidate(tasksProvider(const TaskFilterParams()));
+      }
+    }
   }
 
   static const _sortPrefKey = 'task_sort_order';
@@ -84,12 +118,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   Future<void> _saveSortOrder(_SortOrder order) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_sortPrefKey, order.name);
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 
   @override

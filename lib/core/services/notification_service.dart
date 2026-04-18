@@ -992,4 +992,64 @@ class NotificationService {
       debugPrint('FocusMode: Error requesting DND - ${e.message}');
     }
   }
+
+  /// Start focus mode foreground service immediately
+  Future<bool> startFocusService({
+    required String taskId,
+    required String taskTitle,
+    String taskDesc = '',
+    required int durationMinutes,
+    String language = 'en',
+  }) async {
+    try {
+      return await _focusChannel.invokeMethod('startFocusService', {
+        'taskId': taskId,
+        'taskTitle': taskTitle,
+        'taskDesc': taskDesc,
+        'durationMinutes': durationMinutes,
+        'language': language,
+      }) ?? false;
+    } on PlatformException catch (e) {
+      debugPrint('FocusMode: Error starting service - ${e.message}');
+      return false;
+    }
+  }
+
+  /// Stop focus mode foreground service
+  Future<bool> stopFocusService() async {
+    try {
+      return await _focusChannel.invokeMethod('stopFocusService') ?? false;
+    } on PlatformException catch (e) {
+      debugPrint('FocusMode: Error stopping service - ${e.message}');
+      return false;
+    }
+  }
+
+  /// Check if focus mode service is running
+  Future<bool> isFocusServiceRunning() async {
+    try {
+      return await _focusChannel.invokeMethod('isFocusServiceRunning') ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  /// Check if a focus task was completed while app was in background.
+  /// Returns the task ID if completed, null otherwise.
+  /// Call this from the tasks screen on resume to sync completion state.
+  Future<String?> checkFocusTaskCompleted() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final completedTaskId = prefs.getString('focus_completed_task_id');
+      if (completedTaskId != null) {
+        // Clear it after reading
+        await prefs.remove('focus_completed_task_id');
+        debugPrint('FocusMode: Found completed task: $completedTaskId');
+      }
+      return completedTaskId;
+    } catch (e) {
+      debugPrint('FocusMode: Error checking completed task - $e');
+      return null;
+    }
+  }
 }
