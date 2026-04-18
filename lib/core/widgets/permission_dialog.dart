@@ -2,8 +2,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/app_constants.dart';
 import '../services/platform_channel_service.dart';
+import '../services/notification_service.dart';
 
 /// Checks all required permissions and shows a dialog for missing ones.
 class PermissionDialogHandler extends StatefulWidget {
@@ -96,6 +98,30 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
       ));
     }
 
+    // 6. Accessibility Service (auto-accepts screen pinning during Focus Mode)
+    // Only show if user has never enabled it before — Huawei EMUI kills services between sessions
+    if (Platform.isAndroid) {
+      final notifService = NotificationService.instance;
+      final prefs = await SharedPreferences.getInstance();
+      final everEnabled = prefs.getBool('focus_a11y_ever_enabled') ?? false;
+      final a11yEnabled = await notifService.isAccessibilityServiceEnabled();
+      if (a11yEnabled && !everEnabled) {
+        await prefs.setBool('focus_a11y_ever_enabled', true);
+      }
+      if (!a11yEnabled && !everEnabled) {
+        missing.add(_PermInfo(
+          icon: Icons.phonelink_lock,
+          title: 'accessibility_permission_title',
+          desc: 'accessibility_permission_desc',
+          color: Colors.teal,
+          action: null,
+          openSettings: () async {
+            await notifService.requestAccessibilityPermission();
+          },
+        ));
+      }
+    }
+
     if (missing.isEmpty || !mounted) {
       _hasChecked = true;
       return;
@@ -128,13 +154,30 @@ class _PermissionsPage extends StatefulWidget {
   State<_PermissionsPage> createState() => _PermissionsPageState();
 }
 
-class _PermissionsPageState extends State<_PermissionsPage> {
+class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingObserver {
   late List<bool> _granted;
 
   @override
   void initState() {
     super.initState();
     _granted = List.filled(widget.permissions.length, false);
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Recheck all ungranted permissions when user returns from settings
+      for (int i = 0; i < widget.permissions.length; i++) {
+        if (!_granted[i]) _recheckPermission(i);
+      }
+    }
   }
 
   Future<void> _grantPermission(int index) async {
@@ -167,6 +210,12 @@ class _PermissionsPageState extends State<_PermissionsPage> {
       nowGranted = await Permission.notification.status.isGranted;
     } else if (perm.title == 'dnd_permission_title') {
       nowGranted = await Permission.accessNotificationPolicy.status.isGranted;
+    } else if (perm.title == 'accessibility_permission_title') {
+      nowGranted = await NotificationService.instance.isAccessibilityServiceEnabled();
+      if (nowGranted) {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('focus_a11y_ever_enabled', true);
+      }
     }
 
     if (nowGranted && mounted) {
@@ -347,6 +396,7 @@ class _PermissionsPageState extends State<_PermissionsPage> {
       'exact_alarm_title': 'المنبهات الدقيقة',
       'battery_optimization_title': 'تحسين البطارية',
       'dnd_permission_title': 'وضع عدم الإزعاج',
+      'accessibility_permission_title': 'أذونات وضع التركيز',
     };
     return map[key] ?? key;
   }
@@ -358,6 +408,7 @@ class _PermissionsPageState extends State<_PermissionsPage> {
       'exact_alarm_message': 'مطلوب لتشغيل الأذان في الوقت المحدد',
       'battery_optimization_message': 'مطلوب لضمان عمل الإشعارات في الخلفية',
       'dnd_permission_desc': 'مطلوب لتفعيل الوضع الصامت أثناء الصلاة',
+      'accessibility_permission_desc': 'مطلوب لعمل وضع التركيز بشكل صحيح',
     };
     return map[key] ?? key;
   }

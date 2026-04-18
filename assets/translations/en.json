@@ -206,5 +206,7 @@
   "focus_mode_grant_overlay": "Grant Overlay Permission",
   "focus_mode_grant_dnd": "Grant DND Permission",
   "focus_mode_exit_hint": "Press volume up 3 times to exit",
-  "focus_mode_task_done": "Mark Done & Exit"
+  "focus_mode_task_done": "Mark Done & Exit",
+  "accessibility_permission_title": "Focus Mode Permissions",
+  "accessibility_permission_desc": "Required for Focus Mode to work properly"
 }

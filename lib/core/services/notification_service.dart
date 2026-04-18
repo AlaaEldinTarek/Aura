@@ -957,6 +957,24 @@ class NotificationService {
     }
   }
 
+  /// Check if Accessibility Service is enabled
+  Future<bool> isAccessibilityServiceEnabled() async {
+    try {
+      return await _focusChannel.invokeMethod('isAccessibilityServiceEnabled') ?? false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
+  /// Open Accessibility Settings so user can enable the service
+  Future<void> requestAccessibilityPermission() async {
+    try {
+      await _focusChannel.invokeMethod('requestAccessibilityPermission');
+    } on PlatformException catch (e) {
+      debugPrint('FocusMode: Error opening accessibility settings - ${e.message}');
+    }
+  }
+
   /// Check if overlay permission is granted
   Future<bool> canDrawOverlays() async {
     try {
@@ -1039,16 +1057,14 @@ class NotificationService {
   /// Call this from the tasks screen on resume to sync completion state.
   Future<String?> checkFocusTaskCompleted() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final completedTaskId = prefs.getString('focus_completed_task_id');
-      if (completedTaskId != null) {
-        // Clear it after reading
-        await prefs.remove('focus_completed_task_id');
-        debugPrint('FocusMode: Found completed task: $completedTaskId');
+      // Read directly from native SharedPreferences via MethodChannel — bypasses Flutter cache
+      final taskId = await _focusChannel.invokeMethod<String?>('getFocusCompletedTaskId');
+      if (taskId != null) {
+        debugPrint('FocusMode: Found completed task via native: $taskId');
       }
-      return completedTaskId;
-    } catch (e) {
-      debugPrint('FocusMode: Error checking completed task - $e');
+      return taskId;
+    } on PlatformException catch (e) {
+      debugPrint('FocusMode: Error checking completed task - ${e.message}');
       return null;
     }
   }

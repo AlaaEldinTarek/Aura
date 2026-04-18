@@ -482,6 +482,33 @@ class MainActivity : FlutterActivity() {
                         result.success(true)
                     }
                 }
+                "getFocusCompletedTaskId" -> {
+                    val prefs = getSharedPreferences("${packageName}_preferences", Context.MODE_PRIVATE)
+                    val taskId = prefs.getString("focus_completed_task_id", null)
+                    if (taskId != null) {
+                        prefs.edit().remove("focus_completed_task_id").remove("focus_task_was_completed").apply()
+                    }
+                    result.success(taskId)
+                }
+                "isAccessibilityServiceEnabled" -> {
+                    val am = getSystemService(Context.ACCESSIBILITY_SERVICE) as android.view.accessibility.AccessibilityManager
+                    val enabledServices = android.provider.Settings.Secure.getString(
+                        contentResolver,
+                        android.provider.Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+                    ) ?: ""
+                    val fullName = "$packageName/com.aura.hala.AuraAccessibilityService"
+                    result.success(enabledServices.contains(fullName) || enabledServices.contains("AuraAccessibilityService"))
+                }
+                "requestAccessibilityPermission" -> {
+                    try {
+                        val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        startActivity(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        result.success(false)
+                    }
+                }
                 "hasDndAccess" -> {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager

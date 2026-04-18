@@ -114,15 +114,12 @@ class FocusModeReceiver : BroadcastReceiver() {
 
                 Log.d(TAG, "🎯 [FOCUS] Alarm triggered for task: $taskTitle")
 
-                // 1. Start the foreground service FIRST (most important for persistence)
+                // 1. Start the foreground service for monitoring
                 FocusModeService.start(
                     context, taskId, taskTitle, taskDesc, durationMinutes, language
                 )
 
-                // 2. Create notification channel
-                createNotificationChannel(context)
-
-                // 3. Build full-screen intent (just for the notification, not for launching)
+                // 2. Launch the activity with ring timer
                 val focusIntent = Intent(context, FocusModeActivity::class.java).apply {
                     putExtra(FocusModeActivity.EXTRA_TASK_ID, taskId)
                     putExtra(FocusModeActivity.EXTRA_TASK_TITLE, taskTitle)
@@ -130,44 +127,14 @@ class FocusModeReceiver : BroadcastReceiver() {
                     putExtra(FocusModeActivity.EXTRA_DURATION_MINUTES, durationMinutes)
                     putExtra(FocusModeActivity.EXTRA_LANGUAGE, language)
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or
-                            Intent.FLAG_ACTIVITY_CLEAR_TASK
+                            Intent.FLAG_ACTIVITY_CLEAR_TASK or
+                            Intent.FLAG_ACTIVITY_SINGLE_TOP
                 }
-
-                val fullScreenPendingIntent = PendingIntent.getActivity(
-                    context,
-                    FOCUS_NOTIFICATION_ID,
-                    focusIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                )
-
-                // 4. Build high-priority notification with fullScreenIntent
-                val isArabic = language == "ar"
-                val builder = NotificationCompat.Builder(context, FOCUS_NOTIFICATION_CHANNEL)
-                    .setSmallIcon(R.mipmap.ic_launcher)
-                    .setContentTitle(if (isArabic) "وضع التركيز" else "Focus Mode")
-                    .setContentText(if (isArabic) taskTitle else taskTitle)
-                    .setPriority(NotificationCompat.PRIORITY_MAX)
-                    .setCategory(NotificationCompat.CATEGORY_ALARM)
-                    .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                    .setAutoCancel(true)
-                    .setFullScreenIntent(fullScreenPendingIntent, true)
-                    .setContentIntent(fullScreenPendingIntent)
-
-                // 5. Show notification
-                val notificationManager = NotificationManagerCompat.from(context)
-                try {
-                    notificationManager.notify(FOCUS_NOTIFICATION_ID, builder.build())
-                    Log.d(TAG, "✅ [FOCUS] Notification with fullScreenIntent shown")
-                } catch (e: Exception) {
-                    Log.e(TAG, "❌ [FOCUS] Notification failed: ${e.message}")
-                }
-
-                // 6. Launch directly (belt and suspenders)
                 try {
                     context.startActivity(focusIntent)
-                    Log.d(TAG, "✅ [FOCUS] FocusModeActivity launched directly")
+                    Log.d(TAG, "✅ [FOCUS] FocusModeActivity launched")
                 } catch (e: Exception) {
-                    Log.e(TAG, "❌ [FOCUS] Direct launch failed: ${e.message}")
+                    Log.e(TAG, "❌ [FOCUS] Activity launch failed: ${e.message}")
                 }
             }
 

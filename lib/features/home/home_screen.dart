@@ -139,18 +139,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                     // Prayer Progress Bar
                     _buildPrayerProgress(context, isDark, isArabic, completedCount, totalPrayers, prayerStatuses)
-                        .animate().fadeIn(delay: 200.ms, duration: 400.ms),
+                        .animate().fadeIn(delay: 200.ms, duration: 400.ms).slideY(begin: 0.1),
 
                     const SizedBox(height: AppConstants.paddingLarge),
 
                     // Task Progress Ring
-                    _buildTaskProgress(context, isDark, isArabic),
+                    _buildTaskProgress(context, isDark, isArabic)
+                        .animate().fadeIn(delay: 250.ms, duration: 400.ms).slideY(begin: 0.1),
 
                     const SizedBox(height: AppConstants.paddingLarge),
 
                     // Today's Tasks Preview
                     _buildTodayTasksPreview(context, isDark, isArabic)
-                        .animate().fadeIn(delay: 300.ms, duration: 400.ms),
+                        .animate().fadeIn(delay: 350.ms, duration: 400.ms).slideY(begin: 0.1),
 
                     const SizedBox(height: AppConstants.paddingLarge),
 

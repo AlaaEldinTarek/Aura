@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Focus Mode Activity Layout - Full screen countdown with task info -->
+<!-- Focus Mode Activity Layout - Full screen countdown with task info and completion prompt -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#0D1117">
 
-    <!-- Center content -->
+    <!-- ====== TIMER SECTION (visible during countdown) ====== -->
     <LinearLayout
+        android:id="@+id/timerSection"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:orientation="vertical"
@@ -120,11 +121,11 @@
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="48dp"
-        android:text="Press volume up 3x to exit"
+        android:text="You cannot exit until timer ends"
         android:textSize="12sp"
         android:textColor="#33FFFFFF" />
 
-    <!-- Close button at bottom -->
+    <!-- Close button at bottom (during countdown) -->
     <Button
         android:id="@+id/focusCloseBtn"
         android:layout_width="match_parent"
@@ -133,10 +134,287 @@
         android:layout_marginBottom="48dp"
         android:layout_marginStart="32dp"
         android:layout_marginEnd="32dp"
-        android:text="Mark Done &amp; Exit"
+        android:text="Locked until timer ends"
         android:textSize="16sp"
         android:textColor="#FFFFFF"
         android:background="@drawable/btn_close"
         android:textAllCaps="false" />
+
+    <!-- ====== COMPLETION SECTION (visible after timer ends) ====== -->
+    <LinearLayout
+        android:id="@+id/completionSection"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:paddingStart="32dp"
+        android:paddingEnd="32dp"
+        android:visibility="gone">
+
+        <!-- Done checkmark -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Done!"
+            android:textSize="56sp"
+            android:textColor="#FFFFFF"
+            android:fontFamily="monospace"
+            android:textStyle="bold"
+            android:layout_marginBottom="16dp" />
+
+        <!-- Session complete text -->
+        <TextView
+            android:id="@+id/completionTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Focus Session Complete!"
+            android:textSize="22sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginBottom="8dp" />
+
+        <TextView
+            android:id="@+id/completionSubtitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Great job! You stayed focused."
+            android:textSize="15sp"
+            android:textColor="#80FFFFFF"
+            android:gravity="center"
+            android:layout_marginBottom="40dp" />
+
+        <!-- Did you complete? -->
+        <TextView
+            android:id="@+id/completionQuestion"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Did you complete your task?"
+            android:textSize="18sp"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Yes / No buttons -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_marginBottom="16dp">
+
+            <Button
+                android:id="@+id/btnYes"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:text="Yes"
+                android:textSize="18sp"
+                android:textColor="#FFFFFF"
+                android:textAllCaps="false"
+                android:background="@drawable/btn_focus_green" />
+
+            <Button
+                android:id="@+id/btnNo"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:text="No"
+                android:textSize="18sp"
+                android:textColor="#FFFFFF"
+                android:textAllCaps="false"
+                android:background="@drawable/btn_close" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- ====== RESTART SECTION (visible when user says No) ====== -->
+    <ScrollView
+        android:id="@+id/restartSection"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:paddingStart="32dp"
+            android:paddingEnd="32dp"
+            android:paddingTop="60dp"
+            android:paddingBottom="40dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Restart Focus?"
+                android:textSize="24sp"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:layout_marginBottom="8dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Choose a new duration or skip"
+                android:textSize="14sp"
+                android:textColor="#80FFFFFF"
+                android:layout_marginBottom="32dp" />
+
+            <!-- Duration preset buttons in 2-column grid -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+
+                <Button
+                    android:id="@+id/btnRestart5"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:text="5 min"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    android:textAllCaps="false"
+                    android:background="@drawable/btn_close" />
+
+                <Button
+                    android:id="@+id/btnRestart10"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:text="10 min"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    android:textAllCaps="false"
+                    android:background="@drawable/btn_close" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
+
+                <Button
+                    android:id="@+id/btnRestart15"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:text="15 min"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    android:textAllCaps="false"
+                    android:background="@drawable/btn_close" />
+
+                <Button
+                    android:id="@+id/btnRestart25"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:text="25 min"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    android:textAllCaps="false"
+                    android:background="@drawable/btn_close" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="16dp">
+
+                <Button
+                    android:id="@+id/btnRestart45"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="6dp"
+                    android:text="45 min"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    android:textAllCaps="false"
+                    android:background="@drawable/btn_close" />
+
+                <Button
+                    android:id="@+id/btnRestart60"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:text="60 min"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    android:textAllCaps="false"
+                    android:background="@drawable/btn_close" />
+
+            </LinearLayout>
+
+            <!-- Custom duration input -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="24dp">
+
+                <EditText
+                    android:id="@+id/customDurationInput"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="8dp"
+                    android:hint="Custom (min)"
+                    android:textColorHint="#4DFFFFFF"
+                    android:inputType="number"
+                    android:textColor="#FFFFFF"
+                    android:textSize="16sp"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:background="@drawable/btn_close"
+                    android:maxLines="1" />
+
+                <Button
+                    android:id="@+id/btnRestartCustom"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:paddingStart="24dp"
+                    android:paddingEnd="24dp"
+                    android:text="Go"
+                    android:textSize="16sp"
+                    android:textColor="#FFFFFF"
+                    android:textAllCaps="false"
+                    android:background="@drawable/btn_focus_green" />
+
+            </LinearLayout>
+
+            <!-- Skip & Close -->
+            <Button
+                android:id="@+id/btnSkipClose"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="Skip &amp; Close"
+                android:textSize="16sp"
+                android:textColor="#80FFFFFF"
+                android:textAllCaps="false"
+                android:background="@drawable/btn_close" />
+
+        </LinearLayout>
+
+    </ScrollView>
 
 </RelativeLayout>

@@ -19,7 +19,10 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import java.util.concurrent.TimeUnit
@@ -27,20 +30,11 @@ import java.util.concurrent.TimeUnit
 /**
  * Focus Mode Activity - Full screen lock that cannot be dismissed until timer ends.
  *
- * Universal compatibility:
- * - Android 5.0+ (API 21+)
- * - All OEM devices: Huawei, Honor, Xiaomi, Samsung, Oppo, Vivo, Realme, etc.
- *
- * Features:
- * - Cannot be dismissed until timer finishes (no back, no home, no recents)
- * - Auto-wakes and unlocks phone when triggered
- * - Full-screen over lock screen and other apps
- * - DND / silent mode with fallback for restricted devices
- * - Countdown timer with circular progress
- * - Immersive sticky mode hides system bars
- * - WakeLock keeps screen on
- * - Mark task as done when timer completes
- * - Monitored by FocusModeService for guaranteed persistence
+ * Flow:
+ * 1. Timer countdown with ring progress (inescapable)
+ * 2. Timer ends -> restore sound immediately -> show "Did you complete?" (Yes/No)
+ * 3. Yes -> mark task done -> close
+ * 4. No -> show restart options (5/10/15/25/45/60 min + custom + skip)
  */
 class FocusModeActivity : AppCompatActivity() {
 
@@ -51,8 +45,8 @@ class FocusModeActivity : AppCompatActivity() {
         const val EXTRA_TASK_DESC = "task_desc"
         const val EXTRA_DURATION_MINUTES = "duration_minutes"
         const val EXTRA_LANGUAGE = "language"
+        const val EXTRA_STARTED_AT = "started_at"
 
-        // Static flag so FocusModeService can check if activity is visible
         var isActivityVisible: Boolean = false
             private set
     }
@@ -72,6 +66,13 @@ class FocusModeActivity : AppCompatActivity() {
 
     private lateinit var wakeLock: PowerManager.WakeLock
 
+    // UI sections
+    private var timerSection: LinearLayout? = null
+    private var completionSection: LinearLayout? = null
+    private var restartSection: ScrollView? = null
+    private var exitHint: TextView? = null
+    private var closeBtn: Button? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -82,61 +83,63 @@ class FocusModeActivity : AppCompatActivity() {
         isArabic = intent.getStringExtra(EXTRA_LANGUAGE) == "ar"
 
         totalDurationMs = durationMinutes.toLong() * 60 * 1000
-        startedAtMs = System.currentTimeMillis()
+        // Use the original start time passed from service so timer continues on relaunch
+        startedAtMs = intent.getLongExtra(EXTRA_STARTED_AT, 0L)
+        if (startedAtMs == 0L) startedAtMs = System.currentTimeMillis()
 
-        Log.d(TAG, "═══════════════════════════════════════")
-        Log.d(TAG, "🎯 [FOCUS] Starting focus mode for: $taskTitle")
-        Log.d(TAG, "📱 [FOCUS] Duration: $durationMinutes min, Arabic: $isArabic")
-        Log.d(TAG, "📱 [FOCUS] Android SDK: ${Build.VERSION.SDK_INT}")
+        Log.d(TAG, "[FOCUS] Starting focus mode for: $taskTitle (${durationMinutes}min)")
 
-        // Mark activity as visible
         isActivityVisible = true
 
-        // Wake and unlock screen first
         wakeUpAndUnlockScreen()
-
-        // Acquire WakeLock
         acquireWakeLock()
-
-        // Setup full screen
         setupFullScreen()
-
-        // Enable silent/DND mode
         enableSilentMode()
 
-        // Set layout
         setContentView(R.layout.activity_focus_mode)
+        bindViews()
         setupUI()
+        setupCompletionButtons()
+        setupRestartButtons()
 
-        // Start countdown
+        // Block ALL touch input during countdown
+        FocusModeService.blockTouch(this)
+
         startCountdown()
-
-        // Immersive sticky mode
         setupImmersiveMode()
 
-        Log.d(TAG, "✅ [FOCUS] Focus mode active — CANNOT be dismissed until timer ends")
+        Log.d(TAG, "[FOCUS] Focus mode active - cannot be dismissed until timer ends")
     }
 
     override fun onResume() {
         super.onResume()
         isActivityVisible = true
-        Log.d(TAG, "✅ [FOCUS] Activity resumed — visible")
+        if (!isTimerFinished) {
+            try { startLockTask() } catch (_: Exception) {}
+        }
     }
 
     override fun onPause() {
         super.onPause()
-        // Don't set invisible here — the service will detect and relaunch
-        Log.d(TAG, "⚠️ [FOCUS] Activity paused")
+        if (!isTimerFinished) isActivityVisible = false
     }
 
-    // ─── Wake Up & Unlock Screen ──────────────────────────────────────────
+    // --- View Binding ---
+
+    private fun bindViews() {
+        timerSection = findViewById(R.id.timerSection)
+        completionSection = findViewById(R.id.completionSection)
+        restartSection = findViewById(R.id.restartSection)
+        exitHint = findViewById(R.id.focusExitHint)
+        closeBtn = findViewById(R.id.focusCloseBtn)
+    }
+
+    // --- Wake Up & Unlock ---
 
     @Suppress("DEPRECATION")
     private fun wakeUpAndUnlockScreen() {
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
 
-        // Wake up the screen
-        @Suppress("DEPRECATION")
         val screenLock = powerManager.newWakeLock(
             PowerManager.SCREEN_BRIGHT_WAKE_LOCK or
             PowerManager.ACQUIRE_CAUSES_WAKEUP or
@@ -146,7 +149,6 @@ class FocusModeActivity : AppCompatActivity() {
         screenLock.acquire(5000L)
         screenLock.release()
 
-        // Dismiss keyguard (unlock screen)
         val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             keyguardManager.requestDismissKeyguard(this, null)
@@ -156,20 +158,16 @@ class FocusModeActivity : AppCompatActivity() {
                 WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
             )
         }
-
-        Log.d(TAG, "✅ [FOCUS] Screen woken and keyguard dismissed")
     }
 
-    // ─── Full Screen Setup ────────────────────────────────────────────────
+    // --- Full Screen ---
 
     private fun setupFullScreen() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             try {
                 setTurnScreenOn(true)
                 setShowWhenLocked(true)
-                Log.d(TAG, "✅ [FOCUS] Using O_MR1+ APIs")
-            } catch (e: Exception) {
-                Log.w(TAG, "⚠️ [FOCUS] O_MR1+ APIs failed: ${e.message}")
+            } catch (_: Exception) {
                 setupWindowFlags()
             }
         } else {
@@ -217,7 +215,7 @@ class FocusModeActivity : AppCompatActivity() {
         }
     }
 
-    // ─── Block All Escape Attempts ────────────────────────────────────────
+    // --- Block Escape ---
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (!isTimerFinished) {
@@ -225,10 +223,7 @@ class FocusModeActivity : AppCompatActivity() {
                 KeyEvent.KEYCODE_BACK,
                 KeyEvent.KEYCODE_HOME,
                 KeyEvent.KEYCODE_APP_SWITCH,
-                KeyEvent.KEYCODE_RECENT_APPS -> {
-                    Log.d(TAG, "🚫 [FOCUS] Blocked key: $keyCode")
-                    return true
-                }
+                KeyEvent.KEYCODE_RECENT_APPS -> return true
             }
         }
         return super.onKeyDown(keyCode, event)
@@ -249,18 +244,13 @@ class FocusModeActivity : AppCompatActivity() {
     @Suppress("DEPRECATION")
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        if (!isTimerFinished) {
-            Log.d(TAG, "🚫 [FOCUS] Back button pressed — blocked")
-            return
-        }
+        if (!isTimerFinished) return
         finishFocusMode()
     }
 
     override fun onUserLeaveHint() {
         if (!isTimerFinished) {
-            Log.d(TAG, "🚫 [FOCUS] User tried to leave — service will relaunch")
-            // No need for manual relaunch — FocusModeService handles it
-            // via the isActivityVisible flag check
+            // FocusModeService will detect and relaunch
         }
         super.onUserLeaveHint()
     }
@@ -272,9 +262,10 @@ class FocusModeActivity : AppCompatActivity() {
         intent.putExtra(EXTRA_TASK_DESC, taskDesc)
         intent.putExtra(EXTRA_DURATION_MINUTES, durationMinutes)
         intent.putExtra(EXTRA_LANGUAGE, if (isArabic) "ar" else "en")
+        intent.putExtra(EXTRA_STARTED_AT, startedAtMs)
     }
 
-    // ─── WakeLock ─────────────────────────────────────────────────────────
+    // --- WakeLock ---
 
     @Suppress("DEPRECATION")
     private fun acquireWakeLock() {
@@ -284,10 +275,9 @@ class FocusModeActivity : AppCompatActivity() {
             "aura:FocusModeWakeLock"
         )
         wakeLock.acquire((durationMinutes + 5).toLong() * 60 * 1000L)
-        Log.d(TAG, "✅ [FOCUS] WakeLock acquired")
     }
 
-    // ─── Silent Mode ──────────────────────────────────────────────────────
+    // --- Silent Mode ---
 
     private fun enableSilentMode() {
         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -299,13 +289,10 @@ class FocusModeActivity : AppCompatActivity() {
                 wasDndEnabled = true
                 try {
                     notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
-                    Log.d(TAG, "✅ [FOCUS] DND enabled via NotificationManager")
-                } catch (e: Exception) {
-                    Log.w(TAG, "⚠️ [FOCUS] DND failed, falling back to ringer mode: ${e.message}")
+                } catch (_: Exception) {
                     fallbackToRingerSilent(audioManager)
                 }
             } else {
-                Log.w(TAG, "⚠️ [FOCUS] DND policy access not granted, falling back to ringer mode")
                 fallbackToRingerSilent(audioManager)
             }
         } else {
@@ -314,45 +301,26 @@ class FocusModeActivity : AppCompatActivity() {
     }
 
     private fun fallbackToRingerSilent(audioManager: AudioManager) {
-        try {
-            audioManager.ringerMode = AudioManager.RINGER_MODE_VIBRATE
-            Log.d(TAG, "✅ [FOCUS] Ringer mode set to vibrate")
-        } catch (e: Exception) {
-            try {
-                audioManager.ringerMode = AudioManager.RINGER_MODE_SILENT
-                Log.d(TAG, "✅ [FOCUS] Ringer mode set to silent")
-            } catch (e2: Exception) {
-                Log.e(TAG, "❌ [FOCUS] Could not change ringer mode: ${e2.message}")
-            }
+        try { audioManager.ringerMode = AudioManager.RINGER_MODE_VIBRATE } catch (_: Exception) {
+            try { audioManager.ringerMode = AudioManager.RINGER_MODE_SILENT } catch (_: Exception) {}
         }
     }
 
     private fun restoreSoundMode() {
+        Log.d(TAG, "[FOCUS] Restoring sound mode IMMEDIATELY")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            if (wasDndEnabled && notificationManager.isNotificationPolicyAccessGranted) {
-                try {
-                    notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL)
-                    Log.d(TAG, "✅ [FOCUS] DND disabled")
-                } catch (e: Exception) {
-                    Log.w(TAG, "⚠️ [FOCUS] Could not disable DND: ${e.message}")
-                }
+            if (notificationManager.isNotificationPolicyAccessGranted) {
+                try { notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL) } catch (_: Exception) {}
             }
         }
-
         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        try {
-            audioManager.ringerMode = savedRingerMode
-            Log.d(TAG, "✅ [FOCUS] Ringer mode restored to $savedRingerMode")
-        } catch (e: Exception) {
-            Log.w(TAG, "⚠️ [FOCUS] Could not restore ringer mode: ${e.message}")
-        }
+        try { audioManager.ringerMode = AudioManager.RINGER_MODE_NORMAL } catch (_: Exception) {}
     }
 
-    // ─── Countdown Timer ──────────────────────────────────────────────────
+    // --- Countdown Timer ---
 
     private fun startCountdown() {
-        // Calculate remaining time if activity was relaunched
         val elapsedMs = System.currentTimeMillis() - startedAtMs
         val remainingMs = if (elapsedMs > 0 && elapsedMs < totalDurationMs) {
             totalDurationMs - elapsedMs
@@ -360,7 +328,7 @@ class FocusModeActivity : AppCompatActivity() {
             totalDurationMs
         }
 
-        Log.d(TAG, "⏱️ [FOCUS] Starting countdown: ${remainingMs / 1000}s remaining (elapsed: ${elapsedMs / 1000}s)")
+        Log.d(TAG, "[FOCUS] Starting countdown: ${remainingMs / 1000}s remaining")
 
         countDownTimer = object : CountDownTimer(remainingMs, 1000) {
             override fun onTick(millisUntilFinished: Long) {
@@ -378,88 +346,212 @@ class FocusModeActivity : AppCompatActivity() {
         val seconds = TimeUnit.MILLISECONDS.toSeconds(millisRemaining) % 60
 
         val timeText = if (isArabic) {
-            val arMin = toArabicNumerals(minutes.toString())
-            val arSec = toArabicNumerals(String.format("%02d", seconds))
-            "$arMin:$arSec"
+            "${toArabicNumerals(minutes.toString())}:${toArabicNumerals(String.format("%02d", seconds))}"
         } else {
             String.format("%02d:%02d", minutes, seconds)
         }
 
         try {
-            val timerTextView = findViewById<TextView>(R.id.focusTimerText)
-            timerTextView?.text = timeText
+            findViewById<TextView>(R.id.focusTimerText)?.text = timeText
 
             val progressBar = findViewById<ProgressBar>(R.id.focusProgressBar)
-            if (progressBar != null) {
-                val progress = ((totalDurationMs - millisRemaining).toFloat() / totalDurationMs.toFloat() * 100).toInt()
-                progressBar.progress = progress
+            progressBar?.let {
+                val progress = ((totalDurationMs - millisRemaining).toFloat() / totalDurationMs * 100).toInt()
+                it.progress = progress
             }
 
             val remainingLabel = findViewById<TextView>(R.id.focusRemainingLabel)
-            if (remainingLabel != null) {
-                remainingLabel.text = if (isArabic) {
-                    "${toArabicNumerals(minutes.toString())} ${if (minutes == 1L) "دقيقة" else "دقائق"} متبقي"
-                } else {
-                    "$minutes min remaining"
-                }
+            remainingLabel?.text = if (isArabic) {
+                "${toArabicNumerals(minutes.toString())} ${if (minutes == 1L) "دقيقة" else "دقائق"} متبقي"
+            } else {
+                "$minutes min remaining"
             }
         } catch (_: Exception) {}
     }
 
     private fun onCountdownComplete() {
         isTimerFinished = true
-        isActivityVisible = true // Keep visible for completion UI
-        Log.d(TAG, "✅ [FOCUS] Countdown complete!")
+        isActivityVisible = true
 
-        // Notify service to stop
+        Log.d(TAG, "[FOCUS] Countdown complete!")
+
+
+        try { stopLockTask() } catch (_: Exception) {}
+        // Allow touch input so user can interact with buttons
+        FocusModeService.allowTouch(this)
+
+        // 3. Restore sound IMMEDIATELY
+        restoreSoundMode()
+
+        // 2. Stop the monitoring service (no more relaunch)
         FocusModeService.stop(this)
 
-        // Mark task as done via broadcast
-        val completeIntent = Intent(this, FocusModeReceiver::class.java).apply {
-            action = "com.aura.hala.FOCUS_TASK_COMPLETE"
-            putExtra(EXTRA_TASK_ID, taskId)
-        }
-        sendBroadcast(completeIntent)
-
-        // Show completion UI
+        // 3. Update timer display to show completion
         try {
-            val timerTextView = findViewById<TextView>(R.id.focusTimerText)
-            timerTextView?.text = if (isArabic) "تم!" else "Done!"
+            findViewById<TextView>(R.id.focusTimerText)?.text = if (isArabic) "تم!" else "Done!"
+            findViewById<ProgressBar>(R.id.focusProgressBar)?.progress = 100
+        } catch (_: Exception) {}
 
-            val titleLabel = findViewById<TextView>(R.id.focusTaskTitle)
-            titleLabel?.text = if (isArabic) "انتهت جلسة التركيز!" else "Focus Session Complete!"
-
-            val subtitleLabel = findViewById<TextView>(R.id.focusTaskDesc)
-            val minStr = if (isArabic) toArabicNumerals(durationMinutes.toString()) else durationMinutes.toString()
-            subtitleLabel?.text = if (isArabic) {
-                "أحسنت! بقيت مركزاً لمدة $minStr دقيقة."
-            } else {
-                "Great job! You stayed focused for $durationMinutes minutes."
-            }
-
-            val progressBar = findViewById<ProgressBar>(R.id.focusProgressBar)
-            progressBar?.progress = 100
-
-            val closeBtn = findViewById<Button>(R.id.focusCloseBtn)
-            closeBtn?.apply {
-                text = if (isArabic) "إغلاق" else "Close"
-                isEnabled = true
-                alpha = 1.0f
-                setBackgroundColor(0xFF4CAF50.toInt())
-            }
-
-            stopPulseAnimation()
-        } catch (e: Exception) {
-            Log.w(TAG, "⚠️ [FOCUS] Error updating completion UI: ${e.message}")
-        }
-
-        // Auto-close after 10 seconds
+        // 4. Show completion prompt after brief delay
         Handler(Looper.getMainLooper()).postDelayed({
-            finishFocusMode()
-        }, 10000)
+            showCompletionPrompt()
+        }, 800)
+
+        stopPulseAnimation()
     }
 
-    // ─── UI Setup ─────────────────────────────────────────────────────────
+    // --- Completion Prompt ---
+
+    private fun showCompletionPrompt() {
+        // Hide timer section, exit hint, close button
+        timerSection?.visibility = View.GONE
+        exitHint?.visibility = View.GONE
+        closeBtn?.visibility = View.GONE
+
+        // Update completion texts
+        val completionTitle = findViewById<TextView>(R.id.completionTitle)
+        completionTitle?.text = if (isArabic) "انتهت جلسة التركيز!" else "Focus Session Complete!"
+
+        val completionSubtitle = findViewById<TextView>(R.id.completionSubtitle)
+        val minStr = if (isArabic) toArabicNumerals(durationMinutes.toString()) else durationMinutes.toString()
+        completionSubtitle?.text = if (isArabic) {
+            "أحسنت! بقيت مركزاً لمدة $minStr دقيقة."
+        } else {
+            "Great job! You stayed focused for $durationMinutes minutes."
+        }
+
+        val completionQuestion = findViewById<TextView>(R.id.completionQuestion)
+        completionQuestion?.text = if (isArabic) "هل أكملت مهمتك؟" else "Did you complete your task?"
+
+        val btnYes = findViewById<Button>(R.id.btnYes)
+        btnYes?.text = if (isArabic) "نعم" else "Yes"
+
+        val btnNo = findViewById<Button>(R.id.btnNo)
+        btnNo?.text = if (isArabic) "لا" else "No"
+
+        // Show completion section
+        completionSection?.visibility = View.VISIBLE
+    }
+
+    // --- Completion Button Handlers ---
+
+    private fun setupCompletionButtons() {
+        // Yes button - mark task as done
+        findViewById<Button>(R.id.btnYes)?.setOnClickListener {
+            Log.d(TAG, "[FOCUS] User marked task as DONE")
+            markTaskDone()
+            finishFocusMode()
+        }
+
+        // No button - show restart options
+        findViewById<Button>(R.id.btnNo)?.setOnClickListener {
+            Log.d(TAG, "[FOCUS] User said NOT done - showing restart options")
+            showRestartOptions()
+        }
+    }
+
+    private fun markTaskDone() {
+        val prefs = getSharedPreferences("${packageName}_preferences", Context.MODE_PRIVATE)
+        prefs.edit()
+            .putString("focus_completed_task_id", taskId)
+            .putBoolean("focus_task_was_completed", true)
+            .apply()
+        Log.d(TAG, "[FOCUS] Task $taskId marked done in SharedPreferences")
+    }
+
+    // --- Restart Options ---
+
+    private fun showRestartOptions() {
+        completionSection?.visibility = View.GONE
+
+        // Update restart button labels for Arabic
+        if (isArabic) {
+            findViewById<Button>(R.id.btnRestart5)?.text = "${toArabicNumerals("5")} دقيقة"
+            findViewById<Button>(R.id.btnRestart10)?.text = "${toArabicNumerals("10")} دقيقة"
+            findViewById<Button>(R.id.btnRestart15)?.text = "${toArabicNumerals("15")} دقيقة"
+            findViewById<Button>(R.id.btnRestart25)?.text = "${toArabicNumerals("25")} دقيقة"
+            findViewById<Button>(R.id.btnRestart45)?.text = "${toArabicNumerals("45")} دقيقة"
+            findViewById<Button>(R.id.btnRestart60)?.text = "${toArabicNumerals("60")} دقيقة"
+            findViewById<Button>(R.id.btnRestartCustom)?.text = "ابدأ"
+            findViewById<Button>(R.id.btnSkipClose)?.text = "تخطي وإغلاق"
+            findViewById<EditText>(R.id.customDurationInput)?.hint = "مخصص (دقائق)"
+        }
+
+        restartSection?.visibility = View.VISIBLE
+    }
+
+    private fun setupRestartButtons() {
+        val presetButtons = mapOf(
+            R.id.btnRestart5 to 5,
+            R.id.btnRestart10 to 10,
+            R.id.btnRestart15 to 15,
+            R.id.btnRestart25 to 25,
+            R.id.btnRestart45 to 45,
+            R.id.btnRestart60 to 60,
+        )
+
+        for ((id, minutes) in presetButtons) {
+            findViewById<Button>(id)?.setOnClickListener {
+                restartFocusMode(minutes)
+            }
+        }
+
+        // Custom duration
+        findViewById<Button>(R.id.btnRestartCustom)?.setOnClickListener {
+            val input = findViewById<EditText>(R.id.customDurationInput)
+            val text = input?.text?.toString()?.trim() ?: ""
+            val minutes = text.toIntOrNull()
+            if (minutes != null && minutes in 1..240) {
+                restartFocusMode(minutes)
+            }
+        }
+
+        // Skip & Close
+        findViewById<Button>(R.id.btnSkipClose)?.setOnClickListener {
+            Log.d(TAG, "[FOCUS] User skipped restart - closing")
+            finishFocusMode()
+        }
+    }
+
+    private fun restartFocusMode(minutes: Int) {
+        Log.d(TAG, "[FOCUS] Restarting focus mode for $minutes min")
+
+        // Reset state with new start time
+        isTimerFinished = false
+        durationMinutes = minutes
+        totalDurationMs = minutes.toLong() * 60 * 1000
+        startedAtMs = System.currentTimeMillis() // Fresh start for restart
+
+        // Hide restart/completion, show timer
+        restartSection?.visibility = View.GONE
+        completionSection?.visibility = View.GONE
+        timerSection?.visibility = View.VISIBLE
+        exitHint?.visibility = View.VISIBLE
+        closeBtn?.visibility = View.VISIBLE
+
+        // Re-enable silent mode
+        enableSilentMode()
+
+        // Re-block all touch input during new countdown
+        FocusModeService.blockTouch(this)
+
+        // Re-pin screen for new countdown
+        try { startLockTask() } catch (_: Exception) {}
+        // Restart the foreground service for monitoring with new start time
+        val serviceIntent = Intent(this, FocusModeService::class.java).apply {
+            action = FocusModeService.ACTION_RESTART_FOCUS
+            putExtra(FocusModeService.EXTRA_DURATION_MINUTES, minutes)
+            putExtra(FocusModeService.EXTRA_STARTED_AT, startedAtMs)
+        }
+        startService(serviceIntent)
+
+        // Reset UI
+        setupUI()
+        startCountdown()
+        startPulseAnimation()
+    }
+
+    // --- UI Setup ---
 
     private fun setupUI() {
         val titleLabel = findViewById<TextView>(R.id.focusTaskTitle)
@@ -477,18 +569,14 @@ class FocusModeActivity : AppCompatActivity() {
         val durStr = if (isArabic) toArabicNumerals(durationMinutes.toString()) else durationMinutes.toString()
         durationLabel?.text = if (isArabic) "$durStr دقيقة" else "$durationMinutes min"
 
-        val exitHint = findViewById<TextView>(R.id.focusExitHint)
-        exitHint?.text = if (isArabic) "🔒 لن يمكنك الخروج حتى ينتهي المؤقت" else "🔒 You cannot exit until timer ends"
+        exitHint?.text = if (isArabic) "لن يمكنك الخروج حتى ينتهي المؤقت" else "You cannot exit until timer ends"
 
-        val closeBtn = findViewById<Button>(R.id.focusCloseBtn)
         closeBtn?.apply {
-            text = if (isArabic) "🔒 مقفل حتى انتهاء الوقت" else "🔒 Locked until timer ends"
+            text = if (isArabic) "مقفل حتى انتهاء الوقت" else "Locked until timer ends"
             isEnabled = false
             alpha = 0.4f
             setOnClickListener {
-                if (isTimerFinished) {
-                    finishFocusMode()
-                }
+                if (isTimerFinished) finishFocusMode()
             }
         }
 
@@ -516,51 +604,47 @@ class FocusModeActivity : AppCompatActivity() {
         pulseAnimator = null
     }
 
-    // ─── Finish ───────────────────────────────────────────────────────────
+    // --- Finish ---
 
     private fun finishFocusMode() {
         isActivityVisible = false
+        try { stopLockTask() } catch (_: Exception) {}
         countDownTimer?.cancel()
         countDownTimer = null
-        restoreSoundMode()
         stopPulseAnimation()
 
         // Stop the foreground service
         FocusModeService.stop(this)
 
-        if (wakeLock.isHeld) {
+        if (::wakeLock.isInitialized && wakeLock.isHeld) {
             try { wakeLock.release() } catch (_: Exception) {}
-            Log.d(TAG, "✅ [FOCUS] WakeLock released")
         }
 
         finish()
-        Log.d(TAG, "✅ [FOCUS] Focus mode ended")
+        Log.d(TAG, "[FOCUS] Focus mode ended")
     }
 
     override fun onDestroy() {
         countDownTimer?.cancel()
-        restoreSoundMode()
         stopPulseAnimation()
-        if (wakeLock.isHeld) {
+        if (::wakeLock.isInitialized && wakeLock.isHeld) {
             try { wakeLock.release() } catch (_: Exception) {}
         }
 
         if (!isTimerFinished) {
             isActivityVisible = false
-            Log.w(TAG, "⚠️ [FOCUS] Destroyed before timer — service will handle relaunch")
-            // FocusModeService detects isActivityVisible=false and relaunches
+            Log.w(TAG, "[FOCUS] Destroyed before timer - service will handle relaunch")
         } else {
             isActivityVisible = false
         }
 
         super.onDestroy()
-        Log.d(TAG, "📱 [FOCUS] Activity destroyed")
     }
 
-    // ─── Arabic Numerals ──────────────────────────────────────────────────
+    // --- Arabic Numerals ---
 
     private fun toArabicNumerals(input: String): String {
-        val easternDigits = charArrayOf('٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩')
+        val easternDigits = charArrayOf('\u0660', '\u0661', '\u0662', '\u0663', '\u0664', '\u0665', '\u0666', '\u0667', '\u0668', '\u0669')
         return input.map { c ->
             if (c in '0'..'9') easternDigits[c - '0'] else c
         }.joinToString("")

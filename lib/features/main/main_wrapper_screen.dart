@@ -7,6 +7,8 @@ import '../../core/widgets/bottom_nav_bar.dart';
 import '../../core/utils/haptic_feedback.dart' as app_haptic;
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/preferences_provider.dart';
+import '../../core/providers/prayer_times_provider.dart';
+import '../../core/providers/task_provider.dart';
 import '../home/home_screen.dart';
 import '../prayer/prayer_screen.dart';
 import '../profile/profile_screen.dart';
@@ -23,7 +25,7 @@ class MainWrapperScreen extends ConsumerStatefulWidget {
 }
 
 class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
   late int _currentIndex;
 
@@ -39,8 +41,17 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
   static const _navigationChannel = MethodChannel('com.aura.hala/navigation');
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      ref.invalidate(prayerTimesProvider);
+      ref.invalidate(tasksProvider(const TaskFilterParams()));
+    }
+  }
+
+  @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _currentIndex = widget.initialIndex;
     _tabController = TabController(length: 4, vsync: this);
     _tabController.index = _currentIndex;
@@ -60,6 +71,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _tabController.dispose();
     _pageController.dispose();
     super.dispose();

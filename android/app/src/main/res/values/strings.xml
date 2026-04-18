@@ -21,4 +21,7 @@
 
     <!-- Adhan Full-Screen Activity -->
     <string name="prayer_time_icon">Prayer Time</string>
+
+    <!-- Accessibility Service -->
+    <string name="accessibility_service_description">Allows Aura to automatically accept screen pinning during Focus Mode so you are not interrupted</string>
 </resources>
