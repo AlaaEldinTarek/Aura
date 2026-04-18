@@ -147,6 +147,8 @@ class TaskCard extends StatelessWidget {
                                   completed: task.completedSubtasks,
                                   total: task.subtasks.length,
                                 ),
+                              if (task.estimatedMinutes > 0)
+                                _EstimateBadge(minutes: task.estimatedMinutes),
                             ],
                           ),
                           if (task.subtasks.isNotEmpty) ...[
@@ -521,6 +523,38 @@ class _SubtaskBadge extends StatelessWidget {
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
                   color: completed == total ? Colors.green : Colors.blue)),
+        ],
+      ),
+    );
+  }
+}
+
+class _EstimateBadge extends StatelessWidget {
+  final int minutes;
+  const _EstimateBadge({required this.minutes});
+
+  @override
+  Widget build(BuildContext context) {
+    final h = minutes ~/ 60;
+    final m = minutes % 60;
+    final label = h > 0
+        ? (m > 0 ? '${h}h ${m}m' : '${h}h')
+        : '${m}m';
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+          color: Colors.teal.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(4)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.timer_outlined, size: 11, color: Colors.teal),
+          const SizedBox(width: 3),
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.teal)),
         ],
       ),
     );

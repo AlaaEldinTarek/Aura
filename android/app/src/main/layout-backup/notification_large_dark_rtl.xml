@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#3A3A3C"
+    android:paddingStart="12dp"
+    android:paddingEnd="12dp"
+    android:layoutDirection="rtl"
+    android:textDirection="rtl"
+    android:gravity="center_horizontal">
+
+    <!-- Header: App name - Next Prayer -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingTop="8dp"
+        android:paddingBottom="0dp"
+        android:layoutDirection="rtl">
+
+        <ImageView
+            android:id="@+id/notification_small_icon"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:src="@drawable/ic_launcher_foreground"
+            android:scaleType="centerCrop" />
+
+        <TextView
+            android:id="@+id/notification_header"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginStart="6dp"
+            android:text="Aura - Next Prayer"
+            android:textSize="12sp"
+            android:textColor="#b3ffffff"
+            android:textDirection="rtl" />
+
+    </LinearLayout>
+
+    <!-- Content: Prayer info + Icon (RTL: text right, icon left) -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_gravity="center_horizontal"
+        android:layoutDirection="rtl">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="0dp"
+            android:orientation="vertical"
+            android:gravity="end">
+
+            <TextView
+                android:id="@+id/notification_title"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Maghrib"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#ffffffff"
+                android:textDirection="rtl" />
+
+            <TextView
+                android:id="@+id/notification_time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⏰ 2h 15m 30s"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:textColor="#4DA6FF"
+                android:textDirection="rtl" />
+
+            <TextView
+                android:id="@+id/notification_until"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Until Azan"
+                android:textSize="16sp"
+                android:textColor="#b3ffffff"
+                android:textDirection="rtl" />
+
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/notification_logo"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
+            android:src="@mipmap/ic_launcher"
+            android:scaleType="centerCrop"
+            android:contentDescription="Prayer Icon" />
+
+    </LinearLayout>
+
+</LinearLayout>

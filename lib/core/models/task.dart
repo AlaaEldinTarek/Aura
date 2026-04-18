@@ -53,6 +53,7 @@ class Task {
   final bool isPinned;
   final bool focusMode;
   final int focusDurationMinutes;
+  final int estimatedMinutes;
 
   Task({
     required this.id,
@@ -74,6 +75,7 @@ class Task {
     this.isPinned = false,
     this.focusMode = false,
     this.focusDurationMinutes = 25,
+    this.estimatedMinutes = 0,
   });
 
   bool get isRecurring => recurrenceType != RecurrenceType.none;
@@ -125,6 +127,7 @@ class Task {
       isPinned: data['isPinned'] as bool? ?? false,
       focusMode: data['focusMode'] as bool? ?? false,
       focusDurationMinutes: data['focusDurationMinutes'] as int? ?? 25,
+      estimatedMinutes: data['estimatedMinutes'] as int? ?? 0,
     );
   }
 
@@ -149,6 +152,7 @@ class Task {
       'isPinned': isPinned,
       'focusMode': focusMode,
       'focusDurationMinutes': focusDurationMinutes,
+      'estimatedMinutes': estimatedMinutes,
     };
   }
 
@@ -173,6 +177,7 @@ class Task {
     bool? isPinned,
     bool? focusMode,
     int? focusDurationMinutes,
+    int? estimatedMinutes,
     bool clearDueDate = false,
     bool clearCompletedAt = false,
     bool clearRecurrenceEndDate = false,
@@ -202,6 +207,7 @@ class Task {
       isPinned: isPinned ?? this.isPinned,
       focusMode: focusMode ?? this.focusMode,
       focusDurationMinutes: focusDurationMinutes ?? this.focusDurationMinutes,
+      estimatedMinutes: estimatedMinutes ?? this.estimatedMinutes,
     );
   }
 

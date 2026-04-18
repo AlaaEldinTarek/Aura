@@ -153,6 +153,7 @@ class TaskService {
     List<SubTask> subtasks = const [],
     bool focusMode = false,
     int focusDurationMinutes = 25,
+    int estimatedMinutes = 0,
   }) async {
     try {
       final docRef = _firestore
@@ -178,6 +179,7 @@ class TaskService {
         subtasks: subtasks,
         focusMode: focusMode,
         focusDurationMinutes: focusDurationMinutes,
+        estimatedMinutes: estimatedMinutes,
       );
 
       await docRef.set(task.toFirestore());
@@ -226,6 +228,7 @@ class TaskService {
     bool? isPinned,
     bool? focusMode,
     int? focusDurationMinutes,
+    int? estimatedMinutes,
   }) async {
     try {
       // Get current task from cache or Firestore
@@ -266,6 +269,7 @@ class TaskService {
         isPinned: isPinned,
         focusMode: focusMode,
         focusDurationMinutes: focusDurationMinutes,
+        estimatedMinutes: estimatedMinutes,
       );
 
       await _firestore

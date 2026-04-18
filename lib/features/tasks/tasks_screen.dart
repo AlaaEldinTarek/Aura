@@ -329,6 +329,42 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               ),
             ),
 
+            // Estimated time summary for today
+            SliverToBoxAdapter(
+              child: allTasksAsync.when(
+                data: (tasks) {
+                  final todayEstimate = tasks
+                      .where((t) => t.isDueToday && !t.isCompleted && t.estimatedMinutes > 0)
+                      .fold(0, (sum, t) => sum + t.estimatedMinutes);
+                  if (todayEstimate == 0) return const SizedBox.shrink();
+                  final h = todayEstimate ~/ 60;
+                  final m = todayEstimate % 60;
+                  final label = h > 0
+                      ? (isArabic ? '~$h س ${m > 0 ? '$m د' : ''} لليوم' : '~${h}h ${m > 0 ? '${m}m ' : ''}today')
+                      : (isArabic ? '~$m د لليوم' : '~${m}m today');
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    child: Row(
+                      children: [
+                        Icon(Icons.timer_outlined, size: 14, color: Colors.teal),
+                        const SizedBox(width: 4),
+                        Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.teal,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                loading: () => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
+              ),
+            ),
+
             // Category Filter Chips
             SliverToBoxAdapter(
               child: _buildCategoryChips(isDark, isArabic),
@@ -918,15 +954,57 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       ..sort((a, b) =>
           (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099)));
 
-    final upcomingTasks = tasks
-        .where((t) => isVisible(t) && t.isUpcoming)
-        .toList()
-      ..sort((a, b) =>
-          (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099)));
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final tomorrow = today.add(const Duration(days: 1));
+    final in3Hours = now.add(const Duration(hours: 3));
+    final thisWeekEnd = today.add(const Duration(days: 7));
+    final nextWeekEnd = today.add(const Duration(days: 14));
 
+    // Due soon — has a time component and due within 3 hours
+    final dueSoonTasks = tasks.where((t) {
+      if (!isVisible(t) || t.isOverdue || t.isCompleted) return false;
+      if (t.dueDate == null || !t.hasDueTime) return false;
+      return t.dueDate!.isAfter(now) && t.dueDate!.isBefore(in3Hours);
+    }).toList()
+      ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
+
+    final tomorrowTasks = tasks.where((t) {
+      if (!isVisible(t) || t.isOverdue || t.isCompleted) return false;
+      if (t.dueDate == null) return false;
+      final dueDay = DateTime(t.dueDate!.year, t.dueDate!.month, t.dueDate!.day);
+      return dueDay == tomorrow && !dueSoonTasks.contains(t);
+    }).toList()
+      ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
+
+    final thisWeekTasks = tasks.where((t) {
+      if (!isVisible(t) || t.isOverdue || t.isDueToday || t.isCompleted) return false;
+      if (t.dueDate == null) return false;
+      final dueDay = DateTime(t.dueDate!.year, t.dueDate!.month, t.dueDate!.day);
+      return dueDay.isAfter(tomorrow) && dueDay.isBefore(thisWeekEnd) &&
+          !dueSoonTasks.contains(t) && !tomorrowTasks.contains(t);
+    }).toList()
+      ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
+
+    final nextWeekTasks = tasks.where((t) {
+      if (!isVisible(t) || t.isOverdue || t.isDueToday || t.isCompleted) return false;
+      if (t.dueDate == null) return false;
+      final dueDay = DateTime(t.dueDate!.year, t.dueDate!.month, t.dueDate!.day);
+      return !dueDay.isBefore(thisWeekEnd) && dueDay.isBefore(nextWeekEnd);
+    }).toList()
+      ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
+
+    final laterTasks = tasks.where((t) {
+      if (!isVisible(t) || t.isOverdue || t.isDueToday || t.isCompleted) return false;
+      if (t.dueDate == null) return false;
+      final dueDay = DateTime(t.dueDate!.year, t.dueDate!.month, t.dueDate!.day);
+      return !dueDay.isBefore(nextWeekEnd);
+    }).toList()
+      ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
+
+    // No due date tasks
     final otherTasks = tasks
-        .where((t) =>
-            isVisible(t) && !t.isDueToday && !t.isUpcoming && !t.isOverdue)
+        .where((t) => isVisible(t) && t.dueDate == null && !t.isCompleted)
         .toList();
 
     final completedTasks = tasks
@@ -972,25 +1050,81 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
             const SizedBox(height: 20),
           ],
 
-          // Upcoming Section
-          if (upcomingTasks.isNotEmpty) ...[
+          // Due Soon (within 3 hours)
+          if (dueSoonTasks.isNotEmpty) ...[
             _buildSectionHeader(
-              icon: Icons.upcoming,
-              title: isArabic ? 'قريباً' : 'Upcoming',
-              count: upcomingTasks.length,
+              icon: Icons.alarm,
+              title: isArabic ? 'خلال ٣ ساعات' : 'Due Soon',
+              count: dueSoonTasks.length,
+              color: Colors.deepOrange,
+              isDark: isDark,
+            ),
+            const SizedBox(height: 8),
+            ...dueSoonTasks.map((task) => _buildTaskCard(task)),
+            const SizedBox(height: 20),
+          ],
+
+          // Tomorrow
+          if (tomorrowTasks.isNotEmpty) ...[
+            _buildSectionHeader(
+              icon: Icons.wb_twilight,
+              title: isArabic ? 'غداً' : 'Tomorrow',
+              count: tomorrowTasks.length,
               color: Colors.orange,
               isDark: isDark,
             ),
             const SizedBox(height: 8),
-            ...upcomingTasks.map((task) => _buildTaskCard(task)),
+            ...tomorrowTasks.map((task) => _buildTaskCard(task)),
             const SizedBox(height: 20),
           ],
 
-          // All Other Tasks Section
+          // This Week
+          if (thisWeekTasks.isNotEmpty) ...[
+            _buildSectionHeader(
+              icon: Icons.date_range,
+              title: isArabic ? 'هذا الأسبوع' : 'This Week',
+              count: thisWeekTasks.length,
+              color: Colors.teal,
+              isDark: isDark,
+            ),
+            const SizedBox(height: 8),
+            ...thisWeekTasks.map((task) => _buildTaskCard(task)),
+            const SizedBox(height: 20),
+          ],
+
+          // Next Week
+          if (nextWeekTasks.isNotEmpty) ...[
+            _buildSectionHeader(
+              icon: Icons.calendar_month,
+              title: isArabic ? 'الأسبوع القادم' : 'Next Week',
+              count: nextWeekTasks.length,
+              color: Colors.indigo,
+              isDark: isDark,
+            ),
+            const SizedBox(height: 8),
+            ...nextWeekTasks.map((task) => _buildTaskCard(task)),
+            const SizedBox(height: 20),
+          ],
+
+          // Later (15+ days)
+          if (laterTasks.isNotEmpty) ...[
+            _buildSectionHeader(
+              icon: Icons.event,
+              title: isArabic ? 'لاحقاً' : 'Later',
+              count: laterTasks.length,
+              color: Colors.blueGrey,
+              isDark: isDark,
+            ),
+            const SizedBox(height: 8),
+            ...laterTasks.map((task) => _buildTaskCard(task)),
+            const SizedBox(height: 20),
+          ],
+
+          // No due date
           if (otherTasks.isNotEmpty) ...[
             _buildSectionHeader(
               icon: Icons.task_alt,
-              title: isArabic ? 'كل المهام' : 'All Tasks',
+              title: isArabic ? 'بدون تاريخ' : 'No Date',
               count: otherTasks.length,
               color: Colors.purple,
               isDark: isDark,
@@ -1142,13 +1276,18 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: TaskCard(
-        key: ValueKey(task.id),
+      child: _InlineSubtaskCard(
+        key: ValueKey('inline_${task.id}'),
         task: task,
         onToggle: () => _toggleTask(task),
         onTap: () => _editTask(task),
         onDelete: () => _deleteTask(task, isArabic),
         onLongPress: () => _showContextMenu(task, isArabic),
+        userId: ref.read(currentUserIdProvider),
+        onChanged: () {
+          ref.invalidate(allTasksProvider);
+          ref.invalidate(taskStatisticsProvider);
+        },
       ),
     );
   }
@@ -2341,6 +2480,244 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─── Inline Subtask Card ─────────────────────────────────────────────────────
+
+class _InlineSubtaskCard extends StatefulWidget {
+  final Task task;
+  final VoidCallback? onTap;
+  final VoidCallback? onToggle;
+  final VoidCallback? onDelete;
+  final VoidCallback? onLongPress;
+  final String userId;
+  final VoidCallback onChanged;
+
+  const _InlineSubtaskCard({
+    super.key,
+    required this.task,
+    this.onTap,
+    this.onToggle,
+    this.onDelete,
+    this.onLongPress,
+    required this.userId,
+    required this.onChanged,
+  });
+
+  @override
+  State<_InlineSubtaskCard> createState() => _InlineSubtaskCardState();
+}
+
+class _InlineSubtaskCardState extends State<_InlineSubtaskCard> {
+  bool _expanded = false;
+  final TextEditingController _addController = TextEditingController();
+  bool _adding = false;
+
+  @override
+  void dispose() {
+    _addController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _toggleSubtask(SubTask subtask) async {
+    if (widget.userId.isEmpty) return;
+    final updated = widget.task.subtasks.map((s) {
+      if (s.id == subtask.id) return SubTask(id: s.id, title: s.title, isCompleted: !s.isCompleted);
+      return s;
+    }).toList();
+    await TaskService.instance.updateTask(
+      userId: widget.userId,
+      taskId: widget.task.id,
+      subtasks: updated,
+    );
+    widget.onChanged();
+  }
+
+  Future<void> _addSubtask(String title) async {
+    final t = title.trim();
+    if (t.isEmpty || widget.userId.isEmpty) return;
+    setState(() => _adding = true);
+    final newSub = SubTask(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: t,
+      isCompleted: false,
+    );
+    final updated = [...widget.task.subtasks, newSub];
+    await TaskService.instance.updateTask(
+      userId: widget.userId,
+      taskId: widget.task.id,
+      subtasks: updated,
+    );
+    _addController.clear();
+    setState(() => _adding = false);
+    widget.onChanged();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final hasSubtasks = widget.task.subtasks.isNotEmpty;
+
+    return Column(
+      children: [
+        Stack(
+          children: [
+            TaskCard(
+              key: ValueKey(widget.task.id),
+              task: widget.task,
+              onToggle: widget.onToggle,
+              onTap: widget.onTap,
+              onDelete: widget.onDelete,
+              onLongPress: widget.onLongPress,
+            ),
+            // Expand button — bottom-right of card
+            Positioned(
+              bottom: 8,
+              right: 8,
+              child: GestureDetector(
+                onTap: () => setState(() => _expanded = !_expanded),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppConstants.primaryColor.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _expanded ? Icons.expand_less : Icons.expand_more,
+                        size: 14,
+                        color: AppConstants.primaryColor,
+                      ),
+                      const SizedBox(width: 2),
+                      Text(
+                        _expanded
+                            ? (isArabic ? 'إخفاء' : 'Hide')
+                            : (hasSubtasks
+                                ? (isArabic ? 'المهام الفرعية' : 'Subtasks')
+                                : (isArabic ? 'إضافة فرعية' : '+ Sub')),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppConstants.primaryColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        // Expanded subtask panel
+        AnimatedSize(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          child: _expanded
+              ? Container(
+                  margin: const EdgeInsets.only(top: 2, left: 12, right: 4),
+                  decoration: BoxDecoration(
+                    color: isDark ? AppConstants.darkCard : Colors.white,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(AppConstants.radiusMedium),
+                      bottomRight: Radius.circular(AppConstants.radiusMedium),
+                    ),
+                    border: Border.all(
+                      color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      // Existing subtasks
+                      ...widget.task.subtasks.map((sub) => InkWell(
+                        onTap: () => _toggleSubtask(sub),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          child: Row(
+                            children: [
+                              AnimatedScale(
+                                scale: sub.isCompleted ? 1.1 : 1.0,
+                                duration: const Duration(milliseconds: 150),
+                                child: Icon(
+                                  sub.isCompleted
+                                      ? Icons.check_circle
+                                      : Icons.radio_button_unchecked,
+                                  size: 20,
+                                  color: sub.isCompleted
+                                      ? Colors.green
+                                      : (isDark ? Colors.grey.shade500 : Colors.grey.shade400),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  sub.title,
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    decoration: sub.isCompleted
+                                        ? TextDecoration.lineThrough
+                                        : null,
+                                    color: sub.isCompleted
+                                        ? (isDark ? Colors.grey.shade500 : Colors.grey.shade400)
+                                        : (isDark ? Colors.white : Colors.black87),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )),
+
+                      // Divider before add field
+                      if (widget.task.subtasks.isNotEmpty)
+                        Divider(height: 1, color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+
+                      // Quick add field
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        child: Row(
+                          children: [
+                            Icon(Icons.add, size: 18, color: AppConstants.primaryColor),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: TextField(
+                                controller: _addController,
+                                style: const TextStyle(fontSize: 14),
+                                decoration: InputDecoration(
+                                  hintText: isArabic ? 'أضف مهمة فرعية...' : 'Add subtask...',
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                textInputAction: TextInputAction.done,
+                                onSubmitted: _adding ? null : _addSubtask,
+                              ),
+                            ),
+                            if (_adding)
+                              const SizedBox(
+                                width: 16, height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            else
+                              GestureDetector(
+                                onTap: () => _addSubtask(_addController.text),
+                                child: Icon(Icons.send, size: 16, color: AppConstants.primaryColor),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : const SizedBox.shrink(),
+        ),
+      ],
     );
   }
 }

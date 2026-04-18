@@ -41,6 +41,8 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   // Focus Mode
   bool _focusModeEnabled = false;
   int _focusDurationMinutes = 25;
+  // Duration estimate
+  int _estimatedMinutes = 0;
 
   @override
   void initState() {
@@ -70,6 +72,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     _subtasks = List<SubTask>.from(task.subtasks);
     _focusModeEnabled = task.focusMode;
     _focusDurationMinutes = task.focusDurationMinutes;
+    _estimatedMinutes = task.estimatedMinutes;
   }
 
   @override
@@ -121,6 +124,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           subtasks: _subtasks,
           focusMode: _focusModeEnabled,
           focusDurationMinutes: _focusDurationMinutes,
+          estimatedMinutes: _estimatedMinutes,
         );
 
         if (task != null && mounted) {
@@ -165,6 +169,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           subtasks: _subtasks,
           focusMode: _focusModeEnabled,
           focusDurationMinutes: _focusDurationMinutes,
+          estimatedMinutes: _estimatedMinutes,
         );
 
         if (success && mounted) {
@@ -672,6 +677,11 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
 
             const SizedBox(height: AppConstants.paddingMedium),
 
+            // Estimated Duration Card
+            _buildEstimatedDurationCard(isDark, isArabic),
+
+            const SizedBox(height: AppConstants.paddingMedium),
+
             // Tags Card
             _buildTagsCard(isDark, isArabic),
 
@@ -834,6 +844,104 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  // ─── Estimated Duration ────────────────────────────────────────────────
+
+  Widget _buildEstimatedDurationCard(bool isDark, bool isArabic) {
+    final borderColor = isDark ? AppConstants.darkBorder : AppConstants.lightBorder;
+    final presets = [15, 30, 45, 60, 90, 120];
+
+    String _formatMins(int mins) {
+      if (mins == 0) return isArabic ? 'بدون' : 'None';
+      if (mins < 60) return isArabic ? '$mins د' : '${mins}m';
+      final h = mins ~/ 60;
+      final m = mins % 60;
+      if (m == 0) return isArabic ? '$h س' : '${h}h';
+      return isArabic ? '$h س $m د' : '${h}h ${m}m';
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppConstants.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
+        border: Border.all(color: borderColor),
+      ),
+      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.timer_outlined, size: 18, color: Colors.teal),
+              const SizedBox(width: 8),
+              Text(
+                isArabic ? 'الوقت المقدر' : 'Estimated Duration',
+                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+              ),
+              const Spacer(),
+              Text(
+                _formatMins(_estimatedMinutes),
+                style: TextStyle(
+                  color: Colors.teal,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              // None option
+              GestureDetector(
+                onTap: () => setState(() => _estimatedMinutes = 0),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: _estimatedMinutes == 0
+                        ? Colors.teal
+                        : Colors.teal.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    isArabic ? 'بدون' : 'None',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: _estimatedMinutes == 0 ? Colors.white : Colors.teal,
+                    ),
+                  ),
+                ),
+              ),
+              // Preset options
+              ...presets.map((mins) => GestureDetector(
+                onTap: () => setState(() => _estimatedMinutes = mins),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: _estimatedMinutes == mins
+                        ? Colors.teal
+                        : Colors.teal.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    _formatMins(mins),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: _estimatedMinutes == mins ? Colors.white : Colors.teal,
+                    ),
+                  ),
+                ),
+              )),
+            ],
+          ),
         ],
       ),
     );
