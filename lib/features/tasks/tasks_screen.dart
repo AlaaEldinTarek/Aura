@@ -21,7 +21,7 @@ class TasksScreen extends ConsumerStatefulWidget {
   ConsumerState<TasksScreen> createState() => _TasksScreenState();
 }
 
-enum _SortOrder { dateDesc, dateAsc, priority, title }
+enum _SortOrder { dateDesc, dateAsc, priority, title, manual }
 
 class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingObserver {
   TaskCategory? _selectedCategory;
@@ -288,6 +288,18 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                           : null),
                   const SizedBox(width: 8),
                   Text(isArabic ? 'أبجدياً' : 'Alphabetical'),
+                ]),
+              ),
+              PopupMenuItem<_SortOrder>(
+                value: _SortOrder.manual,
+                child: Row(children: [
+                  Icon(Icons.drag_handle,
+                      size: 16,
+                      color: _sortOrder == _SortOrder.manual
+                          ? AppConstants.primaryColor
+                          : null),
+                  const SizedBox(width: 8),
+                  Text(isArabic ? 'ترتيب يدوي' : 'Custom Order'),
                 ]),
               ),
             ],
@@ -900,6 +912,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       case _SortOrder.title:
         sorted.sort(
             (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+      case _SortOrder.manual:
+        sorted.sort((a, b) => a.manualOrder.compareTo(b.manualOrder));
     }
     // Pinned tasks always float to top
     sorted.sort((a, b) {
@@ -907,6 +921,108 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       return a.isPinned ? -1 : 1;
     });
     return sorted;
+  }
+
+  Widget _buildManualOrderView(List<Task> tasks, bool isDark, bool isArabic) {
+    final activeTasks = tasks.where((t) => !t.isCompleted).toList();
+    final completedTasks = tasks.where((t) => t.isCompleted).toList();
+
+    if (activeTasks.isEmpty && completedTasks.isEmpty) {
+      return _buildEmptyState(isDark, isArabic);
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Drag hint
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              children: [
+                Icon(Icons.drag_handle, size: 16, color: Colors.grey.shade500),
+                const SizedBox(width: 6),
+                Text(
+                  isArabic ? 'اسحب لإعادة الترتيب' : 'Drag to reorder',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                ),
+              ],
+            ),
+          ),
+          // Reorderable list — drag handle on left, no long-press conflict
+          ReorderableListView(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            buildDefaultDragHandles: false,
+            onReorder: (oldIndex, newIndex) async {
+              if (newIndex > oldIndex) newIndex--;
+              final reordered = List<Task>.from(activeTasks);
+              final moved = reordered.removeAt(oldIndex);
+              reordered.insert(newIndex, moved);
+              setState(() {});
+              final userId = ref.read(currentUserIdProvider);
+              if (userId.isNotEmpty) {
+                await TaskService.instance.updateTaskOrders(
+                  userId: userId,
+                  tasks: reordered,
+                );
+                ref.invalidate(allTasksProvider);
+              }
+            },
+            children: List.generate(activeTasks.length, (index) {
+              final task = activeTasks[index];
+              return Padding(
+                key: ValueKey('reorder_${task.id}'),
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    // Drag handle — only interactive element for dragging
+                    ReorderableDragStartListener(
+                      index: index,
+                      child: Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: Icon(
+                          Icons.drag_handle,
+                          color: Colors.grey.shade500,
+                          size: 22,
+                        ),
+                      ),
+                    ),
+                    Expanded(child: _buildTaskCard(task)),
+                  ],
+                ),
+              );
+            }),
+          ),
+          // Completed section
+          if (completedTasks.isNotEmpty) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => setState(() => _showCompleted = !_showCompleted),
+                    borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+                    child: _buildSectionHeader(
+                      icon: _showCompleted ? Icons.expand_less : Icons.expand_more,
+                      title: isArabic ? 'المكتملة' : 'Completed',
+                      count: completedTasks.length,
+                      color: Colors.green,
+                      isDark: isDark,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (_showCompleted) ...[
+              const SizedBox(height: 8),
+              ...completedTasks.map((task) => _buildTaskCard(task)),
+            ],
+            const SizedBox(height: 20),
+          ],
+        ],
+      ),
+    );
   }
 
   Widget _buildSections(List<Task> allTasks, bool isDark, bool isArabic) {
@@ -936,6 +1052,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
 
     // Apply sort
     tasks = _applySort(tasks);
+
+    // Manual reorder mode — flat ReorderableListView
+    if (_sortOrder == _SortOrder.manual) {
+      return _buildManualOrderView(tasks, isDark, isArabic);
+    }
 
     // Split into sections
     // Recently completed tasks stay in their section for animation

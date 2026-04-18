@@ -436,6 +436,29 @@ class TaskService {
     debugPrint('TaskService: Created next recurrence for task ${task.id}');
   }
 
+  /// Batch update manualOrder for a list of tasks
+  Future<void> updateTaskOrders({
+    required String userId,
+    required List<Task> tasks,
+  }) async {
+    try {
+      final batch = _firestore.batch();
+      for (int i = 0; i < tasks.length; i++) {
+        final ref = _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('tasks')
+            .doc(tasks[i].id);
+        batch.update(ref, {'manualOrder': i});
+        _taskCache[tasks[i].id] = tasks[i].copyWith(manualOrder: i);
+      }
+      await batch.commit();
+      debugPrint('TaskService: Updated order for ${tasks.length} tasks');
+    } catch (e) {
+      debugPrint('TaskService: Error updating task orders - $e');
+    }
+  }
+
   /// Delete a task
   Future<bool> deleteTask({
     required String userId,
