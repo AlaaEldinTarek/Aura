@@ -533,11 +533,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      isArabic ? 'تقدم المهام' : 'Task Progress',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          isArabic ? 'تقدم المهام' : 'Task Progress',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        Text(
+                          todayTotal > 0
+                              ? (isArabic ? '$todayDone من $todayTotal' : '$todayDone of $todayTotal')
+                              : (isArabic ? 'لا مهام' : 'No tasks'),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: progress >= 1.0 ? Colors.green : AppConstants.primaryColor,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 6),
+                    if (todayTotal > 0) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 5,
+                          backgroundColor: isDark ? Colors.white12 : Colors.black12,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            progress >= 1.0 ? Colors.green : AppConstants.primaryColor,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                     Row(
                       children: [
                         _buildMiniStat(Icons.today, '$todayTotal',

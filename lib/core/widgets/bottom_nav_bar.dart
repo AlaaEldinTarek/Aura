@@ -19,10 +19,10 @@ class AuraBottomNavBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Get today's task count for badge
-    final todayCount = ref.watch(allTasksProvider).whenOrNull(
+    // Show overdue count as red badge on Tasks tab
+    final overdueCount = ref.watch(allTasksProvider).whenOrNull(
           data: (tasks) =>
-              tasks.where((t) => !t.isCompleted && t.isDueToday).length,
+              tasks.where((t) => !t.isCompleted && t.isOverdue).length,
         ) ?? 0;
 
     return Container(
@@ -62,7 +62,7 @@ class AuraBottomNavBar extends ConsumerWidget {
                 label: 'task_management'.tr(),
                 isSelected: currentIndex == 2,
                 onTap: () => onTap(2),
-                badge: todayCount,
+                badge: overdueCount,
               ),
               _buildNavItem(
                 context: context,
