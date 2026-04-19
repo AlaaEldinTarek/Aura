@@ -2122,18 +2122,17 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
         userId: userId,
         taskId: task.id,
       );
-      ref.invalidate(allTasksProvider);
-      ref.invalidate(taskStatisticsProvider);
 
       if (mounted) {
-        ScaffoldMessenger.of(context).clearSnackBars();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        final messenger = ScaffoldMessenger.of(context);
+        messenger.clearSnackBars();
+        final controller = messenger.showSnackBar(SnackBar(
           content: Text(
             isArabic ? 'تم حذف المهمة' : 'Task deleted',
             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
           ),
           backgroundColor: Colors.black87,
-          duration: const Duration(seconds: 2),
+          duration: const Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
           action: SnackBarAction(
@@ -2158,7 +2157,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
             },
           ),
         ));
+        Future.delayed(const Duration(seconds: 3), controller.close);
       }
+
+      ref.invalidate(allTasksProvider);
+      ref.invalidate(taskStatisticsProvider);
     } catch (e) {
       debugPrint('Error deleting task: $e');
     }
