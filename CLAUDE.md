@@ -327,7 +327,7 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 - **Sort**: dateDesc, dateAsc, priority, title — persisted via SharedPreferences (`task_sort_order`). Pinned tasks always float to top
 - **Search**: live filtering across title, description, tags
 - **Calendar view**: `TableCalendar` with day markers, day selection shows tasks for that day
-- **Context menu**: long-press for Edit, Duplicate, Change Priority, Pin/Unpin, Toggle Complete, Delete
+- **Context menu**: 3-dot icon (⋮) on each card opens Edit, Duplicate, Change Priority, Pin/Unpin, Toggle Complete, Delete. Uses `onMenuTap` callback (separate from `onLongPress` which is reserved for drag-to-reorder in Custom Order mode)
 - **Bulk select mode**: multi-select with bottom action bar for Complete/Delete
 - **Clear completed**: button in completed section header with confirmation dialog
 - **Quick-add sheet**: priority/category/date/time chips with `StatefulBuilder`

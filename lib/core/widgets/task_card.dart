@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import '../models/task.dart';
 import '../constants/app_constants.dart';
 
-/// Performance-optimized task card widget with completion animation
+/// Task card with top-row actions, bottom action bar, and swipe gestures
 class TaskCard extends StatelessWidget {
   final Task task;
   final VoidCallback? onTap;
   final VoidCallback? onToggle;
   final VoidCallback? onDelete;
   final VoidCallback? onLongPress;
+  final VoidCallback? onMenuTap;
+  final VoidCallback? onPostpone;
+  final VoidCallback? onExpand;
+  final bool isExpanded;
   final bool isSelected;
 
   const TaskCard({
@@ -18,6 +22,10 @@ class TaskCard extends StatelessWidget {
     this.onToggle,
     this.onDelete,
     this.onLongPress,
+    this.onMenuTap,
+    this.onPostpone,
+    this.onExpand,
+    this.isExpanded = false,
     this.isSelected = false,
   });
 
@@ -46,9 +54,13 @@ class TaskCard extends StatelessWidget {
       }
     }
     final showAccent = !task.isCompleted;
-
-    // Pin icon color
     final pinColor = isDark ? Colors.amber.shade300 : Colors.amber.shade700;
+
+    // Determine if bottom bar is needed
+    final showBottomBar = onToggle != null ||
+        onDelete != null ||
+        onPostpone != null ||
+        onExpand != null;
 
     final card = Container(
       decoration: BoxDecoration(
@@ -84,136 +96,181 @@ class TaskCard extends StatelessWidget {
               onLongPress: onLongPress,
               borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
               child: Padding(
-                padding: const EdgeInsets.all(AppConstants.paddingMedium),
-                child: Row(
+                padding: const EdgeInsets.fromLTRB(
+                  AppConstants.paddingMedium,
+                  AppConstants.paddingMedium,
+                  AppConstants.paddingMedium,
+                  6,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildCheckbox(context, isDark),
-                    const SizedBox(width: AppConstants.paddingMedium),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            task.title,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                              color: task.isCompleted
-                                  ? (isDark
-                                      ? Colors.grey.shade600
-                                      : Colors.grey.shade400)
-                                  : (isDark ? Colors.white : Colors.black87),
-                              decoration: task.isCompleted
-                                  ? TextDecoration.lineThrough
-                                  : null,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (task.description != null &&
-                              task.description!.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4),
-                              child: Text(
-                                task.description!,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: isDark
-                                      ? Colors.grey.shade400
-                                      : Colors.grey.shade600,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 4,
+                    // === TOP ROW: trash | title | menu ===
+                    Row(
+                      children: [
+                        // Title
+                        Expanded(
+                          child: Row(
                             children: [
-                              _PriorityBadge(priority: task.priority),
-                              if (task.category != TaskCategory.other)
-                                _CategoryBadge(category: task.category),
-                              if (task.dueDate != null)
-                                _DueDateBadge(
-                                    dueDate: task.dueDate!,
-                                    isOverdue: task.isOverdue,
-                                    hasDueTime: task.hasDueTime),
-                              if (task.isRecurring)
-                                _RecurrenceBadge(
-                                    recurrenceType: task.recurrenceType),
-                              if (task.subtasks.isNotEmpty)
-                                _SubtaskBadge(
-                                  completed: task.completedSubtasks,
-                                  total: task.subtasks.length,
+                              Flexible(
+                                child: Text(
+                                  task.title,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: task.isCompleted
+                                        ? (isDark
+                                            ? Colors.grey.shade600
+                                            : Colors.grey.shade400)
+                                        : (isDark
+                                            ? Colors.white
+                                            : Colors.black87),
+                                    decoration: task.isCompleted
+                                        ? TextDecoration.lineThrough
+                                        : null,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              if (task.estimatedMinutes > 0)
-                                _EstimateBadge(minutes: task.estimatedMinutes),
+                              ),
+                              if (task.isPinned && !task.isCompleted)
+                                Padding(
+                                  padding: EdgeInsets.only(
+                                      left: isArabic ? 0 : 4,
+                                      right: isArabic ? 4 : 0),
+                                  child: Icon(Icons.push_pin,
+                                      size: 14, color: pinColor),
+                                ),
                             ],
                           ),
-                          if (task.subtasks.isNotEmpty) ...[
-                            const SizedBox(height: 6),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(3),
-                              child: LinearProgressIndicator(
-                                value: task.subtaskProgress,
-                                backgroundColor: isDark
-                                    ? Colors.grey.shade800
-                                    : Colors.grey.shade200,
-                                color: task.completedSubtasks == task.subtasks.length
-                                    ? Colors.green
-                                    : AppConstants.primaryColor,
-                                minHeight: 3,
+                        ),
+                        // 3-dot menu (right)
+                        if (onMenuTap != null)
+                          GestureDetector(
+                            onTap: onMenuTap,
+                            behavior: HitTestBehavior.opaque,
+                            child: Padding(
+                              padding: const EdgeInsets.all(4),
+                              child: Icon(Icons.more_vert,
+                                  size: 20,
+                                  color: isDark
+                                      ? Colors.grey.shade500
+                                      : Colors.grey.shade600),
+                            ),
+                          ),
+                      ],
+                    ),
+
+                    // Description
+                    if (task.description != null &&
+                        task.description!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          task.description!,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark
+                                ? Colors.grey.shade400
+                                : Colors.grey.shade600,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    const SizedBox(height: 8),
+
+                    // Badges — all info under title
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        _PriorityBadge(priority: task.priority),
+                        if (task.category != TaskCategory.other)
+                          _CategoryBadge(category: task.category),
+                        if (task.dueDate != null)
+                          _DueDateBadge(
+                            dueDate: task.dueDate!,
+                            isOverdue: task.isOverdue,
+                            hasDueTime: task.hasDueTime,
+                          ),
+                        if (task.isRecurring)
+                          _RecurrenceBadge(
+                              recurrenceType: task.recurrenceType),
+                        if (task.subtasks.isNotEmpty)
+                          _SubtaskBadge(
+                            completed: task.completedSubtasks,
+                            total: task.subtasks.length,
+                          ),
+                        if (task.estimatedMinutes > 0)
+                          _EstimateBadge(minutes: task.estimatedMinutes),
+                      ],
+                    ),
+
+                    // Progress bar
+                    if (task.subtasks.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(3),
+                        child: LinearProgressIndicator(
+                          value: task.subtaskProgress,
+                          backgroundColor: isDark
+                              ? Colors.grey.shade800
+                              : Colors.grey.shade200,
+                          color:
+                              task.completedSubtasks == task.subtasks.length
+                                  ? Colors.green
+                                  : AppConstants.primaryColor,
+                          minHeight: 3,
+                        ),
+                      ),
+                    ],
+
+                    // Tags
+                    if (task.tags != null && task.tags!.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: task.tags!.take(3).map((tag) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 15, vertical: 4),
+                            decoration: BoxDecoration(
+                              color:
+                                  AppConstants.primaryColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              '#$tag',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppConstants.primaryColor,
+                                fontWeight: FontWeight.w500,
                               ),
                             ),
-                          ],
-                          if (task.tags != null && task.tags!.isNotEmpty) ...[
-                            const SizedBox(height: 6),
-                            Wrap(
-                              spacing: 6,
-                              runSpacing: 6,
-                              children: task.tags!.take(3).map((tag) {
-                                return Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 15, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: AppConstants.primaryColor
-                                        .withOpacity(0.1),
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    '#$tag',
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      color: AppConstants.primaryColor,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ],
-                        ],
+                          );
+                        }).toList(),
                       ),
-                    ),
-                    if (onDelete != null)
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline, size: 20),
-                        color: Colors.red.shade400,
-                        onPressed: onDelete,
-                        tooltip: isArabic ? 'حذف' : 'Delete',
-                      ),
-                    if (task.isPinned && !task.isCompleted)
-                      Padding(
-                        padding: const EdgeInsets.only(left: 4),
-                        child: Icon(Icons.push_pin, size: 16, color: pinColor),
-                      ),
+                    ],
+
+                    // === BOTTOM ACTION BAR ===
+                    if (showBottomBar) ...[
+                      const SizedBox(height: 8),
+                      Divider(
+                          height: 1,
+                          color: isDark
+                              ? AppConstants.darkBorder
+                              : AppConstants.lightBorder),
+                      const SizedBox(height: 6),
+                      _buildBottomBar(context, isDark, isArabic),
+                    ],
                   ],
                 ),
               ),
             ),
           ),
-          // Left accent bar — top layer
+          // Left accent bar
           if (showAccent)
             Positioned(
               left: 0,
@@ -224,8 +281,10 @@ class TaskCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: leftAccent,
                   borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(AppConstants.radiusMedium),
-                    bottomLeft: Radius.circular(AppConstants.radiusMedium),
+                    topLeft:
+                        Radius.circular(AppConstants.radiusMedium),
+                    bottomLeft:
+                        Radius.circular(AppConstants.radiusMedium),
                   ),
                 ),
               ),
@@ -269,40 +328,59 @@ class TaskCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCheckbox(BuildContext context, bool isDark) {
-    return GestureDetector(
-      onTap: onToggle,
-      behavior: HitTestBehavior.opaque,
-      child: Padding(
-        padding: const EdgeInsets.all(8), // Extra tap area (40x40 total)
-        child: AnimatedScale(
-          scale: task.isCompleted ? 1.2 : 1.0,
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOutBack,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeInOut,
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
+  Widget _buildBottomBar(BuildContext context, bool isDark, bool isArabic) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          // Complete toggle
+          if (onToggle != null)
+            _ActionButton(
+              icon: task.isCompleted
+                  ? Icons.check_circle
+                  : Icons.radio_button_unchecked,
+              label: task.isCompleted
+                  ? (isArabic ? 'تم' : 'Done')
+                  : (isArabic ? 'إتمام' : 'Complete'),
               color: task.isCompleted
-                  ? AppConstants.primaryColor
-                  : (isDark ? Colors.grey.shade800 : Colors.grey.shade200),
-              border: Border.all(
-                color: task.isCompleted
-                    ? AppConstants.primaryColor
-                    : (isDark ? Colors.grey.shade700 : Colors.grey.shade400),
-                width: task.isCompleted ? 2 : 1.5,
-              ),
+                  ? Colors.green
+                  : AppConstants.primaryColor,
+              onTap: onToggle!,
             ),
-            child: AnimatedOpacity(
-              duration: const Duration(milliseconds: 200),
-              opacity: task.isCompleted ? 1.0 : 0.0,
-              child: const Icon(Icons.check, size: 18, color: Colors.white),
+          if (onToggle != null) const SizedBox(width: 6),
+          // Postpone
+          if (onPostpone != null && !task.isCompleted) ...[
+            _ActionButton(
+              icon: Icons.event_outlined,
+              label: isArabic ? 'تأجيل' : 'Postpone',
+              color: Colors.orange,
+              onTap: onPostpone!,
             ),
-          ),
-        ),
+            const SizedBox(width: 6),
+          ],
+          // Expand subtasks
+          if (onExpand != null) ...[
+            _ActionButton(
+              icon: isExpanded ? Icons.expand_less : Icons.expand_more,
+              label: isExpanded
+                  ? (isArabic ? 'إخفاء' : 'Hide')
+                  : (task.subtasks.isNotEmpty
+                      ? (isArabic ? 'الفرعية' : 'Subtasks')
+                      : (isArabic ? 'إضافة فرعية' : '+ Sub')),
+              color: AppConstants.primaryColor,
+              onTap: onExpand!,
+            ),
+            const SizedBox(width: 6),
+          ],
+          // Delete
+          if (onDelete != null)
+            _ActionButton(
+              icon: Icons.delete_outline,
+              label: isArabic ? 'حذف' : 'Delete',
+              color: Colors.red.shade400,
+              onTap: onDelete!,
+            ),
+        ],
       ),
     );
   }
@@ -341,6 +419,51 @@ class TaskCard extends StatelessWidget {
             Icon(icon, color: Colors.white, size: 22),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// Compact action button for the bottom bar
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: color.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 4),
+            Text(label,
+                style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    height: 1.1,
+                    color: color),
+                textAlign: TextAlign.center),
+          ],
+        ),
       ),
     );
   }
@@ -462,7 +585,6 @@ class _DueDateBadge extends StatelessWidget {
           : '${dueDate.day}/${dueDate.month}';
     }
 
-    // Append time if set
     if (hasDueTime) {
       final hour = dueDate.hour;
       final minute = dueDate.minute;

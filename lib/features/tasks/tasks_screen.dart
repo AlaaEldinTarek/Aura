@@ -936,21 +936,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Drag hint
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Row(
-              children: [
-                Icon(Icons.drag_handle, size: 16, color: Colors.grey.shade500),
-                const SizedBox(width: 6),
-                Text(
-                  isArabic ? 'اسحب لإعادة الترتيب' : 'Drag to reorder',
-                  style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
-                ),
-              ],
-            ),
-          ),
-          // Reorderable list — drag handle on left, no long-press conflict
+          // Reorderable list — long press card to drag
           ReorderableListView(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -972,25 +958,12 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
             },
             children: List.generate(activeTasks.length, (index) {
               final task = activeTasks[index];
-              return Padding(
+              return ReorderableDelayedDragStartListener(
                 key: ValueKey('reorder_${task.id}'),
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Row(
-                  children: [
-                    // Drag handle — only interactive element for dragging
-                    ReorderableDragStartListener(
-                      index: index,
-                      child: Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: Icon(
-                          Icons.drag_handle,
-                          color: Colors.grey.shade500,
-                          size: 22,
-                        ),
-                      ),
-                    ),
-                    Expanded(child: _buildTaskCard(task)),
-                  ],
+                index: index,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _buildReorderableTaskCard(task, isArabic),
                 ),
               );
             }),
@@ -1334,6 +1307,61 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
     );
   }
 
+  /// Task card for reorder mode — no long-press context menu (long press = drag)
+  Widget _buildReorderableTaskCard(Task task, bool isArabic) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Stack(
+        children: [
+          _InlineSubtaskCard(
+            key: ValueKey('inline_${task.id}'),
+            task: task,
+            onToggle: () => _toggleTask(task),
+            onTap: () => _editTask(task),
+            onDelete: () => _deleteTask(task, isArabic),
+            onMenuTap: () => _showContextMenu(task, isArabic),
+            onPostpone: () => _postponeTask(task),
+            userId: ref.read(currentUserIdProvider),
+            onChanged: () {
+              ref.invalidate(allTasksProvider);
+              ref.invalidate(taskStatisticsProvider);
+            },
+          ),
+          if (task.focusMode && !task.isCompleted)
+            PositionedDirectional(
+              top: 8,
+              end: 8,
+              child: GestureDetector(
+                onTap: () => _startFocusNow(task),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppConstants.primaryColor,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('🎯', style: TextStyle(fontSize: 11)),
+                      const SizedBox(width: 3),
+                      Text(
+                        isArabic ? 'تركيز' : 'Focus',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildTaskCard(Task task) {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final isSelected = _selectedTaskIds.contains(task.id);
@@ -1405,7 +1433,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
             onToggle: () => _toggleTask(task),
             onTap: () => _editTask(task),
             onDelete: () => _deleteTask(task, isArabic),
-            onLongPress: () => _showContextMenu(task, isArabic),
+            onLongPress: null,
+            onMenuTap: () => _showContextMenu(task, isArabic),
+            onPostpone: () => _postponeTask(task),
             userId: ref.read(currentUserIdProvider),
             onChanged: () {
               ref.invalidate(allTasksProvider);
@@ -1470,6 +1500,27 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       durationMinutes: task.focusDurationMinutes,
       language: language,
     );
+  }
+
+  Future<void> _postponeTask(Task task) async {
+    final userId = ref.read(currentUserIdProvider);
+    final now = DateTime.now();
+    final tomorrow = DateTime(now.year, now.month, now.day + 1);
+    DateTime newDueDate;
+    if (task.dueDate != null && task.hasDueTime) {
+      newDueDate = DateTime(tomorrow.year, tomorrow.month, tomorrow.day,
+          task.dueDate!.hour, task.dueDate!.minute);
+    } else {
+      newDueDate = tomorrow;
+    }
+    await TaskService.instance.updateTask(
+      userId: userId,
+      taskId: task.id,
+      dueDate: newDueDate,
+      hasDueTime: task.hasDueTime,
+    );
+    ref.invalidate(allTasksProvider);
+    ref.invalidate(taskStatisticsProvider);
   }
 
   void _showContextMenu(Task task, bool isArabic) {
@@ -2672,6 +2723,8 @@ class _InlineSubtaskCard extends StatefulWidget {
   final VoidCallback? onToggle;
   final VoidCallback? onDelete;
   final VoidCallback? onLongPress;
+  final VoidCallback? onMenuTap;
+  final VoidCallback? onPostpone;
   final String userId;
   final VoidCallback onChanged;
 
@@ -2682,6 +2735,8 @@ class _InlineSubtaskCard extends StatefulWidget {
     this.onToggle,
     this.onDelete,
     this.onLongPress,
+    this.onMenuTap,
+    this.onPostpone,
     required this.userId,
     required this.onChanged,
   });
@@ -2735,64 +2790,35 @@ class _InlineSubtaskCardState extends State<_InlineSubtaskCard> {
     widget.onChanged();
   }
 
+  Future<void> _deleteSubtask(SubTask subtask) async {
+    if (widget.userId.isEmpty) return;
+    final updated = widget.task.subtasks.where((s) => s.id != subtask.id).toList();
+    await TaskService.instance.updateTask(
+      userId: widget.userId,
+      taskId: widget.task.id,
+      subtasks: updated,
+    );
+    widget.onChanged();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final hasSubtasks = widget.task.subtasks.isNotEmpty;
 
     return Column(
       children: [
-        Stack(
-          children: [
-            TaskCard(
-              key: ValueKey(widget.task.id),
-              task: widget.task,
-              onToggle: widget.onToggle,
-              onTap: widget.onTap,
-              onDelete: widget.onDelete,
-              onLongPress: widget.onLongPress,
-            ),
-            // Expand button — bottom-end of card (auto-flips in RTL)
-            PositionedDirectional(
-              bottom: 8,
-              end: 8,
-              child: GestureDetector(
-                onTap: () => setState(() => _expanded = !_expanded),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppConstants.primaryColor.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _expanded ? Icons.expand_less : Icons.expand_more,
-                        size: 14,
-                        color: AppConstants.primaryColor,
-                      ),
-                      const SizedBox(width: 2),
-                      Text(
-                        _expanded
-                            ? (isArabic ? 'إخفاء' : 'Hide')
-                            : (hasSubtasks
-                                ? (isArabic ? 'المهام الفرعية' : 'Subtasks')
-                                : (isArabic ? 'إضافة فرعية' : '+ Sub')),
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: AppConstants.primaryColor,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
+        TaskCard(
+          key: ValueKey(widget.task.id),
+          task: widget.task,
+          onToggle: widget.onToggle,
+          onTap: widget.onTap,
+          onDelete: widget.onDelete,
+          onLongPress: widget.onLongPress,
+          onMenuTap: widget.onMenuTap,
+          onPostpone: widget.onPostpone,
+          onExpand: () => setState(() => _expanded = !_expanded),
+          isExpanded: _expanded,
         ),
 
         // Expanded subtask panel
@@ -2847,6 +2873,14 @@ class _InlineSubtaskCardState extends State<_InlineSubtaskCard> {
                                         ? (isDark ? Colors.grey.shade500 : Colors.grey.shade400)
                                         : (isDark ? Colors.white : Colors.black87),
                                   ),
+                                ),
+                              ),
+                              GestureDetector(
+                                onTap: () => _deleteSubtask(sub),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4),
+                                  child: Icon(Icons.close, size: 16,
+                                    color: isDark ? Colors.grey.shade600 : Colors.grey.shade400),
                                 ),
                               ),
                             ],
