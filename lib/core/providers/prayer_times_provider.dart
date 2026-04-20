@@ -227,23 +227,11 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
           debugPrint('PrayerTimesNotifier: Error scheduling notifications - $e');
         }
 
-        // Schedule prayer check reminders (30 min before prayer, check if previous was done)
+        // Schedule post-prayer check notifications (after prayer time, ask if user prayed)
         try {
-          await PrayerTrackingService.instance.initialize();
-          final summary = await PrayerTrackingService.instance.getDailySummary(
-            userId: getCurrentUserId(),
-            date: DateTime.now(),
-          );
-          final completedPrayers = <String, bool>{};
-          for (final entry in summary.prayers.entries) {
-            completedPrayers[entry.key] = entry.value != PrayerStatus.missed;
-          }
-          await NotificationService.instance.schedulePrayerCheckReminders(
-            updatedPrayerTimes,
-            completedPrayers,
-          );
+          await NotificationService.instance.schedulePostPrayerCheck(updatedPrayerTimes);
         } catch (e) {
-          debugPrint('PrayerTimesNotifier: Error scheduling prayer check reminders - $e');
+          debugPrint('PrayerTimesNotifier: Error scheduling post-prayer checks - $e');
         }
 
         // Schedule daily 8 AM task digest notification

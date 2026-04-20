@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../models/prayer_record.dart';
 import '../models/achievement.dart';
 import 'achievement_service.dart';
+import 'notification_service.dart';
 
 /// Service for tracking prayer completion
 /// Optimized with local caching and batched writes
@@ -63,6 +64,9 @@ class PrayerTrackingService {
 
       // Check achievements in background (don't block)
       AchievementService.instance.checkAndAward(userId: userId);
+
+      // Cancel the post-prayer check notification since user already logged it
+      NotificationService.instance.cancelPostPrayerCheck(prayerName);
 
       debugPrint('PrayerTrackingService: Recorded $prayerName for $date');
       return true;

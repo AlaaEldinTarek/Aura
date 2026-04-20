@@ -119,30 +119,7 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
       }
     }
 
-    // 7. Accessibility Service (auto-accepts screen pinning during Focus Mode)
-    // Only show if user has never enabled it before — Huawei EMUI kills services between sessions
-    if (Platform.isAndroid) {
-      final notifService = NotificationService.instance;
-      final prefs = await SharedPreferences.getInstance();
-      final everEnabled = prefs.getBool('focus_a11y_ever_enabled') ?? false;
-      final a11yEnabled = await notifService.isAccessibilityServiceEnabled();
-      if (a11yEnabled && !everEnabled) {
-        await prefs.setBool('focus_a11y_ever_enabled', true);
-      }
-      if (!a11yEnabled && !everEnabled) {
-        missing.add(_PermInfo(
-          icon: Icons.phonelink_lock,
-          title: 'accessibility_permission_title',
-          desc: 'accessibility_permission_desc',
-          color: Colors.teal,
-          group: _PermGroup.focusMode,
-          action: null,
-          openSettings: () async {
-            await notifService.requestAccessibilityPermission();
-          },
-        ));
-      }
-    }
+    // Accessibility service removed — screen pinning dialog handled manually by user
 
     if (missing.isEmpty || !mounted) {
       _hasChecked = true;
@@ -234,12 +211,6 @@ class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingO
       nowGranted = await Permission.accessNotificationPolicy.status.isGranted;
     } else if (perm.title == 'overlay_permission_title') {
       nowGranted = await NotificationService.instance.canDrawOverlays();
-    } else if (perm.title == 'accessibility_permission_title') {
-      nowGranted = await NotificationService.instance.isAccessibilityServiceEnabled();
-      if (nowGranted) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setBool('focus_a11y_ever_enabled', true);
-      }
     }
 
     if (nowGranted && mounted) {

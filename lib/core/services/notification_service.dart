@@ -39,6 +39,10 @@ class NotificationService {
   static const String _jumuahChannelName = "Jumu'ah Reminder";
   static const int _jumuahNotificationId = 7001;
 
+  // Post-prayer check channel (asks did you pray after prayer time)
+  static const String _postCheckChannelId = 'post_prayer_check';
+  static const String _postCheckChannelName = 'Prayer Check';
+
   // Notification IDs
   static const int _fajrNotificationId = 1;
   static const int _sunriseNotificationId = 2;
@@ -81,6 +85,12 @@ class NotificationService {
         } else if (response.actionId != null && response.actionId!.startsWith('mark_prayed_') && response.payload != null) {
           // Handle prayer check "Yes, I prayed" action (mark_prayed_fajr, mark_prayed_zuhr, etc.)
           _handleMarkPrayed(response.payload!);
+        } else if (response.actionId != null && response.actionId!.startsWith('post_done_') && response.payload != null) {
+          _handlePostPrayerAction(response.payload!, PrayerStatus.onTime);
+        } else if (response.actionId != null && response.actionId!.startsWith('post_late_') && response.payload != null) {
+          _handlePostPrayerAction(response.payload!, PrayerStatus.late);
+        } else if (response.actionId != null && response.actionId!.startsWith('post_miss_') && response.payload != null) {
+          _handlePostPrayerAction(response.payload!, PrayerStatus.missed);
         } else if (response.actionId != null && response.actionId!.startsWith('task_done_')) {
           // Handle task "Mark Done" action
           _handleTaskDone(response.actionId!.replaceFirst('task_done_', ''));
@@ -166,6 +176,20 @@ class NotificationService {
     await _notifications
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(jumuahChannel);
+
+    const AndroidNotificationChannel postCheckChannel = AndroidNotificationChannel(
+      _postCheckChannelId,
+      _postCheckChannelName,
+      description: 'Asks if you prayed after prayer time passes',
+      importance: Importance.high,
+      enableVibration: true,
+      playSound: true,
+      showBadge: true,
+    );
+
+    await _notifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(postCheckChannel);
   }
 
   /// Request notification permissions
@@ -999,6 +1023,123 @@ class NotificationService {
     debugPrint('═══════════════════════════════════════');
   }
 
+  // ─── Post-Prayer Check ───────────────────────────────────────────────────
+
+  /// Schedule a notification AFTER each prayer asking "Did you pray?"
+  /// Timing:
+  ///   - If iqama is set  → 30 min after iqama time
+  ///   - No iqama         → 1 hour after prayer time
+  /// Buttons: Done ✅ / Late ⏰ / Missed ❌
+  Future<void> schedulePostPrayerCheck(List<PrayerTime> prayers) async {
+    final isArabic = await _getLanguagePreference() == 'ar';
+    final now = DateTime.now();
+
+    for (final prayer in prayers) {
+      if (prayer.name == 'Sunrise') continue;
+
+      // Determine trigger time
+      final DateTime triggerTime;
+      if (prayer.iqamaTime != null) {
+        triggerTime = prayer.iqamaTime!.add(const Duration(minutes: 30));
+      } else {
+        triggerTime = prayer.time.add(const Duration(hours: 1));
+      }
+
+      if (triggerTime.isBefore(now)) {
+        debugPrint('⏭️ [POST_CHECK] ${prayer.name} trigger already passed — skipping');
+        continue;
+      }
+
+      final notifId = 6000 + _getNotificationId(prayer.name);
+      final prayerLabel = isArabic ? prayer.nameAr : prayer.name;
+      final title = isArabic ? 'هل صليت $prayerLabel؟' : 'Did you pray $prayerLabel?';
+      final body = isArabic
+          ? 'سجّل صلاتك الآن'
+          : 'Log your prayer now';
+
+      final lowerName = prayer.name.toLowerCase();
+
+      final androidDetails = AndroidNotificationDetails(
+        _postCheckChannelId,
+        _postCheckChannelName,
+        channelDescription: 'Asks if you prayed after prayer time passes',
+        importance: Importance.high,
+        priority: Priority.high,
+        showWhen: true,
+        icon: '@mipmap/ic_launcher',
+        actions: [
+          AndroidNotificationAction(
+            'post_done_$lowerName',
+            isArabic ? '✅ صليت' : '✅ Done',
+            showsUserInterface: false,
+          ),
+          AndroidNotificationAction(
+            'post_late_$lowerName',
+            isArabic ? '⏰ متأخراً' : '⏰ Late',
+            showsUserInterface: false,
+          ),
+          AndroidNotificationAction(
+            'post_miss_$lowerName',
+            isArabic ? '❌ فاتتني' : '❌ Missed',
+            showsUserInterface: false,
+          ),
+        ],
+      );
+
+      final scheduledDate = tz.TZDateTime.from(triggerTime, tz.local);
+
+      await _notifications.zonedSchedule(
+        notifId,
+        title,
+        body,
+        scheduledDate,
+        NotificationDetails(android: androidDetails),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        payload: 'post_check|${prayer.name}|${prayer.nameAr}',
+      );
+
+      debugPrint('✅ [POST_CHECK] Scheduled "${prayer.name}" check at $triggerTime');
+    }
+  }
+
+  /// Cancel all post-prayer check notifications (e.g. if user tracked manually)
+  Future<void> cancelPostPrayerCheck(String prayerName) async {
+    final notifId = 6000 + _getNotificationId(prayerName);
+    await _notifications.cancel(notifId);
+  }
+
+  Future<void> _handlePostPrayerAction(String payload, PrayerStatus status) async {
+    debugPrint('✅ [POST_CHECK] Handling action — status: $status, payload: $payload');
+    try {
+      final parts = payload.split('|');
+      if (parts.length < 2) return;
+      final prayerName = parts[1]; // post_check|Fajr|الفجر → Fajr
+
+      final userId = getCurrentUserId();
+      if (userId.isEmpty) return;
+
+      final now = DateTime.now();
+      await PrayerTrackingService.instance.recordPrayer(
+        userId: userId,
+        prayerName: prayerName,
+        date: now,
+        prayedAt: now,
+        status: status,
+        method: PrayerMethod.alone,
+      );
+
+      // Cancel the notification after action taken
+      final notifId = 6000 + _getNotificationId(prayerName);
+      await _notifications.cancel(notifId);
+
+      debugPrint('✅ [POST_CHECK] Recorded $prayerName as $status');
+    } catch (e) {
+      debugPrint('❌ [POST_CHECK] Error: $e');
+    }
+  }
+
   // ─── Jumu'ah Reminder ────────────────────────────────────────────────────
 
   /// Schedule a weekly Friday Jumu'ah reminder at 12:00 PM.
@@ -1093,23 +1234,7 @@ class NotificationService {
     }
   }
 
-  /// Check if Accessibility Service is enabled
-  Future<bool> isAccessibilityServiceEnabled() async {
-    try {
-      return await _focusChannel.invokeMethod('isAccessibilityServiceEnabled') ?? false;
-    } on PlatformException {
-      return false;
-    }
-  }
-
-  /// Open Accessibility Settings so user can enable the service
-  Future<void> requestAccessibilityPermission() async {
-    try {
-      await _focusChannel.invokeMethod('requestAccessibilityPermission');
-    } on PlatformException catch (e) {
-      debugPrint('FocusMode: Error opening accessibility settings - ${e.message}');
-    }
-  }
+  // Accessibility service removed — screen pinning handled by user tapping OK
 
   /// Check if overlay permission is granted
   Future<bool> canDrawOverlays() async {

@@ -107,6 +107,7 @@ class FocusModeActivity : AppCompatActivity() {
 
         startCountdown()
         setupImmersiveMode()
+        try { startLockTask() } catch (_: Exception) {}
 
         Log.d(TAG, "[FOCUS] Focus mode active - cannot be dismissed until timer ends")
     }
