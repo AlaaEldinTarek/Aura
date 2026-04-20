@@ -350,7 +350,7 @@ class PrayerForegroundService : Service() {
             }
 
             val untilText = if (currentLanguage == "ar") {
-                "حتى الأذان"
+                "حتى موعد الأذان"
             } else {
                 "Until Azan"
             }
@@ -422,7 +422,7 @@ class PrayerForegroundService : Service() {
     private fun calculateTimeRemaining(): Pair<Long, String> {
         // Return 0 if prayer data not loaded
         if (nextPrayerTime == null) {
-            return Pair(0, "--:--")
+            return Pair(0, "--")
         }
 
         val now = System.currentTimeMillis()
@@ -438,11 +438,19 @@ class PrayerForegroundService : Service() {
         val hours = remaining / 3600000
         val minutes = (remaining % 3600000) / 60000
 
-        // Digital clock style: 02:15 (no seconds)
+        // Labeled units: "1س 45د" (Arabic) or "1h 45m" (English)
         val timeString = if (currentLanguage == "ar") {
-            String.format("%s:%s", toEasternArabic(hours), toEasternArabic(minutes))
+            if (hours > 0) {
+                "${toEasternArabic(hours)}س ${toEasternArabic(minutes)}د"
+            } else {
+                "${toEasternArabic(minutes)}د"
+            }
         } else {
-            String.format("%d:%02d", hours, minutes)
+            if (hours > 0) {
+                "${hours}h ${minutes}m"
+            } else {
+                "${minutes}m"
+            }
         }
 
         return Pair(remaining, timeString)

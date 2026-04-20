@@ -1,7 +1,7 @@
 {
   "app_name": "Aura",
   "app_name_arabic": "Hala",
-  "app_tagline": "Aura your time and Elevate yourself.",
+  "app_tagline": "Aura brightens your day with commitment",
 
   "splash_welcome": "Welcome to Aura",
 
@@ -208,5 +208,11 @@
   "focus_mode_exit_hint": "Press volume up 3 times to exit",
   "focus_mode_task_done": "Mark Done & Exit",
   "accessibility_permission_title": "Focus Mode Permissions",
-  "accessibility_permission_desc": "Required for Focus Mode to work properly"
+  "accessibility_permission_desc": "Required for Focus Mode to work properly",
+
+  "jumua_mubarak": "Jumu'ah Mubarak 🕌",
+  "jumua_subtitle": "May Allah bless your Friday and accept your prayers",
+  "jumua_prayer_name": "Jumu'ah",
+  "jumua_reminder_title": "Jumu'ah Reminder",
+  "jumua_reminder_subtitle": "Get notified before Friday prayer"
 }

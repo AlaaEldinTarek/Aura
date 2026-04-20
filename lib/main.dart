@@ -9,6 +9,7 @@ import 'core/services/shared_preferences_service.dart';
 import 'core/services/firebase_options.dart';
 import 'core/services/analytics_service.dart';
 import 'core/services/prayer_widget_service.dart';
+import 'core/services/task_widget_service.dart';
 import 'core/services/notification_service.dart';
 import 'core/services/adhan_player_service.dart';
 import 'core/services/prayer_alarm_service.dart';
@@ -20,6 +21,7 @@ import 'features/splash/splash_screen.dart';
 import 'features/auth/login_screen.dart';
 import 'features/auth/signup_screen.dart';
 import 'features/onboarding/preference_screen.dart';
+import 'features/onboarding/mode_selection_screen.dart';
 import 'features/main/main_wrapper_screen.dart';
 import 'features/prayer/prayer_screen.dart';
 import 'features/prayer/prayer_tracking_screen.dart';
@@ -89,6 +91,14 @@ void main() async {
         debugPrint('✅ PrayerWidgetService initialized');
       } catch (e, st) {
         debugPrint('❌ PrayerWidgetService initialization failed: $e');
+      }
+    }(),
+    () async {
+      try {
+        await TaskWidgetService.init();
+        debugPrint('✅ TaskWidgetService initialized');
+      } catch (e, st) {
+        debugPrint('❌ TaskWidgetService initialization failed: $e');
       }
     }(),
     () async {
@@ -346,6 +356,11 @@ class AuraAppMaterial extends ConsumerWidget {
       case '/onboarding':
         return MaterialPageRoute(
           builder: (_) => const PreferenceScreen(),
+          settings: settings,
+        );
+      case '/mode_selection':
+        return MaterialPageRoute(
+          builder: (_) => const ModeSelectionScreen(),
           settings: settings,
         );
       case '/home':

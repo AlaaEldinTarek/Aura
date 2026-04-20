@@ -151,7 +151,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   const SizedBox(height: AppConstants.paddingMedium),
                   // Tagline
                   Text(
-                    'splash_welcome'.tr(),
+                    'app_tagline'.tr(),
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: isDark
                               ? AppConstants.darkTextSecondary

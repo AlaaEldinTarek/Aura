@@ -5,6 +5,8 @@ import '../../core/models/task.dart';
 import '../../core/services/task_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/providers/task_provider.dart';
+import '../../core/providers/prayer_times_provider.dart';
+import '../../core/providers/preferences_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Task Form Screen - Add or Edit a task
@@ -665,6 +667,9 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               ),
             ],
 
+            // Prayer conflict warning (only in Both mode)
+            _buildPrayerConflictWarning(isDark, isArabic),
+
             const SizedBox(height: AppConstants.paddingMedium),
 
             // Recurrence Card
@@ -844,6 +849,80 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+
+  // ─── Prayer Conflict Warning ───────────────────────────────────────────
+
+  Widget _buildPrayerConflictWarning(bool isDark, bool isArabic) {
+    final appMode = ref.watch(appModeProvider);
+    if (appMode != AppMode.both) return const SizedBox.shrink();
+    if (_selectedDueTime == null || _selectedDueDate == null) return const SizedBox.shrink();
+
+    final prayerState = ref.watch(prayerTimesProvider);
+    final prayers = prayerState?.prayerTimes ?? [];
+    if (prayers.isEmpty) return const SizedBox.shrink();
+
+    final taskDateTime = DateTime(
+      _selectedDueDate!.year,
+      _selectedDueDate!.month,
+      _selectedDueDate!.day,
+      _selectedDueTime!.hour,
+      _selectedDueTime!.minute,
+    );
+
+    // Check if task time is within 30 minutes of any prayer
+    String? warningPrayerName;
+    String? warningPrayerNameAr;
+    int? minutesDiff;
+    bool isDuringPrayer = false;
+
+    for (final prayer in prayers) {
+      if (prayer.name == 'Sunrise') continue;
+      final diff = taskDateTime.difference(prayer.time).inMinutes.abs();
+      if (diff == 0) {
+        isDuringPrayer = true;
+        warningPrayerName = prayer.name;
+        warningPrayerNameAr = prayer.nameAr;
+        minutesDiff = 0;
+        break;
+      } else if (diff <= 30) {
+        if (minutesDiff == null || diff < minutesDiff) {
+          minutesDiff = diff;
+          warningPrayerName = prayer.name;
+          warningPrayerNameAr = prayer.nameAr;
+          isDuringPrayer = false;
+        }
+      }
+    }
+
+    if (warningPrayerName == null) return const SizedBox.shrink();
+
+    final prayerDisplay = isArabic ? warningPrayerNameAr! : warningPrayerName;
+    final message = isDuringPrayer
+        ? (isArabic ? '⚠️ هذا الوقت يتزامن مع صلاة $prayerDisplay' : '⚠️ This time overlaps with $prayerDisplay prayer')
+        : (isArabic ? '⚠️ هذا الوقت قريب من صلاة $prayerDisplay ($minutesDiff دقيقة)' : '⚠️ This time is $minutesDiff min from $prayerDisplay prayer');
+
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.orange.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+        border: Border.all(color: Colors.orange.withOpacity(0.4)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.mosque_outlined, size: 16, color: Colors.orange),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(fontSize: 13, color: Colors.orange),
+            ),
+          ),
         ],
       ),
     );

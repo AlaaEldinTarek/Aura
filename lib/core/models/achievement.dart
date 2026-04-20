@@ -3,6 +3,7 @@ enum AchievementCategory {
   streaks,
   consistency,
   dhikr,
+  tasks,
   special,
 }
 
@@ -188,6 +189,48 @@ class AchievementDefinitions {
       iconEmoji: '🌟',
       category: AchievementCategory.dhikr,
       threshold: 100,
+    ),
+
+    // Tasks
+    Achievement(
+      id: 'first_task',
+      nameEn: 'First Mission',
+      nameAr: 'أول مهمة',
+      descriptionEn: 'Complete your first task',
+      descriptionAr: 'أكمل أول مهمة',
+      iconEmoji: '✅',
+      category: AchievementCategory.tasks,
+      threshold: 1,
+    ),
+    Achievement(
+      id: 'tasks_10',
+      nameEn: 'Getting Things Done',
+      nameAr: 'منجز المهام',
+      descriptionEn: 'Complete 10 tasks',
+      descriptionAr: 'أكمل 10 مهام',
+      iconEmoji: '📋',
+      category: AchievementCategory.tasks,
+      threshold: 10,
+    ),
+    Achievement(
+      id: 'tasks_50',
+      nameEn: 'Task Master',
+      nameAr: 'سيّد المهام',
+      descriptionEn: 'Complete 50 tasks',
+      descriptionAr: 'أكمل 50 مهمة',
+      iconEmoji: '🚀',
+      category: AchievementCategory.tasks,
+      threshold: 50,
+    ),
+    Achievement(
+      id: 'task_streak_7',
+      nameEn: 'Consistent Achiever',
+      nameAr: 'المثابر',
+      descriptionEn: 'Complete tasks 7 days in a row',
+      descriptionAr: 'أكمل مهام 7 أيام متتالية',
+      iconEmoji: '📅',
+      category: AchievementCategory.tasks,
+      threshold: 7,
     ),
 
     // Special

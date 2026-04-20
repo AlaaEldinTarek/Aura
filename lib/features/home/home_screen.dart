@@ -97,6 +97,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final user = ref.watch(currentUserProvider);
     final userName = user?.displayName ?? 'User';
     final isGuest = ref.watch(guestModeProvider.select((async) => async.value ?? false));
+    final appMode = ref.watch(appModeProvider);
+    final showPrayer = appMode != AppMode.tasksOnly;
+    final showTasks = appMode != AppMode.prayerOnly;
 
     // Calculate prayer progress from shared provider
     final prayerStatuses = ref.watch(dailyPrayerStatusProvider).statuses;
@@ -129,29 +132,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       onTap: () => Navigator.of(context).pushNamed('/prayer'),
                     ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
 
+                    // Jumu'ah Banner (Fridays only)
+                    if (showPrayer && DateTime.now().weekday == DateTime.friday) ...[
+                      const SizedBox(height: AppConstants.paddingLarge),
+                      _buildJumuahBanner(context, isDark, isArabic)
+                          .animate().fadeIn(delay: 80.ms, duration: 500.ms).slideY(begin: 0.08),
+                    ],
+
                     const SizedBox(height: AppConstants.paddingLarge),
 
                     // Next Prayer Mini Card
-                    _buildNextPrayerCard(context, prayerState, isDark, isArabic, completedCount, totalPrayers)
-                        .animate().fadeIn(delay: 100.ms, duration: 400.ms).slideY(begin: 0.1),
+                    if (showPrayer)
+                      _buildNextPrayerCard(context, prayerState, isDark, isArabic, completedCount, totalPrayers)
+                          .animate().fadeIn(delay: 100.ms, duration: 400.ms).slideY(begin: 0.1),
 
-                    const SizedBox(height: AppConstants.paddingMedium),
+                    if (showPrayer) const SizedBox(height: AppConstants.paddingMedium),
 
                     // Prayer Progress Bar
-                    _buildPrayerProgress(context, isDark, isArabic, completedCount, totalPrayers, prayerStatuses)
-                        .animate().fadeIn(delay: 200.ms, duration: 400.ms).slideY(begin: 0.1),
+                    if (showPrayer)
+                      _buildPrayerProgress(context, isDark, isArabic, completedCount, totalPrayers, prayerStatuses)
+                          .animate().fadeIn(delay: 200.ms, duration: 400.ms).slideY(begin: 0.1),
 
-                    const SizedBox(height: AppConstants.paddingLarge),
+                    if (showPrayer) const SizedBox(height: AppConstants.paddingLarge),
 
                     // Task Progress Ring
-                    _buildTaskProgress(context, isDark, isArabic)
-                        .animate().fadeIn(delay: 250.ms, duration: 400.ms).slideY(begin: 0.1),
+                    if (showTasks)
+                      _buildTaskProgress(context, isDark, isArabic)
+                          .animate().fadeIn(delay: 250.ms, duration: 400.ms).slideY(begin: 0.1),
 
-                    const SizedBox(height: AppConstants.paddingLarge),
+                    if (showTasks) const SizedBox(height: AppConstants.paddingLarge),
 
                     // Today's Tasks Preview
-                    _buildTodayTasksPreview(context, isDark, isArabic)
-                        .animate().fadeIn(delay: 350.ms, duration: 400.ms).slideY(begin: 0.1),
+                    if (showTasks)
+                      _buildTodayTasksPreview(context, isDark, isArabic)
+                          .animate().fadeIn(delay: 350.ms, duration: 400.ms).slideY(begin: 0.1),
 
                     const SizedBox(height: AppConstants.paddingLarge),
 
@@ -177,6 +191,86 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
           // Permission dialog handler (shows dialogs after home loads)
           const PermissionDialogHandler(),
+        ],
+      ),
+    );
+  }
+
+  String _getDisplayPrayerName(String name, bool isArabic) {
+    final isFriday = DateTime.now().weekday == DateTime.friday;
+    final isZuhr = name == 'Zuhr' || name == 'Dhuhr';
+    if (isFriday && isZuhr) {
+      return isArabic ? 'الجمعة' : "Jumu'ah";
+    }
+    return isArabic
+        ? {'Fajr': 'الفجر', 'Zuhr': 'الظهر', 'Dhuhr': 'الظهر', 'Asr': 'العصر', 'Maghrib': 'المغرب', 'Isha': 'العشاء', 'Sunrise': 'الشروق'}[name] ?? name
+        : name;
+  }
+
+  Widget _buildJumuahBanner(BuildContext context, bool isDark, bool isArabic) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isDark
+              ? [const Color(0xFF5C4200), const Color(0xFF3D2C00)]
+              : [const Color(0xFFFFF3CC), const Color(0xFFFFE484)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
+        border: Border.all(
+          color: const Color(0xFFD4A017).withOpacity(isDark ? 0.6 : 0.4),
+          width: 1.5,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFFD4A017).withOpacity(0.15),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: const Color(0xFFD4A017).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+            ),
+            child: const Center(child: Text('🕌', style: TextStyle(fontSize: 26))),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isArabic ? 'جمعة مباركة' : "Jumu'ah Mubarak",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? const Color(0xFFFFD966) : const Color(0xFF7A5700),
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  isArabic
+                      ? 'جعلها الله جمعة مباركة وتقبّل صلاتك'
+                      : 'May Allah bless your Friday and accept your prayers',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark
+                        ? const Color(0xFFFFD966).withOpacity(0.75)
+                        : const Color(0xFF7A5700).withOpacity(0.8),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -247,7 +341,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         const SizedBox(height: 2),
                         Text(
                           hasData
-                              ? (isArabic ? nextPrayer.nameAr : nextPrayer.name)
+                              ? _getDisplayPrayerName(nextPrayer.name, isArabic)
                               : (isArabic ? 'جاري التحميل...' : 'Loading...'),
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
@@ -484,7 +578,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         final allTasksAsync = ref.watch(allTasksProvider);
         return allTasksAsync.when(
           data: (allTasks) {
-            final todayTasks = allTasks.where((t) => t.isDueToday).toList();
+            final todayTasks = allTasks.where((t) => t.isDueToday || t.dueDate == null).toList();
             final todayDone = todayTasks.where((t) => t.isCompleted).length;
             final todayTotal = todayTasks.length;
             final progress = todayTotal > 0 ? todayDone / todayTotal : 0.0;
@@ -709,7 +803,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           allTasksAsync.when(
             data: (allTasks) {
               final todayTasks =
-                  allTasks.where((t) => !t.isCompleted && t.isDueToday).toList();
+                  allTasks.where((t) => !t.isCompleted && (t.isDueToday || t.dueDate == null)).toList();
               final upcomingTasks =
                   allTasks.where((t) => !t.isCompleted && t.isUpcoming).toList();
               final toShow = todayTasks.isNotEmpty ? todayTasks : upcomingTasks;
@@ -779,7 +873,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     try {
       // Check if this is the last today task before toggling
       final tasks = ref.read(allTasksProvider).valueOrNull ?? [];
-      final todayIncomplete = tasks.where((t) => t.isDueToday && !t.isCompleted);
+      final todayIncomplete = tasks.where((t) => (t.isDueToday || t.dueDate == null) && !t.isCompleted);
       final wasLastTask = todayIncomplete.length == 1 && todayIncomplete.first.id == taskId;
 
       await TaskService.instance.toggleTaskCompletion(
@@ -791,14 +885,27 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       ref.invalidate(allTasksProvider);
       ref.invalidate(taskStatisticsProvider);
 
-      // If this was the last today task, increment streak
+      // If this was the last today task, increment streak + celebrate
       if (wasLastTask) {
         await _incrementStreak();
-        setState(() {}); // Refresh to show updated streak
+        setState(() {});
+        Future.delayed(const Duration(milliseconds: 800), () {
+          if (mounted) _showCelebration();
+        });
       }
     } catch (e) {
       debugPrint('Error toggling task: $e');
     }
+  }
+
+  void _showCelebration() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final overlay = OverlayEntry(
+      builder: (_) => _HomeCelebrationOverlay(isDark: isDark, isArabic: isArabic),
+    );
+    Overlay.of(context).insert(overlay);
+    Future.delayed(const Duration(seconds: 3), () => overlay.remove());
   }
 
   Future<void> _editTask(Task task) async {
@@ -1038,5 +1145,180 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     } catch (_) {
       return [];
     }
+  }
+}
+
+class _HomeCelebrationOverlay extends StatefulWidget {
+  final bool isDark;
+  final bool isArabic;
+  const _HomeCelebrationOverlay({required this.isDark, required this.isArabic});
+
+  @override
+  State<_HomeCelebrationOverlay> createState() => _HomeCelebrationOverlayState();
+}
+
+class _HomeCelebrationOverlayState extends State<_HomeCelebrationOverlay>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnim;
+  late Animation<double> _opacityAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 2800));
+    _scaleAnim = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
+    );
+    _opacityAnim = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 10),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 75),
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 15),
+    ]).animate(_controller);
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: Material(
+          color: Colors.transparent,
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, _) {
+              return Container(
+                color: AppConstants.primaryColor.withValues(alpha: 0.12 * _opacityAnim.value),
+                alignment: Alignment.center,
+                child: Opacity(
+                  opacity: _opacityAnim.value,
+                  child: Transform.scale(
+                    scale: _scaleAnim.value,
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 36),
+                      decoration: BoxDecoration(
+                        color: widget.isDark ? AppConstants.darkSurface : Colors.white,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(
+                          color: AppConstants.primaryColor.withValues(alpha: 0.25),
+                          width: 1.5,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppConstants.primaryColor.withValues(alpha: 0.22),
+                            blurRadius: 36,
+                            offset: const Offset(0, 10),
+                            spreadRadius: 2,
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(vertical: 28),
+                            decoration: const BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [AppConstants.primaryColor, AppConstants.accentCyan],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                            ),
+                            child: Column(
+                              children: [
+                                Container(
+                                  width: 72,
+                                  height: 72,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.2),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2),
+                                  ),
+                                  child: const Center(
+                                    child: Icon(Icons.check_rounded, size: 42, color: Colors.white),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: List.generate(3, (i) => Container(
+                                    width: 6,
+                                    height: 6,
+                                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: i == 1 ? 0.9 : 0.4),
+                                      shape: BoxShape.circle,
+                                    ),
+                                  )),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(28, 22, 28, 26),
+                            child: Column(
+                              children: [
+                                Text(
+                                  widget.isArabic ? 'أُنجز الكل! ✨' : 'All Done! ✨',
+                                  style: TextStyle(
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.bold,
+                                    color: widget.isDark ? Colors.white : const Color(0xFF1A1A1A),
+                                    letterSpacing: -0.3,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  widget.isArabic
+                                      ? 'أكملت جميع مهام اليوم، استمر!'
+                                      : 'You crushed every task today!',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    height: 1.5,
+                                    color: widget.isDark ? Colors.white60 : Colors.black45,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                                const SizedBox(height: 18),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
+                                  decoration: BoxDecoration(
+                                    color: AppConstants.primaryColor.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(30),
+                                    border: Border.all(
+                                      color: AppConstants.primaryColor.withValues(alpha: 0.25),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    widget.isArabic ? '🎯  يوم منتج!' : '🎯  Productive day!',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppConstants.primaryColor,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
   }
 }

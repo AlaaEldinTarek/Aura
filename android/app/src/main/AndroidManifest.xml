@@ -216,6 +216,42 @@
             android:enabled="true"
             android:exported="false"/>
 
+        <!-- Tasks Widget -->
+        <receiver
+            android:name=".TasksWidget"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/tasks_widget_info"/>
+        </receiver>
+
+        <receiver
+            android:name=".TasksWidgetReceiver"
+            android:enabled="true"
+            android:exported="false"/>
+
+        <!-- Next Task Widget (4x1) -->
+        <receiver
+            android:name=".NextTaskWidget"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/next_task_widget_info"/>
+        </receiver>
+
+        <receiver
+            android:name=".NextTaskWidgetReceiver"
+            android:enabled="true"
+            android:exported="false"/>
+
         <service
             android:name=".AuraAccessibilityService"
             android:exported="true"

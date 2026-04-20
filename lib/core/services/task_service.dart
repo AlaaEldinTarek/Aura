@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task.dart';
 import 'notification_service.dart';
+import 'achievement_service.dart';
 
 /// Service for managing tasks with Firestore
 /// Optimized for performance with pagination and caching
@@ -344,11 +345,18 @@ class TaskService {
         }
       }
 
-      return await updateTask(
+      final result = await updateTask(
         userId: userId,
         taskId: taskId,
         isCompleted: newStatus,
       );
+
+      // Check achievements after completing (not undoing) a task
+      if (result && newStatus) {
+        AchievementService.instance.checkAndAward(userId: userId);
+      }
+
+      return result;
     } catch (e) {
       debugPrint('TaskService: Error toggling task - $e');
       return false;

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../constants/app_constants.dart';
 import '../providers/task_provider.dart';
+import '../providers/preferences_provider.dart';
 
 /// Custom bottom navigation bar for the app
 class AuraBottomNavBar extends ConsumerWidget {
@@ -19,11 +20,17 @@ class AuraBottomNavBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final appMode = ref.watch(appModeProvider);
+
     // Show overdue count as red badge on Tasks tab
     final overdueCount = ref.watch(allTasksProvider).whenOrNull(
           data: (tasks) =>
               tasks.where((t) => !t.isCompleted && t.isOverdue).length,
         ) ?? 0;
+
+    // Build nav items based on mode
+    final showPrayer = appMode != AppMode.tasksOnly;
+    final showTasks = appMode != AppMode.prayerOnly;
 
     return Container(
       decoration: BoxDecoration(
@@ -49,21 +56,23 @@ class AuraBottomNavBar extends ConsumerWidget {
                 isSelected: currentIndex == 0,
                 onTap: () => onTap(0),
               ),
-              _buildNavItem(
-                context: context,
-                icon: Icons.mosque_outlined,
-                label: 'prayer_times_title'.tr(),
-                isSelected: currentIndex == 1,
-                onTap: () => onTap(1),
-              ),
-              _buildNavItem(
-                context: context,
-                icon: Icons.task_alt_outlined,
-                label: 'task_management'.tr(),
-                isSelected: currentIndex == 2,
-                onTap: () => onTap(2),
-                badge: overdueCount,
-              ),
+              if (showPrayer)
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.mosque_outlined,
+                  label: 'prayer_times_title'.tr(),
+                  isSelected: currentIndex == 1,
+                  onTap: () => onTap(1),
+                ),
+              if (showTasks)
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.task_alt_outlined,
+                  label: 'task_management'.tr(),
+                  isSelected: currentIndex == 2,
+                  onTap: () => onTap(2),
+                  badge: overdueCount,
+                ),
               _buildNavItem(
                 context: context,
                 icon: Icons.person_outline,

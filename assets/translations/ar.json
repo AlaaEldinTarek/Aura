@@ -1,7 +1,7 @@
 {
   "app_name": "Aura",
   "app_name_arabic": "هالة",
-  "app_tagline": "أحِط وقتك بهالة، وارْتَقِ بنفسك.",
+  "app_tagline": "هالة تضىء يومك بالالتزام",
 
   "splash_welcome": "مرحباً بك في هالة",
 
@@ -208,5 +208,11 @@
   "focus_mode_exit_hint": "اضغط على زر رفع الصوت 3 مرات للخروج",
   "focus_mode_task_done": "إتمام المهمة والخروج",
   "accessibility_permission_title": "أذونات وضع التركيز",
-  "accessibility_permission_desc": "مطلوب لعمل وضع التركيز بشكل صحيح"
+  "accessibility_permission_desc": "مطلوب لعمل وضع التركيز بشكل صحيح",
+
+  "jumua_mubarak": "جمعة مباركة 🕌",
+  "jumua_subtitle": "جعلها الله جمعة مباركة وتقبّل صلاتك",
+  "jumua_prayer_name": "الجمعة",
+  "jumua_reminder_title": "تذكير صلاة الجمعة",
+  "jumua_reminder_subtitle": "إشعار قبل حلول وقت صلاة الجمعة"
 }

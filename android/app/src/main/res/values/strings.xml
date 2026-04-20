@@ -18,6 +18,8 @@
     <!-- Widget Descriptions -->
     <string name="next_prayer_widget_description">Shows the next upcoming prayer time</string>
     <string name="all_prayers_widget_description">Shows all daily prayer times</string>
+    <string name="tasks_widget_description">Shows today\'s tasks and progress</string>
+    <string name="next_task_widget_description">Shows the next upcoming task</string>
 
     <!-- Adhan Full-Screen Activity -->
     <string name="prayer_time_icon">Prayer Time</string>

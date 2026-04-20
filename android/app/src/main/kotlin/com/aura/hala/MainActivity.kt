@@ -206,6 +206,38 @@ class MainActivity : FlutterActivity() {
 
                     result.success(true)
                 }
+                "updateTasksWidget" -> {
+                    val taskCount = call.argument<Int>("taskCount") ?: 0
+                    val tasksDone = call.argument<Int>("tasksDone") ?: 0
+                    val tasksTotal = call.argument<Int>("tasksTotal") ?: 0
+                    val language = call.argument<String>("language") ?: "en"
+                    val themeMode = call.argument<String>("themeMode") ?: "system"
+
+                    val prefs = getSharedPreferences("aura_tasks_widget", Context.MODE_PRIVATE)
+                    val editor = prefs.edit()
+
+                    editor.putInt("task_count", taskCount)
+                    editor.putInt("tasks_done", tasksDone)
+                    editor.putInt("tasks_total", tasksTotal)
+                    editor.putInt("streak", call.argument<Int>("streak") ?: 0)
+                    editor.putString("language", language)
+                    editor.putString("themeMode", themeMode)
+
+                    for (i in 0 until 5) {
+                        editor.putString("task_${i}_id", call.argument<String>("task_${i}_id"))
+                        editor.putString("task_${i}_title", call.argument<String>("task_${i}_title"))
+                        editor.putString("task_${i}_time", call.argument<String>("task_${i}_time"))
+                        editor.putString("task_${i}_priority", call.argument<String>("task_${i}_priority"))
+                        editor.putString("task_${i}_category", call.argument<String>("task_${i}_category"))
+                        editor.putInt("task_${i}_subtaskDone", call.argument<Int>("task_${i}_subtaskDone") ?: 0)
+                        editor.putInt("task_${i}_subtaskTotal", call.argument<Int>("task_${i}_subtaskTotal") ?: 0)
+                        editor.putBoolean("task_${i}_overdue", call.argument<Boolean>("task_${i}_overdue") ?: false)
+                    }
+                    editor.apply()
+
+                    updateTasksWidget()
+                    result.success(true)
+                }
                 else -> result.notImplemented()
             }
         }
@@ -570,6 +602,22 @@ class MainActivity : FlutterActivity() {
         val allWidgetIds = appWidgetManager.getAppWidgetIds(allWidgetComponent)
         for (appWidgetId in allWidgetIds) {
             AllPrayersWidget().updateAppWidget(this, appWidgetManager, appWidgetId)
+        }
+    }
+
+    private fun updateTasksWidget() {
+        val appWidgetManager = getSystemService(Context.APPWIDGET_SERVICE) as AppWidgetManager
+
+        // Tasks Widget (4x3)
+        val tasksComponent = ComponentName(this, TasksWidget::class.java)
+        for (id in appWidgetManager.getAppWidgetIds(tasksComponent)) {
+            TasksWidget().updateAppWidget(this, appWidgetManager, id)
+        }
+
+        // Next Task Widget (4x1)
+        val nextComponent = ComponentName(this, NextTaskWidget::class.java)
+        for (id in appWidgetManager.getAppWidgetIds(nextComponent)) {
+            NextTaskWidget().updateAppWidget(this, appWidgetManager, id)
         }
     }
 }

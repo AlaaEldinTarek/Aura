@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/shared_preferences_service.dart';
 import '../services/firestore_service.dart';
 import '../services/prayer_widget_service.dart';
+import '../services/task_widget_service.dart';
 import 'auth_provider.dart';
 import 'prayer_times_provider.dart';
 
@@ -58,6 +59,9 @@ class ThemeModeNotifier extends StateNotifier<AsyncValue<String>> {
           );
           debugPrint('📱 Widgets updated with new theme: $value');
         }
+        try {
+          await TaskWidgetService.instance.refreshWidget();
+        } catch (_) {}
       } catch (e) {
         debugPrint('⚠️ Error updating widgets with new theme: $e');
       }
@@ -139,6 +143,9 @@ class LanguageNotifier extends StateNotifier<AsyncValue<String>> {
           );
           debugPrint('📱 Widgets and notification updated with new language: $value');
         }
+        try {
+          await TaskWidgetService.instance.refreshWidget();
+        } catch (_) {}
       } catch (e) {
         debugPrint('⚠️ Error updating widgets with new language: $e');
       }
@@ -458,6 +465,32 @@ class TaskNotificationsEnabledNotifier extends StateNotifier<AsyncValue<bool>> {
 /// Tab navigation provider — allows child screens to request tab switches
 final tabNavigationProvider = StateProvider<int>((ref) => -1);
 
+// ─── Jumu'ah Reminder Provider ────────────────────────────────────────────────
+
+const _jumuahReminderKey = 'jumua_reminder_enabled';
+
+final jumuahReminderEnabledProvider =
+    StateNotifierProvider<JumuahReminderNotifier, bool>((ref) {
+  return JumuahReminderNotifier();
+});
+
+class JumuahReminderNotifier extends StateNotifier<bool> {
+  JumuahReminderNotifier() : super(true) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    final prefs = await SharedPreferences.getInstance();
+    state = prefs.getBool(_jumuahReminderKey) ?? true;
+  }
+
+  Future<void> setEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_jumuahReminderKey, value);
+    state = value;
+  }
+}
+
 // Task Reminder Minutes Provider
 final taskReminderMinutesProvider =
     StateNotifierProvider<TaskReminderMinutesNotifier, AsyncValue<int>>((ref) {
@@ -491,6 +524,50 @@ class TaskReminderMinutesNotifier extends StateNotifier<AsyncValue<int>> {
     } catch (e, st) {
       state = AsyncValue.error(e, st);
       rethrow;
+    }
+  }
+}
+
+// ─── App Mode ─────────────────────────────────────────────────────────────────
+
+enum AppMode { both, prayerOnly, tasksOnly }
+
+const _appModeKey = 'app_mode';
+
+final appModeProvider = StateNotifierProvider<AppModeNotifier, AppMode>((ref) {
+  return AppModeNotifier();
+});
+
+class AppModeNotifier extends StateNotifier<AppMode> {
+  AppModeNotifier() : super(AppMode.both) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getString(_appModeKey) ?? 'both';
+    state = _fromString(value);
+  }
+
+  Future<void> setMode(AppMode mode) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_appModeKey, _toString(mode));
+    state = mode;
+  }
+
+  static AppMode _fromString(String v) {
+    switch (v) {
+      case 'prayer_only': return AppMode.prayerOnly;
+      case 'tasks_only': return AppMode.tasksOnly;
+      default: return AppMode.both;
+    }
+  }
+
+  static String _toString(AppMode m) {
+    switch (m) {
+      case AppMode.prayerOnly: return 'prayer_only';
+      case AppMode.tasksOnly: return 'tasks_only';
+      case AppMode.both: return 'both';
     }
   }
 }

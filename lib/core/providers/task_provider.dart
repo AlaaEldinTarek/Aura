@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/task.dart';
 import '../services/task_service.dart';
+import '../services/task_widget_service.dart';
 import 'auth_provider.dart';
 
 /// Task Service provider
@@ -42,6 +44,19 @@ final allTasksProvider = StreamProvider.autoDispose<List<Task>>((ref) {
   final service = ref.watch(taskServiceProvider);
   final userId = ref.watch(currentUserIdProvider);
   return service.getTasksStream(userId: userId, limit: 200);
+});
+
+/// Syncs today's tasks to the home screen widget
+final taskWidgetSyncProvider = Provider.autoDispose<void>((ref) {
+  ref.listen(allTasksProvider, (previous, next) {
+    next.whenData((tasks) async {
+      try {
+        await TaskWidgetService.instance.saveTasks(tasks: tasks);
+      } catch (e) {
+        debugPrint('Error syncing tasks to widget: $e');
+      }
+    });
+  });
 });
 
 /// Task statistics provider

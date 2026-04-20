@@ -86,7 +86,7 @@
                     android:id="@+id/notification_until"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="حتى الأذان"
+                    android:text="حتى موعد الأذان"
                     android:textSize="12sp"
                     android:textColor="#99000000"
                     android:paddingEnd="8dp"

@@ -14,6 +14,7 @@ import '../../core/models/prayer_record.dart';
 import '../../core/providers/task_provider.dart';
 
 import '../../core/widgets/setting_tile.dart';
+import '../../core/services/notification_service.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -161,6 +162,19 @@ class ProfileScreen extends ConsumerWidget {
             ),
             const SizedBox(height: AppConstants.paddingLarge),
 
+            // App Mode Section
+            SettingsSectionHeader(
+              icon: Icons.tune,
+              title: isArabic ? 'وضع التطبيق' : 'App Mode',
+            ),
+            SettingsCard(
+              children: [
+                _AppModeTiles(isDark: isDark, isArabic: isArabic),
+              ],
+            ),
+
+            const SizedBox(height: AppConstants.paddingLarge),
+
             // Achievements Section
             SettingsSectionHeader(
               icon: Icons.emoji_events,
@@ -202,6 +216,18 @@ class ProfileScreen extends ConsumerWidget {
                   trailing: Icon(Icons.chevron_right, size: 20, color: isDark ? Colors.white60 : Colors.black54),
                   onTap: () => _showThemeDialog(context, ref, isArabic),
                 ),
+              ],
+            ),
+            const SizedBox(height: AppConstants.paddingLarge),
+
+            // Prayer Notifications Section
+            SettingsSectionHeader(
+              icon: Icons.notifications_outlined,
+              title: isArabic ? 'الإشعارات' : 'Notifications',
+            ),
+            SettingsCard(
+              children: [
+                _JumuahReminderTile(isDark: isDark, isArabic: isArabic),
               ],
             ),
             const SizedBox(height: AppConstants.paddingLarge),
@@ -504,7 +530,10 @@ class ProfileScreen extends ConsumerWidget {
         final totalPrayers = snapshot.data?['totalPrayers'] ?? 0;
         final achievementCount = snapshot.data?['achievementCount'] ?? 0;
 
-        final completionPct = (completionRate * 100).round();
+        // Show -- until user has at least 1 recorded prayer
+        final completionValue = totalPrayers > 0
+            ? '${(completionRate * 100).round()}%'
+            : '--';
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
@@ -522,10 +551,20 @@ class ProfileScreen extends ConsumerWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: _ProfileStatCard(
+                  icon: Icons.mosque_outlined,
+                  value: NumberFormatter.withArabicNumeralsByLanguage('$totalPrayers', isArabic ? 'ar' : 'en'),
+                  label: isArabic ? 'الصلوات' : 'Prayers',
+                  color: AppConstants.primaryColor,
+                  isDark: isDark,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _ProfileStatCard(
                   icon: Icons.check_circle,
-                  value: '${NumberFormatter.withArabicNumeralsByLanguage('$completionPct', isArabic ? 'ar' : 'en')}%',
+                  value: completionValue,
                   label: isArabic ? 'الإتمام' : 'Completion',
-                  color: Colors.green,
+                  color: totalPrayers > 0 ? Colors.green : Colors.grey,
                   isDark: isDark,
                 ),
               ),
@@ -628,10 +667,19 @@ class ProfileScreen extends ConsumerWidget {
       final streak = await PrayerTrackingService.instance.calculateCurrentStreak(userId: userId);
       final achievementCount = await AchievementService.instance.getEarnedCount(userId: userId);
 
+      final totalPrayers = stats.completedOnTime + stats.completedLate;
+
+      // True completion rate = recorded completed / expected total (30 days × 5 prayers).
+      // Unrecorded prayers count as not completed so the % is honest.
+      const expectedPerDay = 5;
+      const days = 30;
+      const expectedTotal = days * expectedPerDay;
+      final trueRate = totalPrayers / expectedTotal;
+
       return {
         'streak': streak,
-        'completionRate': stats.completionRate,
-        'totalPrayers': stats.completedOnTime + stats.completedLate,
+        'completionRate': trueRate.clamp(0.0, 1.0),
+        'totalPrayers': totalPrayers,
         'achievementCount': achievementCount,
       };
     } catch (_) {
@@ -833,6 +881,72 @@ class _ProfileStatCard extends StatelessWidget {
           Text(label, style: TextStyle(fontSize: 10, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
         ],
       ),
+    );
+  }
+}
+
+class _JumuahReminderTile extends ConsumerWidget {
+  final bool isDark;
+  final bool isArabic;
+  const _JumuahReminderTile({required this.isDark, required this.isArabic});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final enabled = ref.watch(jumuahReminderEnabledProvider);
+
+    return SettingTile(
+      icon: Icons.mosque_outlined,
+      iconColor: const Color(0xFFD4A017),
+      title: isArabic ? 'تذكير صلاة الجمعة' : "Jumu'ah Reminder",
+      subtitle: isArabic ? 'إشعار قبل حلول وقت صلاة الجمعة' : 'Get notified before Friday prayer',
+      showChevron: false,
+      trailing: Switch(
+        value: enabled,
+        activeThumbColor: AppConstants.primaryColor,
+        onChanged: (value) async {
+          await ref.read(jumuahReminderEnabledProvider.notifier).setEnabled(value);
+          if (value) {
+            await NotificationService.instance.scheduleJumuahReminder();
+          } else {
+            await NotificationService.instance.cancelJumuahReminder();
+          }
+        },
+      ),
+    );
+  }
+}
+
+class _AppModeTiles extends ConsumerWidget {
+  final bool isDark;
+  final bool isArabic;
+  const _AppModeTiles({required this.isDark, required this.isArabic});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentMode = ref.watch(appModeProvider);
+
+    final modes = [
+      (AppMode.both, Icons.apps, isArabic ? 'الكل' : 'Full App', isArabic ? 'الصلاة والمهام' : 'Prayer & Tasks'),
+      (AppMode.prayerOnly, Icons.mosque, isArabic ? 'الصلاة فقط' : 'Prayer Only', isArabic ? 'أوقات الصلاة والأذان' : 'Prayer times & Adhan'),
+      (AppMode.tasksOnly, Icons.task_alt, isArabic ? 'المهام فقط' : 'Tasks Only', isArabic ? 'إدارة المهام' : 'Task management'),
+    ];
+
+    return Column(
+      children: modes.map((item) {
+        final (mode, icon, label, subtitle) = item;
+        final isSelected = currentMode == mode;
+        return SettingTile(
+          icon: icon,
+          title: label,
+          subtitle: subtitle,
+          iconColor: isSelected ? AppConstants.primaryColor : null,
+          trailing: isSelected
+              ? const Icon(Icons.check_circle, color: AppConstants.primaryColor, size: 20)
+              : null,
+          showChevron: false,
+          onTap: () => ref.read(appModeProvider.notifier).setMode(mode),
+        );
+      }).toList(),
     );
   }
 }

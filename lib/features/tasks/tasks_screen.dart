@@ -2033,13 +2033,14 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
     final wasCompleted = task.isCompleted;
     final userId = ref.read(currentUserIdProvider);
 
-    // Check BEFORE toggle: is this the last incomplete today task?
+    // Check BEFORE toggle: is this the last incomplete active task?
+    // Counts tasks due today OR with no due date (undated tasks are always "active")
     bool shouldCelebrate = false;
     if (!wasCompleted) {
       final currentTasks = ref.read(allTasksProvider).valueOrNull ?? [];
-      final todayIncomplete = currentTasks.where(
-          (t) => t.isDueToday && !t.isCompleted);
-      shouldCelebrate = todayIncomplete.length == 1 && todayIncomplete.first.id == task.id;
+      final activeTasks = currentTasks.where(
+          (t) => !t.isCompleted && (t.isDueToday || t.dueDate == null));
+      shouldCelebrate = activeTasks.length == 1 && activeTasks.first.id == task.id;
     }
 
     app_haptic.HapticFeedback.medium();
@@ -2275,52 +2276,132 @@ class _CelebrationOverlayState extends State<_CelebrationOverlay>
   Widget build(BuildContext context) {
     return Positioned.fill(
       child: IgnorePointer(
-        child: AnimatedBuilder(
+        child: Material(
+          color: Colors.transparent,
+          child: AnimatedBuilder(
           animation: _controller,
           builder: (context, _) {
             return Container(
-              color: Colors.black.withOpacity(0.3 * _opacityAnim.value),
+              color: AppConstants.primaryColor.withValues(alpha: 0.12 * _opacityAnim.value),
               alignment: Alignment.center,
               child: Opacity(
                 opacity: _opacityAnim.value,
                 child: Transform.scale(
                   scale: _scaleAnim.value,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 28),
+                    margin: const EdgeInsets.symmetric(horizontal: 36),
                     decoration: BoxDecoration(
-                      color: widget.isDark ? AppConstants.darkCard : Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+                      color: widget.isDark ? AppConstants.darkSurface : Colors.white,
+                      borderRadius: BorderRadius.circular(28),
+                      border: Border.all(
+                        color: AppConstants.primaryColor.withValues(alpha: 0.25),
+                        width: 1.5,
+                      ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
+                          color: AppConstants.primaryColor.withValues(alpha: 0.22),
+                          blurRadius: 36,
+                          offset: const Offset(0, 10),
+                          spreadRadius: 2,
                         ),
                       ],
                     ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.celebration, size: 56, color: Colors.amber),
-                        const SizedBox(height: 16),
-                        Text(
-                          widget.isArabic ? 'أحسنت!' : 'Well Done!',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: widget.isDark ? Colors.white : Colors.black87,
+                        // Gradient header
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 28),
+                          decoration: const BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [AppConstants.primaryColor, AppConstants.accentCyan],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                          ),
+                          child: Column(
+                            children: [
+                              // Glowing check circle
+                              Container(
+                                width: 72,
+                                height: 72,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2),
+                                ),
+                                child: const Center(
+                                  child: Icon(Icons.check_rounded, size: 42, color: Colors.white),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              // Decorative dots row
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(3, (i) => Container(
+                                  width: 6,
+                                  height: 6,
+                                  margin: const EdgeInsets.symmetric(horizontal: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: i == 1 ? 0.9 : 0.4),
+                                    shape: BoxShape.circle,
+                                  ),
+                                )),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          widget.isArabic
-                              ? 'لقد أكملت جميع مهام اليوم'
-                              : 'You completed all tasks for today!',
-                          style: TextStyle(
-                            fontSize: 15,
-                            color: widget.isDark ? Colors.grey.shade300 : Colors.grey.shade600,
+
+                        // Body
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(28, 22, 28, 26),
+                          child: Column(
+                            children: [
+                              Text(
+                                widget.isArabic ? 'أُنجز الكل! ✨' : 'All Done! ✨',
+                                style: TextStyle(
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.bold,
+                                  color: widget.isDark ? Colors.white : const Color(0xFF1A1A1A),
+                                  letterSpacing: -0.3,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                widget.isArabic
+                                    ? 'أكملت جميع مهام اليوم، استمر!'
+                                    : 'You crushed every task today!',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  height: 1.5,
+                                  color: widget.isDark ? Colors.white60 : Colors.black45,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                              const SizedBox(height: 18),
+                              // Theme-colored badge
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
+                                decoration: BoxDecoration(
+                                  color: AppConstants.primaryColor.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(30),
+                                  border: Border.all(
+                                    color: AppConstants.primaryColor.withValues(alpha: 0.25),
+                                  ),
+                                ),
+                                child: Text(
+                                  widget.isArabic ? '🎯  يوم منتج!' : '🎯  Productive day!',
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppConstants.primaryColor,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
@@ -2329,6 +2410,7 @@ class _CelebrationOverlayState extends State<_CelebrationOverlay>
               ),
             );
           },
+        ),
         ),
       ),
     );
