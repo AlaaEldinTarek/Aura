@@ -39,6 +39,7 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
         title: 'location_permission_title',
         desc: 'location_permission_desc',
         color: Colors.blue,
+        group: _PermGroup.prayer,
         action: () => Permission.location.request(),
         openSettings: () => openAppSettings(),
       ));
@@ -53,6 +54,7 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
           title: 'notification_permission_title',
           desc: 'notification_permission_desc',
           color: Colors.orange,
+          group: _PermGroup.prayer,
           action: () => Permission.notification.request(),
           openSettings: () => openAppSettings(),
         ));
@@ -67,6 +69,7 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
         title: 'exact_alarm_title',
         desc: 'exact_alarm_message',
         color: Colors.red,
+        group: _PermGroup.prayer,
         action: null,
         openSettings: () => PlatformChannelService.openExactAlarmSettings(),
       ));
@@ -80,12 +83,13 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
         title: 'battery_optimization_title',
         desc: 'battery_optimization_message',
         color: Colors.amber.shade800,
+        group: _PermGroup.prayer,
         action: null,
         openSettings: () => PlatformChannelService.openBatteryOptimizationSettings(),
       ));
     }
 
-    // 5. Do Not Disturb access (for silent mode)
+    // 5. Do Not Disturb access (for silent mode + focus mode)
     final dndStatus = await Permission.accessNotificationPolicy.status;
     if (!dndStatus.isGranted) {
       missing.add(_PermInfo(
@@ -93,12 +97,29 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
         title: 'dnd_permission_title',
         desc: 'dnd_permission_desc',
         color: Colors.purple,
+        group: _PermGroup.focusMode,
         action: () => Permission.accessNotificationPolicy.request(),
         openSettings: () => openAppSettings(),
       ));
     }
 
-    // 6. Accessibility Service (auto-accepts screen pinning during Focus Mode)
+    // 6. Overlay (SYSTEM_ALERT_WINDOW) for Focus Mode overlay screen
+    if (Platform.isAndroid) {
+      final canOverlay = await NotificationService.instance.canDrawOverlays();
+      if (!canOverlay) {
+        missing.add(_PermInfo(
+          icon: Icons.picture_in_picture_alt,
+          title: 'overlay_permission_title',
+          desc: 'overlay_permission_desc',
+          color: Colors.deepOrange,
+          group: _PermGroup.focusMode,
+          action: null,
+          openSettings: () => NotificationService.instance.requestOverlayPermission(),
+        ));
+      }
+    }
+
+    // 7. Accessibility Service (auto-accepts screen pinning during Focus Mode)
     // Only show if user has never enabled it before — Huawei EMUI kills services between sessions
     if (Platform.isAndroid) {
       final notifService = NotificationService.instance;
@@ -114,6 +135,7 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
           title: 'accessibility_permission_title',
           desc: 'accessibility_permission_desc',
           color: Colors.teal,
+          group: _PermGroup.focusMode,
           action: null,
           openSettings: () async {
             await notifService.requestAccessibilityPermission();
@@ -210,6 +232,8 @@ class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingO
       nowGranted = await Permission.notification.status.isGranted;
     } else if (perm.title == 'dnd_permission_title') {
       nowGranted = await Permission.accessNotificationPolicy.status.isGranted;
+    } else if (perm.title == 'overlay_permission_title') {
+      nowGranted = await NotificationService.instance.canDrawOverlays();
     } else if (perm.title == 'accessibility_permission_title') {
       nowGranted = await NotificationService.instance.isAccessibilityServiceEnabled();
       if (nowGranted) {
@@ -276,77 +300,49 @@ class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingO
             ),
           ),
 
-          // Permission list
+          // Permission list — grouped by prayer / focus mode
           Expanded(
-            child: ListView.builder(
+            child: ListView(
               padding: const EdgeInsets.all(AppConstants.paddingMedium),
-              itemCount: widget.permissions.length,
-              itemBuilder: (context, index) {
-                final perm = widget.permissions[index];
-                final isGranted = _granted[index];
-                return Container(
-                  margin: const EdgeInsets.only(bottom: AppConstants.paddingSmall),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppConstants.darkCard : Colors.white,
-                    borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
-                    border: Border.all(
-                      color: isGranted
-                          ? Colors.green.withOpacity(0.5)
-                          : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
-                    ),
+              children: [
+                if (widget.permissions.any((p) => p.group == _PermGroup.prayer)) ...[
+                  _GroupHeader(
+                    icon: Icons.mosque_outlined,
+                    label: isArabic ? '🕌 أذونات الصلاة' : '🕌 Prayer Permissions',
+                    color: AppConstants.primaryColor,
+                    isDark: isDark,
                   ),
-                  child: ListTile(
-                    leading: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: (isGranted ? Colors.green : perm.color).withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-                      ),
-                      child: Icon(
-                        isGranted ? Icons.check_circle : perm.icon,
-                        color: isGranted ? Colors.green : perm.color,
-                        size: 24,
-                      ),
-                    ),
-                    title: Text(
-                      isArabic ? _arabicTitle(perm.title) : perm.title.tr(),
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    subtitle: Text(
-                      isArabic ? _arabicDesc(perm.desc) : perm.desc.tr(),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-                      ),
-                    ),
-                    trailing: isGranted
-                        ? Text(
-                            isArabic ? 'ممنوح' : 'Granted',
-                            style: const TextStyle(
-                              color: Colors.green,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          )
-                        : ElevatedButton(
-                            onPressed: () => _grantPermission(index),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: perm.color,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(AppConstants.radiusSmall),
-                              ),
-                            ),
-                            child: Text(
-                              isArabic ? 'تفعيل' : 'Enable',
-                              style: const TextStyle(fontSize: 12),
-                            ),
-                          ),
+                  const SizedBox(height: 8),
+                  ...widget.permissions.asMap().entries
+                      .where((e) => e.value.group == _PermGroup.prayer)
+                      .map((e) => _PermTile(
+                            perm: e.value,
+                            isGranted: _granted[e.key],
+                            isArabic: isArabic,
+                            isDark: isDark,
+                            onGrant: () => _grantPermission(e.key),
+                          )),
+                ],
+                if (widget.permissions.any((p) => p.group == _PermGroup.focusMode)) ...[
+                  const SizedBox(height: 12),
+                  _GroupHeader(
+                    icon: Icons.lock_clock,
+                    label: isArabic ? '🎯 أذونات وضع التركيز' : '🎯 Focus Mode Permissions',
+                    color: Colors.deepOrange,
+                    isDark: isDark,
                   ),
-                );
-              },
+                  const SizedBox(height: 8),
+                  ...widget.permissions.asMap().entries
+                      .where((e) => e.value.group == _PermGroup.focusMode)
+                      .map((e) => _PermTile(
+                            perm: e.value,
+                            isGranted: _granted[e.key],
+                            isArabic: isArabic,
+                            isDark: isDark,
+                            onGrant: () => _grantPermission(e.key),
+                          )),
+                ],
+              ],
             ),
           ),
 
@@ -391,36 +387,197 @@ class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingO
 
   String _arabicTitle(String key) {
     const map = {
-      'location_permission_title': 'الموقع',
+      'location_permission_title': 'الموقع الجغرافي',
       'notification_permission_title': 'الإشعارات',
       'exact_alarm_title': 'المنبهات الدقيقة',
       'battery_optimization_title': 'تحسين البطارية',
       'dnd_permission_title': 'وضع عدم الإزعاج',
-      'accessibility_permission_title': 'أذونات وضع التركيز',
+      'overlay_permission_title': 'العرض فوق التطبيقات',
+      'accessibility_permission_title': 'خدمة إمكانية الوصول',
     };
     return map[key] ?? key;
   }
 
   String _arabicDesc(String key) {
     const map = {
-      'location_permission_desc': 'مطلوب لحساب أوقات الصلاة بدقة',
-      'notification_permission_desc': 'مطلوب لإشعارات أوقات الصلاة',
-      'exact_alarm_message': 'مطلوب لتشغيل الأذان في الوقت المحدد',
+      'location_permission_desc': 'مطلوب لحساب أوقات الصلاة بدقة واتجاه القبلة',
+      'notification_permission_desc': 'مطلوب لإشعارات أوقات الصلاة والمهام',
+      'exact_alarm_message': 'مطلوب لتشغيل الأذان في الوقت المحدد تماماً',
       'battery_optimization_message': 'مطلوب لضمان عمل الإشعارات في الخلفية',
-      'dnd_permission_desc': 'مطلوب لتفعيل الوضع الصامت أثناء الصلاة',
-      'accessibility_permission_desc': 'مطلوب لعمل وضع التركيز بشكل صحيح',
+      'dnd_permission_desc': 'مطلوب لوضع الصامت أثناء الصلاة ووضع التركيز',
+      'overlay_permission_desc': 'مطلوب لعرض شاشة وضع التركيز فوق التطبيقات',
+      'accessibility_permission_desc': 'يقبل تلقائياً تثبيت الشاشة أثناء وضع التركيز',
     };
     return map[key] ?? key;
   }
 }
 
+// ── Group header widget ────────────────────────────────────────────────────
+class _GroupHeader extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final bool isDark;
+  const _GroupHeader({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 20),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Permission tile widget ─────────────────────────────────────────────────
+class _PermTile extends StatelessWidget {
+  final _PermInfo perm;
+  final bool isGranted, isArabic, isDark;
+  final VoidCallback onGrant;
+  const _PermTile({
+    required this.perm,
+    required this.isGranted,
+    required this.isArabic,
+    required this.isDark,
+    required this.onGrant,
+  });
+
+  String _title() {
+    const ar = {
+      'location_permission_title': 'الموقع الجغرافي',
+      'notification_permission_title': 'الإشعارات',
+      'exact_alarm_title': 'المنبهات الدقيقة',
+      'battery_optimization_title': 'تحسين البطارية',
+      'dnd_permission_title': 'وضع عدم الإزعاج',
+      'overlay_permission_title': 'العرض فوق التطبيقات',
+      'accessibility_permission_title': 'خدمة إمكانية الوصول',
+    };
+    return isArabic ? (ar[perm.title] ?? perm.title) : perm.title.tr();
+  }
+
+  String _desc() {
+    const ar = {
+      'location_permission_desc': 'مطلوب لحساب أوقات الصلاة بدقة واتجاه القبلة',
+      'notification_permission_desc': 'مطلوب لإشعارات أوقات الصلاة والمهام',
+      'exact_alarm_message': 'مطلوب لتشغيل الأذان في الوقت المحدد تماماً',
+      'battery_optimization_message': 'مطلوب لضمان عمل الإشعارات في الخلفية',
+      'dnd_permission_desc': 'مطلوب لوضع الصامت أثناء الصلاة ووضع التركيز',
+      'overlay_permission_desc': 'مطلوب لعرض شاشة وضع التركيز فوق التطبيقات',
+      'accessibility_permission_desc': 'يقبل تلقائياً تثبيت الشاشة أثناء وضع التركيز',
+    };
+    return isArabic ? (ar[perm.desc] ?? perm.desc) : perm.desc.tr();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: isDark ? AppConstants.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isGranted
+              ? Colors.green.withValues(alpha: 0.4)
+              : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+        ),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+        leading: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: (isGranted ? Colors.green : perm.color).withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(
+            isGranted ? Icons.check_circle_rounded : perm.icon,
+            color: isGranted ? Colors.green : perm.color,
+            size: 24,
+          ),
+        ),
+        title: Text(
+          _title(),
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+        ),
+        subtitle: Text(
+          _desc(),
+          style: TextStyle(
+            fontSize: 12,
+            height: 1.4,
+            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+          ),
+        ),
+        trailing: isGranted
+            ? Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  isArabic ? 'مفعّل' : 'Granted',
+                  style: const TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 11,
+                  ),
+                ),
+              )
+            : ElevatedButton(
+                onPressed: onGrant,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: perm.color,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 0,
+                ),
+                child: Text(
+                  isArabic ? 'تفعيل' : 'Enable',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                ),
+              ),
+      ),
+    );
+  }
+}
+
 // ==================== Permission Info Model ====================
+
+enum _PermGroup { prayer, focusMode }
 
 class _PermInfo {
   final IconData icon;
   final String title;
   final String desc;
   final Color color;
+  final _PermGroup group;
   final Future<PermissionStatus> Function()? action;
   final VoidCallback openSettings;
 
@@ -429,6 +586,7 @@ class _PermInfo {
     required this.title,
     required this.desc,
     required this.color,
+    required this.group,
     required this.action,
     required this.openSettings,
   });

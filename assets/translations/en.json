@@ -214,5 +214,8 @@
   "jumua_subtitle": "May Allah bless your Friday and accept your prayers",
   "jumua_prayer_name": "Jumu'ah",
   "jumua_reminder_title": "Jumu'ah Reminder",
-  "jumua_reminder_subtitle": "Get notified before Friday prayer"
+  "jumua_reminder_subtitle": "Get notified before Friday prayer",
+
+  "overlay_permission_title": "Display Over Apps",
+  "overlay_permission_desc": "Required to show the Focus Mode screen over other apps"
 }

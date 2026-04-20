@@ -214,5 +214,8 @@
   "jumua_subtitle": "جعلها الله جمعة مباركة وتقبّل صلاتك",
   "jumua_prayer_name": "الجمعة",
   "jumua_reminder_title": "تذكير صلاة الجمعة",
-  "jumua_reminder_subtitle": "إشعار قبل حلول وقت صلاة الجمعة"
+  "jumua_reminder_subtitle": "إشعار قبل حلول وقت صلاة الجمعة",
+
+  "overlay_permission_title": "العرض فوق التطبيقات",
+  "overlay_permission_desc": "مطلوب لعرض شاشة وضع التركيز فوق التطبيقات الأخرى"
 }
