@@ -19,6 +19,11 @@ import '../../core/services/prayer_tracking_service.dart';
 import '../../core/services/task_service.dart';
 import '../../core/models/task.dart';
 import '../../core/models/prayer_record.dart';
+import '../../core/models/daily_content.dart';
+import '../../core/services/daily_content_service.dart';
+import '../../core/widgets/prayer_status_dialog.dart';
+import '../../core/services/prayer_tracking_service.dart' show PrayerTrackingService;
+import '../../core/utils/prayer_time_rules.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -132,6 +137,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       onTap: () => Navigator.of(context).pushNamed('/prayer'),
                     ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
 
+                    // Daily Ayah / Hadith card — hidden in Tasks Only mode
+                    if (showPrayer) ...[
+                      const SizedBox(height: AppConstants.paddingLarge),
+                      _buildDailyContentCard(context, isDark, isArabic)
+                          .animate().fadeIn(delay: 50.ms, duration: 400.ms).slideY(begin: 0.08),
+                    ],
+
                     // Jumu'ah Banner (Fridays only)
                     if (showPrayer && DateTime.now().weekday == DateTime.friday) ...[
                       const SizedBox(height: AppConstants.paddingLarge),
@@ -192,6 +204,95 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           // Permission dialog handler (shows dialogs after home loads)
           const PermissionDialogHandler(),
         ],
+      ),
+    );
+  }
+
+  Widget _buildDailyContentCard(BuildContext context, bool isDark, bool isArabic) {
+    final content = DailyContentService.instance.getToday();
+    final isAyah = content.type == DailyContentType.ayah;
+
+    final Color accentColor = isAyah
+        ? const Color(0xFF00897B)   // teal for Ayah
+        : const Color(0xFFD4A017);  // gold for Hadith
+
+    final String typeLabel = isAyah
+        ? (isArabic ? '📖 آية اليوم' : '📖 Verse of the Day')
+        : (isArabic ? '📜 حديث اليوم' : '📜 Hadith of the Day');
+
+    return GestureDetector(
+      onTap: () => Navigator.of(context).pushNamed('/daily_content'),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? AppConstants.darkCard : Colors.white,
+          borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
+          border: Border.all(color: accentColor.withValues(alpha: 0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: accentColor.withValues(alpha: 0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Label row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  typeLabel,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: accentColor,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+                Text(
+                  content.source,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isDark ? Colors.white38 : Colors.black38,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            // Arabic text
+            Text(
+              content.arabic,
+              style: TextStyle(
+                fontSize: 18,
+                fontFamily: 'Cairo',
+                color: isDark ? Colors.white : Colors.black87,
+                height: 1.7,
+              ),
+              textAlign: TextAlign.right,
+            ),
+            const SizedBox(height: 8),
+            // Divider
+            Container(
+              height: 1,
+              color: accentColor.withValues(alpha: 0.15),
+            ),
+            const SizedBox(height: 8),
+            // Translation
+            Text(
+              content.translation,
+              style: TextStyle(
+                fontSize: 13,
+                fontStyle: FontStyle.italic,
+                color: isDark ? Colors.white60 : Colors.black54,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -524,41 +625,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 icon = Icons.circle_outlined;
               }
 
-              return Column(
-                children: [
-                  Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isTracked
-                          ? color.withValues(alpha: 0.15)
-                          : (isDark ? AppConstants.darkSurface : Colors.grey[100]),
-                      border: Border.all(
-                        color: isTracked ? color : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
-                        width: 1.5,
+              return GestureDetector(
+                onTap: () => _markPrayerFromHome(context, trackablePrayers[i], isArabic),
+                child: Column(
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: isTracked
+                            ? color.withValues(alpha: 0.15)
+                            : (isDark ? AppConstants.darkSurface : Colors.grey[100]),
+                        border: Border.all(
+                          color: isTracked ? color : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+                          width: 1.5,
+                        ),
+                      ),
+                      child: Center(
+                        child: isTracked
+                            ? Icon(icon, color: color, size: 20)
+                            : Text(prayerIcons[i], style: const TextStyle(fontSize: 14)),
                       ),
                     ),
-                    child: Center(
-                      child: isTracked
-                          ? Icon(icon, color: color, size: 20)
-                          : Text(prayerIcons[i], style: const TextStyle(fontSize: 14)),
+                    const SizedBox(height: 4),
+                    Text(
+                      isArabic
+                          ? ['الفجر', 'الظهر', 'العصر', 'المغرب', 'العشاء'][i]
+                          : kPrayerNames[i],
+                      style: TextStyle(
+                        fontSize: 9,
+                        color: isTracked
+                            ? color
+                            : (isDark ? Colors.white54 : Colors.black54),
+                        fontWeight: isTracked ? FontWeight.bold : FontWeight.normal,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    isArabic
-                        ? ['الفجر', 'الظهر', 'العصر', 'المغرب', 'العشاء'][i]
-                        : kPrayerNames[i],
-                    style: TextStyle(
-                      fontSize: 9,
-                      color: isTracked
-                          ? color
-                          : (isDark ? Colors.white54 : Colors.black54),
-                      fontWeight: isTracked ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               );
             }),
           ),
@@ -866,6 +970,35 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _markPrayerFromHome(BuildContext context, String prayerName, bool isArabic) async {
+    // Use the same 20-min rule as the prayer screen
+    final prayerTimes = ref.read(prayerTimesProvider).prayerTimes;
+    if (!canMarkPrayer(
+      context: context,
+      prayerName: prayerName,
+      prayerTimes: prayerTimes,
+      isArabic: isArabic,
+    )) return;
+
+    final chosenStatus = await showPrayerStatusDialog(
+      context: context,
+      prayerName: prayerName,
+      isArabic: isArabic,
+    );
+    if (chosenStatus == null || !mounted) return;
+
+    final userId = getCurrentUserId();
+    final now = DateTime.now();
+    await PrayerTrackingService.instance.recordPrayer(
+      userId: userId,
+      prayerName: prayerName,
+      date: now,
+      prayedAt: now,
+      status: chosenStatus,
+    );
+    ref.read(dailyPrayerStatusProvider.notifier).updatePrayer(prayerName, chosenStatus);
   }
 
   Future<void> _toggleTask(String taskId) async {

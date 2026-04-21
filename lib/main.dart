@@ -37,6 +37,7 @@ import 'features/profile/profile_screen.dart';
 import 'features/settings/iqama_settings_screen.dart';
 import 'features/settings/adhan_downloads_screen.dart';
 import 'features/qibla/qibla_screen.dart';
+import 'features/daily_content/daily_content_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -428,6 +429,11 @@ class AuraAppMaterial extends ConsumerWidget {
       case '/qibla':
         return MaterialPageRoute(
           builder: (_) => const QiblaScreen(),
+          settings: settings,
+        );
+      case '/daily_content':
+        return MaterialPageRoute(
+          builder: (_) => const DailyContentScreen(),
           settings: settings,
         );
       default:

@@ -19,6 +19,16 @@
         android:paddingEnd="8dp"
         android:gravity="center_vertical">
 
+        <!-- Widget label -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🕌 Prayer"
+            android:textSize="9sp"
+            android:textColor="#888888"
+            android:layout_marginBottom="3dp"
+            android:fontFamily="sans-serif" />
+
         <!-- Prayer Name -->
         <TextView
             android:id="@+id/widget_next_prayer_name"

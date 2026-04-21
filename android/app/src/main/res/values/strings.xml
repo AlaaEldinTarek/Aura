@@ -15,6 +15,14 @@
     <string name="loading">Loading…</string>
     <string name="prayer_times">Prayer Times</string>
 
+    <!-- Widget Labels (shown in widget picker) -->
+    <string name="daily_content_widget_label">Aura – Daily Verse</string>
+    <string name="daily_content_widget_description">Shows today\'s Ayah or Hadith</string>
+    <string name="next_prayer_widget_label">Aura – Next Prayer</string>
+    <string name="all_prayers_widget_label">Aura – All Prayers</string>
+    <string name="tasks_widget_label">Aura – Today\'s Tasks</string>
+    <string name="next_task_widget_label">Aura – Next Task</string>
+
     <!-- Widget Descriptions -->
     <string name="next_prayer_widget_description">Shows the next upcoming prayer time</string>
     <string name="all_prayers_widget_description">Shows all daily prayer times</string>

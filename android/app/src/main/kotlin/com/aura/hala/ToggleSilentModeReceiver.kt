@@ -332,6 +332,11 @@ class SilentOffReceiver : BroadcastReceiver() {
         val sharedPrefs = context.getSharedPreferences("aura_silent_mode", Context.MODE_PRIVATE)
         sharedPrefs.edit().putBoolean("is_silent_active", false).apply()
 
+        // Clear adhan mode — foreground service goes back to normal countdown
+        context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+            .edit().putBoolean("adhan_active", false).apply()
+        Log.d(TAG, "✅ [ADHAN_STATE] Cleared — 20 min window ended")
+
         // Show toast to notify user
         val language = getLanguagePreference(context)
         val isArabic = language == "ar"

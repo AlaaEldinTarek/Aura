@@ -308,6 +308,7 @@ class PrayerForegroundService : Service() {
         )
 
         val primaryColor = 0xFF007DFF.toInt()
+        val isArabic = currentLanguage == "ar"
 
         val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
@@ -320,71 +321,172 @@ class PrayerForegroundService : Service() {
             .setColor(primaryColor)
             .setShowWhen(false)
 
-        // Show loading state if prayer data not loaded yet
-        if (!isPrayerDataLoaded || nextPrayerName == null) {
-            val loadingTitle = if (currentLanguage == "ar") {
-                "جاري تحميل مواقيت الصلاة..."
-            } else {
-                "Loading prayer times..."
-            }
+        // Check if adhan is currently active
+        val adhanPrefs = getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+        val adhanActive = adhanPrefs.getBoolean("adhan_active", false)
+        val adhanEndTime = adhanPrefs.getLong("adhan_end_time", 0L)
+        val adhanIqamaTime = adhanPrefs.getLong("adhan_iqama_time", 0L)
+        val adhanPrayerName = adhanPrefs.getString("adhan_prayer_name", null)
+        val adhanPrayerNameAr = adhanPrefs.getString("adhan_prayer_name_ar", null)
+        val now = System.currentTimeMillis()
 
-            notificationBuilder
-                .setContentTitle(loadingTitle)
-                .setContentText("🕌 Aura App")
-
-            Log.d(TAG, "📱 [NOTIFICATION] Showing loading state")
+        if (adhanActive && adhanEndTime > 0 && now < adhanEndTime && adhanPrayerName != null) {
+            // ── ADHAN MODE ────────────────────────────────────────────────
+            showAdhanModeNotification(
+                notificationBuilder, isArabic, now,
+                adhanPrayerName, adhanPrayerNameAr ?: adhanPrayerName,
+                adhanIqamaTime, adhanEndTime
+            )
         } else {
-            // Show countdown to next prayer with custom layout
-            val (timeRemaining, timeString) = calculateTimeRemaining()
+            // Auto-clear adhan state when 20 min window passes
+            if (adhanActive) {
+                adhanPrefs.edit().putBoolean("adhan_active", false).apply()
+                Log.d(TAG, "✅ [ADHAN_STATE] Cleared — 20 min window passed")
+            }
 
-            val nextPrayerText = if (currentLanguage == "ar") {
-                "الصلاة القادمة"
+            // ── NORMAL MODE ───────────────────────────────────────────────
+            if (!isPrayerDataLoaded || nextPrayerName == null) {
+                val loadingTitle = if (isArabic) "جاري تحميل مواقيت الصلاة..." else "Loading prayer times..."
+                notificationBuilder.setContentTitle(loadingTitle).setContentText("🕌 Aura App")
             } else {
-                "Next Prayer"
+                val (_, timeString) = calculateTimeRemaining()
+                val nextPrayerText = if (isArabic) "الصلاة القادمة" else "Next Prayer"
+                val prayerName = if (isArabic) nextPrayerNameAr ?: "" else nextPrayerName ?: ""
+                val untilText = if (isArabic) "حتى موعد الأذان" else "Until Azan"
+
+                val layoutId = if (isArabic) R.layout.notification_large_rtl else R.layout.notification_large
+                val contentView = RemoteViews(packageName, layoutId)
+                contentView.setTextViewText(R.id.notification_header, if (isArabic) "هالة - $nextPrayerText" else "Aura - $nextPrayerText")
+                loadPrayerIcon()?.let { contentView.setImageViewBitmap(R.id.notification_logo, it) } // clock-based for normal mode
+                contentView.setTextViewText(R.id.notification_title, prayerName)
+                contentView.setTextViewText(R.id.notification_time, timeString)
+                contentView.setViewVisibility(R.id.notification_until, android.view.View.VISIBLE)
+                contentView.setTextViewText(R.id.notification_until, untilText)
+
+                notificationBuilder
+                    .setContentTitle("Aura - $nextPrayerText")
+                    .setCustomContentView(contentView)
+                    .setCustomBigContentView(contentView)
+
+                Log.d(TAG, "📱 [NOTIFICATION] Normal mode: $prayerName in $timeString")
             }
-
-            val prayerName = if (currentLanguage == "ar") {
-                nextPrayerNameAr ?: ""
-            } else {
-                nextPrayerName ?: ""
-            }
-
-            val untilText = if (currentLanguage == "ar") {
-                "حتى موعد الأذان"
-            } else {
-                "Until Azan"
-            }
-
-            // Always dark layout - immune to OEM theme overrides
-            val isArabic = currentLanguage == "ar"
-            val layoutId = if (isArabic) R.layout.notification_large_rtl else R.layout.notification_large
-            val contentView = RemoteViews(packageName, layoutId)
-
-            // Header: "Aura - Next Prayer"
-            val headerText = if (isArabic) "هالة - $nextPrayerText" else "Aura - $nextPrayerText"
-            contentView.setTextViewText(R.id.notification_header, headerText)
-
-            // Prayer icon
-            val prayerIcon = loadPrayerIcon()
-            if (prayerIcon != null) {
-                contentView.setImageViewBitmap(R.id.notification_logo, prayerIcon)
-            }
-
-            // Prayer info
-            contentView.setTextViewText(R.id.notification_title, prayerName)
-            contentView.setTextViewText(R.id.notification_time, timeString)
-            contentView.setViewVisibility(R.id.notification_until, android.view.View.VISIBLE)
-            contentView.setTextViewText(R.id.notification_until, untilText)
-
-            notificationBuilder
-                .setContentTitle("Aura - $nextPrayerText")
-                .setCustomContentView(contentView)
-                .setCustomBigContentView(contentView)
-
-            Log.d(TAG, "📱 [NOTIFICATION] Showing countdown: $prayerName in $timeString")
         }
 
         return notificationBuilder.build()
+    }
+
+    private fun showAdhanModeNotification(
+        builder: NotificationCompat.Builder,
+        isArabic: Boolean,
+        now: Long,
+        prayerName: String,
+        prayerNameAr: String,
+        iqamaTime: Long,
+        adhanEndTime: Long
+    ) {
+        val isIqamaArrived = iqamaTime > 0 && now >= iqamaTime
+
+        val layoutId = if (isArabic) R.layout.notification_large_rtl else R.layout.notification_large
+        val contentView = RemoteViews(packageName, layoutId)
+
+        // Header
+        val headerText = if (isArabic) "هالة 🔔 وقت الصلاة" else "Aura 🔔 Prayer Time"
+        contentView.setTextViewText(R.id.notification_header, headerText)
+
+        // Prayer icon — always mosque icon during adhan mode (iqama countdown + after)
+        loadMosqueIcon()?.let { contentView.setImageViewBitmap(R.id.notification_logo, it) }
+
+        // Prayer name
+        val displayName = if (isArabic) prayerNameAr else prayerName
+        contentView.setTextViewText(R.id.notification_title, displayName)
+
+        // Time field: iqama countdown OR mosque icon at iqama time
+        val timeText = if (isIqamaArrived) {
+            "🕌"
+        } else if (iqamaTime > 0) {
+            val remaining = iqamaTime - now
+            val mins = (remaining / 60000).toInt()
+            val secs = ((remaining % 60000) / 1000).toInt()
+            if (isArabic) {
+                val minsAr = toEasternArabic(mins.toLong())
+                val secsAr = toEasternArabic(secs.toLong())
+                "الإقامة بعد ${minsAr}د ${secsAr}ث"
+            } else {
+                "Iqama in ${mins}m ${secs}s"
+            }
+        } else {
+            if (isArabic) "🕌 حان وقت الصلاة" else "🕌 Time to pray"
+        }
+        contentView.setTextViewText(R.id.notification_time, timeText)
+
+        // Until label
+        val untilText = if (isIqamaArrived) {
+            if (isArabic) "حان وقت الصلاة" else "Time to pray"
+        } else {
+            ""
+        }
+        if (untilText.isNotEmpty()) {
+            contentView.setViewVisibility(R.id.notification_until, android.view.View.VISIBLE)
+            contentView.setTextViewText(R.id.notification_until, untilText)
+        } else {
+            contentView.setViewVisibility(R.id.notification_until, android.view.View.GONE)
+        }
+
+        builder
+            .setContentTitle(headerText)
+            .setCustomContentView(contentView)
+            .setCustomBigContentView(contentView)
+
+        // ── Action buttons ─────────────────────────────────────────────
+        val silentPrefs = getSharedPreferences("aura_silent_mode", Context.MODE_PRIVATE)
+        val isSilentActive = silentPrefs.getBoolean("is_silent_active", false)
+
+        if (isSilentActive) {
+            val stopLabel = if (isArabic) "إيقاف الاهتزاز" else "Stop Vibration"
+            val keepLabel = if (isArabic) "إبقاء الاهتزاز" else "Keep Vibration"
+
+            val dismissIntent = Intent(this, ToggleSilentModeReceiver::class.java).apply {
+                action = "com.aura.hala.DISMISS_SILENT"
+                putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME, prayerName)
+                putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME_AR, prayerNameAr)
+            }
+            val dismissPI = PendingIntent.getBroadcast(
+                this, 8001, dismissIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+
+            val extendIntent = Intent(this, ToggleSilentModeReceiver::class.java).apply {
+                action = "com.aura.hala.EXTEND_SILENT"
+                putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME, prayerName)
+                putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME_AR, prayerNameAr)
+            }
+            val extendPI = PendingIntent.getBroadcast(
+                this, 8002, extendIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+
+            builder.addAction(android.R.drawable.ic_media_play, stopLabel, dismissPI)
+            builder.addAction(android.R.drawable.ic_media_pause, keepLabel, extendPI)
+        }
+
+        Log.d(TAG, "📱 [ADHAN_MODE] $prayerName | iqamaArrived=$isIqamaArrived | time=$timeText")
+    }
+
+    // Mosque icon — shown at iqama time
+    private fun loadMosqueIcon(): Bitmap? = loadIcon(R.drawable.ic_mosque)
+
+    // Prayer-specific icon — matches the actual prayer name
+    private fun loadPrayerIconForPrayer(prayerName: String): Bitmap? {
+        val resId = when (prayerName) {
+            "Fajr"    -> R.drawable.ic_prayer_fajr
+            "Sunrise" -> R.drawable.ic_prayer_fajr
+            "Zuhr", "Dhuhr" -> R.drawable.ic_prayer_dhuhr
+            "Asr"     -> R.drawable.ic_prayer_afternoon
+            "Maghrib" -> R.drawable.ic_prayer_maghrib
+            "Isha"    -> R.drawable.ic_prayer_isha
+            else      -> R.drawable.ic_mosque
+        }
+        return loadIcon(resId)
     }
 
     private fun loadPrayerIcon(): Bitmap? {
@@ -393,15 +495,18 @@ class PrayerForegroundService : Service() {
         val hour = calendar.get(java.util.Calendar.HOUR_OF_DAY)
 
         val resId = when (hour) {
-            in 0..4 -> R.drawable.ic_prayer_isha       // Night (midnight–4:59)
-            in 5..6 -> R.drawable.ic_prayer_fajr        // Dawn (5:00–6:59)
-            in 7..11 -> R.drawable.ic_prayer_dhuhr      // Morning (7:00–11:59)
-            in 12..15 -> R.drawable.ic_prayer_dhuhr     // Afternoon (12:00–15:59)
-            in 16..17 -> R.drawable.ic_prayer_afternoon  // Late afternoon (16:00–17:59)
-            in 18..19 -> R.drawable.ic_prayer_maghrib    // Evening (18:00–19:59)
-            else -> R.drawable.ic_prayer_isha            // Night (20:00–23:59)
+            in 0..4 -> R.drawable.ic_prayer_isha
+            in 5..6 -> R.drawable.ic_prayer_fajr
+            in 7..11 -> R.drawable.ic_prayer_dhuhr
+            in 12..15 -> R.drawable.ic_prayer_dhuhr
+            in 16..17 -> R.drawable.ic_prayer_afternoon
+            in 18..19 -> R.drawable.ic_prayer_maghrib
+            else -> R.drawable.ic_prayer_isha
         }
+        return loadIcon(resId)
+    }
 
+    private fun loadIcon(resId: Int): Bitmap? {
         return try {
             val drawable = ResourcesCompat.getDrawable(resources, resId, null)
             if (drawable != null) {
@@ -410,11 +515,9 @@ class PrayerForegroundService : Service() {
                 drawable.setBounds(0, 0, 128, 128)
                 drawable.draw(canvas)
                 bitmap
-            } else {
-                null
-            }
+            } else null
         } catch (e: Exception) {
-            Log.e(TAG, "Error loading prayer icon: ${e.message}")
+            Log.e(TAG, "Error loading icon $resId: ${e.message}")
             null
         }
     }

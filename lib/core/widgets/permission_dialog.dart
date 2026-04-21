@@ -29,20 +29,28 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
   Future<void> _checkAllPermissions() async {
     if (_hasChecked) return;
 
+    // Read app mode to filter relevant permissions
+    final prefs = await SharedPreferences.getInstance();
+    final appMode = prefs.getString('app_mode') ?? 'both';
+    final needsPrayer = appMode != 'tasks_only';
+    final needsTasks  = appMode != 'prayer_only';
+
     final missing = <_PermInfo>[];
 
-    // 1. Location
-    final locationStatus = await Permission.location.status;
-    if (!locationStatus.isGranted) {
-      missing.add(_PermInfo(
-        icon: Icons.location_on,
-        title: 'location_permission_title',
-        desc: 'location_permission_desc',
-        color: Colors.blue,
-        group: _PermGroup.prayer,
-        action: () => Permission.location.request(),
-        openSettings: () => openAppSettings(),
-      ));
+    // 1. Location — prayer only
+    if (needsPrayer) {
+      final locationStatus = await Permission.location.status;
+      if (!locationStatus.isGranted) {
+        missing.add(_PermInfo(
+          icon: Icons.location_on,
+          title: 'location_permission_title',
+          desc: 'location_permission_desc',
+          color: Colors.blue,
+          group: _PermGroup.prayer,
+          action: () => Permission.location.request(),
+          openSettings: () => openAppSettings(),
+        ));
+      }
     }
 
     // 2. Notifications (Android 13+)
@@ -89,22 +97,26 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
       ));
     }
 
-    // 5. Do Not Disturb access (for silent mode + focus mode)
+    // 5. Do Not Disturb — dual purpose:
+    // - Prayer silent mode (if prayer enabled)
+    // - Focus mode silence (if tasks enabled)
     final dndStatus = await Permission.accessNotificationPolicy.status;
     if (!dndStatus.isGranted) {
+      // Place under whichever group the user has enabled; Focus if both
+      final dndGroup = needsTasks ? _PermGroup.focusMode : _PermGroup.prayer;
       missing.add(_PermInfo(
         icon: Icons.do_not_disturb_on,
         title: 'dnd_permission_title',
         desc: 'dnd_permission_desc',
         color: Colors.purple,
-        group: _PermGroup.focusMode,
+        group: dndGroup,
         action: () => Permission.accessNotificationPolicy.request(),
         openSettings: () => openAppSettings(),
       ));
     }
 
-    // 6. Overlay (SYSTEM_ALERT_WINDOW) for Focus Mode overlay screen
-    if (Platform.isAndroid) {
+    // 6. Overlay — only needed for Focus Mode (tasks)
+    if (Platform.isAndroid && needsTasks) {
       final canOverlay = await NotificationService.instance.canDrawOverlays();
       if (!canOverlay) {
         missing.add(_PermInfo(

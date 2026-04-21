@@ -65,6 +65,15 @@ class PrayerWidgetService {
       debugPrint('  Location sent to widget: "$locationName"');
       debugPrint('  Theme mode: $themeMode');
 
+      // Build iqama times map
+      final Map<String, String> iqamaTimesMap = {};
+      for (final prayer in prayerTimes) {
+        if (prayer.iqamaTime != null) {
+          final key = _getIqamaKey(prayer.name);
+          iqamaTimesMap[key] = prayer.iqamaTime!.millisecondsSinceEpoch.toString();
+        }
+      }
+
       // Also update the background service notification
       await BackgroundServiceManager.instance.updatePrayerTimes(
         prayerTimes: prayerTimesMap,
@@ -72,10 +81,24 @@ class PrayerWidgetService {
         nextPrayerNameAr: nextPrayer?.nameAr,
         nextPrayerTime: nextPrayer?.time.millisecondsSinceEpoch,
         language: language,
+        iqamaTimes: iqamaTimesMap,
       );
       debugPrint('📱 WidgetService: Also updated background service notification');
     } catch (e) {
       debugPrint('📱 WidgetService: Error sending prayer times - $e');
+    }
+  }
+
+  /// Get the storage key for an iqama time
+  String _getIqamaKey(String prayerName) {
+    switch (prayerName.toLowerCase()) {
+      case 'fajr': return 'fajr_iqama_time';
+      case 'dhuhr':
+      case 'zuhr': return 'dhuhr_iqama_time';
+      case 'asr': return 'asr_iqama_time';
+      case 'maghrib': return 'maghrib_iqama_time';
+      case 'isha': return 'isha_iqama_time';
+      default: return '${prayerName.toLowerCase()}_iqama_time';
     }
   }
 

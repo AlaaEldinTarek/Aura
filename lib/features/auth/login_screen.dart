@@ -217,7 +217,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       shaderCallback: (bounds) => const LinearGradient(
                         colors: [
                           AppConstants.primaryColor,
-                          Color(0xFF6B4CE6),
+                          AppConstants.accentCyan,
                         ],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,

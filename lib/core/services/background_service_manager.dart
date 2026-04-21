@@ -88,6 +88,7 @@ class BackgroundServiceManager {
     required String? nextPrayerNameAr,
     required int? nextPrayerTime,
     required String language,
+    Map<String, String>? iqamaTimes,
   }) async {
     try {
       await _channel.invokeMethod('updatePrayerTimes', {
@@ -96,6 +97,7 @@ class BackgroundServiceManager {
         'nextPrayerNameAr': nextPrayerNameAr,
         'nextPrayerTime': nextPrayerTime,
         'language': language,
+        if (iqamaTimes != null) 'iqamaTimes': iqamaTimes,
       });
       debugPrint('BackgroundServiceManager: Prayer times updated for notification');
     } catch (e) {

@@ -122,6 +122,69 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                   children: [
                     const SizedBox(height: AppConstants.paddingMedium),
 
+                    // Logo
+                    Image.asset(
+                      'assets/images/logo-0.png',
+                      width: 80,
+                      height: 80,
+                    ).animate().fadeIn(duration: 500.ms).scale(
+                          duration: 700.ms, curve: Curves.elasticOut),
+
+                    const SizedBox(height: 10),
+
+                    // App name
+                    ShaderMask(
+                      shaderCallback: (bounds) => const LinearGradient(
+                        colors: [
+                          AppConstants.primaryColor,
+                          AppConstants.accentCyan,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ).createShader(bounds),
+                      child: RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(
+                          children: [
+                            TextSpan(
+                              text: 'Aura',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    fontFamily: 'Roboto',
+                                    color: Colors.white,
+                                  ),
+                            ),
+                            TextSpan(
+                              text: ' | ',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w300,
+                                    color: Colors.white,
+                                  ),
+                            ),
+                            TextSpan(
+                              text: 'هالة',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineSmall
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    fontFamily: 'Cairo',
+                                    color: Colors.white,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ).animate().fadeIn(delay: 200.ms, duration: 500.ms),
+
+                    const SizedBox(height: 20),
+
                     // Title
                     Text(
                       'auth_create_account'.tr(),

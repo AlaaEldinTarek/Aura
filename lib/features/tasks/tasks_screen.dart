@@ -1309,6 +1309,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
 
   /// Task card for reorder mode — no long-press context menu (long press = drag)
   Widget _buildReorderableTaskCard(Task task, bool isArabic) {
+    final hasFocus = task.focusMode && !task.isCompleted;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Stack(
@@ -1319,7 +1320,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
             onToggle: () => _toggleTask(task),
             onTap: () => _editTask(task),
             onDelete: () => _deleteTask(task, isArabic),
-            onMenuTap: () => _showContextMenu(task, isArabic),
+            onMenuTap: hasFocus ? null : () => _showContextMenu(task, isArabic),
             onPostpone: () => _postponeTask(task),
             userId: ref.read(currentUserIdProvider),
             onChanged: () {
@@ -1327,7 +1328,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               ref.invalidate(taskStatisticsProvider);
             },
           ),
-          if (task.focusMode && !task.isCompleted)
+          if (hasFocus) ...[
+            // Focus button
             PositionedDirectional(
               top: 8,
               end: 8,
@@ -1357,6 +1359,23 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                 ),
               ),
             ),
+            // 3-dot menu — positioned below Focus button
+            PositionedDirectional(
+              top: 40,
+              end: 12,
+              child: GestureDetector(
+                onTap: () => _showContextMenu(task, isArabic),
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(Icons.more_vert, size: 20,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey.shade500
+                          : Colors.grey.shade600),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1423,6 +1442,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       );
     }
 
+    final hasFocus = task.focusMode && !task.isCompleted;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Stack(
@@ -1434,7 +1454,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
             onTap: () => _editTask(task),
             onDelete: () => _deleteTask(task, isArabic),
             onLongPress: null,
-            onMenuTap: () => _showContextMenu(task, isArabic),
+            onMenuTap: hasFocus ? null : () => _showContextMenu(task, isArabic),
             onPostpone: () => _postponeTask(task),
             userId: ref.read(currentUserIdProvider),
             onChanged: () {
@@ -1442,8 +1462,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               ref.invalidate(taskStatisticsProvider);
             },
           ),
-          // Focus Mode shortcut — only on tasks with focusMode enabled
-          if (task.focusMode && !task.isCompleted)
+          if (hasFocus) ...[
+            // Focus button
             PositionedDirectional(
               top: 8,
               end: 8,
@@ -1473,6 +1493,23 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                 ),
               ),
             ),
+            // 3-dot menu — positioned below Focus button
+            PositionedDirectional(
+              top: 40,
+              end: 12,
+              child: GestureDetector(
+                onTap: () => _showContextMenu(task, isArabic),
+                behavior: HitTestBehavior.opaque,
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(Icons.more_vert, size: 20,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey.shade500
+                          : Colors.grey.shade600),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

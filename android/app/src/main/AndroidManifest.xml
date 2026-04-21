@@ -179,9 +179,24 @@
             android:stopWithTask="false"
             android:foregroundServiceType="dataSync"/>
 
+        <!-- Daily Content Widget (Ayah / Hadith) -->
+        <receiver
+            android:name=".DailyContentWidget"
+            android:label="@string/daily_content_widget_label"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/daily_content_widget_info"/>
+        </receiver>
+
         <!-- Next Prayer Widget -->
         <receiver
             android:name=".NextPrayerWidget"
+            android:label="@string/next_prayer_widget_label"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
@@ -195,6 +210,7 @@
         <!-- All Prayers Widget -->
         <receiver
             android:name=".AllPrayersWidget"
+            android:label="@string/all_prayers_widget_label"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
@@ -219,6 +235,7 @@
         <!-- Tasks Widget -->
         <receiver
             android:name=".TasksWidget"
+            android:label="@string/tasks_widget_label"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
@@ -237,6 +254,7 @@
         <!-- Next Task Widget (4x1) -->
         <receiver
             android:name=".NextTaskWidget"
+            android:label="@string/next_task_widget_label"
             android:enabled="true"
             android:exported="true">
             <intent-filter>

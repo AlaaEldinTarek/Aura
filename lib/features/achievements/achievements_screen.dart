@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/models/achievement.dart';
 import '../../core/models/prayer_record.dart';
 import '../../core/services/achievement_service.dart';
 import '../../core/utils/number_formatter.dart';
+import '../../core/providers/preferences_provider.dart';
 
 /// Achievements Screen - Grid of badges (earned and locked)
-class AchievementsScreen extends StatefulWidget {
+class AchievementsScreen extends ConsumerStatefulWidget {
   const AchievementsScreen({super.key});
 
   @override
-  State<AchievementsScreen> createState() => _AchievementsScreenState();
+  ConsumerState<AchievementsScreen> createState() => _AchievementsScreenState();
 }
 
-class _AchievementsScreenState extends State<AchievementsScreen> {
+class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
   final AchievementService _achievementService = AchievementService.instance;
   bool _isLoading = true;
   List<Achievement> _earnedAchievements = [];
@@ -119,8 +121,24 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                     ),
                   ),
 
-                  // Group by category
+                  // Group by category — filter based on app mode
                   ...AchievementCategory.values.map((category) {
+                    final appMode = ref.watch(appModeProvider);
+                    final showPrayer = appMode != AppMode.tasksOnly;
+                    final showTasks = appMode != AppMode.prayerOnly;
+
+                    // Hide prayer categories in Tasks Only mode
+                    if (!showPrayer && (category == AchievementCategory.streaks ||
+                        category == AchievementCategory.consistency ||
+                        category == AchievementCategory.dhikr ||
+                        category == AchievementCategory.special)) {
+                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    }
+                    // Hide task category in Prayer Only mode
+                    if (!showTasks && category == AchievementCategory.tasks) {
+                      return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    }
+
                     final achievements = AchievementDefinitions.all
                         .where((a) => a.category == category)
                         .toList();
@@ -131,6 +149,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                       AchievementCategory.streaks: isArabic ? 'التتابعات' : 'Streaks',
                       AchievementCategory.consistency: isArabic ? 'الالتزام' : 'Consistency',
                       AchievementCategory.dhikr: isArabic ? 'الأذكار' : 'Zikr',
+                      AchievementCategory.tasks: isArabic ? 'المهام' : 'Tasks',
                       AchievementCategory.special: isArabic ? 'خاص' : 'Special',
                     };
 

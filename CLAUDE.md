@@ -11,14 +11,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Location-based prayer time calculations using Adhan library
 - Custom Adhan audio playback with native Android MediaPlayer integration
 - Silent mode automation during prayer times (configurable duration, default 20 min)
-- Two home screen widgets (NextPrayerWidget, AllPrayersWidget) with light/dark/LTR/RTL variants
+- Three home screen widgets (NextPrayerWidget, AllPrayersWidget, TasksWidget) with light/dark/LTR/RTL variants
 - Qibla compass pointing to Kaaba
-- Digital Dhikr/Tasbeeh counter with 6 presets + custom, haptic feedback
-- Prayer tracking (on-time/late/missed/excused) with daily stats
-- Daily Islamic content (Hadith, Ayah, Dua) from Firestore
+- Digital Dhikr/Tasbeeh counter with 6 presets + custom, haptic feedback, stats tracking
+- Prayer tracking (on-time/late/missed/excused) with daily stats and prayer reports
+- Achievements system with unlockable badges
+- Daily Islamic content (Hadith, Ayah, Dua) from Firestore with home screen widget
 - Task management with priorities, categories, due dates, subtasks, pin-to-top, recurring tasks, task notifications, and Firestore sync
 - Multi-language support (English/Arabic) with full RTL support
-- Firebase authentication (Email/Password, Google Sign-In, Forgot Password) + guest mode
+- Firebase authentication (Email/Password, Google Sign-In, Forgot Password) + guest mode + offline queue
 - Hijri date display with Gregorian-to-Hijri conversion
 - Foreground service for reliable background prayer alerts
 
@@ -105,11 +106,12 @@ The app uses `flutter_riverpod` for reactive state management with these key pro
 | `upcomingTasksProvider` | `task_provider.dart` | Upcoming tasks |
 | `highPriorityTasksProvider` | `task_provider.dart` | High priority tasks |
 | `taskNotificationsEnabledProvider` | `preferences_provider.dart` | Task reminder notifications toggle (key: `task_notifications_enabled`) |
+| `dailyPrayerStatusProvider` | `daily_prayer_status_provider.dart` | Daily prayer tracking status (on-time/late/missed/excused) |
 
 ### Complete Feature Structure
 ```
 lib/
-├── main.dart                          # Entry point, Firebase init, 12 named routes
+├── main.dart                          # Entry point, Firebase init, 20 named routes
 ├── core/
 │   ├── constants/
 │   │   └── app_constants.dart         # Colors, spacing, animation durations, pref keys
@@ -120,14 +122,16 @@ lib/
 │   │   ├── user_data.dart             # UserData with Firestore serialization
 │   │   ├── task.dart                  # Task, TaskPriority (low/med/high), TaskCategory (7 types)
 │   │   ├── dhikr.dart                 # DhikrSession, DhikrPreset (6 built-in), DhikrStatistics
-│   │   └── daily_islamic_content.dart # DailyContent (hadith/ayah/dua) + DailyContentService
+│   │   ├── achievement.dart           # Achievement model with unlockable badges
+│   │   └── daily_content.dart         # DailyContent (hadith/ayah/dua) model
 │   ├── providers/
 │   │   ├── auth_provider.dart         # Auth state, login/signup/signout, user data sync
 │   │   ├── preferences_provider.dart  # Theme, language, guest mode, vibration, silent mode
 │   │   ├── prayer_times_provider.dart # Prayer times state, next/current prayer, auto-refresh
 │   │   ├── connectivity_provider.dart # Network connectivity monitoring
 │   │   ├── background_service_provider.dart # Foreground service
-│   │   └── task_provider.dart         # Task streams, filters, statistics
+│   │   ├── task_provider.dart         # Task streams, filters, statistics
+│   │   └── daily_prayer_status_provider.dart # Daily prayer tracking status
 │   ├── services/
 │   │   ├── prayer_times_service.dart  # Adhan library calc, iqama offsets, next/current logic
 │   │   ├── location_service.dart      # GPS + manual location, 50+ city name translations
@@ -140,21 +144,28 @@ lib/
 │   │   ├── prayer_alarm_service.dart  # MethodChannel → native PrayerAlarmReceiver.kt
 │   │   ├── background_service_manager.dart # MethodChannel → native ForegroundService
 │   │   ├── prayer_widget_service.dart # MethodChannel → native WidgetUpdateService.kt
+│   │   ├── task_widget_service.dart   # MethodChannel → native TasksWidget.kt
 │   │   ├── analytics_service.dart     # Firebase Analytics wrapper
 │   │   ├── navigation_service.dart    # MethodChannel route tracking
 │   │   ├── silent_mode_service.dart   # MethodChannel silent mode control
 │   │   ├── platform_channel_service.dart # Battery optimization + alarm permission checks
 │   │   ├── task_service.dart          # Firestore task CRUD, pagination, caching
 │   │   ├── prayer_tracking_service.dart # Firestore prayer records with daily cache
+│   │   ├── daily_content_service.dart # Daily Islamic content (hadith/ayah/dua) from Firestore
+│   │   ├── achievement_service.dart   # Achievement unlock logic and badge management
+│   │   ├── dhikr_service.dart         # Dhikr session persistence and statistics
+│   │   ├── offline_queue_service.dart # Offline operation queue for Firestore writes
+│   │   ├── sync_service.dart          # Data sync coordination service
 │   │   └── firebase_options.dart      # Firebase platform config
 │   ├── theme/
-│   │   └── app_theme.dart             # Light/dark Material 3, primary #007DFF, cyan #00BCD4
+│   │   └── app_theme.dart             # Light/dark/amoled Material 3, primary #007DFF, cyan #00BCD4
 │   ├── utils/
 │   │   ├── date_formatter.dart        # Bilingual date formatting, month/day names
 │   │   ├── number_formatter.dart      # Arabic-Hindi numeral conversion
 │   │   ├── time_formatter.dart        # Duration/time bilingual formatting
 │   │   ├── hijri_date.dart            # Gregorian → Hijri conversion with month names
-│   │   └── haptic_feedback.dart       # Light/medium/heavy/selection with enable/simplified
+│   │   ├── haptic_feedback.dart       # Light/medium/heavy/selection with enable/simplified
+│   │   └── prayer_time_rules.dart     # Prayer time validation and rule logic
 │   └── widgets/
 │       ├── bottom_nav_bar.dart        # 4-tab nav: Home, Prayer, Tasks, Profile
 │       ├── greeting_widget.dart       # Time-based greeting (bilingual)
@@ -163,6 +174,7 @@ lib/
 │       ├── empty_state.dart           # Empty state with icon/title/subtitle
 │       ├── prayer_time_card.dart      # Gradient card with emoji + countdown
 │       ├── prayer_card.dart           # Detailed prayer row with iqamah + mark-as-prayed
+│       ├── prayer_status_dialog.dart  # Prayer status selection dialog (on-time/late/missed/excused)
 │       ├── setting_tile.dart          # Settings list tile
 │       ├── shimmer_loading.dart       # ShimmerBox, ShimmerListTile, ShimmerCard
 │       ├── offline_banner.dart        # ConnectivityWrapper + yellow offline banner
@@ -171,17 +183,18 @@ lib/
 └── features/
     ├── splash/                        # Lottie splash, auth check → login/onboarding/home
     ├── auth/                          # LoginScreen (with forgot password dialog), SignupScreen
-    ├── onboarding/                    # PreferenceScreen (language + theme)
+    ├── onboarding/                    # PreferenceScreen (language + theme), ModeSelectionScreen
     ├── main/                          # MainWrapperScreen (4-tab PageView, back-to-exit)
-    ├── home/                          # HomeScreen, CombinedHomeScreen (dashboard + stats)
-    ├── prayer/                        # PrayerScreen, PrayerTrackingScreen
+    ├── home/                          # HomeScreen (with daily content card + Jumu'ah banner), CombinedHomeScreen
+    ├── prayer/                        # PrayerScreen, PrayerTrackingScreen, PrayerReportScreen
     ├── profile/                       # ProfileScreen (with task stats summary cards)
     ├── settings/                      # SettingsScreen, IqamaSettingsScreen, AdhanDownloadsScreen
     │                                  # AdhanCalculationMethod, AsrMadhabSelection, PrayerCalculationSettingsDialog
     ├── qibla/                         # QiblaScreen (compass to Kaaba 21.4225, 39.8262)
     ├── tasks/                         # TaskFormScreen, TaskStatsScreen, _TaskSettingsSheet (notification toggle)
-    ├── dhikl/                         # DhikrScreen (tasbeeh counter with haptic + animations)
-    └── daily_content/                 # DailyIslamicContentScreen (Hadith, Ayah, Dua)
+    ├── achievements/                  # AchievementsScreen (unlockable badge grid)
+    ├── dhikl/                         # DhikrScreen, DhikrStatsScreen, CustomZikrFormScreen
+    └── daily_content/                 # DailyContentScreen (Hadith, Ayah, Dua)
 ```
 
 ### Platform Channel Architecture (7 MethodChannels)
@@ -196,7 +209,7 @@ lib/
 | `com.aura.hala/navigation` | Route tracking | NavigationService | MainActivity.kt |
 | `com.aura.hala/focus_mode` | Focus mode scheduling, overlay/DND permissions, service control | NotificationService | FocusModeService.kt |
 
-### Native Android Architecture (16 Kotlin files)
+### Native Android Architecture (20 Kotlin files)
 
 Located at `android/app/src/main/kotlin/com/aura/hala/`:
 
@@ -208,7 +221,10 @@ Located at `android/app/src/main/kotlin/com/aura/hala/`:
 | `SilentModeAutomation.kt` | AudioManager silent mode scheduling with configurable duration |
 | `PrayerForegroundService.kt` | START_STICKY foreground service with next prayer countdown, updates every second |
 | `PrayerWidgets.kt` | NextPrayerWidget + AllPrayersWidget, light/dark/LTR/RTL layouts |
+| `TasksWidget.kt` | Home screen tasks widget with task count and next due task |
 | `WidgetUpdateService.kt` | Updates widget views from SharedPreferences prayer data |
+| `DailyContentWidget.kt` | Home screen widget for daily Islamic content (ayah/hadith) |
+| `RingProgressView.kt` | Custom circular progress view for prayer/dhikr counters |
 | `AdhanFullScreenActivity.kt` | Full-screen intent over lock screen when adhan fires |
 | `FocusModeService.kt` | START_STICKY foreground service with system overlay (TYPE_APPLICATION_OVERLAY) for inescapable focus mode. Blocks notification shade via second overlay. Shows countdown timer, task completion prompt, and restart options. Restores sound mode on timer end. Uses full-screen intent notification to relaunch when user escapes to recent apps |
 | `FocusModeActivity.kt` | Full-screen activity for focus mode. Uses startLockTask() for complete phone lockdown. No stopLockTask() at timer end so completion/restart UI stays locked. Only unlocks via finishFocusMode(). DND restored unconditionally on timer end |
@@ -234,15 +250,19 @@ Located at `android/app/src/main/kotlin/com/aura/hala/`:
 2. `AnalyticsService.initialize()`
 3. `EasyLocalization.ensureInitialized()`
 4. `SharedPreferencesService` injected into Riverpod via ProviderScope override
-5. `PrayerWidgetService.initialize()`
-6. `NotificationService.initialize()`
-7. `AdhanPlayerService.initialize()`
-8. `PrayerAlarmService.initialize()`
-9. `BackgroundServiceManager.initialize()`
-10. `runApp()` → ProviderScope > AuraApp > EasyLocalization > AuraAppMaterial
+5. Parallel initialization of all services:
+   - `PrayerWidgetService.initialize()`
+   - `TaskWidgetService.initialize()`
+   - `NotificationService.initialize()`
+   - `AdhanPlayerService.initialize()`
+   - `PrayerAlarmService.initialize()`
+   - `BackgroundServiceManager.initialize()`
+   - `OfflineQueueService.initialize()`
+   - `TaskService.initialize()`
+6. `runApp()` → ProviderScope > AuraApp > EasyLocalization > AuraAppMaterial
 
-### Routes (13 named routes in `_generateRoute`)
-`/` (splash), `/login`, `/signup`, `/onboarding`, `/home`, `/prayer`, `/prayer_tracking`, `/task_form`, `/task_stats`, `/profile`, `/iqama_settings`, `/adhan_downloads`, `/daily_content`
+### Routes (20 named routes in `_generateRoute`)
+`/` (splash), `/login`, `/signup`, `/onboarding`, `/mode_selection`, `/home`, `/prayer`, `/prayer_tracking`, `/prayer_report`, `/dhikr`, `/dhikr_stats`, `/achievements`, `/task_form`, `/task_stats`, `/profile`, `/iqama_settings`, `/adhan_downloads`, `/qibla`, `/daily_content`
 
 ### Prayer Time Calculation Flow
 1. `LocationService.getBestLocation()` — Gets GPS (via geolocator) or manual location
@@ -361,7 +381,7 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 | Notifications | flutter_local_notifications | 17.0.0 |
 | Audio | audioplayers | 6.0.0 |
 | Localization | easy_localization, intl | 3.0.3, 0.20.2 |
-| UI | table_calendar, flutter_animate, lottie, wakelock_plus | various |
+| UI | table_calendar, flutter_animate, lottie, wakelock_plus, dynamic_color | various |
 | Utilities | shared_preferences, path_provider, dio, url_launcher, share_plus, connectivity_plus, timezone, permission_handler, vibration | various |
 
 ---
@@ -372,7 +392,7 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 - **pubspec.yaml**: Dependencies and app configuration (version 1.0.2+3)
 - **analysis_options.yaml**: Dart analyzer settings
 - **android/app/build.gradle**: Android build configuration
-- **android/app/src/main/AndroidManifest.xml**: 16 permissions, 7 receivers, 2 services, 2 activities
+- **android/app/src/main/AndroidManifest.xml**: 18 permissions, 8 receivers, 3 services, 3 activities
 
 ### Critical Services (Edit Carefully)
 - **`lib/core/services/prayer_times_service.dart`**: Prayer time calculations — handles day transitions, next/current prayer logic
@@ -420,6 +440,8 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 Defined in `lib/core/theme/app_theme.dart`:
 - **Light**: Primary blue (#007DFF), cyan secondary (#00BCD4), white/light surfaces
 - **Dark**: Same primary colors, dark surfaces (#1A1B1E, #111317)
+- **AMOLED**: True black surfaces for OLED screens
+- **Dynamic color**: Optional Material You dynamic colors via `dynamic_color` package
 - Material 3 with custom ColorScheme, CardTheme, ElevatedButtonTheme, InputDecorationTheme
 - Two font families: Roboto (English) and Cairo (Arabic)
 
@@ -451,7 +473,7 @@ Defined in `lib/core/theme/app_theme.dart`:
 - Check `PrayerForegroundService` is START_STICKY
 
 ### Widgets Not Updating
-- Verify `PrayerWidgetService` is initialized in main.dart
+- Verify `PrayerWidgetService` and `TaskWidgetService` are initialized in main.dart
 - Check SharedPreferences has prayer data
 - Look for widget update logs
 
@@ -507,6 +529,8 @@ Defined in `lib/core/theme/app_theme.dart`:
 8. **Calculation Methods**: Test all 9 calculation methods
 9. **Asr Madhab**: Test both Shafi and Hanafi
 10. **Language**: Test both English and Arabic with RTL
+11. **Widgets**: Verify TasksWidget and DailyContentWidget update correctly
+12. **Achievements**: Verify badge unlock triggers and display correctly
 
 ### Quick Test Commands
 ```bash
