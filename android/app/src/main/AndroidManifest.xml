@@ -232,6 +232,11 @@
             android:enabled="true"
             android:exported="false"/>
 
+        <receiver
+            android:name=".DailyContentWidgetReceiver"
+            android:enabled="true"
+            android:exported="false"/>
+
         <!-- Tasks Widget -->
         <receiver
             android:name=".TasksWidget"

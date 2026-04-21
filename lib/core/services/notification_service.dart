@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:permission_handler/permission_handler.dart';
@@ -7,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/prayer_time.dart';
 import '../models/prayer_record.dart' show kPrayerNames, PrayerStatus, PrayerMethod, getCurrentUserId;
 import '../constants/app_constants.dart';
+import '../providers/daily_prayer_status_provider.dart';
 import 'prayer_tracking_service.dart';
 import 'task_service.dart';
 import 'package:flutter/services.dart';
@@ -20,6 +22,9 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
   SharedPreferences? _prefs;
+
+  ProviderContainer? _container;
+  void attachContainer(ProviderContainer container) => _container = container;
 
   // Store prayer times for "remind me again" feature
   final Map<String, DateTime> _scheduledPrayerTimes = {};
@@ -1129,6 +1134,9 @@ class NotificationService {
         status: status,
         method: PrayerMethod.alone,
       );
+
+      // Update shared provider so home screen + prayer cards refresh immediately
+      _container?.read(dailyPrayerStatusProvider.notifier).updatePrayer(prayerName, status);
 
       // Cancel the notification after action taken
       final notifId = 6000 + _getNotificationId(prayerName);

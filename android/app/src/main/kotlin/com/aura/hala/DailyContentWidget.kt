@@ -1,5 +1,6 @@
 package com.aura.hala
 
+import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -14,11 +15,23 @@ class DailyContentWidget : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
         for (id in appWidgetIds) updateAppWidget(context, appWidgetManager, id)
+        scheduleWidgetUpdate(context)
+    }
+
+    override fun onEnabled(context: Context) {
+        Log.d(TAG, "DailyContentWidget enabled")
+        scheduleWidgetUpdate(context)
+    }
+
+    override fun onDisabled(context: Context) {
+        Log.d(TAG, "DailyContentWidget disabled")
+        cancelWidgetUpdate(context)
     }
 
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
-        if (intent.action == AppWidgetManager.ACTION_APPWIDGET_UPDATE) {
+        if (intent.action == AppWidgetManager.ACTION_APPWIDGET_UPDATE ||
+            intent.action == ACTION_DAILY_UPDATE) {
             val manager = AppWidgetManager.getInstance(context)
             val ids = manager.getAppWidgetIds(ComponentName(context, DailyContentWidget::class.java))
             for (id in ids) updateAppWidget(context, manager, id)
@@ -27,9 +40,10 @@ class DailyContentWidget : AppWidgetProvider() {
 
     companion object {
         private const val TAG = "DailyContentWidget"
+        private const val ACTION_DAILY_UPDATE = "com.aura.hala.DAILY_CONTENT_UPDATE"
 
         data class ContentItem(
-            val type: String,    // "ayah" or "hadith"
+            val type: String,
             val arabic: String,
             val translation: String,
             val source: String
@@ -63,18 +77,20 @@ class DailyContentWidget : AppWidgetProvider() {
             val language = prefs.getString("language", "en") ?: "en"
             val isArabic = language == "ar"
 
-            val themePrefs = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
-            val theme = themePrefs.getString("theme_mode", "system") ?: "system"
-            val isDark = theme == "dark" || theme == "amoled"
+            val themeMode = prefs.getString("themeMode", "system") ?: "system"
+            val isDark = when (themeMode) {
+                "dark", "amoled" -> true
+                "light" -> false
+                else -> isSystemDarkTheme(context)
+            }
 
             val layoutId = if (isDark) R.layout.daily_content_widget_dark else R.layout.daily_content_widget
             val views = RemoteViews(context.packageName, layoutId)
 
-            // Rotate daily by day of year
             val dayOfYear = Calendar.getInstance().get(Calendar.DAY_OF_YEAR)
             val item = CONTENT[dayOfYear % CONTENT.size]
 
-            val typeEmoji = if (item.type == "ayah") "\uD83D\uDCD6" else "\uD83D\uDCDC"
+            val typeEmoji = if (item.type == "ayah") "📖" else "📜"
             val typeLabel = if (item.type == "ayah") {
                 if (isArabic) "آية اليوم" else "Verse of the Day"
             } else {
@@ -87,11 +103,10 @@ class DailyContentWidget : AppWidgetProvider() {
             views.setTextViewText(R.id.widget_arabic, item.arabic)
             views.setTextViewText(R.id.widget_translation, item.translation)
 
-            // Tap opens app
             val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
             if (launchIntent != null) {
                 val pi = PendingIntent.getActivity(
-                    context, 0, launchIntent,
+                    context, id, launchIntent,
                     PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                 )
                 views.setOnClickPendingIntent(R.id.widget_root, pi)
@@ -99,6 +114,56 @@ class DailyContentWidget : AppWidgetProvider() {
 
             appWidgetManager.updateAppWidget(id, views)
             Log.d(TAG, "Updated: ${item.type} | day=$dayOfYear | ${item.source}")
+        }
+
+        private fun isSystemDarkTheme(context: Context): Boolean {
+            val nightMode = context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
+            return nightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES
+        }
+
+        fun scheduleWidgetUpdate(context: Context) {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val intent = Intent(context, DailyContentWidgetReceiver::class.java)
+            val pendingIntent = PendingIntent.getBroadcast(
+                context, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            // Update once daily at midnight
+            val calendar = Calendar.getInstance().apply {
+                add(Calendar.DAY_OF_YEAR, 1)
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 1)
+                set(Calendar.SECOND, 0)
+            }
+            alarmManager.setRepeating(
+                AlarmManager.RTC_WAKEUP,
+                calendar.timeInMillis,
+                AlarmManager.INTERVAL_DAY,
+                pendingIntent
+            )
+            Log.d(TAG, "Scheduled daily widget update")
+        }
+
+        private fun cancelWidgetUpdate(context: Context) {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val intent = Intent(context, DailyContentWidgetReceiver::class.java)
+            val pendingIntent = PendingIntent.getBroadcast(
+                context, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            alarmManager.cancel(pendingIntent)
+        }
+    }
+}
+
+class DailyContentWidgetReceiver : android.content.BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent) {
+        Log.d("DailyContentWidget", "Broadcast received, updating widget")
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val componentName = ComponentName(context, DailyContentWidget::class.java)
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+        for (id in appWidgetIds) {
+            DailyContentWidget.updateAppWidget(context, appWidgetManager, id)
         }
     }
 }

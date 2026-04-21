@@ -33,6 +33,7 @@ class WidgetUpdateService : Service() {
                     else -> {
                         updateNextPrayerWidget()
                         updateAllPrayersWidget()
+                        updateDailyContentWidget()
                     }
                 }
             } catch (e: Exception) {
@@ -76,6 +77,23 @@ class WidgetUpdateService : Service() {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error updating AllPrayersWidget", e)
+        }
+    }
+
+    private fun updateDailyContentWidget() {
+        try {
+            val appWidgetManager = AppWidgetManager.getInstance(this)
+            val componentName = ComponentName(this, DailyContentWidget::class.java)
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+
+            if (appWidgetIds.isNotEmpty()) {
+                for (appWidgetId in appWidgetIds) {
+                    DailyContentWidget.updateAppWidget(this, appWidgetManager, appWidgetId)
+                }
+                Log.d(TAG, "Updated ${appWidgetIds.size} DailyContentWidget instances")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error updating DailyContentWidget", e)
         }
     }
 

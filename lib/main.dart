@@ -151,11 +151,17 @@ void main() async {
     }(),
   ]);
 
+  final container = ProviderContainer(
+    overrides: [
+      sharedPreferencesServiceProvider.overrideWithValue(prefsService),
+    ],
+  );
+
+  NotificationService.instance.attachContainer(container);
+
   runApp(
-    ProviderScope(
-      overrides: [
-        sharedPreferencesServiceProvider.overrideWithValue(prefsService),
-      ],
+    UncontrolledProviderScope(
+      container: container,
       child: const AuraApp(),
     ),
   );
