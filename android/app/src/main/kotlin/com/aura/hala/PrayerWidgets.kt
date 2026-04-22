@@ -7,6 +7,12 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
+import android.graphics.RectF
+import android.os.SystemClock
 import android.text.format.DateFormat
 import android.util.Log
 import android.widget.RemoteViews
@@ -132,58 +138,51 @@ class NextPrayerWidget : AppWidgetProvider() {
         // Calculate and set time remaining
         val now = System.currentTimeMillis()
         val timeRemainingMs = nextPrayerTime - now
-        val timeRemainingText = if (timeRemainingMs > 0) {
-            val totalMinutes = (timeRemainingMs / 60000).toInt()
-            val hours = totalMinutes / 60
-            val minutes = totalMinutes % 60
-            if (hours > 0) {
-                if (isArabic) {
-                    "${toEasternArabic(hours)} س ${toEasternArabic(minutes)} د"
-                } else {
-                    "$hours h $minutes m"
-                }
-            } else {
-                if (isArabic) {
-                    "${toEasternArabic(minutes)} د"
-                } else {
-                    "$minutes m"
-                }
-            }
-        } else {
-            if (isArabic) "الآن" else "now"
-        }
-        views.setTextViewText(R.id.widget_time_remaining, timeRemainingText)
 
-        // Set seconds countdown
-        val secondsText = if (timeRemainingMs > 0) {
-            val seconds = (timeRemainingMs / 1000).toInt() % 60
-            if (isArabic) {
-                "${toEasternArabic(seconds)} ثانية"
-            } else {
-                "$seconds seconds"
-            }
+        // Live countdown using Chronometer — counts down automatically every second
+        if (timeRemainingMs > 0) {
+            val base = SystemClock.elapsedRealtime() + timeRemainingMs
+            views.setChronometer(R.id.widget_time_remaining, base, null, true)
         } else {
-            ""
+            views.setChronometer(R.id.widget_time_remaining, SystemClock.elapsedRealtime(), null, false)
         }
-        views.setTextViewText(R.id.widget_time_remaining_seconds, secondsText)
 
-        // Set "Next Prayer" label
-        val nextPrayerLabel = if (isArabic) "الصلاة القادمة" else "Next Prayer"
+        // "UNTIL ADHAN" label next to countdown
+        val untilLabel = if (isArabic) "حتى الأذان" else "UNTIL ADHAN"
+        views.setTextViewText(R.id.widget_time_remaining_seconds, untilLabel)
+
+        // Set "PRAYER TIMES" label
+        val nextPrayerLabel = if (isArabic) "أوقات الصلاة" else "PRAYER TIMES"
         views.setTextViewText(R.id.widget_next_prayer_label, nextPrayerLabel)
 
-        // Calculate progress bar based on time remaining
-        // More time remaining = less progress (bar fills up as prayer approaches)
-        val totalMinutesRemaining = (timeRemainingMs / 60000).toInt()
-        val maxMinutes = 180 // 3 hours in minutes
-        val progress = when {
-            totalMinutesRemaining >= 120 -> 10  // 2+ hours left
-            totalMinutesRemaining >= 60 -> 30  // 1-2 hours left
-            totalMinutesRemaining >= 30 -> 60  // 30-60 min left
-            else -> 90  // Less than 30 min
+        // Status line: "ADHAN IN 1h 02m"
+        val statusText = if (timeRemainingMs > 0) {
+            val totalMinutes = (timeRemainingMs / 60000).toInt()
+            val h = totalMinutes / 60
+            val m = totalMinutes % 60
+            if (isArabic) {
+                "الأذان بعد ${toEasternArabic(h)} س ${toEasternArabic(String.format("%02d", m))} د"
+            } else {
+                String.format("ADHAN IN %dh %02dm", h, m)
+            }
+        } else {
+            if (isArabic) "حان وقت الأذان" else "ADHAN TIME"
         }
-        views.setProgressBar(R.id.widget_progress_bar, 100, progress, false)
+        views.setTextViewText(R.id.widget_status_text, statusText)
 
-        // Set date info for combined date card
+        // Ring progress indicator — draw arc bitmap based on actual progress
+        val maxMinutes = 180f
+        val totalMinutesRemaining = (timeRemainingMs / 60000).toFloat()
+        val progress = ((maxMinutes - totalMinutesRemaining) / maxMinutes).coerceIn(0f, 1f)
+        val ringColor = if (isDark) 0xFFF5B301.toInt() else 0xFFB5821B.toInt()
+        val trackColor = if (isDark) 0x14FFFFFF else 0x1A3C2D14
+        val trackColorAlpha = if (isDark) Color.argb(20, 255, 255, 255) else Color.argb(26, 60, 45, 20)
+        val density = context.resources.displayMetrics.density
+        val ringSize = (16 * density).toInt()
+        val ringBitmap = createRingBitmap(progress, ringColor, trackColorAlpha, ringSize, 2f * density)
+        views.setImageViewBitmap(R.id.widget_progress_bar, ringBitmap)
+
+        // Set date info for date card
         val currentDate = Date(now)
 
         // Day of week
@@ -200,7 +199,7 @@ class NextPrayerWidget : AppWidgetProvider() {
         }
         views.setTextViewText(R.id.widget_day_of_week, if (isArabic) dayOfWeekAr else dayOfWeek.toString())
 
-        // Gregorian date
+        // Gregorian date — split into day, month, year for V3 layout
         val gregorianMonthEn = DateFormat.format("MMM", currentDate)
         val gregorianMonthAr = when (gregorianMonthEn.toString()) {
             "Jan" -> "يناير"
@@ -217,24 +216,33 @@ class NextPrayerWidget : AppWidgetProvider() {
             "Dec" -> "ديسمبر"
             else -> gregorianMonthEn.toString()
         }
-        val gregorianDayOfMonth = DateFormat.format("d", currentDate)
-        val gregorianYear = DateFormat.format("yyyy", currentDate)
+        val gregorianDayOfMonth = DateFormat.format("d", currentDate).toString()
+        val gregorianYear = DateFormat.format("yyyy", currentDate).toString()
 
-        val gregorianDateStr = if (isArabic) {
-            "${toEasternArabic(gregorianDayOfMonth.toString())} $gregorianMonthAr ${toEasternArabic(gregorianYear.toString())}"
-        } else {
-            "$gregorianDayOfMonth $gregorianMonthEn $gregorianYear"
-        }
-        views.setTextViewText(R.id.widget_gregorian_date, gregorianDateStr)
+        // V3 split fields
+        views.setTextViewText(R.id.widget_gregorian_label, if (isArabic) "الميلادي" else "GREGORIAN")
+        views.setTextViewText(R.id.widget_gregorian_day,
+            if (isArabic) "${toEasternArabic(gregorianDayOfMonth)} " else "$gregorianDayOfMonth ")
+        views.setTextViewText(R.id.widget_gregorian_month,
+            if (isArabic) gregorianMonthAr else gregorianMonthEn.toString())
+        views.setTextViewText(R.id.widget_gregorian_year,
+            if (isArabic) toEasternArabic(gregorianYear) else gregorianYear)
 
         // Hijri date - calculated dynamically
         val hijriDate = calculateHijriDate(currentDate)
+        views.setTextViewText(R.id.widget_hijri_label, if (isArabic) "الهجري" else "HIJRI")
         val hijriDateStr = if (isArabic) {
-            "${toEasternArabic(hijriDate["day"].toString())} ${hijriDate["monthAr"]} ${toEasternArabic(hijriDate["year"].toString())}"
+            "${toEasternArabic(hijriDate["day"].toString())} ${hijriDate["monthAr"]}"
         } else {
-            "${hijriDate["day"]} ${hijriDate["monthEn"]} ${hijriDate["year"]}"
+            "${hijriDate["day"]} ${hijriDate["monthEn"]}"
         }
         views.setTextViewText(R.id.widget_hijri_date, hijriDateStr)
+        val hijriYearStr = if (isArabic) {
+            "${toEasternArabic(hijriDate["year"].toString())} هـ"
+        } else {
+            "${hijriDate["year"]} AH"
+        }
+        views.setTextViewText(R.id.widget_hijri_year, hijriYearStr)
 
         // Create click intent to open app - make entire widget clickable
         val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
@@ -257,6 +265,33 @@ class NextPrayerWidget : AppWidgetProvider() {
     private fun isSystemDarkTheme(context: Context): Boolean {
         val nightMode = context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
         return nightMode == android.content.res.Configuration.UI_MODE_NIGHT_YES
+    }
+
+    private fun createRingBitmap(progress: Float, ringColor: Int, trackColor: Int, size: Int, strokeWidth: Float): Bitmap {
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val center = size / 2f
+        val radius = (size - strokeWidth) / 2f
+        val rect = RectF(center - radius, center - radius, center + radius, center + radius)
+
+        val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE
+            this.strokeWidth = strokeWidth
+            color = trackColor
+        }
+        canvas.drawCircle(center, center, radius, trackPaint)
+
+        if (progress > 0f) {
+            val arcPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                this.strokeWidth = strokeWidth
+                color = ringColor
+                strokeCap = Paint.Cap.ROUND
+            }
+            canvas.drawArc(rect, -90f, 360f * progress, false, arcPaint)
+        }
+
+        return bitmap
     }
 
     private fun scheduleWidgetUpdate(context: Context) {

@@ -7,15 +7,15 @@ class AppTheme {
   static const String arabicFont = 'Cairo'; // You need to add Cairo font to assets
 
   // Primary color palette
-  static const Color primary = Color(0xFF007DFF);
+  static const Color primary = Color(0xFFF5A623);
   static const Color onPrimary = Color(0xFFFFFFFF);
-  static const Color primaryContainerLight = Color(0xFFD9E6FF);
-  static const Color onPrimaryContainerLight = Color(0xFF001C3B);
-  static const Color primaryContainerDark = Color(0xFF0052B3);
-  static const Color onPrimaryContainerDark = Color(0xFFD9E6FF);
+  static const Color primaryContainerLight = Color(0xFFFFEACC);
+  static const Color onPrimaryContainerLight = Color(0xFF2A1800);
+  static const Color primaryContainerDark = Color(0xFFF5A623);
+  static const Color onPrimaryContainerDark = Color(0xFFFFEACC);
 
   // Secondary/Accent colors
-  static const Color secondary = Color(0xFF00BCD4);
+  static const Color secondary = Color(0xFFD4A43A);
   static const Color onSecondary = Color(0xFFFFFFFF);
 
   // Surface colors
@@ -153,15 +153,21 @@ class AppTheme {
     ],
   );
 
+  // Dark theme primary (brighter for visibility on dark surfaces)
+  static const Color primaryDark = Color(0xFFFFBF2E);
+  static const Color onPrimaryDark = Color(0xFF2A1800);
+  static const Color primaryContainerDarkTheme = Color(0xFFF5A623);
+  static const Color onPrimaryContainerDarkTheme = Color(0xFFFFEACC);
+
   // Dark theme
   static ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
     colorScheme: const ColorScheme.dark(
-      primary: primary,
-      onPrimary: onPrimary,
-      primaryContainer: primaryContainerDark,
-      onPrimaryContainer: onPrimaryContainerDark,
+      primary: primaryDark,
+      onPrimary: onPrimaryDark,
+      primaryContainer: primaryContainerDarkTheme,
+      onPrimaryContainer: onPrimaryContainerDarkTheme,
       secondary: secondary,
       onSecondary: onSecondary,
       surface: surfaceDark,
@@ -263,10 +269,10 @@ class AppTheme {
     useMaterial3: true,
     brightness: Brightness.dark,
     colorScheme: const ColorScheme.dark(
-      primary: primary,
-      onPrimary: onPrimary,
-      primaryContainer: primaryContainerDark,
-      onPrimaryContainer: onPrimaryContainerDark,
+      primary: primaryDark,
+      onPrimary: onPrimaryDark,
+      primaryContainer: primaryContainerDarkTheme,
+      onPrimaryContainer: onPrimaryContainerDarkTheme,
       secondary: secondary,
       onSecondary: onSecondary,
       surface: surfaceAmoled,

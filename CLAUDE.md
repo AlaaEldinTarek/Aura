@@ -158,7 +158,7 @@ lib/
 │   │   ├── sync_service.dart          # Data sync coordination service
 │   │   └── firebase_options.dart      # Firebase platform config
 │   ├── theme/
-│   │   └── app_theme.dart             # Light/dark/amoled Material 3, primary #007DFF, cyan #00BCD4
+│   │   └── app_theme.dart             # Light/dark/amoled Material 3, primary #F5A623 (amber), secondary #D4A43A
 │   ├── utils/
 │   │   ├── date_formatter.dart        # Bilingual date formatting, month/day names
 │   │   ├── number_formatter.dart      # Arabic-Hindi numeral conversion
@@ -438,7 +438,7 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 ## Theme System
 
 Defined in `lib/core/theme/app_theme.dart`:
-- **Light**: Primary blue (#007DFF), cyan secondary (#00BCD4), white/light surfaces
+- **Light**: Primary amber (#F5A623), gold secondary (#D4A43A), white/light surfaces
 - **Dark**: Same primary colors, dark surfaces (#1A1B1E, #111317)
 - **AMOLED**: True black surfaces for OLED screens
 - **Dynamic color**: Optional Material You dynamic colors via `dynamic_color` package
