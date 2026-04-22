@@ -4,7 +4,7 @@ class AppConstants {
   AppConstants._();
 
   // Brand Colors
-  static const Color primaryColor = Color(0xFFF5A623);
+  static const Color primaryColor = Color(0xFFB5821B);
   static const Color primaryDark = Color(0xFFD4890A);
   static const Color primaryLight = Color(0xFFFFD37A);
 

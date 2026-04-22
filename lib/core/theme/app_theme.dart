@@ -7,11 +7,11 @@ class AppTheme {
   static const String arabicFont = 'Cairo'; // You need to add Cairo font to assets
 
   // Primary color palette
-  static const Color primary = Color(0xFFF5A623);
+  static const Color primary = Color(0xFFB5821B);
   static const Color onPrimary = Color(0xFFFFFFFF);
   static const Color primaryContainerLight = Color(0xFFFFEACC);
   static const Color onPrimaryContainerLight = Color(0xFF2A1800);
-  static const Color primaryContainerDark = Color(0xFFF5A623);
+  static const Color primaryContainerDark = Color(0xFFF5B301);
   static const Color onPrimaryContainerDark = Color(0xFFFFEACC);
 
   // Secondary/Accent colors
@@ -156,7 +156,7 @@ class AppTheme {
   // Dark theme primary (brighter for visibility on dark surfaces)
   static const Color primaryDark = Color(0xFFFFBF2E);
   static const Color onPrimaryDark = Color(0xFF2A1800);
-  static const Color primaryContainerDarkTheme = Color(0xFFF5A623);
+  static const Color primaryContainerDarkTheme = Color(0xFFF5B301);
   static const Color onPrimaryContainerDarkTheme = Color(0xFFFFEACC);
 
   // Dark theme
