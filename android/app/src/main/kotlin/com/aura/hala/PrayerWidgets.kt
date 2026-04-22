@@ -147,15 +147,11 @@ class NextPrayerWidget : AppWidgetProvider() {
             views.setChronometer(R.id.widget_time_remaining, SystemClock.elapsedRealtime(), null, false)
         }
 
-        // "UNTIL ADHAN" label next to countdown
-        val untilLabel = if (isArabic) "حتى الأذان" else "UNTIL ADHAN"
+        // "UNTIL AZAN" label next to countdown
+        val untilLabel = if (isArabic) "حتى الأذان" else "UNTIL AZAN"
         views.setTextViewText(R.id.widget_time_remaining_seconds, untilLabel)
 
-        // Set "PRAYER TIMES" label
-        val nextPrayerLabel = if (isArabic) "أوقات الصلاة" else "PRAYER TIMES"
-        views.setTextViewText(R.id.widget_next_prayer_label, nextPrayerLabel)
-
-        // Status line: "ADHAN IN 1h 02m"
+        // Status line: "AZAN IN 1h 02m"
         val statusText = if (timeRemainingMs > 0) {
             val totalMinutes = (timeRemainingMs / 60000).toInt()
             val h = totalMinutes / 60
@@ -163,10 +159,10 @@ class NextPrayerWidget : AppWidgetProvider() {
             if (isArabic) {
                 "الأذان بعد ${toEasternArabic(h)} س ${toEasternArabic(String.format("%02d", m))} د"
             } else {
-                String.format("ADHAN IN %dh %02dm", h, m)
+                String.format("AZAN IN %dh %02dm", h, m)
             }
         } else {
-            if (isArabic) "حان وقت الأذان" else "ADHAN TIME"
+            if (isArabic) "حتى موعد الأذان" else "AZAN TIME"
         }
         views.setTextViewText(R.id.widget_status_text, statusText)
 
@@ -231,12 +227,14 @@ class NextPrayerWidget : AppWidgetProvider() {
         // Hijri date - calculated dynamically
         val hijriDate = calculateHijriDate(currentDate)
         views.setTextViewText(R.id.widget_hijri_label, if (isArabic) "الهجري" else "HIJRI")
-        val hijriDateStr = if (isArabic) {
-            "${toEasternArabic(hijriDate["day"].toString())} ${hijriDate["monthAr"]}"
-        } else {
-            "${hijriDate["day"]} ${hijriDate["monthEn"]}"
-        }
-        views.setTextViewText(R.id.widget_hijri_date, hijriDateStr)
+
+        // Hijri day
+        views.setTextViewText(R.id.widget_hijri_day,
+            if (isArabic) " ${toEasternArabic(hijriDate["day"].toString())}" else "${hijriDate["day"]} ")
+
+        // Hijri month
+        views.setTextViewText(R.id.widget_hijri_month,
+            if (isArabic) hijriDate["monthAr"] ?: "" else hijriDate["monthEn"] ?: "")
         val hijriYearStr = if (isArabic) {
             "${toEasternArabic(hijriDate["year"].toString())} هـ"
         } else {
@@ -390,14 +388,14 @@ class NextPrayerWidget : AppWidgetProvider() {
 
         // Month names
         val monthNamesAr = listOf(
-            "محرم", "صفر", "ربيع الأول", "ربيع الآخر",
-            "جمادى الأولى", "جمادى الآخرة", "رجب", "شعبان",
-            "رمضان", "شوال", "ذو القعدة", "ذو الحجة"
+            "محرم", "صفر", "ربيع I", "ربيع II",
+            "جمادى I", "جمادى II", "رجب", "شعبان",
+            "رمضان", "شوال", "ذو قعدة", "ذو حجة"
         )
         val monthNamesEn = listOf(
-            "Muharram", "Safar", "Rabi al-Awwal", "Rabi al-Thani",
-            "Jumada al-Awwal", "Jumada al-Thani", "Rajab", "Shaban",
-            "Ramadan", "Shawwal", "Dhu al-Qadah", "Dhu al-Hijjah"
+            "Muh.", "Saf.", "Rabi I", "Rabi II",
+            "Jum. I", "Jum. II", "Raj.", "Sha.",
+            "Ram.", "Shaw.", "Dhu Q.", "Dhu H."
         )
 
         return mapOf(

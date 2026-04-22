@@ -19,7 +19,7 @@
         android:layout_weight="1.4"
         android:orientation="vertical">
 
-        <!-- Row 1: label + location -->
+        <!-- Row 1: prayer name + time -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -27,46 +27,11 @@
             android:gravity="center_vertical">
 
             <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="🕌"
-                android:textSize="10sp" />
-
-            <TextView
-                android:id="@+id/widget_next_prayer_label"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="PRAYER TIMES"
-                android:textSize="8sp"
-                android:textColor="#A8ADB8"
-                android:fontFamily="monospace"
-                android:letterSpacing="0.15"
-                android:layout_marginStart="4dp" />
-
-            <TextView
-                android:id="@+id/widget_location_small"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Riyadh"
-                android:textSize="9sp"
-                android:textColor="#A8ADB8" />
-        </LinearLayout>
-
-        <!-- Row 2: prayer name + time -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginTop="2dp">
-
-            <TextView
                 android:id="@+id/widget_next_prayer_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Asr"
-                android:textSize="22sp"
+                android:textSize="30sp"
                 android:textColor="#F4F5F7"
                 android:textStyle="bold"
                 android:fontFamily="sans-serif-medium"
@@ -78,7 +43,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="03:25"
-                android:textSize="13sp"
+                android:textSize="18sp"
                 android:textColor="#F5B301"
                 android:fontFamily="monospace"
                 android:layout_marginStart="8dp" />
@@ -88,7 +53,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="PM"
-                android:textSize="9sp"
+                android:textSize="13sp"
                 android:textColor="#A8ADB8"
                 android:layout_marginStart="2dp" />
         </LinearLayout>
@@ -99,24 +64,26 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="4dp"
             android:background="@drawable/widget_v3_pill_dark"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
             android:paddingTop="3dp"
             android:paddingBottom="3dp"
-            android:layout_marginTop="3dp">
+            android:minHeight="26dp">
 
             <ImageView
                 android:id="@+id/widget_progress_bar"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
                 android:scaleType="fitCenter" />
 
             <Chronometer
                 android:id="@+id/widget_time_remaining"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textSize="9sp"
+                android:textSize="13sp"
                 android:textColor="#FFD37A"
                 android:fontFamily="monospace"
                 android:countDown="true"
@@ -126,17 +93,40 @@
                 android:id="@+id/widget_time_remaining_seconds"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="UNTIL ADHAN"
-                android:textSize="7sp"
+                android:text="UNTIL AZAN"
+                android:textSize="10sp"
                 android:textColor="#A8ADB8"
                 android:fontFamily="monospace"
                 android:layout_marginStart="3dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <ImageView
+                android:id="@+id/widget_location_icon"
+                android:layout_width="9dp"
+                android:layout_height="9dp"
+                android:src="@drawable/widget_location_pin"
+                android:scaleType="fitCenter"
+                android:layout_marginEnd="2dp" />
+
+            <TextView
+                android:id="@+id/widget_location_small"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Riyadh"
+                android:textSize="10sp"
+                android:textColor="#A8ADB8" />
         </LinearLayout>
     </LinearLayout>
 
     <!-- ── Right: date card ── -->
     <LinearLayout
-        android:layout_width="140dp"
+        android:layout_width="120dp"
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:background="@drawable/widget_v3_panel_dark"
@@ -161,7 +151,7 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             android:orientation="horizontal"
-            android:layout_marginTop="2dp">
+            android:layout_marginTop="0dp">
 
             <!-- Gregorian -->
             <LinearLayout
@@ -246,17 +236,34 @@
                     android:letterSpacing="0.12"
                     android:gravity="center" />
 
-                <TextView
-                    android:id="@+id/widget_hijri_date"
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="4 Dhu al-Qadah"
-                    android:textSize="9sp"
-                    android:textColor="#D4D7DE"
-                    android:textStyle="bold"
-                    android:gravity="center"
-                    android:maxLines="2"
-                    android:ellipsize="end" />
+                    android:orientation="horizontal"
+                    android:gravity="center">
+
+                    <TextView
+                        android:id="@+id/widget_hijri_day"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="4 "
+                        android:textSize="13sp"
+                        android:textColor="#F4F5F7"
+                        android:fontFamily="sans-serif-medium"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/widget_hijri_month"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Dhu al-Qadah"
+                        android:textSize="13sp"
+                        android:textColor="#F5B301"
+                        android:fontFamily="sans-serif-medium"
+                        android:textStyle="bold"
+                        android:maxLines="1"
+                        android:ellipsize="end" />
+                </LinearLayout>
 
                 <TextView
                     android:id="@+id/widget_hijri_year"
