@@ -182,7 +182,7 @@
                         android:id="@+id/widget_gregorian_day"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="21 "
+                        android:text="21"
                         android:textSize="13sp"
                         android:textColor="#F4F5F7"
                         android:fontFamily="sans-serif-medium"
@@ -196,7 +196,8 @@
                         android:textSize="13sp"
                         android:textColor="#F5B301"
                         android:fontFamily="sans-serif-medium"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:layout_marginStart="4dp" />
                 </LinearLayout>
 
                 <TextView
@@ -246,7 +247,7 @@
                         android:id="@+id/widget_hijri_day"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="4 "
+                        android:text="4"
                         android:textSize="13sp"
                         android:textColor="#F4F5F7"
                         android:fontFamily="sans-serif-medium"
@@ -257,6 +258,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="Dhu al-Qadah"
+                        android:layout_marginStart="4dp"
                         android:textSize="13sp"
                         android:textColor="#F5B301"
                         android:fontFamily="sans-serif-medium"

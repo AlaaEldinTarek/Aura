@@ -148,7 +148,7 @@ class NextPrayerWidget : AppWidgetProvider() {
         }
 
         // "UNTIL AZAN" label next to countdown
-        val untilLabel = if (isArabic) "حتى الأذان" else "UNTIL AZAN"
+        val untilLabel = if (isArabic) "حتى موعد الأذان" else "UNTIL AZAN"
         views.setTextViewText(R.id.widget_time_remaining_seconds, untilLabel)
 
         // Status line: "AZAN IN 1h 02m"
@@ -218,7 +218,7 @@ class NextPrayerWidget : AppWidgetProvider() {
         // V3 split fields
         views.setTextViewText(R.id.widget_gregorian_label, if (isArabic) "الميلادي" else "GREGORIAN")
         views.setTextViewText(R.id.widget_gregorian_day,
-            if (isArabic) "${toEasternArabic(gregorianDayOfMonth)} " else "$gregorianDayOfMonth ")
+            if (isArabic) toEasternArabic(gregorianDayOfMonth) else "$gregorianDayOfMonth")
         views.setTextViewText(R.id.widget_gregorian_month,
             if (isArabic) gregorianMonthAr else gregorianMonthEn.toString())
         views.setTextViewText(R.id.widget_gregorian_year,
@@ -230,7 +230,7 @@ class NextPrayerWidget : AppWidgetProvider() {
 
         // Hijri day
         views.setTextViewText(R.id.widget_hijri_day,
-            if (isArabic) " ${toEasternArabic(hijriDate["day"].toString())}" else "${hijriDate["day"]} ")
+            if (isArabic) toEasternArabic(hijriDate["day"].toString()) else "${hijriDate["day"]}")
 
         // Hijri month
         views.setTextViewText(R.id.widget_hijri_month,

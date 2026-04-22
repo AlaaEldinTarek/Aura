@@ -340,7 +340,7 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
         prayerTimes: updatedPrayerTimes,
         nextPrayer: nextPrayer,
         language: language,
-        locationName: state.location?.cityName,
+        locationName: getLocalizedCityName(state.location?.cityName ?? '', language),
       );
       debugPrint('📱 [UPDATE] Widgets updated with next prayer: ${nextPrayer?.name}');
     } catch (e) {
