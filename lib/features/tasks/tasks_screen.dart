@@ -2430,7 +2430,7 @@ class _CelebrationOverlayState extends State<_CelebrationOverlay>
                                 ),
                                 child: Text(
                                   widget.isArabic ? '🎯  يوم منتج!' : '🎯  Productive day!',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
                                     color: AppConstants.primaryColor,

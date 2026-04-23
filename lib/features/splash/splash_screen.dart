@@ -114,9 +114,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                               .textTheme
                               .displaySmall
                               ?.copyWith(
-                                color: isDark
-                                    ? AppConstants.primaryLight
-                                    : AppConstants.primaryColor,
+                                color: AppConstants.primaryColor,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Roboto',
                               ),
@@ -138,9 +136,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                               .textTheme
                               .displaySmall
                               ?.copyWith(
-                                color: isDark
-                                    ? AppConstants.primaryLight
-                                    : AppConstants.primaryColor,
+                                color: AppConstants.primaryColor,
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Cairo',
                               ),

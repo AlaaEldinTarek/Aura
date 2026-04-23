@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/prayer_record.dart';
 import '../constants/app_constants.dart';
-
 /// Reusable dialog for selecting prayer status (On Time / Late / Missed)
 /// Returns null if user cancels.
 Future<PrayerStatus?> showPrayerStatusDialog({

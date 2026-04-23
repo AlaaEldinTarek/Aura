@@ -89,7 +89,7 @@
                     android:text="٢ س ١٥ د ٣٠ ث"
                     android:textSize="18sp"
                     android:textStyle="bold"
-                    android:textColor="#007DFF"
+                    android:textColor="#F5B301"
                     android:textDirection="rtl" />
 
                 <TextView

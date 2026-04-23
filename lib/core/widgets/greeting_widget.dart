@@ -99,12 +99,12 @@ class GreetingWidget extends ConsumerWidget {
         photoURL,
         fit: BoxFit.cover,
         errorBuilder: (_, __, ___) => Image.asset(
-          'assets/images/logo.png',
+          'assets/images/logo_dark.png',
           fit: BoxFit.cover,
         ),
       );
     }
-    return Image.asset('assets/images/logo.png', fit: BoxFit.cover);
+    return Image.asset('assets/images/logo_dark.png', fit: BoxFit.cover);
   }
 
   (String, String, String, Color) _getTimeBasedGreeting(int hour) {

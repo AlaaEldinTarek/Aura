@@ -307,7 +307,7 @@ class PrayerForegroundService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val primaryColor = 0xFF007DFF.toInt()
+        val primaryColor = 0xFFF5B301.toInt()
         val isArabic = currentLanguage == "ar"
 
         val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)

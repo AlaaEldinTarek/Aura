@@ -158,7 +158,7 @@ lib/
 │   │   ├── sync_service.dart          # Data sync coordination service
 │   │   └── firebase_options.dart      # Firebase platform config
 │   ├── theme/
-│   │   └── app_theme.dart             # Light/dark/amoled Material 3, primary #F5A623 (amber), secondary #D4A43A
+│   │   └── app_theme.dart             # Light/dark/amoled Material 3, primary #B5821B (light) / #F5B301 (dark), secondary #D4A43A
 │   ├── utils/
 │   │   ├── date_formatter.dart        # Bilingual date formatting, month/day names
 │   │   ├── number_formatter.dart      # Arabic-Hindi numeral conversion
@@ -438,12 +438,24 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 ## Theme System
 
 Defined in `lib/core/theme/app_theme.dart`:
-- **Light**: Primary amber (#F5A623), gold secondary (#D4A43A), white/light surfaces
-- **Dark**: Same primary colors, dark surfaces (#1A1B1E, #111317)
-- **AMOLED**: True black surfaces for OLED screens
+- **Visual Identity Color**: `#F5B301` (bright gold) — used everywhere as `AppConstants.primaryColor`
+- **Light**: Primary `#B5821B` (warm gold), dark gold secondary `#D4A43A`, white/light surfaces
+- **Dark**: Primary `#F5B301` (bright gold), dark surfaces (#1A1B1E, #111317)
+- **AMOLED**: True black surfaces for OLED screens, same `#F5B301` primary
 - **Dynamic color**: Optional Material You dynamic colors via `dynamic_color` package
 - Material 3 with custom ColorScheme, CardTheme, ElevatedButtonTheme, InputDecorationTheme
 - Two font families: Roboto (English) and Cairo (Arabic)
+
+### Color Palette (Amber/Gold)
+
+| Role | Light | Dark |
+|------|-------|------|
+| Primary | `#B5821B` | `#F5B301` |
+| AppConstants.primaryColor | `#F5B301` (used everywhere in Flutter) | Same |
+| Native Primary | `#B5821B` | `#F5B301` |
+| Primary Container | `#FFEACC` | `#F5B301` |
+| Secondary/Accent | `#D4A43A` | `#D4A43A` |
+| Widget Accent (light) | `#B5821B` | `#F5B301` (dark widgets) |
 
 ---
 

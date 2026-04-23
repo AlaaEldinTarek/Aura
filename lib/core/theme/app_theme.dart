@@ -4,18 +4,19 @@ import 'package:dynamic_color/dynamic_color.dart';
 class AppTheme {
   // Font families
   static const String primaryFont = 'Roboto';
-  static const String arabicFont = 'Cairo'; // You need to add Cairo font to assets
+  static const String arabicFont =
+      'Cairo'; // You need to add Cairo font to assets
 
   // Primary color palette
   static const Color primary = Color(0xFFB5821B);
   static const Color onPrimary = Color(0xFFFFFFFF);
   static const Color primaryContainerLight = Color(0xFFFFEACC);
   static const Color onPrimaryContainerLight = Color(0xFF2A1800);
-  static const Color primaryContainerDark = Color(0xFFF5B301);
+  static const Color primaryContainerDark = Color(0xFFD4A43A);
   static const Color onPrimaryContainerDark = Color(0xFFFFEACC);
 
   // Secondary/Accent colors
-  static const Color secondary = Color(0xFFD4A43A);
+  static const Color secondary = Color(0xFFB5821B);
   static const Color onSecondary = Color(0xFFFFFFFF);
 
   // Surface colors
@@ -154,7 +155,7 @@ class AppTheme {
   );
 
   // Dark theme primary (brighter for visibility on dark surfaces)
-  static const Color primaryDark = Color(0xFFFFBF2E);
+  static const Color primaryDark = Color(0xFFF5B301);
   static const Color onPrimaryDark = Color(0xFF2A1800);
   static const Color primaryContainerDarkTheme = Color(0xFFF5B301);
   static const Color onPrimaryContainerDarkTheme = Color(0xFFFFEACC);
@@ -436,10 +437,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: colorScheme.primary, width: 2),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
       scaffoldBackgroundColor: backgroundColor,
     );
   }
-
 }

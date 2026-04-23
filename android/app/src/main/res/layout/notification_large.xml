@@ -90,7 +90,7 @@
                     android:text="2h 15m 30s"
                     android:textSize="18sp"
                     android:textStyle="bold"
-                    android:textColor="#007DFF" />
+                    android:textColor="#F5B301" />
 
                 <TextView
                     android:id="@+id/notification_until"

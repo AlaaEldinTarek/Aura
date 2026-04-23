@@ -124,7 +124,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
                     // Logo
                     Image.asset(
-                      'assets/images/logo-0.png',
+                      'assets/images/logo-0_dark.png',
                       width: 80,
                       height: 80,
                     ).animate().fadeIn(duration: 500.ms).scale(

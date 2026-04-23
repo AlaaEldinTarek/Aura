@@ -76,7 +76,7 @@
         android:layout_height="3dp"
         android:max="100"
         android:progress="0"
-        android:progressTint="#007DFF"
+        android:progressTint="#B5821B"
         android:progressBackgroundTint="#E0E0E0" />
 
     <!-- Task Rows -->
@@ -114,7 +114,7 @@
                     android:layout_height="wrap_content"
                     android:text="○"
                     android:textSize="14sp"
-                    android:textColor="#007DFF" />
+                    android:textColor="#B5821B" />
 
                 <TextView
                     android:id="@+id/task_title_0"
@@ -178,7 +178,7 @@
                     android:layout_height="wrap_content"
                     android:text="○"
                     android:textSize="14sp"
-                    android:textColor="#007DFF" />
+                    android:textColor="#B5821B" />
 
                 <TextView
                     android:id="@+id/task_title_1"
@@ -242,7 +242,7 @@
                     android:layout_height="wrap_content"
                     android:text="○"
                     android:textSize="14sp"
-                    android:textColor="#007DFF" />
+                    android:textColor="#B5821B" />
 
                 <TextView
                     android:id="@+id/task_title_2"
@@ -306,7 +306,7 @@
                     android:layout_height="wrap_content"
                     android:text="○"
                     android:textSize="14sp"
-                    android:textColor="#007DFF" />
+                    android:textColor="#B5821B" />
 
                 <TextView
                     android:id="@+id/task_title_3"
@@ -370,7 +370,7 @@
                     android:layout_height="wrap_content"
                     android:text="○"
                     android:textSize="14sp"
-                    android:textColor="#007DFF" />
+                    android:textColor="#B5821B" />
 
                 <TextView
                     android:id="@+id/task_title_4"

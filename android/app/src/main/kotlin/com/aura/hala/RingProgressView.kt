@@ -12,7 +12,7 @@ import android.view.View
  */
 class RingProgressView(context: Context) : View(context) {
 
-    private var progressColor: Int = 0xFF007DFF.toInt()
+    private var progressColor: Int = 0xFFB5821B.toInt()
     private var bgColor: Int = 0x1AFFFFFF
     var strokeWidth: Float = 8f
     private var progress: Float = 0f // 0.0 to 1.0

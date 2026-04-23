@@ -201,7 +201,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Hero(
                       tag: 'app_logo',
                       child: Image.asset(
-                        'assets/images/logo-0.png',
+                        'assets/images/logo-0_dark.png',
                         width: isTablet ? 140 : 120,
                         height: isTablet ? 140 : 120,
                       ),
