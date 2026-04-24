@@ -21,12 +21,13 @@ import java.util.Calendar
 import java.util.Date
 
 /**
- * Next Prayer Widget - Shows the next upcoming prayer time
+ * Next Prayer Widget — ViewFlipper with Next Prayer + Compact Timeline
  */
 class NextPrayerWidget : AppWidgetProvider() {
 
     companion object {
         private const val TAG = "NextPrayerWidget"
+        const val ACTION_SWITCH_VIEW = "com.aura.hala.ACTION_SWITCH_VIEW"
     }
 
     override fun onUpdate(
@@ -34,24 +35,39 @@ class NextPrayerWidget : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        Log.d(TAG, "=== onUpdate called for ${appWidgetIds.size} widgets ===")
-        Log.d(TAG, "Called from: ${Thread.currentThread().stackTrace[3].className}")
+        Log.d(TAG, "onUpdate for ${appWidgetIds.size} widgets")
         for (appWidgetId in appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId)
         }
-
-        // Schedule periodic updates using AlarmManager
         scheduleWidgetUpdate(context)
     }
 
     override fun onEnabled(context: Context) {
-        Log.d(TAG, "Widget enabled")
         scheduleWidgetUpdate(context)
     }
 
     override fun onDisabled(context: Context) {
-        Log.d(TAG, "Widget disabled")
         cancelWidgetUpdate(context)
+    }
+
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action == ACTION_SWITCH_VIEW) {
+            val widgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
+            if (widgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+                val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+                val currentView = prefs.getInt("next_widget_view_$widgetId", 0)
+                val newView = if (currentView == 0) 1 else 0
+                prefs.edit().putInt("next_widget_view_$widgetId", newView).apply()
+                Log.d(TAG, "View flip to $newView for widget $widgetId")
+            }
+        }
+        super.onReceive(context, intent)
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val componentName = ComponentName(context, NextPrayerWidget::class.java)
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+        for (appWidgetId in appWidgetIds) {
+            updateAppWidget(context, appWidgetManager, appWidgetId)
+        }
     }
 
     fun updateAppWidget(
@@ -59,205 +75,202 @@ class NextPrayerWidget : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
     ) {
-        Log.d(TAG, "=== updateAppWidget START for widget $appWidgetId ===")
-        Log.d(TAG, "Time: ${Date(System.currentTimeMillis())}")
-
-        // Get prayer times from shared preferences
         val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
-
-        // Get theme mode
         val themeMode = prefs.getString("themeMode", "system") ?: "system"
-        Log.d(TAG, "ThemeMode from prefs: $themeMode")
-
         val isDark = when (themeMode) {
             "dark" -> true
             "light" -> false
             else -> isSystemDarkTheme(context)
         }
-        Log.d(TAG, "isDark result: $isDark (system=${isSystemDarkTheme(context)})")
-
-        // Get language preference
         val language = prefs.getString("language", "en") ?: "en"
         val isArabic = language == "ar"
-        Log.d(TAG, "Language: $language, isArabic: $isArabic")
 
-        // Use appropriate layout based on theme and language (RTL for Arabic)
-        val layoutId = when {
-            isArabic && isDark -> R.layout.next_prayer_widget_dark_rtl
-            isArabic && !isDark -> R.layout.next_prayer_widget_rtl
-            !isArabic && isDark -> R.layout.next_prayer_widget_dark
-            else -> R.layout.next_prayer_widget
+        // Check which view to show
+        val currentView = prefs.getInt("next_widget_view_$appWidgetId", 0)
+
+        // Select layout: timeline (View 1) uses separate _tl layouts, next prayer (View 0) uses original layouts
+        val layoutId = if (currentView == 1) {
+            when {
+                isArabic && isDark -> R.layout.next_prayer_widget_tl_dark_rtl
+                isArabic && !isDark -> R.layout.next_prayer_widget_tl_rtl
+                !isArabic && isDark -> R.layout.next_prayer_widget_tl_dark
+                else -> R.layout.next_prayer_widget_tl
+            }
+        } else {
+            when {
+                isArabic && isDark -> R.layout.next_prayer_widget_dark_rtl
+                isArabic && !isDark -> R.layout.next_prayer_widget_rtl
+                !isArabic && isDark -> R.layout.next_prayer_widget_dark
+                else -> R.layout.next_prayer_widget
+            }
         }
-        Log.d(TAG, "Selected layout: ${context.resources.getResourceName(layoutId)}")
         val views = RemoteViews(context.packageName, layoutId)
 
-        val nextPrayerName = prefs.getString("next_prayer_name", "Asr") ?: "Asr"
+        val now = System.currentTimeMillis()
+        val nextPrayerNameEn = prefs.getString("next_prayer_name", "Asr") ?: "Asr"
         val nextPrayerNameAr = prefs.getString("next_prayer_name_ar", "العصر") ?: "العصر"
         val nextPrayerTimeStr = prefs.getString("next_prayer_time", "0") ?: "0"
         val nextPrayerTime = nextPrayerTimeStr.toLongOrNull() ?: 0
 
-        // Set next prayer name
-        val nextPrayerDisplay = if (isArabic) nextPrayerNameAr else nextPrayerName
-        views.setTextViewText(R.id.widget_next_prayer_name, nextPrayerDisplay)
+        if (currentView == 0) {
+            // ═══ VIEW 0: Next Prayer (original layout) ═══
+            val nextPrayerDisplay = if (isArabic) nextPrayerNameAr else nextPrayerNameEn
+            views.setTextViewText(R.id.widget_next_prayer_name, nextPrayerDisplay)
 
-        // Set next prayer time (separate time and AM/PM)
-        if (nextPrayerTime > 0) {
-            val date = Date(nextPrayerTime)
-            val cal = Calendar.getInstance().apply { timeInMillis = nextPrayerTime }
-            var hours = cal.get(Calendar.HOUR_OF_DAY)
-            val minutes = cal.get(Calendar.MINUTE)
-            val ampm = if (hours < 12) {
-                if (isArabic) "صباحاً" else "AM"
+            if (nextPrayerTime > 0) {
+                val cal = Calendar.getInstance().apply { timeInMillis = nextPrayerTime }
+                var hours = cal.get(Calendar.HOUR_OF_DAY)
+                val minutes = cal.get(Calendar.MINUTE)
+                val ampm = if (hours < 12) { if (isArabic) "صباحاً" else "AM" } else { if (isArabic) "مساءً" else "PM" }
+                hours = if (hours == 0) 12 else if (hours > 12) hours - 12 else hours
+                if (isArabic) {
+                    views.setTextViewText(R.id.widget_next_prayer_time, "${toEasternArabic(String.format("%02d", hours))}:${toEasternArabic(String.format("%02d", minutes))}")
+                } else {
+                    views.setTextViewText(R.id.widget_next_prayer_time, String.format("%02d:%02d", hours, minutes))
+                }
+                views.setTextViewText(R.id.widget_next_prayer_ampm, ampm)
             } else {
-                if (isArabic) "مساءً" else "PM"
-            }
-            hours = if (hours == 0) 12 else if (hours > 12) hours - 12 else hours
-
-            // Set time
-            if (isArabic) {
-                views.setTextViewText(R.id.widget_next_prayer_time, "${toEasternArabic(String.format("%02d", hours))}:${toEasternArabic(String.format("%02d", minutes))}")
-            } else {
-                views.setTextViewText(R.id.widget_next_prayer_time, String.format("%02d:%02d", hours, minutes))
+                views.setTextViewText(R.id.widget_next_prayer_time, "--:--")
+                views.setTextViewText(R.id.widget_next_prayer_ampm, "")
             }
 
-            // Set AM/PM with smaller text
-            views.setTextViewText(R.id.widget_next_prayer_ampm, ampm)
-        } else {
-            views.setTextViewText(R.id.widget_next_prayer_time, "--:--")
-            views.setTextViewText(R.id.widget_next_prayer_ampm, "")
-        }
+            val locationName = prefs.getString("location_name", null)
+            views.setTextViewText(R.id.widget_location_small,
+                if (!locationName.isNullOrEmpty()) locationName else if (isArabic) "الموقع" else "Location")
 
-        // Set location
-        val locationName = prefs.getString("location_name", null)
-        if (!locationName.isNullOrEmpty()) {
-            views.setTextViewText(R.id.widget_location_small, locationName)
-        } else {
-            views.setTextViewText(R.id.widget_location_small, if (isArabic) "الموقع" else "Location")
-        }
-
-        // Calculate and set time remaining
-        val now = System.currentTimeMillis()
-        val timeRemainingMs = nextPrayerTime - now
-
-        // Live countdown using Chronometer — counts down automatically every second
-        if (timeRemainingMs > 0) {
-            val base = SystemClock.elapsedRealtime() + timeRemainingMs
-            views.setChronometer(R.id.widget_time_remaining, base, null, true)
-        } else {
-            views.setChronometer(R.id.widget_time_remaining, SystemClock.elapsedRealtime(), null, false)
-        }
-
-        // "UNTIL AZAN" label next to countdown
-        val untilLabel = if (isArabic) "حتى موعد الأذان" else "UNTIL AZAN"
-        views.setTextViewText(R.id.widget_time_remaining_seconds, untilLabel)
-
-        // Status line: "AZAN IN 1h 02m"
-        val statusText = if (timeRemainingMs > 0) {
-            val totalMinutes = (timeRemainingMs / 60000).toInt()
-            val h = totalMinutes / 60
-            val m = totalMinutes % 60
-            if (isArabic) {
-                "الأذان بعد ${toEasternArabic(h)} س ${toEasternArabic(String.format("%02d", m))} د"
+            val timeRemainingMs = nextPrayerTime - now
+            if (timeRemainingMs > 0) {
+                views.setChronometer(R.id.widget_time_remaining, SystemClock.elapsedRealtime() + timeRemainingMs, null, true)
             } else {
-                String.format("AZAN IN %dh %02dm", h, m)
+                views.setChronometer(R.id.widget_time_remaining, SystemClock.elapsedRealtime(), null, false)
             }
+            views.setTextViewText(R.id.widget_time_remaining_seconds, if (isArabic) "حتى موعد الأذان" else "UNTIL AZAN")
+
+            val statusText = if (timeRemainingMs > 0) {
+                val totalMin = (timeRemainingMs / 60000).toInt()
+                val h = totalMin / 60; val m = totalMin % 60
+                if (isArabic) "الأذان بعد ${toEasternArabic(h)} س ${toEasternArabic(String.format("%02d", m))} د"
+                else String.format("AZAN IN %dh %02dm", h, m)
+            } else { if (isArabic) "حتى موعد الأذان" else "AZAN TIME" }
+            views.setTextViewText(R.id.widget_status_text, statusText)
+
+            // Ring bitmap
+            val maxMinutes = 180f
+            val progress = ((maxMinutes - (timeRemainingMs / 60000).toFloat()) / maxMinutes).coerceIn(0f, 1f)
+            val ringColor = if (isDark) 0xFFF5B301.toInt() else 0xFFB5821B.toInt()
+            val trackColor = if (isDark) Color.argb(20, 255, 255, 255) else Color.argb(26, 60, 45, 20)
+            val density = context.resources.displayMetrics.density
+            val ringBitmap = createRingBitmap(progress, ringColor, trackColor, (16 * density).toInt(), 2f * density)
+            views.setImageViewBitmap(R.id.widget_progress_bar, ringBitmap)
+
+            // Date card
+            val currentDate = Date(now)
+            val dayOfWeek = DateFormat.format("EEEE", currentDate)
+            val dayOfWeekAr = when (dayOfWeek.toString()) {
+                "Monday" -> "الإثنين"; "Tuesday" -> "الثلاثاء"; "Wednesday" -> "الأربعاء"
+                "Thursday" -> "الخميس"; "Friday" -> "الجمعة"; "Saturday" -> "السبت"
+                "Sunday" -> "الأحد"; else -> dayOfWeek.toString()
+            }
+            views.setTextViewText(R.id.widget_day_of_week, if (isArabic) dayOfWeekAr else dayOfWeek.toString())
+
+            val gregorianMonthEn = DateFormat.format("MMM", currentDate)
+            val gregorianMonthAr = when (gregorianMonthEn.toString()) {
+                "Jan" -> "يناير"; "Feb" -> "فبراير"; "Mar" -> "مارس"; "Apr" -> "أبريل"
+                "May" -> "مايو"; "Jun" -> "يونيو"; "Jul" -> "يوليو"; "Aug" -> "أغسطس"
+                "Sep" -> "سبتمبر"; "Oct" -> "أكتوبر"; "Nov" -> "نوفمبر"; "Dec" -> "ديسمبر"
+                else -> gregorianMonthEn.toString()
+            }
+            val gregorianDay = DateFormat.format("d", currentDate).toString()
+            val gregorianYear = DateFormat.format("yyyy", currentDate).toString()
+
+            views.setTextViewText(R.id.widget_gregorian_label, if (isArabic) "الميلادي" else "GREGORIAN")
+            views.setTextViewText(R.id.widget_gregorian_day, if (isArabic) toEasternArabic(gregorianDay) else gregorianDay)
+            views.setTextViewText(R.id.widget_gregorian_month, if (isArabic) gregorianMonthAr else gregorianMonthEn.toString())
+            views.setTextViewText(R.id.widget_gregorian_year, if (isArabic) toEasternArabic(gregorianYear) else gregorianYear)
+
+            val hijriDate = calculateHijriDate(currentDate)
+            views.setTextViewText(R.id.widget_hijri_label, if (isArabic) "الهجري" else "HIJRI")
+            views.setTextViewText(R.id.widget_hijri_day, if (isArabic) toEasternArabic(hijriDate["day"].toString()) else "${hijriDate["day"]}")
+            views.setTextViewText(R.id.widget_hijri_month, if (isArabic) hijriDate["monthAr"] ?: "" else hijriDate["monthEn"] ?: "")
+            val hijriYearStr = if (isArabic) "${toEasternArabic(hijriDate["year"].toString())} هـ" else "${hijriDate["year"]} AH"
+            views.setTextViewText(R.id.widget_hijri_year, hijriYearStr)
         } else {
-            if (isArabic) "حتى موعد الأذان" else "AZAN TIME"
-        }
-        views.setTextViewText(R.id.widget_status_text, statusText)
-
-        // Ring progress indicator — draw arc bitmap based on actual progress
-        val maxMinutes = 180f
-        val totalMinutesRemaining = (timeRemainingMs / 60000).toFloat()
-        val progress = ((maxMinutes - totalMinutesRemaining) / maxMinutes).coerceIn(0f, 1f)
-        val ringColor = if (isDark) 0xFFF5B301.toInt() else 0xFFB5821B.toInt()
-        val trackColor = if (isDark) 0x14FFFFFF else 0x1A3C2D14
-        val trackColorAlpha = if (isDark) Color.argb(20, 255, 255, 255) else Color.argb(26, 60, 45, 20)
-        val density = context.resources.displayMetrics.density
-        val ringSize = (16 * density).toInt()
-        val ringBitmap = createRingBitmap(progress, ringColor, trackColorAlpha, ringSize, 2f * density)
-        views.setImageViewBitmap(R.id.widget_progress_bar, ringBitmap)
-
-        // Set date info for date card
-        val currentDate = Date(now)
-
-        // Day of week
-        val dayOfWeek = DateFormat.format("EEEE", currentDate)
-        val dayOfWeekAr = when (dayOfWeek.toString()) {
-            "Monday" -> "الإثنين"
-            "Tuesday" -> "الثلاثاء"
-            "Wednesday" -> "الأربعاء"
-            "Thursday" -> "الخميس"
-            "Friday" -> "الجمعة"
-            "Saturday" -> "السبت"
-            "Sunday" -> "الأحد"
-            else -> dayOfWeek.toString()
-        }
-        views.setTextViewText(R.id.widget_day_of_week, if (isArabic) dayOfWeekAr else dayOfWeek.toString())
-
-        // Gregorian date — split into day, month, year for V3 layout
-        val gregorianMonthEn = DateFormat.format("MMM", currentDate)
-        val gregorianMonthAr = when (gregorianMonthEn.toString()) {
-            "Jan" -> "يناير"
-            "Feb" -> "فبراير"
-            "Mar" -> "مارس"
-            "Apr" -> "أبريل"
-            "May" -> "مايو"
-            "Jun" -> "يونيو"
-            "Jul" -> "يوليو"
-            "Aug" -> "أغسطس"
-            "Sep" -> "سبتمبر"
-            "Oct" -> "أكتوبر"
-            "Nov" -> "نوفمبر"
-            "Dec" -> "ديسمبر"
-            else -> gregorianMonthEn.toString()
-        }
-        val gregorianDayOfMonth = DateFormat.format("d", currentDate).toString()
-        val gregorianYear = DateFormat.format("yyyy", currentDate).toString()
-
-        // V3 split fields
-        views.setTextViewText(R.id.widget_gregorian_label, if (isArabic) "الميلادي" else "GREGORIAN")
-        views.setTextViewText(R.id.widget_gregorian_day,
-            if (isArabic) toEasternArabic(gregorianDayOfMonth) else "$gregorianDayOfMonth")
-        views.setTextViewText(R.id.widget_gregorian_month,
-            if (isArabic) gregorianMonthAr else gregorianMonthEn.toString())
-        views.setTextViewText(R.id.widget_gregorian_year,
-            if (isArabic) toEasternArabic(gregorianYear) else gregorianYear)
-
-        // Hijri date - calculated dynamically
-        val hijriDate = calculateHijriDate(currentDate)
-        views.setTextViewText(R.id.widget_hijri_label, if (isArabic) "الهجري" else "HIJRI")
-
-        // Hijri day
-        views.setTextViewText(R.id.widget_hijri_day,
-            if (isArabic) toEasternArabic(hijriDate["day"].toString()) else "${hijriDate["day"]}")
-
-        // Hijri month
-        views.setTextViewText(R.id.widget_hijri_month,
-            if (isArabic) hijriDate["monthAr"] ?: "" else hijriDate["monthEn"] ?: "")
-        val hijriYearStr = if (isArabic) {
-            "${toEasternArabic(hijriDate["year"].toString())} هـ"
-        } else {
-            "${hijriDate["year"]} AH"
-        }
-        views.setTextViewText(R.id.widget_hijri_year, hijriYearStr)
-
-        // Create click intent to open app - make entire widget clickable
-        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
-        intent?.let {
-            val pendingIntent = PendingIntent.getActivity(
-                context,
-                appWidgetId,
-                it,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            // ═══ VIEW 1: Timeline (separate _tl layout) ═══
+            val prayers = listOf(
+                Triple("fajr_time", "Fajr", "الفجر"),
+                Triple("sunrise_time", "Sunrise", "الشروق"),
+                Triple("dhuhr_time", "Zuhr", "الظهر"),
+                Triple("asr_time", "Asr", "العصر"),
+                Triple("maghrib_time", "Maghrib", "المغرب"),
+                Triple("isha_time", "Isha", "العشاء")
             )
-            views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
+
+            var currentNameEn: String? = null
+            var mostRecentTime = 0L
+            for ((key, nameEn, _) in prayers) {
+                val t = prefs.getString(key, null)?.toLongOrNull() ?: 0
+                if (t > 0 && t <= now && t > mostRecentTime) {
+                    mostRecentTime = t
+                    currentNameEn = nameEn
+                }
+            }
+
+            val dotNow = if (isDark) R.drawable.widget_timeline_dot_now_dark else R.drawable.widget_timeline_dot_now
+            val dotNext = if (isDark) R.drawable.widget_timeline_dot_next_dark else R.drawable.widget_timeline_dot_next
+            val dotPast = if (isDark) R.drawable.widget_timeline_dot_past_dark else R.drawable.widget_timeline_dot_past
+            val dotFuture = if (isDark) R.drawable.widget_timeline_dot_future_dark else R.drawable.widget_timeline_dot_future
+            val colorNow = if (isDark) 0xFFF4F5F7.toInt() else 0xFF2A2418.toInt()
+            val colorNext = if (isDark) 0xFFFFD37A.toInt() else 0xFF8A6110.toInt()
+            val colorMuted = if (isDark) 0xFF6B7180.toInt() else 0xFF9A8F78.toInt()
+
+            val dotIds = intArrayOf(R.id.timeline_dot_0, R.id.timeline_dot_1, R.id.timeline_dot_2, R.id.timeline_dot_3, R.id.timeline_dot_4, R.id.timeline_dot_5)
+            val nameIds = intArrayOf(R.id.timeline_name_0, R.id.timeline_name_1, R.id.timeline_name_2, R.id.timeline_name_3, R.id.timeline_name_4, R.id.timeline_name_5)
+            val timeIds = intArrayOf(R.id.timeline_time_0, R.id.timeline_time_1, R.id.timeline_time_2, R.id.timeline_time_3, R.id.timeline_time_4, R.id.timeline_time_5)
+
+            for (i in prayers.indices) {
+                val (key, nameEn, nameAr) = prayers[i]
+                val t = prefs.getString(key, null)?.toLongOrNull() ?: 0
+                val isCurrent = nameEn == currentNameEn
+                val isNext = nameEn == nextPrayerNameEn
+                val isPast = t > 0 && t <= now && !isCurrent
+
+                views.setImageViewResource(dotIds[i], when {
+                    isCurrent -> dotNow; isNext -> dotNext; isPast -> dotPast; else -> dotFuture
+                })
+
+                views.setTextViewText(nameIds[i], if (isArabic) nameAr else nameEn)
+                val nameColor = when { isCurrent -> colorNow; isNext -> colorNext; else -> colorMuted }
+                views.setTextColor(nameIds[i], nameColor)
+
+                val timeColor = when { isCurrent -> colorNow; isNext -> colorNext; else -> colorMuted }
+                views.setTextColor(timeIds[i], timeColor)
+
+                if (t > 0) {
+                    val cal = Calendar.getInstance().apply { timeInMillis = t }
+                    var h = cal.get(Calendar.HOUR_OF_DAY)
+                    val m = cal.get(Calendar.MINUTE)
+                    val ampm = if (h < 12) { if (isArabic) "ص" else "a" } else { if (isArabic) "م" else "p" }
+                    h = if (h == 0) 12 else if (h > 12) h - 12 else h
+                    views.setTextViewText(timeIds[i],
+                        if (isArabic) "${toEasternArabic(h)}:${toEasternArabic(String.format("%02d", m))} $ampm"
+                        else String.format("%d:%02d%s", h, m, ampm))
+                } else {
+                    views.setTextViewText(timeIds[i], "--:--")
+                }
+            }
         }
 
-        // Update widget
-        appWidgetManager.updateAppWidget(appWidgetId, views)
+        // Tap to flip view
+        val flipIntent = Intent(context, NextPrayerWidget::class.java).apply {
+            action = ACTION_SWITCH_VIEW
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+        }
+        views.setOnClickPendingIntent(R.id.widget_root,
+            PendingIntent.getBroadcast(context, appWidgetId * 10 + 7, flipIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
 
-        Log.d(TAG, "Updated widget $appWidgetId: Next prayer is $nextPrayerDisplay")
+        appWidgetManager.updateAppWidget(appWidgetId, views)
+        Log.d(TAG, "Updated widget $appWidgetId view=$currentView")
     }
 
     private fun isSystemDarkTheme(context: Context): Boolean {
@@ -271,150 +284,85 @@ class NextPrayerWidget : AppWidgetProvider() {
         val center = size / 2f
         val radius = (size - strokeWidth) / 2f
         val rect = RectF(center - radius, center - radius, center + radius, center + radius)
-
-        val trackPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            this.strokeWidth = strokeWidth
-            color = trackColor
-        }
-        canvas.drawCircle(center, center, radius, trackPaint)
-
+        canvas.drawCircle(center, center, radius, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE; this.strokeWidth = strokeWidth; color = trackColor
+        })
         if (progress > 0f) {
-            val arcPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-                style = Paint.Style.STROKE
-                this.strokeWidth = strokeWidth
-                color = ringColor
-                strokeCap = Paint.Cap.ROUND
-            }
-            canvas.drawArc(rect, -90f, 360f * progress, false, arcPaint)
+            canvas.drawArc(rect, -90f, 360f * progress, false, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE; this.strokeWidth = strokeWidth; color = ringColor; strokeCap = Paint.Cap.ROUND
+            })
         }
+        return bitmap
+    }
 
+    private fun createProgressBitmap(progress: Float, fillColor: Int, trackColor: Int, width: Int, height: Int): Bitmap {
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val r = height / 2f
+        canvas.drawRoundRect(RectF(0f, 0f, width.toFloat(), height.toFloat()), r, r,
+            Paint(Paint.ANTI_ALIAS_FLAG).apply { color = trackColor; style = Paint.Style.FILL })
+        if (progress > 0f) {
+            val fillW = width * progress.coerceIn(0f, 1f)
+            canvas.drawRoundRect(RectF(0f, 0f, fillW, height.toFloat()), r, r,
+                Paint(Paint.ANTI_ALIAS_FLAG).apply { color = fillColor; style = Paint.Style.FILL })
+        }
         return bitmap
     }
 
     private fun scheduleWidgetUpdate(context: Context) {
-        Log.d(TAG, "=== scheduleWidgetUpdate called ===")
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, NextPrayerWidgetReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // Update every 30 seconds for accurate seconds countdown
-        val interval = 30000L
-        alarmManager.setRepeating(
-            AlarmManager.RTC_WAKEUP,
-            System.currentTimeMillis(),
-            interval,
-            pendingIntent
-        )
-
-        Log.d(TAG, "Scheduled widget update every $interval ms")
+        val pendingIntent = PendingIntent.getBroadcast(context, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 30000L, pendingIntent)
     }
 
     private fun cancelWidgetUpdate(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, NextPrayerWidgetReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        val pendingIntent = PendingIntent.getBroadcast(context, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         alarmManager.cancel(pendingIntent)
     }
 
-    // Convert Western Arabic numerals to Eastern Arabic numerals
     private fun toEasternArabic(number: String): String {
         val western = "0123456789"
         val eastern = "٠١٢٣٤٥٦٧٨٩"
-        return number.map { digit ->
-            val index = western.indexOf(digit)
-            if (index >= 0) eastern[index] else digit
-        }.joinToString("")
+        return number.map { digit -> val i = western.indexOf(digit); if (i >= 0) eastern[i] else digit }.joinToString("")
     }
 
-    // Convert Western Arabic numerals to Eastern Arabic numerals (Int version)
-    private fun toEasternArabic(number: Int): String {
-        return toEasternArabic(number.toString())
-    }
+    private fun toEasternArabic(number: Int): String = toEasternArabic(number.toString())
 
-    // Calculate Hijri date from Gregorian date
     private fun calculateHijriDate(date: Date): Map<String, String> {
-        val d = date.date
-        val m = date.month + 1 // Java month is 0-based
-        val y = date.year + 1900 // Java year is years since 1900
-
-        // Calculate Julian Day Number for Gregorian date
-        val a = (14 - m) / 12
-        val y1 = y + 4800 - a
-        val m1 = m + 12 * a - 3
-
+        val d = date.date; val m = date.month + 1; val y = date.year + 1900
+        val a = (14 - m) / 12; val y1 = y + 4800 - a; val m1 = m + 12 * a - 3
         val jd = d + ((153 * m1 + 2) / 5) + 365 * y1 + (y1 / 4) - (y1 / 100) + (y1 / 400) - 32045
-
-        // Convert Julian Day to Hijri
-        // Hijri epoch: July 16, 622 CE (Julian) = JD 1948439.5
         val hijriEpoch = 1948439
         val daysSinceEpoch = jd - hijriEpoch
-
-        // Calculate Hijri year, month, day
         val yearLength = 354.36667
         var hYear = (daysSinceEpoch / yearLength).toInt() + 1
         var remainingDays = daysSinceEpoch - ((hYear - 1) * yearLength).toInt()
-
-        // Leap years in 30-year cycle: 2, 5, 7, 10, 13, 16, 18, 21, 24, 26, 29
         val cyclePosition = hYear % 30
         val isLeapYear = listOf(2, 5, 7, 10, 13, 16, 18, 21, 24, 26, 29).contains(cyclePosition)
-
-        // Month lengths
         val monthLengths = mutableListOf(30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29)
-        if (isLeapYear) {
-            monthLengths[11] = 30
-        }
-
-        var hMonth = 1
-        var hDay = remainingDays
-
-        for (i in 0 until 12) {
-            if (hDay <= monthLengths[i]) {
-                hMonth = i + 1
-                break
-            }
-            hDay -= monthLengths[i]
-        }
-
-        // Month names
-        val monthNamesAr = listOf(
-            "محرم", "صفر", "ربيع I", "ربيع II",
-            "جمادى I", "جمادى II", "رجب", "شعبان",
-            "رمضان", "شوال", "ذو قعدة", "ذو حجة"
-        )
-        val monthNamesEn = listOf(
-            "Muh.", "Saf.", "Rabi I", "Rabi II",
-            "Jum. I", "Jum. II", "Raj.", "Sha.",
-            "Ram.", "Shaw.", "Dhu Q.", "Dhu H."
-        )
-
-        return mapOf(
-            "year" to hYear.toString(),
-            "month" to hMonth.toString(),
-            "day" to hDay.toString(),
-            "monthAr" to monthNamesAr[hMonth - 1],
-            "monthEn" to monthNamesEn[hMonth - 1]
-        )
+        if (isLeapYear) monthLengths[11] = 30
+        var hMonth = 1; var hDay = remainingDays
+        for (i in 0 until 12) { if (hDay <= monthLengths[i]) { hMonth = i + 1; break }; hDay -= monthLengths[i] }
+        val monthNamesAr = listOf("محرم","صفر","ربيع I","ربيع II","جمادى I","جمادى II","رجب","شعبان","رمضان","شوال","ذو قعدة","ذو حجة")
+        val monthNamesEn = listOf("Muh.","Saf.","Rabi I","Rabi II","Jum. I","Jum. II","Raj.","Sha.","Ram.","Shaw.","Dhu Q.","Dhu H.")
+        return mapOf("year" to hYear.toString(), "month" to hMonth.toString(), "day" to hDay.toString(),
+            "monthAr" to monthNamesAr[hMonth - 1], "monthEn" to monthNamesEn[hMonth - 1])
     }
 }
 
 /**
- * All Prayers Widget - Shows all 5 daily prayer times
+ * Combined Prayer Widget — ViewFlipper with Next Prayer + Day Timeline views
  */
 class AllPrayersWidget : AppWidgetProvider() {
 
     companion object {
-        private const val TAG = "AllPrayersWidget"
+        private const val TAG = "CombinedPrayerWidget"
+        const val ACTION_SWITCH_TAB = "com.aura.hala.ACTION_SWITCH_TAB"
     }
 
     override fun onUpdate(
@@ -426,8 +374,6 @@ class AllPrayersWidget : AppWidgetProvider() {
         for (appWidgetId in appWidgetIds) {
             updateAppWidget(context, appWidgetManager, appWidgetId)
         }
-
-        // Schedule periodic updates
         scheduleWidgetUpdate(context)
     }
 
@@ -441,255 +387,397 @@ class AllPrayersWidget : AppWidgetProvider() {
         cancelWidgetUpdate(context)
     }
 
+    override fun onReceive(context: Context, intent: Intent) {
+        if (intent.action == ACTION_SWITCH_TAB) {
+            val tabIndex = intent.getIntExtra("tab_index", 0)
+            val widgetId = intent.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID)
+            if (widgetId != AppWidgetManager.INVALID_APPWIDGET_ID) {
+                val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+                prefs.edit().putInt("combined_widget_tab_$widgetId", tabIndex).apply()
+                Log.d(TAG, "Tab switch to $tabIndex for widget $widgetId")
+            }
+        }
+        super.onReceive(context, intent)
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val componentName = ComponentName(context, AllPrayersWidget::class.java)
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+        for (appWidgetId in appWidgetIds) {
+            updateAppWidget(context, appWidgetManager, appWidgetId)
+        }
+    }
+
     fun updateAppWidget(
         context: Context,
         appWidgetManager: AppWidgetManager,
         appWidgetId: Int
     ) {
-        // Get prayer times from shared preferences
         val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
-
-        // Get theme mode
         val themeMode = prefs.getString("themeMode", "system") ?: "system"
         val isDark = when (themeMode) {
             "dark" -> true
             "light" -> false
             else -> isSystemDarkTheme(context)
         }
-
-        // Get language preference
         val language = prefs.getString("language", "en") ?: "en"
         val isArabic = language == "ar"
 
-        // Use appropriate layout based on theme and language (RTL for Arabic)
         val layoutId = when {
-            isArabic && isDark -> R.layout.all_prayers_widget_dark_rtl
-            isArabic && !isDark -> R.layout.all_prayers_widget_rtl
-            !isArabic && isDark -> R.layout.all_prayers_widget_dark
-            else -> R.layout.all_prayers_widget
+            isArabic && isDark -> R.layout.combined_prayer_widget_dark_rtl
+            isArabic && !isDark -> R.layout.combined_prayer_widget_rtl
+            !isArabic && isDark -> R.layout.combined_prayer_widget_dark
+            else -> R.layout.combined_prayer_widget
         }
         val views = RemoteViews(context.packageName, layoutId)
 
-        // Define prayers with their Arabic and English names
+        val now = System.currentTimeMillis()
+
+        // ── Prayer data ──
         val prayers = listOf(
-            mapOf(
-                "key" to "fajr_time",
-                "nameEn" to "Fajr",
-                "nameAr" to "الفجر",
-                "emoji" to "🌙",
-                "timeId" to R.id.widget_fajr_time,
-                "nameId" to R.id.widget_fajr_name
-            ),
-            mapOf(
-                "key" to "sunrise_time",
-                "nameEn" to "Sunrise",
-                "nameAr" to "الشروق",
-                "emoji" to "🌅",
-                "timeId" to R.id.widget_sunrise_time,
-                "nameId" to R.id.widget_sunrise_name
-            ),
-            mapOf(
-                "key" to "dhuhr_time",
-                "nameEn" to "Zuhr",
-                "nameAr" to "الظهر",
-                "emoji" to "☀️",
-                "timeId" to R.id.widget_dhuhr_time,
-                "nameId" to R.id.widget_dhuhr_name
-            ),
-            mapOf(
-                "key" to "asr_time",
-                "nameEn" to "Asr",
-                "nameAr" to "العصر",
-                "emoji" to "🌤️",
-                "timeId" to R.id.widget_asr_time,
-                "nameId" to R.id.widget_asr_name
-            ),
-            mapOf(
-                "key" to "maghrib_time",
-                "nameEn" to "Maghrib",
-                "nameAr" to "المغرب",
-                "emoji" to "🌆",
-                "timeId" to R.id.widget_maghrib_time,
-                "nameId" to R.id.widget_maghrib_name
-            ),
-            mapOf(
-                "key" to "isha_time",
-                "nameEn" to "Isha",
-                "nameAr" to "العشاء",
-                "emoji" to "🌙",
-                "timeId" to R.id.widget_isha_time,
-                "nameId" to R.id.widget_isha_name
-            )
+            PrayerInfo("fajr_time", "Fajr", "الفجر", R.id.timeline_dot_0, R.id.timeline_name_0, R.id.timeline_time_0),
+            PrayerInfo("sunrise_time", "Sunrise", "الشروق", R.id.timeline_dot_1, R.id.timeline_name_1, R.id.timeline_time_1),
+            PrayerInfo("dhuhr_time", "Zuhr", "الظهر", R.id.timeline_dot_2, R.id.timeline_name_2, R.id.timeline_time_2),
+            PrayerInfo("asr_time", "Asr", "العصر", R.id.timeline_dot_3, R.id.timeline_name_3, R.id.timeline_time_3),
+            PrayerInfo("maghrib_time", "Maghrib", "المغرب", R.id.timeline_dot_4, R.id.timeline_name_4, R.id.timeline_time_4),
+            PrayerInfo("isha_time", "Isha", "العشاء", R.id.timeline_dot_5, R.id.timeline_name_5, R.id.timeline_time_5)
         )
 
-        // Get next prayer name and calculate current prayer (most recent that passed)
-        val nextPrayerNameEn = prefs.getString("next_prayer_name", "Maghrib") ?: "Maghrib"
-        val now = System.currentTimeMillis()
+        val nextPrayerNameEn = prefs.getString("next_prayer_name", "Asr") ?: "Asr"
+        val nextPrayerNameAr = prefs.getString("next_prayer_name_ar", "العصر") ?: "العصر"
         val nextPrayerTimeStr = prefs.getString("next_prayer_time", "0") ?: "0"
         val nextPrayerTime = nextPrayerTimeStr.toLongOrNull() ?: 0
 
-        // Find the most recent prayer that has passed (before the next prayer)
+        // Find current prayer (most recent past prayer)
         var currentPrayerNameEn: String? = null
+        var currentPrayerNameAr: String? = null
         var mostRecentTime = 0L
 
-        for (prayer in prayers) {
-            val timeStr = prefs.getString(prayer["key"] as String?, null)
+        for (p in prayers) {
+            val timeStr = prefs.getString(p.key, null)
             val time = timeStr?.toLongOrNull() ?: 0
-            // Check if this prayer has passed and is more recent than others
-            if (time > 0 && time < now && time <= nextPrayerTime && time > mostRecentTime) {
+            if (time > 0 && time <= now && time > mostRecentTime) {
                 mostRecentTime = time
-                currentPrayerNameEn = prayer["nameEn"] as String
+                currentPrayerNameEn = p.nameEn
+                currentPrayerNameAr = p.nameAr
             }
         }
 
-        // Set prayer names and times
-        for (prayer in prayers) {
-            val timeStr = prefs.getString(prayer["key"] as String?, null)
-            val displayTime = if (!timeStr.isNullOrEmpty()) {
-                val time = timeStr.toLongOrNull() ?: 0
-                if (time > 0) {
-                    if (isArabic) {
-                        // Format time in Arabic with Eastern Arabic numerals and 12-hour format
-                        val date = Date(time)
-                        val cal = Calendar.getInstance().apply { timeInMillis = time }
-                        var hours = cal.get(Calendar.HOUR_OF_DAY)
-                        val minutes = cal.get(Calendar.MINUTE)
-                        val ampm = if (hours < 12) "صباحاً" else "مساءً"
-                        hours = if (hours == 0) 12 else if (hours > 12) hours - 12 else hours
-                        "${toEasternArabic(String.format("%02d", hours))}:${toEasternArabic(String.format("%02d", minutes))} $ampm"
-                    } else {
-                        DateFormat.format("hh:mm aa", Date(time))
-                    }
-                } else {
-                    "--:--"
-                }
-            } else {
-                "--:--"
-            }
-            views.setTextViewText(prayer["timeId"] as Int, displayTime)
+        // ── Tab state ──
+        val currentTab = prefs.getInt("combined_widget_tab_$appWidgetId", 0)
+        val activeTabBg = if (isDark) R.drawable.widget_tab_active_dark else R.drawable.widget_tab_active_light
+        val inactiveTabBg = if (isDark) R.drawable.widget_tab_inactive_dark else R.drawable.widget_tab_inactive_light
+        val activeColor = if (isDark) 0xFFF5B301.toInt() else 0xFFB5821B.toInt()
+        val inactiveColor = if (isDark) 0xFF6B7180.toInt() else 0xFF9A8F78.toInt()
 
-            // Set prayer name
-            val prayerName = if (isArabic) prayer["nameAr"] else prayer["nameEn"]
-            views.setTextViewText(prayer["nameId"] as Int, prayerName as String)
+        val tabNextLabel = if (isArabic) "الصلاة القادمة" else "Next Prayer"
+        val tabTimelineLabel = if (isArabic) "الجدول" else "Timeline"
 
-            // Check if this is the current prayer (most recent that passed) or next prayer
-            val isCurrentPrayer = (prayer["nameEn"] as String) == currentPrayerNameEn
-            val isNextPrayer = (prayer["nameEn"] as String) == nextPrayerNameEn
+        views.setTextViewText(R.id.tab_next_prayer, tabNextLabel)
+        views.setTextViewText(R.id.tab_timeline, tabTimelineLabel)
 
-            // Set time color - only next prayer is blue, others are gray/inactive
-            val timeColor = if (isNextPrayer) {
-                if (isDark) android.graphics.Color.parseColor("#4DA6FF") else android.graphics.Color.parseColor("#007DFF")
-            } else {
-                android.graphics.Color.parseColor("#888888")
-            }
-            views.setTextColor(prayer["timeId"] as Int, timeColor)
-
-            // Get the card view ID for this prayer
-            val cardViewId = when (prayer["nameEn"] as String) {
-                "Fajr" -> R.id.widget_fajr_card
-                "Sunrise" -> R.id.widget_sunrise_card
-                "Dhuhr", "Zuhr" -> R.id.widget_dhuhr_card
-                "Asr" -> R.id.widget_asr_card
-                "Maghrib" -> R.id.widget_maghrib_card
-                "Isha" -> R.id.widget_isha_card
-                else -> null
-            }
-
-            // Set highlight background and "now" badge for CURRENT prayer
-            if (isCurrentPrayer && cardViewId != null) {
-                val highlightBg = if (isDark) R.drawable.widget_prayer_card_highlight_modern_dark else R.drawable.widget_prayer_card_highlight_modern
-                views.setInt(cardViewId, "setBackgroundResource", highlightBg)
-
-                // Show "now" badge
-                val nowBadgeId = when (prayer["nameEn"] as String) {
-                    "Fajr" -> R.id.widget_fajr_now
-                    "Sunrise" -> R.id.widget_sunrise_now
-                    "Dhuhr", "Zuhr" -> R.id.widget_dhuhr_now
-                    "Asr" -> R.id.widget_asr_now
-                    "Maghrib" -> R.id.widget_maghrib_now
-                    "Isha" -> R.id.widget_isha_now
-                    else -> null
-                }
-                if (nowBadgeId != null) {
-                    views.setViewVisibility(nowBadgeId, android.view.View.VISIBLE)
-                }
-            } else if (cardViewId != null) {
-                // Reset to normal background
-                val normalBg = if (isDark) R.drawable.widget_prayer_card_modern_dark else R.drawable.widget_prayer_card_modern
-                views.setInt(cardViewId, "setBackgroundResource", normalBg)
-
-                // Hide "now" badge
-                val nowBadgeId = when (prayer["nameEn"] as String) {
-                    "Fajr" -> R.id.widget_fajr_now
-                    "Sunrise" -> R.id.widget_sunrise_now
-                    "Dhuhr", "Zuhr" -> R.id.widget_dhuhr_now
-                    "Asr" -> R.id.widget_asr_now
-                    "Maghrib" -> R.id.widget_maghrib_now
-                    "Isha" -> R.id.widget_isha_now
-                    else -> null
-                }
-                if (nowBadgeId != null) {
-                    views.setViewVisibility(nowBadgeId, android.view.View.GONE)
-                }
-            }
-
-            // Show "next" badge for NEXT prayer
-            if (isNextPrayer) {
-                val nextBadgeId = when (prayer["nameEn"] as String) {
-                    "Fajr" -> R.id.widget_fajr_next
-                    "Sunrise" -> R.id.widget_sunrise_next
-                    "Dhuhr", "Zuhr" -> R.id.widget_dhuhr_next
-                    "Asr" -> R.id.widget_asr_next
-                    "Maghrib" -> R.id.widget_maghrib_next
-                    "Isha" -> R.id.widget_isha_next
-                    else -> null
-                }
-                if (nextBadgeId != null) {
-                    views.setViewVisibility(nextBadgeId, android.view.View.VISIBLE)
-                }
-            } else {
-                // Hide "next" badge for all other prayers
-                val nextBadgeId = when (prayer["nameEn"] as String) {
-                    "Fajr" -> R.id.widget_fajr_next
-                    "Sunrise" -> R.id.widget_sunrise_next
-                    "Dhuhr", "Zuhr" -> R.id.widget_dhuhr_next
-                    "Asr" -> R.id.widget_asr_next
-                    "Maghrib" -> R.id.widget_maghrib_next
-                    "Isha" -> R.id.widget_isha_next
-                    else -> null
-                }
-                if (nextBadgeId != null) {
-                    views.setViewVisibility(nextBadgeId, android.view.View.GONE)
-                }
-            }
+        if (currentTab == 0) {
+            views.setInt(R.id.tab_next_prayer, "setBackgroundResource", activeTabBg)
+            views.setTextColor(R.id.tab_next_prayer, activeColor)
+            views.setInt(R.id.tab_timeline, "setBackgroundResource", inactiveTabBg)
+            views.setTextColor(R.id.tab_timeline, inactiveColor)
+        } else {
+            views.setInt(R.id.tab_next_prayer, "setBackgroundResource", inactiveTabBg)
+            views.setTextColor(R.id.tab_next_prayer, inactiveColor)
+            views.setInt(R.id.tab_timeline, "setBackgroundResource", activeTabBg)
+            views.setTextColor(R.id.tab_timeline, activeColor)
         }
 
-        // Set widget label
-        val widgetLabel = if (isArabic) "مواقيت الصلاة" else "Prayer Times"
-        views.setTextViewText(R.id.widget_label, widgetLabel)
+        // Tab click PendingIntents
+        val tab0Intent = Intent(context, AllPrayersWidget::class.java).apply {
+            action = ACTION_SWITCH_TAB
+            putExtra("tab_index", 0)
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+        }
+        views.setOnClickPendingIntent(R.id.tab_next_prayer,
+            PendingIntent.getBroadcast(context, appWidgetId * 10, tab0Intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
 
-        // Set location in header
+        val tab1Intent = Intent(context, AllPrayersWidget::class.java).apply {
+            action = ACTION_SWITCH_TAB
+            putExtra("tab_index", 1)
+            putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+        }
+        views.setOnClickPendingIntent(R.id.tab_timeline,
+            PendingIntent.getBroadcast(context, appWidgetId * 10 + 1, tab1Intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
+
+        // ── Location ──
         val locationName = prefs.getString("location_name", null)
-        if (!locationName.isNullOrEmpty()) {
-            views.setTextViewText(R.id.widget_location_small, locationName)
+        views.setTextViewText(R.id.widget_location_small,
+            if (!locationName.isNullOrEmpty()) locationName else if (isArabic) "الموقع" else "Location")
+
+        // ══════════════════════════════════════════
+        // VIEW 0: Next Prayer
+        // ══════════════════════════════════════════
+
+        val nextPrayerDisplay = if (isArabic) nextPrayerNameAr else nextPrayerNameEn
+        views.setTextViewText(R.id.widget_next_prayer_name, nextPrayerDisplay)
+
+        // Next prayer time
+        if (nextPrayerTime > 0) {
+            val cal = Calendar.getInstance().apply { timeInMillis = nextPrayerTime }
+            var hours = cal.get(Calendar.HOUR_OF_DAY)
+            val minutes = cal.get(Calendar.MINUTE)
+            val ampm = if (hours < 12) { if (isArabic) "صباحاً" else "AM" } else { if (isArabic) "مساءً" else "PM" }
+            hours = if (hours == 0) 12 else if (hours > 12) hours - 12 else hours
+            val timeText = if (isArabic) {
+                "${toEasternArabic(String.format("%02d", hours))}:${toEasternArabic(String.format("%02d", minutes))}"
+            } else {
+                String.format("%02d:%02d", hours, minutes)
+            }
+            views.setTextViewText(R.id.widget_next_prayer_time, timeText)
+            views.setTextViewText(R.id.widget_next_prayer_ampm, ampm)
+        } else {
+            views.setTextViewText(R.id.widget_next_prayer_time, "--:--")
+            views.setTextViewText(R.id.widget_next_prayer_ampm, "")
         }
 
-        // Create click intent to open app - make entire widget clickable
-        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)
-        intent?.let {
-            val pendingIntent = PendingIntent.getActivity(
-                context,
-                appWidgetId,
-                it,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            views.setOnClickPendingIntent(R.id.widget_root, pendingIntent)
+        // Countdown
+        val timeRemainingMs = nextPrayerTime - now
+        if (timeRemainingMs > 0) {
+            views.setChronometer(R.id.widget_time_remaining,
+                SystemClock.elapsedRealtime() + timeRemainingMs, null, true)
+        } else {
+            views.setChronometer(R.id.widget_time_remaining,
+                SystemClock.elapsedRealtime(), null, false)
         }
 
-        // Update widget
+        val untilLabel = if (isArabic) "حتى موعد الأذان" else "UNTIL AZAN"
+        views.setTextViewText(R.id.widget_time_remaining_seconds, untilLabel)
+
+        // Ring progress bitmap
+        val maxMinutes = 180f
+        val totalMinRem = (timeRemainingMs / 60000).toFloat()
+        val progress = ((maxMinutes - totalMinRem) / maxMinutes).coerceIn(0f, 1f)
+        val ringColor = if (isDark) 0xFFF5B301.toInt() else 0xFFB5821B.toInt()
+        val trackColorAlpha = if (isDark) Color.argb(20, 255, 255, 255) else Color.argb(26, 60, 45, 20)
+        val density = context.resources.displayMetrics.density
+        val ringSize = (20 * density).toInt()
+        val ringBitmap = createRingBitmap(progress, ringColor, trackColorAlpha, ringSize, 2.5f * density)
+        views.setImageViewBitmap(R.id.widget_progress_bar, ringBitmap)
+
+        // Date info
+        val currentDate = Date(now)
+        val dayOfWeek = DateFormat.format("EEEE", currentDate)
+        val dayOfWeekAr = when (dayOfWeek.toString()) {
+            "Monday" -> "الإثنين"; "Tuesday" -> "الثلاثاء"; "Wednesday" -> "الأربعاء"
+            "Thursday" -> "الخميس"; "Friday" -> "الجمعة"; "Saturday" -> "السبت"
+            "Sunday" -> "الأحد"; else -> dayOfWeek.toString()
+        }
+
+        val gregorianMonthEn = DateFormat.format("MMM", currentDate)
+        val gregorianMonthAr = when (gregorianMonthEn.toString()) {
+            "Jan" -> "يناير"; "Feb" -> "فبراير"; "Mar" -> "مارس"; "Apr" -> "أبريل"
+            "May" -> "مايو"; "Jun" -> "يونيو"; "Jul" -> "يوليو"; "Aug" -> "أغسطس"
+            "Sep" -> "سبتمبر"; "Oct" -> "أكتوبر"; "Nov" -> "نوفمبر"; "Dec" -> "ديسمبر"
+            else -> gregorianMonthEn.toString()
+        }
+        val gregorianDay = DateFormat.format("d", currentDate).toString()
+        val gregorianYear = DateFormat.format("yyyy", currentDate).toString()
+
+        // Day of week (horizontal layout)
+        views.setTextViewText(R.id.widget_day_of_week, if (isArabic) dayOfWeekAr else dayOfWeek.toString())
+
+        views.setTextViewText(R.id.widget_gregorian_label, if (isArabic) "الميلادي" else "GREGORIAN")
+        views.setTextViewText(R.id.widget_gregorian_day, if (isArabic) toEasternArabic(gregorianDay) else gregorianDay)
+        views.setTextViewText(R.id.widget_gregorian_month, if (isArabic) gregorianMonthAr else gregorianMonthEn.toString())
+        views.setTextViewText(R.id.widget_gregorian_year, if (isArabic) toEasternArabic(gregorianYear) else gregorianYear)
+
+        val hijriDate = calculateHijriDate(currentDate)
+        views.setTextViewText(R.id.widget_hijri_label, if (isArabic) "الهجري" else "HIJRI")
+        views.setTextViewText(R.id.widget_hijri_day, if (isArabic) toEasternArabic(hijriDate["day"].toString()) else "${hijriDate["day"]}")
+        views.setTextViewText(R.id.widget_hijri_month, if (isArabic) hijriDate["monthAr"] ?: "" else hijriDate["monthEn"] ?: "")
+        val hijriYearStr = if (isArabic) "${toEasternArabic(hijriDate["year"].toString())} هـ" else "${hijriDate["year"]} AH"
+        views.setTextViewText(R.id.widget_hijri_year, hijriYearStr)
+
+        // ══════════════════════════════════════════
+        // VIEW 1: Day Timeline
+        // ══════════════════════════════════════════
+
+        // Current prayer info
+        val curDisplay = if (isArabic) (currentPrayerNameAr ?: "") else (currentPrayerNameEn ?: "")
+        views.setTextViewText(R.id.timeline_current_name, curDisplay)
+
+        if (mostRecentTime > 0) {
+            val cal = Calendar.getInstance().apply { timeInMillis = mostRecentTime }
+            var h = cal.get(Calendar.HOUR_OF_DAY)
+            val m = cal.get(Calendar.MINUTE)
+            val ampm = if (h < 12) { if (isArabic) "صباحاً" else "AM" } else { if (isArabic) "مساءً" else "PM" }
+            h = if (h == 0) 12 else if (h > 12) h - 12 else h
+            views.setTextViewText(R.id.timeline_current_time,
+                if (isArabic) "${toEasternArabic(String.format("%02d", h))}:${toEasternArabic(String.format("%02d", m))}"
+                else String.format("%02d:%02d", h, m))
+            views.setTextViewText(R.id.timeline_current_ampm, ampm)
+        } else {
+            views.setTextViewText(R.id.timeline_current_time, "--:--")
+            views.setTextViewText(R.id.timeline_current_ampm, "")
+        }
+
+        // Next countdown in timeline header
+        val nextDisplayShort = if (isArabic) nextPrayerNameAr else nextPrayerNameEn
+        if (timeRemainingMs > 0) {
+            val th = (timeRemainingMs / 3600000).toInt()
+            val tm = ((timeRemainingMs % 3600000) / 60000).toInt()
+            if (isArabic) {
+                views.setTextViewText(R.id.timeline_next_label, "التالي · $nextDisplayShort بعد")
+                views.setTextViewText(R.id.timeline_countdown_text, "${toEasternArabic(th)} س ${toEasternArabic(String.format("%02d", tm))} د")
+            } else {
+                views.setTextViewText(R.id.timeline_next_label, "NEXT · ${nextDisplayShort.uppercase()} IN")
+                views.setTextViewText(R.id.timeline_countdown_text, String.format("%dh %02dm", th, tm))
+            }
+        } else {
+            views.setTextViewText(R.id.timeline_next_label, if (isArabic) "التالي" else "NEXT")
+            views.setTextViewText(R.id.timeline_countdown_text, if (isArabic) "حان الآن" else "NOW")
+        }
+
+        // Secondary info line
+        if (isArabic) {
+            views.setTextViewText(R.id.timeline_secondary_info, "$dayOfWeekAr ${toEasternArabic(gregorianDay)} $gregorianMonthAr")
+        } else {
+            views.setTextViewText(R.id.timeline_secondary_info, "${dayOfWeek.toString().take(3).uppercase()} ${gregorianDay} ${gregorianMonthEn}")
+        }
+
+        // Timeline dots + names + times
+        val dotNow = if (isDark) R.drawable.widget_timeline_dot_now_dark else R.drawable.widget_timeline_dot_now
+        val dotNext = if (isDark) R.drawable.widget_timeline_dot_next_dark else R.drawable.widget_timeline_dot_next
+        val dotPast = if (isDark) R.drawable.widget_timeline_dot_past_dark else R.drawable.widget_timeline_dot_past
+        val dotFuture = if (isDark) R.drawable.widget_timeline_dot_future_dark else R.drawable.widget_timeline_dot_future
+
+        val nameColorNow = if (isDark) 0xFFF4F5F7.toInt() else 0xFF2A2418.toInt()
+        val nameColorNext = if (isDark) 0xFFFFD37A.toInt() else 0xFF8A6110.toInt()
+        val nameColorPast = if (isDark) 0xFF6B7180.toInt() else 0xFF9A8F78.toInt()
+        val nameColorFuture = if (isDark) 0xFF6B7180.toInt() else 0xFF9A8F78.toInt()
+
+        for (i in prayers.indices) {
+            val p = prayers[i]
+            val timeStr = prefs.getString(p.key, null)
+            val time = timeStr?.toLongOrNull() ?: 0
+
+            val isCurrent = p.nameEn == currentPrayerNameEn
+            val isNext = p.nameEn == nextPrayerNameEn
+            val isPast = time > 0 && time <= now && !isCurrent
+
+            // Dot
+            val dotRes = when {
+                isCurrent -> dotNow
+                isNext -> dotNext
+                isPast -> dotPast
+                else -> dotFuture
+            }
+            views.setImageViewResource(p.dotId, dotRes)
+
+            // Name
+            views.setTextViewText(p.nameId, if (isArabic) p.nameAr else p.nameEn)
+            val nameColor = when {
+                isCurrent -> nameColorNow
+                isNext -> nameColorNext
+                else -> nameColorPast
+            }
+            views.setTextColor(p.nameId, nameColor)
+
+            // Time
+            if (time > 0) {
+                val cal = Calendar.getInstance().apply { timeInMillis = time }
+                var h = cal.get(Calendar.HOUR_OF_DAY)
+                val m = cal.get(Calendar.MINUTE)
+                h = if (h == 0) 12 else if (h > 12) h - 12 else h
+                val timeText = if (isArabic) {
+                    "${toEasternArabic(String.format("%02d", h))}:${toEasternArabic(String.format("%02d", m))}"
+                } else {
+                    String.format("%02d:%02d", h, m)
+                }
+                views.setTextViewText(p.timeId, timeText)
+            } else {
+                views.setTextViewText(p.timeId, "--:--")
+            }
+
+            val timeColor = when {
+                isCurrent -> nameColorNow
+                isNext -> nameColorNext
+                isPast -> nameColorPast
+                else -> nameColorFuture
+            }
+            views.setTextColor(p.timeId, timeColor)
+        }
+
+        // Progress bar bitmap
+        val progressWidth = (256 * density).toInt()
+        val progressHeight = (4 * density).toInt()
+        val fillColor = if (isDark) 0xFFF5B301.toInt() else 0xFFB5821B.toInt()
+        val pTrackColor = if (isDark) Color.argb(20, 255, 255, 255) else Color.argb(26, 60, 45, 20)
+
+        val progressFraction = if (mostRecentTime > 0 && nextPrayerTime > mostRecentTime) {
+            val elapsed = now - mostRecentTime
+            val total = nextPrayerTime - mostRecentTime
+            // Position: current prayer index + fraction to next
+            val curIndex = prayers.indexOfFirst { it.nameEn == currentPrayerNameEn }.coerceIn(0, prayers.size - 1)
+            val segFraction = elapsed.toFloat() / total.toFloat()
+            (curIndex + segFraction) / prayers.size.toFloat()
+        } else if (mostRecentTime > 0) {
+            val curIndex = prayers.indexOfFirst { it.nameEn == currentPrayerNameEn }.coerceIn(0, prayers.size - 1)
+            (curIndex + 0.5f) / prayers.size.toFloat()
+        } else 0f
+
+        val progressBitmap = createProgressBitmap(progressFraction.coerceIn(0f, 1f), fillColor, pTrackColor, progressWidth, progressHeight)
+        views.setImageViewBitmap(R.id.timeline_progress_bar, progressBitmap)
+
+        // ── ViewFlipper ──
+        views.setDisplayedChild(R.id.view_flipper, currentTab)
+
+        // ── Root click → open app ──
+        val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+        launchIntent?.let {
+            views.setOnClickPendingIntent(R.id.view_flipper,
+                PendingIntent.getActivity(context, appWidgetId * 10 + 5, it,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
+        }
+
         appWidgetManager.updateAppWidget(appWidgetId, views)
+        Log.d(TAG, "Updated combined widget $appWidgetId tab=$currentTab (${if(isDark) "dark" else "light"}, $language)")
+    }
 
-        Log.d(TAG, "Updated all prayers widget $appWidgetId (theme: ${if(isDark) "dark" else "light"}, language: $language)")
+    private data class PrayerInfo(
+        val key: String,
+        val nameEn: String,
+        val nameAr: String,
+        val dotId: Int,
+        val nameId: Int,
+        val timeId: Int
+    )
+
+    private fun createRingBitmap(progress: Float, ringColor: Int, trackColor: Int, size: Int, strokeWidth: Float): Bitmap {
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val center = size / 2f
+        val radius = (size - strokeWidth) / 2f
+        val rect = RectF(center - radius, center - radius, center + radius, center + radius)
+        canvas.drawCircle(center, center, radius, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            style = Paint.Style.STROKE; this.strokeWidth = strokeWidth; color = trackColor
+        })
+        if (progress > 0f) {
+            canvas.drawArc(rect, -90f, 360f * progress, false, Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE; this.strokeWidth = strokeWidth; color = ringColor; strokeCap = Paint.Cap.ROUND
+            })
+        }
+        return bitmap
+    }
+
+    private fun createProgressBitmap(progress: Float, fillColor: Int, trackColor: Int, width: Int, height: Int): Bitmap {
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val r = height / 2f
+        canvas.drawRoundRect(RectF(0f, 0f, width.toFloat(), height.toFloat()), r, r,
+            Paint(Paint.ANTI_ALIAS_FLAG).apply { color = trackColor; style = Paint.Style.FILL })
+        if (progress > 0f) {
+            val fillW = (width * progress.coerceIn(0f, 1f))
+            canvas.drawRoundRect(RectF(0f, 0f, fillW, height.toFloat()), r, r,
+                Paint(Paint.ANTI_ALIAS_FLAG).apply { color = fillColor; style = Paint.Style.FILL })
+        }
+        return bitmap
     }
 
     private fun isSystemDarkTheme(context: Context): Boolean {
@@ -700,50 +788,50 @@ class AllPrayersWidget : AppWidgetProvider() {
     private fun scheduleWidgetUpdate(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, AllPrayersWidgetReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // Update every 30 seconds for accurate countdown
-        val interval = 30000L
-        alarmManager.setRepeating(
-            AlarmManager.RTC_WAKEUP,
-            System.currentTimeMillis(),
-            interval,
-            pendingIntent
-        )
-
-        Log.d(TAG, "Scheduled widget update every $interval ms")
+        val pendingIntent = PendingIntent.getBroadcast(context, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 30000L, pendingIntent)
     }
 
     private fun cancelWidgetUpdate(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val intent = Intent(context, AllPrayersWidgetReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            0,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        val pendingIntent = PendingIntent.getBroadcast(context, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         alarmManager.cancel(pendingIntent)
     }
 
-    // Convert Western Arabic numerals to Eastern Arabic numerals
     private fun toEasternArabic(number: String): String {
         val western = "0123456789"
         val eastern = "٠١٢٣٤٥٦٧٨٩"
-        return number.map { digit ->
-            val index = western.indexOf(digit)
-            if (index >= 0) eastern[index] else digit
-        }.joinToString("")
+        return number.map { digit -> val i = western.indexOf(digit); if (i >= 0) eastern[i] else digit }.joinToString("")
     }
 
-    // Convert Western Arabic numerals to Eastern Arabic numerals (Int version)
-    private fun toEasternArabic(number: Int): String {
-        return toEasternArabic(number.toString())
+    private fun toEasternArabic(number: Int): String = toEasternArabic(number.toString())
+
+    private fun calculateHijriDate(date: Date): Map<String, String> {
+        val d = date.date
+        val m = date.month + 1
+        val y = date.year + 1900
+        val a = (14 - m) / 12
+        val y1 = y + 4800 - a
+        val m1 = m + 12 * a - 3
+        val jd = d + ((153 * m1 + 2) / 5) + 365 * y1 + (y1 / 4) - (y1 / 100) + (y1 / 400) - 32045
+        val hijriEpoch = 1948439
+        val daysSinceEpoch = jd - hijriEpoch
+        val yearLength = 354.36667
+        var hYear = (daysSinceEpoch / yearLength).toInt() + 1
+        var remainingDays = daysSinceEpoch - ((hYear - 1) * yearLength).toInt()
+        val cyclePosition = hYear % 30
+        val isLeapYear = listOf(2, 5, 7, 10, 13, 16, 18, 21, 24, 26, 29).contains(cyclePosition)
+        val monthLengths = mutableListOf(30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29)
+        if (isLeapYear) monthLengths[11] = 30
+        var hMonth = 1; var hDay = remainingDays
+        for (i in 0 until 12) { if (hDay <= monthLengths[i]) { hMonth = i + 1; break }; hDay -= monthLengths[i] }
+        val monthNamesAr = listOf("محرم","صفر","ربيع I","ربيع II","جمادى I","جمادى II","رجب","شعبان","رمضان","شوال","ذو قعدة","ذو حجة")
+        val monthNamesEn = listOf("Muh.","Saf.","Rabi I","Rabi II","Jum. I","Jum. II","Raj.","Sha.","Ram.","Shaw.","Dhu Q.","Dhu H.")
+        return mapOf("year" to hYear.toString(), "month" to hMonth.toString(), "day" to hDay.toString(),
+            "monthAr" to monthNamesAr[hMonth - 1], "monthEn" to monthNamesEn[hMonth - 1])
     }
 }
 
@@ -752,7 +840,7 @@ class AllPrayersWidget : AppWidgetProvider() {
  */
 class NextPrayerWidgetReceiver : android.content.BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        Log.d("NextPrayerWidget", "Broadcast received, updating widget")
+        Log.d("NextPrayerWidget", "Broadcast received, action=${intent.action}")
         val appWidgetManager = AppWidgetManager.getInstance(context)
         val componentName = ComponentName(context, NextPrayerWidget::class.java)
         val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
@@ -764,11 +852,11 @@ class NextPrayerWidgetReceiver : android.content.BroadcastReceiver() {
 }
 
 /**
- * BroadcastReceiver for All Prayers Widget updates
+ * BroadcastReceiver for Combined Prayer Widget updates + tab switching
  */
 class AllPrayersWidgetReceiver : android.content.BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        Log.d("AllPrayersWidget", "Broadcast received, updating widget")
+        Log.d("AllPrayersWidget", "Broadcast received, action=${intent.action}")
         val appWidgetManager = AppWidgetManager.getInstance(context)
         val componentName = ComponentName(context, AllPrayersWidget::class.java)
         val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)

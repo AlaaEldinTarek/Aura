@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- V3 Editorial Skyline — Dark RTL (compact 4x1) -->
+<!-- V3 Editorial Skyline — Dark RTL (compact 4x1) with ViewFlipper -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
@@ -9,288 +9,350 @@
     android:background="@drawable/widget_v3_bg_dark"
     android:paddingStart="12dp"
     android:paddingEnd="12dp"
-    android:paddingTop="8dp"
-    android:paddingBottom="8dp"
+    android:paddingTop="3dp"
+    android:paddingBottom="3dp"
     android:gravity="center_vertical">
 
-    <!-- ── Prayer info (right side in RTL) ── -->
-    <LinearLayout
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_weight="1.4"
-        android:orientation="vertical">
+    <ViewFlipper
+        android:id="@+id/view_flipper"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
-        <!-- Row 1: name → time → ampm (RTL: first = right) -->
+        <!-- ═══ VIEW 0: Next Prayer (Dark RTL) ═══ -->
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <TextView
-                android:id="@+id/widget_next_prayer_name"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="العصر"
-                android:textSize="30sp"
-                android:textColor="#F4F5F7"
-                android:textStyle="bold"
-                android:fontFamily="sans-serif-medium"
-                android:maxLines="1"
-                android:ellipsize="end" />
-
-            <TextView
-                android:id="@+id/widget_next_prayer_time"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="٠٣:٢٥"
-                android:textSize="18sp"
-                android:textColor="#F5B301"
-                android:fontFamily="monospace"
-                android:textDirection="ltr"
-                android:layout_marginStart="8dp" />
-
-            <TextView
-                android:id="@+id/widget_next_prayer_ampm"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="مساءً"
-                android:textSize="13sp"
-                android:textColor="#A8ADB8"
-                android:layout_marginStart="2dp" />
-        </LinearLayout>
-
-        <!-- Row 2: countdown pill (circle → timer → label) -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="4dp"
-            android:background="@drawable/widget_v3_pill_dark"
-            android:paddingStart="10dp"
-            android:paddingEnd="10dp"
-            android:paddingTop="3dp"
-            android:paddingBottom="3dp"
-            android:minHeight="26dp"
-            android:layout_gravity="start">
-
-            <ImageView
-                android:id="@+id/widget_progress_bar"
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:scaleType="fitCenter" />
-
-            <Chronometer
-                android:id="@+id/widget_time_remaining"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="13sp"
-                android:textColor="#FFD37A"
-                android:fontFamily="monospace"
-                android:countDown="true"
-                android:textDirection="ltr"
-                android:layout_marginStart="6dp" />
-
-            <TextView
-                android:id="@+id/widget_time_remaining_seconds"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="حتى موعد الأذان"
-                android:textSize="10sp"
-                android:textColor="#A8ADB8"
-                android:fontFamily="sans-serif"
-                android:layout_marginStart="3dp" />
-        </LinearLayout>
-
-        <!-- Row 3: location (icon → city) -->
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:layout_marginTop="0dp"
-            android:layout_gravity="start">
-
-            <ImageView
-                android:id="@+id/widget_location_icon"
-                android:layout_width="9dp"
-                android:layout_height="9dp"
-                android:src="@drawable/widget_location_pin"
-                android:scaleType="fitCenter"
-                android:layout_marginEnd="2dp" />
-
-            <TextView
-                android:id="@+id/widget_location_small"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="الرياض"
-                android:textSize="8sp"
-                android:textColor="#A8ADB8" />
-        </LinearLayout>
-    </LinearLayout>
-
-    <!-- ── Date card (left side in RTL) ── -->
-    <LinearLayout
-        android:layout_width="120dp"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:background="@drawable/widget_v3_panel_dark"
-        android:padding="8dp"
-        android:layout_marginEnd="0dp">
-
-        <!-- Weekday -->
-        <TextView
-            android:id="@+id/widget_day_of_week"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="الثلاثاء"
-            android:textSize="9sp"
-            android:textColor="#F5B301"
-            android:fontFamily="sans-serif-medium"
-            android:textStyle="bold"
-            android:gravity="center" />
-
-        <!-- Hijri | Gregorian side by side -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
-            android:orientation="horizontal">
-
-            <!-- Hijri (first in RTL = right visual) -->
             <LinearLayout
                 android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center">
-
-                <TextView
-                    android:id="@+id/widget_hijri_label"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="الهجري"
-                    android:textSize="7sp"
-                    android:textColor="#6B7180"
-                    android:fontFamily="sans-serif-medium"
-                    android:gravity="center" />
+                android:layout_height="wrap_content"
+                android:layout_weight="1.4"
+                android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:gravity="center"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginBottom="4dp">
+                    android:gravity="center_vertical">
 
                     <TextView
-                        android:id="@+id/widget_hijri_day"
+                        android:id="@+id/widget_next_prayer_name"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="٤"
-                        android:textSize="13sp"
+                        android:text="العصر"
+                        android:textSize="30sp"
                         android:textColor="#F4F5F7"
-                        android:fontFamily="sans-serif-medium"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/widget_hijri_month"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="ذو القعدة"
-                        android:textSize="13sp"
-                        android:textColor="#F5B301"
-                        android:fontFamily="sans-serif-medium"
                         android:textStyle="bold"
+                        android:fontFamily="sans-serif-medium"
                         android:maxLines="1"
-                        android:ellipsize="end"
-                        android:layout_marginStart="4dp" />
+                        android:ellipsize="end" />
+
+                    <TextView
+                        android:id="@+id/widget_next_prayer_time"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="٠٣:٢٥"
+                        android:textSize="18sp"
+                        android:textColor="#F5B301"
+                        android:fontFamily="monospace"
+                        android:textDirection="ltr"
+                        android:layout_marginStart="8dp" />
+
+                    <TextView
+                        android:id="@+id/widget_next_prayer_ampm"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="مساءً"
+                        android:textSize="13sp"
+                        android:textColor="#A8ADB8"
+                        android:layout_marginStart="2dp" />
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/widget_hijri_year"
-                    android:layout_width="match_parent"
+                <LinearLayout
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="١٤٤٧ هـ"
-                    android:textSize="8sp"
-                    android:textColor="#6B7180"
-                    android:fontFamily="sans-serif"
-                    android:gravity="center" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginBottom="4dp"
+                    android:background="@drawable/widget_v3_pill_dark"
+                    android:paddingStart="10dp"
+                    android:paddingEnd="10dp"
+                    android:paddingTop="3dp"
+                    android:paddingBottom="3dp"
+                    android:minHeight="26dp"
+                    android:layout_gravity="start">
+
+                    <ImageView
+                        android:id="@+id/widget_progress_bar"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:scaleType="fitCenter" />
+
+                    <Chronometer
+                        android:id="@+id/widget_time_remaining"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="13sp"
+                        android:textColor="#FFD37A"
+                        android:fontFamily="monospace"
+                        android:countDown="true"
+                        android:textDirection="ltr"
+                        android:layout_marginStart="6dp" />
+
+                    <TextView
+                        android:id="@+id/widget_time_remaining_seconds"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="حتى موعد الأذان"
+                        android:textSize="10sp"
+                        android:textColor="#A8ADB8"
+                        android:fontFamily="sans-serif"
+                        android:layout_marginStart="3dp" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center"
+                    android:layout_gravity="start">
+
+                    <ImageView
+                        android:id="@+id/widget_location_icon"
+                        android:layout_width="9dp"
+                        android:layout_height="9dp"
+                        android:src="@drawable/widget_location_pin"
+                        android:scaleType="fitCenter"
+                        android:layout_marginEnd="2dp" />
+
+                    <TextView
+                        android:id="@+id/widget_location_small"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="الرياض"
+                        android:textSize="8sp"
+                        android:textColor="#A8ADB8" />
+                </LinearLayout>
             </LinearLayout>
 
-            <FrameLayout
-                android:layout_width="1dp"
-                android:layout_height="match_parent"
-                android:layout_marginStart="3dp"
-                android:layout_marginEnd="3dp"
-                android:background="#1AFFFFFF" />
-
-            <!-- Gregorian (second in RTL = left visual) -->
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="120dp"
                 android:layout_height="match_parent"
-                android:layout_weight="1"
                 android:orientation="vertical"
-                android:gravity="center">
+                android:background="@drawable/widget_v3_panel_dark"
+                android:padding="8dp"
+                android:layout_marginEnd="0dp">
 
                 <TextView
-                    android:id="@+id/widget_gregorian_label"
+                    android:id="@+id/widget_day_of_week"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="الميلادي"
-                    android:textSize="7sp"
-                    android:textColor="#6B7180"
+                    android:text="الثلاثاء"
+                    android:textSize="9sp"
+                    android:textColor="#F5B301"
                     android:fontFamily="sans-serif-medium"
+                    android:textStyle="bold"
                     android:gravity="center" />
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center"
-                    android:layout_marginTop="4dp"
-                    android:layout_marginBottom="4dp">
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:orientation="horizontal">
 
-                    <TextView
-                        android:id="@+id/widget_gregorian_day"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="٢١"
-                        android:textSize="13sp"
-                        android:textColor="#F4F5F7"
-                        android:fontFamily="sans-serif-medium"
-                        android:textStyle="bold" />
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
 
-                    <TextView
-                        android:id="@+id/widget_gregorian_month"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="أبريل"
-                        android:textSize="13sp"
-                        android:textColor="#F5B301"
-                        android:fontFamily="sans-serif-medium"
-                        android:textStyle="bold"
-                        android:layout_marginStart="4dp" />
+                        <TextView
+                            android:id="@+id/widget_hijri_label"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="الهجري"
+                            android:textSize="7sp"
+                            android:textColor="#6B7180"
+                            android:fontFamily="sans-serif-medium"
+                            android:gravity="center" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="4dp">
+
+                            <TextView
+                                android:id="@+id/widget_hijri_day"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="٤"
+                                android:textSize="13sp"
+                                android:textColor="#F4F5F7"
+                                android:fontFamily="sans-serif-medium"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/widget_hijri_month"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="ذو القعدة"
+                                android:textSize="13sp"
+                                android:textColor="#F5B301"
+                                android:fontFamily="sans-serif-medium"
+                                android:textStyle="bold"
+                                android:maxLines="1"
+                                android:ellipsize="end"
+                                android:layout_marginStart="4dp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/widget_hijri_year"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="١٤٤٧ هـ"
+                            android:textSize="8sp"
+                            android:textColor="#6B7180"
+                            android:fontFamily="sans-serif"
+                            android:gravity="center" />
+                    </LinearLayout>
+
+                    <FrameLayout
+                        android:layout_width="1dp"
+                        android:layout_height="match_parent"
+                        android:layout_marginStart="3dp"
+                        android:layout_marginEnd="3dp"
+                        android:background="#1AFFFFFF" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+
+                        <TextView
+                            android:id="@+id/widget_gregorian_label"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="الميلادي"
+                            android:textSize="7sp"
+                            android:textColor="#6B7180"
+                            android:fontFamily="sans-serif-medium"
+                            android:gravity="center" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center"
+                            android:layout_marginTop="4dp"
+                            android:layout_marginBottom="4dp">
+
+                            <TextView
+                                android:id="@+id/widget_gregorian_day"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="٢١"
+                                android:textSize="13sp"
+                                android:textColor="#F4F5F7"
+                                android:fontFamily="sans-serif-medium"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/widget_gregorian_month"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="أبريل"
+                                android:textSize="13sp"
+                                android:textColor="#F5B301"
+                                android:fontFamily="sans-serif-medium"
+                                android:textStyle="bold"
+                                android:layout_marginStart="4dp" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/widget_gregorian_year"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="٢٠٢٦"
+                            android:textSize="8sp"
+                            android:textColor="#6B7180"
+                            android:fontFamily="sans-serif"
+                            android:gravity="center" />
+                    </LinearLayout>
+                </LinearLayout>
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/widget_status_text"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- ═══ VIEW 1: Timeline — V2 compact columns ═══ -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layoutDirection="ltr">
+
+            <ImageView
+                android:id="@+id/timeline_progress_bar"
+                android:layout_width="match_parent"
+                android:layout_height="2dp"
+                android:layout_gravity="center_vertical"
+                android:scaleType="fitXY" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layoutDirection="ltr">
+
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                    <ImageView android:id="@+id/timeline_dot_0" android:layout_width="8dp" android:layout_height="8dp" android:scaleType="fitCenter" />
+                    <TextView android:id="@+id/timeline_name_0" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="الفجر" android:textSize="7sp" android:textColor="#6B7180" android:fontFamily="sans-serif-medium" android:gravity="center" />
+                    <TextView android:id="@+id/timeline_time_0" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="٤:٢١ ص" android:textSize="7sp" android:textColor="#6B7180" android:fontFamily="monospace" android:gravity="center" android:textDirection="ltr" />
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/widget_gregorian_year"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="٢٠٢٦"
-                    android:textSize="8sp"
-                    android:textColor="#6B7180"
-                    android:fontFamily="sans-serif"
-                    android:gravity="center" />
-            </LinearLayout>
-        </LinearLayout>
-    </LinearLayout>
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                    <ImageView android:id="@+id/timeline_dot_1" android:layout_width="8dp" android:layout_height="8dp" android:scaleType="fitCenter" />
+                    <TextView android:id="@+id/timeline_name_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="الشروق" android:textSize="7sp" android:textColor="#6B7180" android:fontFamily="sans-serif-medium" android:gravity="center" />
+                    <TextView android:id="@+id/timeline_time_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="٥:٤٧ ص" android:textSize="7sp" android:textColor="#6B7180" android:fontFamily="monospace" android:gravity="center" android:textDirection="ltr" />
+                </LinearLayout>
 
-    <TextView
-        android:id="@+id/widget_status_text"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:visibility="gone" />
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                    <ImageView android:id="@+id/timeline_dot_2" android:layout_width="8dp" android:layout_height="8dp" android:scaleType="fitCenter" />
+                    <TextView android:id="@+id/timeline_name_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="الظهر" android:textSize="7sp" android:textColor="#6B7180" android:fontFamily="sans-serif-medium" android:gravity="center" />
+                    <TextView android:id="@+id/timeline_time_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="١١:٥٢ ص" android:textSize="7sp" android:textColor="#6B7180" android:fontFamily="monospace" android:gravity="center" android:textDirection="ltr" />
+                </LinearLayout>
+
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                    <ImageView android:id="@+id/timeline_dot_3" android:layout_width="8dp" android:layout_height="8dp" android:scaleType="fitCenter" />
+                    <TextView android:id="@+id/timeline_name_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="العصر" android:textSize="7sp" android:textColor="#6B7180" android:fontFamily="sans-serif-medium" android:gravity="center" />
+                    <TextView android:id="@+id/timeline_time_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="٣:١٤ م" android:textSize="7sp" android:textColor="#6B7180" android:fontFamily="monospace" android:gravity="center" android:textDirection="ltr" />
+                </LinearLayout>
+
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                    <ImageView android:id="@+id/timeline_dot_4" android:layout_width="8dp" android:layout_height="8dp" android:scaleType="fitCenter" />
+                    <TextView android:id="@+id/timeline_name_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="المغرب" android:textSize="7sp" android:textColor="#6B7180" android:fontFamily="sans-serif-medium" android:gravity="center" />
+                    <TextView android:id="@+id/timeline_time_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="٦:٢٩ م" android:textSize="7sp" android:textColor="#6B7180" android:fontFamily="monospace" android:gravity="center" android:textDirection="ltr" />
+                </LinearLayout>
+
+                <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:gravity="center">
+                    <ImageView android:id="@+id/timeline_dot_5" android:layout_width="8dp" android:layout_height="8dp" android:scaleType="fitCenter" />
+                    <TextView android:id="@+id/timeline_name_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="العشاء" android:textSize="7sp" android:textColor="#6B7180" android:fontFamily="sans-serif-medium" android:gravity="center" />
+                    <TextView android:id="@+id/timeline_time_5" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="٧:٥٢ م" android:textSize="7sp" android:textColor="#6B7180" android:fontFamily="monospace" android:gravity="center" android:textDirection="ltr" />
+                </LinearLayout>
+            </LinearLayout>
+        </FrameLayout>
+    </ViewFlipper>
 </LinearLayout>

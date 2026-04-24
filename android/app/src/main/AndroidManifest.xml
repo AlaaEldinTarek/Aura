@@ -201,13 +201,14 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+                <action android:name="com.aura.hala.ACTION_SWITCH_VIEW"/>
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/next_prayer_widget_info"/>
         </receiver>
 
-        <!-- All Prayers Widget -->
+        <!-- Combined Prayer Widget (Next Prayer + Timeline with ViewFlipper) -->
         <receiver
             android:name=".AllPrayersWidget"
             android:label="@string/all_prayers_widget_label"
@@ -215,10 +216,11 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+                <action android:name="com.aura.hala.ACTION_SWITCH_TAB"/>
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
-                android:resource="@xml/all_prayers_widget_info"/>
+                android:resource="@xml/combined_prayer_widget_info"/>
         </receiver>
 
         <!-- Widget Broadcast Receivers -->
