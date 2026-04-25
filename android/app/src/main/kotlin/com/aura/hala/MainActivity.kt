@@ -579,13 +579,6 @@ class MainActivity : FlutterActivity() {
     private fun updateWidgets() {
         val appWidgetManager = getSystemService(Context.APPWIDGET_SERVICE) as AppWidgetManager
 
-        // Update Next Prayer Widget
-        val nextWidgetComponent = ComponentName(this, NextPrayerWidget::class.java)
-        val nextWidgetIds = appWidgetManager.getAppWidgetIds(nextWidgetComponent)
-        for (appWidgetId in nextWidgetIds) {
-            NextPrayerWidget().updateAppWidget(this, appWidgetManager, appWidgetId)
-        }
-
         // Update All Prayers Widget
         val allWidgetComponent = ComponentName(this, AllPrayersWidget::class.java)
         val allWidgetIds = appWidgetManager.getAppWidgetIds(allWidgetComponent)

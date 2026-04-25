@@ -508,15 +508,6 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
 
         val appWidgetManager = AppWidgetManager.getInstance(context)
 
-        // Update Next Prayer Widget
-        val nextWidgetComponent = ComponentName(context, NextPrayerWidget::class.java)
-        val nextWidgetIds = appWidgetManager.getAppWidgetIds(nextWidgetComponent)
-
-        nextWidgetIds.forEach { widgetId ->
-            NextPrayerWidget().updateAppWidget(context, appWidgetManager, widgetId)
-        }
-        Log.d(TAG, "✅ [UPDATE] Updated ${nextWidgetIds.size} NextPrayerWidget(s)")
-
         // Update All Prayers Widget
         val allWidgetComponent = ComponentName(context, AllPrayersWidget::class.java)
         val allWidgetIds = appWidgetManager.getAppWidgetIds(allWidgetComponent)

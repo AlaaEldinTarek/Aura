@@ -28,10 +28,8 @@ class WidgetUpdateService : Service() {
         Thread {
             try {
                 when (action) {
-                    ACTION_UPDATE_NEXT_PRAYER -> updateNextPrayerWidget()
-                    ACTION_UPDATE_ALL_PRAYERS -> updateAllPrayersWidget()
+                    ACTION_UPDATE_NEXT_PRAYER, ACTION_UPDATE_ALL_PRAYERS -> updateAllPrayersWidget()
                     else -> {
-                        updateNextPrayerWidget()
                         updateAllPrayersWidget()
                         updateDailyContentWidget()
                     }
@@ -44,23 +42,6 @@ class WidgetUpdateService : Service() {
         }.start()
 
         return START_NOT_STICKY
-    }
-
-    private fun updateNextPrayerWidget() {
-        try {
-            val appWidgetManager = AppWidgetManager.getInstance(this)
-            val componentName = ComponentName(this, NextPrayerWidget::class.java)
-            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-
-            if (appWidgetIds.isNotEmpty()) {
-                for (appWidgetId in appWidgetIds) {
-                    NextPrayerWidget().updateAppWidget(this, appWidgetManager, appWidgetId)
-                }
-                Log.d(TAG, "Updated ${appWidgetIds.size} NextPrayerWidget instances")
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error updating NextPrayerWidget", e)
-        }
     }
 
     private fun updateAllPrayersWidget() {

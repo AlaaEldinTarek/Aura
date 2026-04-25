@@ -20,9 +20,8 @@ import com.aura.hala.R
 import java.util.Calendar
 import java.util.Date
 
-/**
- * Next Prayer Widget — ViewFlipper with Next Prayer + Compact Timeline
- */
+/*
+ * NextPrayerWidget — removed. Use AllPrayersWidget instead.
 class NextPrayerWidget : AppWidgetProvider() {
 
     companion object {
@@ -235,14 +234,14 @@ class NextPrayerWidget : AppWidgetProvider() {
                 val isPast = t > 0 && t <= now && !isCurrent
 
                 views.setImageViewResource(dotIds[i], when {
-                    isCurrent -> dotNow; isNext -> dotNext; isPast -> dotPast; else -> dotFuture
+                    isCurrent -> dotNow; isNext -> dotNext; isPast -> dotNow; else -> dotFuture
                 })
 
                 views.setTextViewText(nameIds[i], if (isArabic) nameAr else nameEn)
-                val nameColor = when { isCurrent -> colorNow; isNext -> colorNext; else -> colorMuted }
+                val nameColor = when { isCurrent -> colorNow; isNext -> colorNext; isPast -> colorMuted; else -> colorMuted }
                 views.setTextColor(nameIds[i], nameColor)
 
-                val timeColor = when { isCurrent -> colorNow; isNext -> colorNext; else -> colorMuted }
+                val timeColor = when { isCurrent -> colorNow; isNext -> colorNext; isPast -> colorMuted; else -> colorMuted }
                 views.setTextColor(timeIds[i], timeColor)
 
                 if (t > 0) {
@@ -354,6 +353,7 @@ class NextPrayerWidget : AppWidgetProvider() {
             "monthAr" to monthNamesAr[hMonth - 1], "monthEn" to monthNamesEn[hMonth - 1])
     }
 }
+*/
 
 /**
  * Combined Prayer Widget — ViewFlipper with Next Prayer + Day Timeline views
@@ -469,7 +469,7 @@ class AllPrayersWidget : AppWidgetProvider() {
         val inactiveColor = if (isDark) 0xFF6B7180.toInt() else 0xFF9A8F78.toInt()
 
         val tabNextLabel = if (isArabic) "الصلاة القادمة" else "Next Prayer"
-        val tabTimelineLabel = if (isArabic) "الجدول" else "Timeline"
+        val tabTimelineLabel = if (isArabic) "كل الصلوات" else "All Prayer"
 
         views.setTextViewText(R.id.tab_next_prayer, tabNextLabel)
         views.setTextViewText(R.id.tab_timeline, tabTimelineLabel)
@@ -556,8 +556,8 @@ class AllPrayersWidget : AppWidgetProvider() {
         val ringColor = if (isDark) 0xFFF5B301.toInt() else 0xFFB5821B.toInt()
         val trackColorAlpha = if (isDark) Color.argb(20, 255, 255, 255) else Color.argb(26, 60, 45, 20)
         val density = context.resources.displayMetrics.density
-        val ringSize = (20 * density).toInt()
-        val ringBitmap = createRingBitmap(progress, ringColor, trackColorAlpha, ringSize, 2.5f * density)
+        val ringSize = (16 * density).toInt()
+        val ringBitmap = createRingBitmap(progress, ringColor, trackColorAlpha, ringSize, 2f * density)
         views.setImageViewBitmap(R.id.widget_progress_bar, ringBitmap)
 
         // Date info
@@ -620,18 +620,15 @@ class AllPrayersWidget : AppWidgetProvider() {
         // Next countdown in timeline header
         val nextDisplayShort = if (isArabic) nextPrayerNameAr else nextPrayerNameEn
         if (timeRemainingMs > 0) {
-            val th = (timeRemainingMs / 3600000).toInt()
-            val tm = ((timeRemainingMs % 3600000) / 60000).toInt()
-            if (isArabic) {
-                views.setTextViewText(R.id.timeline_next_label, "التالي · $nextDisplayShort بعد")
-                views.setTextViewText(R.id.timeline_countdown_text, "${toEasternArabic(th)} س ${toEasternArabic(String.format("%02d", tm))} د")
-            } else {
-                views.setTextViewText(R.id.timeline_next_label, "NEXT · ${nextDisplayShort.uppercase()} IN")
-                views.setTextViewText(R.id.timeline_countdown_text, String.format("%dh %02dm", th, tm))
-            }
+            views.setTextViewText(R.id.timeline_next_label, if (isArabic) "التالي · " else "NEXT · ")
+            views.setTextViewText(R.id.timeline_next_name, if (isArabic) nextDisplayShort else nextDisplayShort.uppercase())
+            views.setTextViewText(R.id.timeline_next_suffix, if (isArabic) " بعد" else " IN")
+            views.setChronometer(R.id.timeline_countdown_text, SystemClock.elapsedRealtime() + timeRemainingMs, null, true)
         } else {
             views.setTextViewText(R.id.timeline_next_label, if (isArabic) "التالي" else "NEXT")
-            views.setTextViewText(R.id.timeline_countdown_text, if (isArabic) "حان الآن" else "NOW")
+            views.setTextViewText(R.id.timeline_next_name, "")
+            views.setTextViewText(R.id.timeline_next_suffix, "")
+            views.setChronometer(R.id.timeline_countdown_text, SystemClock.elapsedRealtime(), null, false)
         }
 
         // Secondary info line
@@ -665,7 +662,7 @@ class AllPrayersWidget : AppWidgetProvider() {
             val dotRes = when {
                 isCurrent -> dotNow
                 isNext -> dotNext
-                isPast -> dotPast
+                isPast -> dotNow
                 else -> dotFuture
             }
             views.setImageViewResource(p.dotId, dotRes)
@@ -675,7 +672,8 @@ class AllPrayersWidget : AppWidgetProvider() {
             val nameColor = when {
                 isCurrent -> nameColorNow
                 isNext -> nameColorNext
-                else -> nameColorPast
+                isPast -> nameColorPast
+                else -> nameColorFuture
             }
             views.setTextColor(p.nameId, nameColor)
 
@@ -713,10 +711,10 @@ class AllPrayersWidget : AppWidgetProvider() {
         val progressFraction = if (mostRecentTime > 0 && nextPrayerTime > mostRecentTime) {
             val elapsed = now - mostRecentTime
             val total = nextPrayerTime - mostRecentTime
-            // Position: current prayer index + fraction to next
+            // Bar starts at current prayer dot center, moves toward next prayer dot center
             val curIndex = prayers.indexOfFirst { it.nameEn == currentPrayerNameEn }.coerceIn(0, prayers.size - 1)
-            val segFraction = elapsed.toFloat() / total.toFloat()
-            (curIndex + segFraction) / prayers.size.toFloat()
+            val segFraction = (elapsed.toFloat() / total.toFloat()).coerceIn(0f, 1f)
+            (curIndex + 0.5f + segFraction) / prayers.size.toFloat()
         } else if (mostRecentTime > 0) {
             val curIndex = prayers.indexOfFirst { it.nameEn == currentPrayerNameEn }.coerceIn(0, prayers.size - 1)
             (curIndex + 0.5f) / prayers.size.toFloat()
@@ -832,22 +830,6 @@ class AllPrayersWidget : AppWidgetProvider() {
         val monthNamesEn = listOf("Muh.","Saf.","Rabi I","Rabi II","Jum. I","Jum. II","Raj.","Sha.","Ram.","Shaw.","Dhu Q.","Dhu H.")
         return mapOf("year" to hYear.toString(), "month" to hMonth.toString(), "day" to hDay.toString(),
             "monthAr" to monthNamesAr[hMonth - 1], "monthEn" to monthNamesEn[hMonth - 1])
-    }
-}
-
-/**
- * BroadcastReceiver for Next Prayer Widget updates
- */
-class NextPrayerWidgetReceiver : android.content.BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) {
-        Log.d("NextPrayerWidget", "Broadcast received, action=${intent.action}")
-        val appWidgetManager = AppWidgetManager.getInstance(context)
-        val componentName = ComponentName(context, NextPrayerWidget::class.java)
-        val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-
-        for (appWidgetId in appWidgetIds) {
-            NextPrayerWidget().updateAppWidget(context, appWidgetManager, appWidgetId)
-        }
     }
 }
 
