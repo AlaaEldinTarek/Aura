@@ -264,7 +264,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         decoration: BoxDecoration(
-          color: isDark ? AppConstants.darkCard : Colors.white,
+          color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SafeArea(
@@ -330,7 +330,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         decoration: BoxDecoration(
-          color: isDark ? AppConstants.darkCard : Colors.white,
+          color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SafeArea(
@@ -945,7 +945,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : Colors.white,
+        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(color: borderColor),
       ),

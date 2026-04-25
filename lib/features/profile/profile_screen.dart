@@ -869,7 +869,7 @@ class _ProfileStatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : Colors.white,
+        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         border: Border.all(color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
       ),

@@ -240,7 +240,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
     return Container(
       padding: const EdgeInsets.all(AppConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : Colors.white,
+        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
       ),
@@ -367,7 +367,7 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : Colors.white,
+        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         border: Border.all(color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
       ),

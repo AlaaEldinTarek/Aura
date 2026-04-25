@@ -220,7 +220,7 @@ class _AchievementBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: isEarned
             ? AppConstants.primaryColor.withOpacity(0.1)
-            : (isDark ? AppConstants.darkCard : Colors.white),
+            : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         border: Border.all(
           color: isEarned

@@ -13,13 +13,13 @@ class AppConstants {
   static const Color accentPurple = Color(0xFF9D4EDD);
   static const Color accentOrange = Color(0xFFFF9F1C);
 
-  // Neutral Colors - Light Mode
-  static const Color lightBackground = Color(0xFFFAFAFA);
-  static const Color lightSurface = Color(0xFFFFFFFF);
-  static const Color lightCard = Color(0xFFF5F5F5);
-  static const Color lightTextPrimary = Color(0xFF1A1A1A);
-  static const Color lightTextSecondary = Color(0xFF757575);
-  static const Color lightBorder = Color(0xFFE0E0E0);
+  // Neutral Colors - Light Mode (warm cream palette matching native widgets)
+  static const Color lightBackground = Color(0xFFFFF8EB);
+  static const Color lightSurface = Color(0xFFFFF8EB);
+  static const Color lightCard = Color(0xFFFFF3D6);
+  static const Color lightTextPrimary = Color(0xFF2A2418);
+  static const Color lightTextSecondary = Color(0xFF7A6E5A);
+  static const Color lightBorder = Color(0xFFE8D5A8);
 
   // Neutral Colors - Dark Mode
   static const Color darkBackground = Color(0xFF121212);

@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Location-based prayer time calculations using Adhan library
 - Custom Adhan audio playback with native Android MediaPlayer integration
 - Silent mode automation during prayer times (configurable duration, default 20 min)
-- Four home screen widgets (NextPrayerWidget, AllPrayersWidget, CombinedPrayerWidget, TasksWidget) with light/dark/LTR/RTL variants. CombinedPrayerWidget uses ViewFlipper tabs for Next Prayer + Timeline views
+- Three home screen widgets (CombinedPrayerWidget, TasksWidget, DailyContentWidget) with light/dark/LTR/RTL variants. CombinedPrayerWidget uses ViewFlipper tabs for Next Prayer + Timeline views
 - Qibla compass pointing to Kaaba
 - Digital Dhikr/Tasbeeh counter with 6 presets + custom, haptic feedback, stats tracking
 - Prayer tracking (on-time/late/missed/excused) with daily stats and prayer reports
@@ -220,7 +220,7 @@ Located at `android/app/src/main/kotlin/com/aura/hala/`:
 | `AdhanPlayer.kt` | Singleton MediaPlayer adhan playback, per-prayer audio, vibration, thread-safe |
 | `SilentModeAutomation.kt` | AudioManager silent mode scheduling with configurable duration |
 | `PrayerForegroundService.kt` | START_STICKY foreground service with next prayer countdown, updates every second |
-| `PrayerWidgets.kt` | NextPrayerWidget + AllPrayersWidget + CombinedPrayerWidget (ViewFlipper tabs), light/dark/LTR/RTL layouts |
+| `PrayerWidgets.kt` | CombinedPrayerWidget (AllPrayersWidget class) with ViewFlipper tabs (Next Prayer + Timeline), light/dark/LTR/RTL layouts |
 | `TasksWidget.kt` | Home screen tasks widget with task count and next due task |
 | `WidgetUpdateService.kt` | Updates widget views from SharedPreferences prayer data |
 | `DailyContentWidget.kt` | Home screen widget for daily Islamic content (ayah/hadith) |
@@ -239,7 +239,7 @@ Located at `android/app/src/main/kotlin/com/aura/hala/`:
 **AndroidManifest.xml declares:**
 - 18 permissions (location, internet, vibration, wake lock, boot, exact alarms, notifications, foreground service, audio, battery, DND, storage, SYSTEM_ALERT_WINDOW, REORDER_TASKS)
 - 8 receivers, 3 services, 3 activities (MainActivity + AdhanFullScreenActivity + FocusModeActivity with lock screen)
-- 70+ drawable XMLs, 24 layout XMLs, 6 widget info XMLs
+- 109 drawable XMLs, 20 layout XMLs, 5 widget info XMLs
 
 ---
 
@@ -305,7 +305,7 @@ The `getNextPrayer()` method in `PrayerTimesService` handles a critical edge cas
 
 ### Localization Pattern
 - All UI strings use `.tr()` from `easy_localization`
-- 196 translation keys in both `en.json` and `ar.json`
+- 392 translation keys in both `en.json` and `ar.json`
 - Arabic numeral conversion via `NumberFormatter.withArabicNumeralsByLanguage()`
 - RTL support via `context.locale.languageCode == 'ar'`
 - AM/PM replaced with Arabic equivalents (ص/م)
@@ -408,8 +408,8 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 - **Language switching**: `MainWrapperScreen.build()` must call `ref.watch(languageProvider)` — without it, bottom nav labels and screen AppBar titles won't rebuild when the locale changes.
 
 ### Translation Files
-- **`assets/translations/en.json`**: 196 English strings
-- **`assets/translations/ar.json`**: 196 Arabic strings
+- **`assets/translations/en.json`**: 392 English strings
+- **`assets/translations/ar.json`**: 392 Arabic strings
 - **When adding new strings, add to BOTH files**
 
 ### Assets
@@ -439,7 +439,7 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 
 Defined in `lib/core/theme/app_theme.dart`:
 - **Visual Identity Color**: `#F5B301` (bright gold) — used everywhere as `AppConstants.primaryColor`
-- **Light**: Primary `#B5821B` (warm gold), dark gold secondary `#D4A43A`, white/light surfaces
+- **Light**: Primary `#B5821B` (warm gold), warm cream surfaces `#FFF8EB`, cards `#FFF3D6`, borders `#E8D5A8`, text `#2A2418`/`#7A6E5A`
 - **Dark**: Primary `#F5B301` (bright gold), dark surfaces (#1A1B1E, #111317)
 - **AMOLED**: True black surfaces for OLED screens, same `#F5B301` primary
 - **Dynamic color**: Optional Material You dynamic colors via `dynamic_color` package
@@ -455,7 +455,11 @@ Defined in `lib/core/theme/app_theme.dart`:
 | Native Primary | `#B5821B` | `#F5B301` |
 | Primary Container | `#FFEACC` | `#F5B301` |
 | Secondary/Accent | `#D4A43A` | `#D4A43A` |
-| Widget Accent (light) | `#B5821B` | `#F5B301` (dark widgets) |
+| Background | `#FFF8EB` (warm cream) | `#111317` |
+| Surface/Card | `#FFF3D6` | `#1A1B1E` |
+| Text Primary | `#2A2418` | `#FFFFFF` |
+| Text Secondary | `#7A6E5A` | `#B0B0B0` |
+| Border | `#E8D5A8` | `#3A3A3A` |
 
 ---
 

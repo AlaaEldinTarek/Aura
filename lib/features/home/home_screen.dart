@@ -226,7 +226,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDark ? AppConstants.darkCard : Colors.white,
+          color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
           borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
           border: Border.all(color: accentColor.withValues(alpha: 0.3)),
           boxShadow: [
@@ -1104,7 +1104,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Container(
       padding: const EdgeInsets.all(AppConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : Colors.white,
+        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
       ),
@@ -1195,7 +1195,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         return Container(
           padding: const EdgeInsets.all(AppConstants.paddingMedium),
           decoration: BoxDecoration(
-            color: isDark ? AppConstants.darkCard : Colors.white,
+            color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
             borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
             border: Border.all(color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
           ),
@@ -1336,7 +1336,7 @@ class _HomeCelebrationOverlayState extends State<_HomeCelebrationOverlay>
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 36),
                       decoration: BoxDecoration(
-                        color: widget.isDark ? AppConstants.darkSurface : Colors.white,
+                        color: widget.isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
                         borderRadius: BorderRadius.circular(28),
                         border: Border.all(
                           color: AppConstants.primaryColor.withValues(alpha: 0.25),

@@ -34,7 +34,7 @@ class AuraBottomNavBar extends ConsumerWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkSurface : Colors.white,
+        color: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),

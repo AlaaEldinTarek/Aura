@@ -259,7 +259,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
     return Container(
       padding: const EdgeInsets.all(AppConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : Colors.white,
+        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(
           color: AppConstants.primaryColor.withOpacity(0.3),

@@ -465,7 +465,7 @@ class _LangCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? AppConstants.primaryColor.withValues(alpha: 0.1)
-              : (isDark ? AppConstants.darkCard : Colors.white),
+              : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: isSelected
@@ -608,7 +608,7 @@ class _ThemeStep extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? opt.color.withValues(alpha: 0.1)
-                        : (isDark ? AppConstants.darkCard : Colors.white),
+                        : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
                       color: isSelected
@@ -799,7 +799,7 @@ class _ModeStep extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? opt.color.withValues(alpha: 0.1)
-                        : (isDark ? AppConstants.darkCard : Colors.white),
+                        : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
                       color: isSelected
@@ -1207,7 +1207,7 @@ class _AllSetStep extends StatelessWidget {
           // Summary cards
           Container(
             decoration: BoxDecoration(
-              color: isDark ? AppConstants.darkCard : Colors.white,
+              color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
                 color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,

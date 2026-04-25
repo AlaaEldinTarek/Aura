@@ -64,7 +64,7 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
               floating: true,
               pinned: false,
               elevation: 0,
-              backgroundColor: isDark ? Colors.grey.shade900 : Colors.white,
+              backgroundColor: isDark ? Colors.grey.shade900 : AppConstants.lightSurface,
               title: Text(
                 'app_name'.tr(),
                 style: TextStyle(
@@ -318,7 +318,7 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
     return Container(
       padding: const EdgeInsets.all(AppConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : Colors.white,
+        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         border: Border.all(
           color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
@@ -429,7 +429,7 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
               return Container(
                 padding: const EdgeInsets.all(AppConstants.paddingLarge),
                 decoration: BoxDecoration(
-                  color: isDark ? AppConstants.darkCard : Colors.white,
+                  color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
                   borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
                   border: Border.all(
                     color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
@@ -733,7 +733,7 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
     return Container(
       padding: const EdgeInsets.all(AppConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : Colors.white,
+        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(
           color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,

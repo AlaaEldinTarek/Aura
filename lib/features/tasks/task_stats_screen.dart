@@ -69,7 +69,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
           isArabic ? 'إحصائيات المهام' : 'Task Statistics',
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: isDark ? AppConstants.darkSurface : Colors.white,
+        backgroundColor: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
         foregroundColor: isDark ? Colors.white : Colors.black87,
         elevation: 0,
         bottom: TabBar(
@@ -216,7 +216,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : Colors.white,
+        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         boxShadow: [
           BoxShadow(
@@ -302,7 +302,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : Colors.white,
+        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         boxShadow: [
           BoxShadow(
@@ -422,7 +422,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
       height: 220,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : Colors.white,
+        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
       ),
       child: const Center(child: CircularProgressIndicator()),
@@ -465,7 +465,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : Colors.white,
+        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         boxShadow: [
           BoxShadow(
@@ -595,7 +595,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : Colors.white,
+        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         boxShadow: [
           BoxShadow(
@@ -827,7 +827,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: isDark ? AppConstants.darkCard : Colors.white,
+                    color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
                     borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
                     boxShadow: [
                       BoxShadow(
@@ -926,7 +926,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
         return Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isDark ? AppConstants.darkCard : Colors.white,
+            color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
             borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
             boxShadow: [
               BoxShadow(

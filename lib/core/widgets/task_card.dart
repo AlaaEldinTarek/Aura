@@ -68,7 +68,7 @@ class TaskCard extends StatelessWidget {
             ? (isDark
                 ? Colors.red.withOpacity(0.07)
                 : Colors.red.withOpacity(0.04))
-            : (isDark ? AppConstants.darkCard : Colors.white),
+            : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         border: isSelected
             ? Border.all(color: AppConstants.primaryColor, width: 2)

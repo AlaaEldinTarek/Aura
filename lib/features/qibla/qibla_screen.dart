@@ -166,7 +166,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
               expandedHeight: 120,
               floating: false,
               pinned: true,
-              backgroundColor: isDark ? AppConstants.darkSurface : Colors.white,
+              backgroundColor: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
               flexibleSpace: FlexibleSpaceBar(
                 titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
                 title: Text(
@@ -235,7 +235,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
     return Container(
       padding: const EdgeInsets.all(AppConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : Colors.white,
+        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(
           color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
@@ -369,7 +369,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
     return Container(
       padding: const EdgeInsets.all(AppConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : Colors.white,
+        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(
           color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,

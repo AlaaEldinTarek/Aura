@@ -190,7 +190,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                 overflow: TextOverflow.ellipsis,
               ),
         centerTitle: false,
-        backgroundColor: isDark ? AppConstants.darkSurface : Colors.white,
+        backgroundColor: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
         foregroundColor: isDark ? Colors.white : Colors.black87,
         elevation: 0,
         actions: [
@@ -457,7 +457,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
             Container(
               margin: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? AppConstants.darkCard : Colors.white,
+                color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
                 borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
                 boxShadow: [
                   BoxShadow(
@@ -701,7 +701,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
         decoration: BoxDecoration(
-          color: isDark ? AppConstants.darkCard : Colors.white,
+          color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
           borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
           boxShadow: [
             BoxShadow(
@@ -787,7 +787,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppConstants.primaryColor.withOpacity(0.12)
-                    : (isDark ? AppConstants.darkCard : Colors.white),
+                    : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: isSelected
@@ -860,7 +860,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppConstants.primaryColor.withOpacity(0.15)
-                        : (isDark ? AppConstants.darkCard : Colors.white),
+                        : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
@@ -1568,7 +1568,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         decoration: BoxDecoration(
-          color: isDark ? AppConstants.darkSurface : Colors.white,
+          color: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SafeArea(
@@ -1752,7 +1752,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkSurface : Colors.white,
+        color: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -1931,7 +1931,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         decoration: BoxDecoration(
-          color: isDark ? AppConstants.darkSurface : Colors.white,
+          color: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SafeArea(
@@ -2328,7 +2328,7 @@ class _CelebrationOverlayState extends State<_CelebrationOverlay>
                   child: Container(
                     margin: const EdgeInsets.symmetric(horizontal: 36),
                     decoration: BoxDecoration(
-                      color: widget.isDark ? AppConstants.darkSurface : Colors.white,
+                      color: widget.isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
                       borderRadius: BorderRadius.circular(28),
                       border: Border.all(
                         color: AppConstants.primaryColor.withValues(alpha: 0.25),
@@ -2472,7 +2472,7 @@ class _TaskSettingsSheet extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkSurface : Colors.white,
+        color: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -2628,7 +2628,7 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         decoration: BoxDecoration(
-          color: isDark ? AppConstants.darkSurface : Colors.white,
+          color: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -2951,7 +2951,7 @@ class _InlineSubtaskCardState extends State<_InlineSubtaskCard> {
               ? Container(
                   margin: const EdgeInsets.only(top: 2, left: 12, right: 4),
                   decoration: BoxDecoration(
-                    color: isDark ? AppConstants.darkCard : Colors.white,
+                    color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
                     borderRadius: const BorderRadius.only(
                       bottomLeft: Radius.circular(AppConstants.radiusMedium),
                       bottomRight: Radius.circular(AppConstants.radiusMedium),

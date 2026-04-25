@@ -20,8 +20,8 @@ class AppTheme {
   static const Color onSecondary = Color(0xFFFFFFFF);
 
   // Surface colors
-  static const Color surfaceLight = Color(0xFFFDFCFF);
-  static const Color onSurfaceLight = Color(0xFF1A1B1E);
+  static const Color surfaceLight = Color(0xFFFFF8EB);
+  static const Color onSurfaceLight = Color(0xFF2A2418);
   static const Color surfaceDark = Color(0xFF1A1B1E);
   static const Color onSurfaceDark = Color(0xFFE3E2E6);
 
@@ -30,8 +30,8 @@ class AppTheme {
   static const Color onSurfaceAmoled = Color(0xFFE3E2E6);
 
   // Background colors
-  static const Color backgroundLight = Color(0xFFFDFCFF);
-  static const Color onBackgroundLight = Color(0xFF1A1B1E);
+  static const Color backgroundLight = Color(0xFFFFF8EB);
+  static const Color onBackgroundLight = Color(0xFF2A2418);
   static const Color backgroundDark = Color(0xFF111317);
   static const Color onBackgroundDark = Color(0xFFE3E2E6);
 
@@ -40,7 +40,7 @@ class AppTheme {
   static const Color onBackgroundAmoled = Color(0xFFE3E2E6);
 
   // Outline colors
-  static const Color outlineLight = Color(0xFFC7C5D0);
+  static const Color outlineLight = Color(0xFFE8D5A8);
   static const Color outlineDark = Color(0xFF47474F);
   static const Color outlineAmoled = Color(0xFF333333);
 
@@ -77,7 +77,7 @@ class AppTheme {
       elevation: 6,
     ),
     cardTheme: CardThemeData(
-      color: surfaceLight,
+      color: const Color(0xFFFFF3D6),
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),

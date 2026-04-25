@@ -56,7 +56,7 @@ class DailyContentScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: isDark ? AppConstants.darkCard : Colors.white,
+                color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
                 borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
                 border: Border.all(color: accentColor.withValues(alpha: 0.25)),
                 boxShadow: [

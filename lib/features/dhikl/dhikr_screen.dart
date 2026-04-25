@@ -533,7 +533,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
               child: Container(
                 padding: const EdgeInsets.all(AppConstants.paddingMedium),
                 decoration: BoxDecoration(
-                  color: isDark ? AppConstants.darkCard : Colors.white,
+                  color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
                   borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
                   border: Border.all(
                     color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,

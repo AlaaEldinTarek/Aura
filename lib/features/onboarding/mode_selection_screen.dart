@@ -115,7 +115,7 @@ class ModeSelectionScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? option.color.withOpacity(0.1)
-              : (isDark ? AppConstants.darkCard : Colors.white),
+              : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
           borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
           border: Border.all(
             color: isSelected ? option.color : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder),

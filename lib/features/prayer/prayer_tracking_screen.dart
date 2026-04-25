@@ -202,7 +202,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
         const SizedBox(height: AppConstants.paddingMedium),
         Container(
           decoration: BoxDecoration(
-            color: isDark ? AppConstants.darkCard : Colors.white,
+            color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
             borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
             border: Border.all(
               color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
@@ -310,7 +310,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
     return Container(
       padding: const EdgeInsets.all(AppConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : Colors.white,
+        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         border: Border.all(
           color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
@@ -670,7 +670,7 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : Colors.white,
+        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         border: Border.all(
           color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
