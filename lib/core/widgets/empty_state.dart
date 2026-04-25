@@ -35,7 +35,7 @@ class EmptyState extends StatelessWidget {
               width: 100,
               height: 100,
               decoration: BoxDecoration(
-                color: AppConstants.primaryColor.withOpacity(0.1),
+                color: AppConstants.getPrimary(isDark).withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: Center(
@@ -43,7 +43,7 @@ class EmptyState extends StatelessWidget {
                     ? Icon(
                         icon,
                         size: 48,
-                        color: AppConstants.primaryColor.withOpacity(0.5),
+                        color: AppConstants.getPrimary(isDark).withOpacity(0.5),
                       )
                     : Text(
                         iconEmoji!,
@@ -81,7 +81,7 @@ class EmptyState extends StatelessWidget {
                 icon: const Icon(Icons.refresh),
                 label: Text(actionLabel!),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppConstants.primaryColor,
+                  backgroundColor: AppConstants.getPrimary(isDark),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: AppConstants.paddingLarge,

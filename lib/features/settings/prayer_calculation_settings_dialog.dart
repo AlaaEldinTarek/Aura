@@ -41,7 +41,7 @@ class PrayerCalculationSettingsDialog extends StatelessWidget {
               children: [
                 Icon(
                   Icons.calculate_outlined,
-                  color: AppConstants.primaryColor,
+                  color: AppConstants.getPrimary(isDark),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -74,7 +74,7 @@ class PrayerCalculationSettingsDialog extends StatelessWidget {
                 leading: Radio<String>(
                   value: method.value,
                   groupValue: currentMethod,
-                  activeColor: AppConstants.primaryColor,
+                  activeColor: AppConstants.getPrimary(isDark),
                   onChanged: (value) {
                     if (value != null) {
                       onMethodChanged(value);
@@ -117,7 +117,7 @@ class PrayerCalculationSettingsDialog extends StatelessWidget {
                 leading: Radio<String>(
                   value: madhab.value,
                   groupValue: currentMadhab,
-                  activeColor: AppConstants.primaryColor,
+                  activeColor: AppConstants.getPrimary(isDark),
                   onChanged: (value) {
                     if (value != null) {
                       onMadhabChanged(value);
@@ -153,7 +153,7 @@ class PrayerCalculationSettingsDialog extends StatelessWidget {
                 Navigator.pop(context);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppConstants.primaryColor,
+                backgroundColor: AppConstants.getPrimary(isDark),
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
               child: Text(
@@ -175,7 +175,7 @@ class PrayerCalculationSettingsDialog extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(icon, size: 20, color: AppConstants.primaryColor),
+        Icon(icon, size: 20, color: AppConstants.getPrimary(isDark)),
         const SizedBox(width: 8),
         Text(
           title,

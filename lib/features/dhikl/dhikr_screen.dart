@@ -165,6 +165,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
 
   void _showCompletionDialog() {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showDialog(
       context: context,
@@ -183,7 +184,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: AppConstants.primaryColor,
+                color: AppConstants.getPrimary(isDark),
               ),
             ),
             const SizedBox(height: 8),
@@ -211,7 +212,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                       _incrementCounter(); // Continue counting
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppConstants.primaryColor,
+                      backgroundColor: AppConstants.getPrimary(isDark),
                     ),
                     child: Text(isArabic ? 'متابعة' : 'Continue'),
                   ),
@@ -228,6 +229,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
 
   void _showPresetSelector() {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final allPresets = _allPresets;
 
     showModalBottomSheet(
@@ -284,14 +286,14 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                   contentPadding: const EdgeInsets.symmetric(horizontal: 8),
                   leading: CircleAvatar(
                     radius: 18,
-                    backgroundColor: AppConstants.primaryColor.withOpacity(0.1),
-                    child: Icon(Icons.add, color: AppConstants.primaryColor, size: 20),
+                    backgroundColor: AppConstants.getPrimary(isDark).withOpacity(0.1),
+                    child: Icon(Icons.add, color: AppConstants.getPrimary(isDark), size: 20),
                   ),
                   title: Text(
                     isArabic ? 'إضافة ذكر مخصص' : 'Add Custom Zikr',
                     style: TextStyle(
                       fontWeight: FontWeight.w600,
-                      color: AppConstants.primaryColor,
+                      color: AppConstants.getPrimary(isDark),
                     ),
                   ),
                   onTap: () {
@@ -310,12 +312,13 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
   }
 
   Widget _buildPresetTile(DhikrPreset preset, bool isSelected, {required bool isCustom}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       leading: CircleAvatar(
         radius: 18,
         backgroundColor: isSelected
-            ? AppConstants.primaryColor
+            ? AppConstants.getPrimary(isDark)
             : Colors.grey.shade300,
         child: preset.arabicText.isNotEmpty
             ? Text(
@@ -341,7 +344,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
           ? Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (isSelected) Icon(Icons.check_circle, color: AppConstants.primaryColor, size: 20),
+                if (isSelected) Icon(Icons.check_circle, color: AppConstants.getPrimary(isDark), size: 20),
                 IconButton(
                   icon: Icon(Icons.edit_outlined, size: 18, color: Colors.grey.shade500),
                   onPressed: () {
@@ -359,7 +362,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
               ],
             )
           : isSelected
-              ? Icon(Icons.check_circle, color: AppConstants.primaryColor)
+              ? Icon(Icons.check_circle, color: AppConstants.getPrimary(isDark))
               : null,
       onTap: () {
         setState(() {
@@ -452,6 +455,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
 
   void _showTargetSelector() {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
       context: context,
@@ -481,7 +485,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                   ),
                 ),
                 trailing: _currentTarget == target
-                    ? Icon(Icons.check_circle, color: AppConstants.primaryColor)
+                    ? Icon(Icons.check_circle, color: AppConstants.getPrimary(isDark))
                     : null,
                 onTap: () {
                   setState(() {
@@ -543,7 +547,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                   children: [
                     Icon(
                       _selectedPreset?.isCustom == true ? Icons.edit_note : Icons.dashboard,
-                      color: AppConstants.primaryColor,
+                      color: AppConstants.getPrimary(isDark),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -610,10 +614,10 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                       '$_currentTarget',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: AppConstants.primaryColor,
+                        color: AppConstants.getPrimary(isDark),
                       ),
                     ),
-                    Icon(Icons.chevron_right, size: 18, color: AppConstants.primaryColor),
+                    Icon(Icons.chevron_right, size: 18, color: AppConstants.getPrimary(isDark)),
                   ],
                 ),
               ),
@@ -640,7 +644,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                   child: ElevatedButton(
                     onPressed: _incrementCounter,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppConstants.primaryColor,
+                      backgroundColor: AppConstants.getPrimary(isDark),
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       elevation: 4,
                     ),
@@ -686,13 +690,13 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                   colors: _isCompleted
                       ? [Colors.green.shade400, Colors.green.shade600]
                       : [
-                          AppConstants.primaryColor,
-                          AppConstants.primaryColor.withOpacity(0.7),
+                          AppConstants.getPrimary(isDark),
+                          AppConstants.getPrimary(isDark).withOpacity(0.7),
                         ],
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: (_isCompleted ? Colors.green : AppConstants.primaryColor)
+                    color: (_isCompleted ? Colors.green : AppConstants.getPrimary(isDark))
                         .withOpacity(0.4),
                     blurRadius: 24,
                     offset: const Offset(0, 8),
@@ -744,7 +748,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
             widthFactor: _progressAnimation.value,
             child: Container(
               decoration: BoxDecoration(
-                color: _isCompleted ? Colors.green : AppConstants.primaryColor,
+                color: _isCompleted ? Colors.green : AppConstants.getPrimary(isDark),
                 borderRadius: BorderRadius.circular(4),
               ),
             ),

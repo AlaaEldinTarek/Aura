@@ -57,12 +57,12 @@ class SettingTile extends StatelessWidget {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: (iconColor ?? AppConstants.primaryColor).withOpacity(0.1),
+                      color: (iconColor ?? AppConstants.getPrimary(isDark)).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
                     ),
                     child: Icon(
                       icon,
-                      color: iconColor ?? AppConstants.primaryColor,
+                      color: iconColor ?? AppConstants.getPrimary(isDark),
                       size: 20,
                     ),
                   )
@@ -71,7 +71,7 @@ class SettingTile extends StatelessWidget {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: AppConstants.primaryColor.withOpacity(0.1),
+                      color: AppConstants.getPrimary(isDark).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
                     ),
                     child: Center(
@@ -179,12 +179,12 @@ class SettingTileSwitch extends StatelessWidget {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: (iconColor ?? AppConstants.primaryColor).withOpacity(0.1),
+                      color: (iconColor ?? AppConstants.getPrimary(isDark)).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
                     ),
                     child: Icon(
                       icon,
-                      color: iconColor ?? AppConstants.primaryColor,
+                      color: iconColor ?? AppConstants.getPrimary(isDark),
                       size: 20,
                     ),
                   )
@@ -193,7 +193,7 @@ class SettingTileSwitch extends StatelessWidget {
                     width: 40,
                     height: 40,
                     decoration: BoxDecoration(
-                      color: AppConstants.primaryColor.withOpacity(0.1),
+                      color: AppConstants.getPrimary(isDark).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
                     ),
                     child: Center(
@@ -233,7 +233,7 @@ class SettingTileSwitch extends StatelessWidget {
                 Switch(
                   value: value,
                   onChanged: onChanged,
-                  activeColor: AppConstants.primaryColor,
+                  activeColor: AppConstants.getPrimary(isDark),
                 ),
               ],
             ),
@@ -272,7 +272,7 @@ class SettingsSectionHeader extends StatelessWidget {
             Icon(
               icon,
               size: 18,
-              color: AppConstants.primaryColor,
+              color: AppConstants.getPrimary(isDark),
             ),
             const SizedBox(width: AppConstants.paddingSmall),
           ],
@@ -280,7 +280,7 @@ class SettingsSectionHeader extends StatelessWidget {
             title,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: AppConstants.primaryColor,
+                  color: AppConstants.getPrimary(isDark),
                   letterSpacing: 0.5,
                 ),
           ),

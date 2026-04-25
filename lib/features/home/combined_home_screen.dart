@@ -81,8 +81,8 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
               ],
               bottom: TabBar(
                 controller: _tabController,
-                indicatorColor: AppConstants.primaryColor,
-                labelColor: AppConstants.primaryColor,
+                indicatorColor: AppConstants.getPrimary(isDark),
+                labelColor: AppConstants.getPrimary(isDark),
                 unselectedLabelColor: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                 tabs: [
                   Tab(text: 'home'.tr()),
@@ -107,7 +107,7 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
               onPressed: () => _navigateToTaskForm(context),
               icon: const Icon(Icons.add),
               label: Text(isArabic ? 'مهمة جديدة' : 'New Task'),
-              backgroundColor: AppConstants.primaryColor,
+              backgroundColor: AppConstants.getPrimary(isDark),
             )
           : null,
     );
@@ -202,8 +202,8 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            AppConstants.primaryColor,
-            AppConstants.primaryColor.withOpacity(0.8),
+            AppConstants.getPrimary(isDark),
+            AppConstants.getPrimary(isDark).withOpacity(0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -211,7 +211,7 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         boxShadow: [
           BoxShadow(
-            color: AppConstants.primaryColor.withOpacity(0.3),
+            color: AppConstants.getPrimary(isDark).withOpacity(0.3),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -273,7 +273,7 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
                 icon: Icons.task_alt,
                 label: isArabic ? 'المهام' : 'Tasks',
                 value: '${stats.pending}',
-                color: AppConstants.primaryColor,
+                color: AppConstants.getPrimary(isDark),
                 isDark: isDark,
               ),
             ),
@@ -391,7 +391,7 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
                       backgroundColor:
                           isDark ? Colors.grey.shade800 : Colors.grey.shade200,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                          progress == 1.0 ? Colors.green : AppConstants.primaryColor),
+                          progress == 1.0 ? Colors.green : AppConstants.getPrimary(isDark)),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -632,7 +632,7 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
               icon: Icons.today,
               title: isArabic ? 'مهام اليوم' : "Today's Tasks",
               count: todayTasks.length,
-              color: AppConstants.primaryColor,
+              color: AppConstants.getPrimary(isDark),
               isDark: isDark),
           const SizedBox(height: 8),
           ...todayTasks.map((t) => _buildHomeTaskCard(t)),
@@ -715,7 +715,7 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.location_on, color: AppConstants.primaryColor, size: 20),
+          Icon(Icons.location_on, color: AppConstants.getPrimary(isDark), size: 20),
           const SizedBox(width: 6),
           Text(
             localizedCityName,
@@ -753,7 +753,7 @@ class _CombinedHomeScreenState extends ConsumerState<CombinedHomeScreen>
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: AppConstants.primaryColor,
+              color: AppConstants.getPrimary(isDark),
             ),
           ),
           const SizedBox(height: 8),

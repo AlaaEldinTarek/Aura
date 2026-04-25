@@ -99,7 +99,7 @@ class _CircularCountdownTimerState extends State<CircularCountdownTimer>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final locale = Localizations.localeOf(context);
     final isArabic = locale.languageCode == 'ar';
-    final primaryColor = widget.primaryColor ?? AppConstants.primaryColor;
+    final primaryColor = widget.primaryColor ?? AppConstants.getPrimary(isDark);
     final backgroundColor =
         widget.backgroundColor ?? (isDark ? AppConstants.darkCard : AppConstants.lightCard);
 
@@ -307,7 +307,7 @@ class CompactCountdown extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final locale = Localizations.localeOf(context);
     final isArabic = locale.languageCode == 'ar';
-    final primaryColor = color ?? AppConstants.primaryColor;
+    final primaryColor = color ?? AppConstants.getPrimary(isDark);
 
     final now = DateTime.now();
     final difference = targetTime.difference(now);

@@ -179,7 +179,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                 icon: Icons.schedule,
                 label: isArabic ? 'في الوقت' : 'On Time',
                 value: NumberFormatter.withArabicNumeralsByLanguage('$onTimeRate%', isArabic ? 'ar' : 'en'),
-                color: AppConstants.primaryColor,
+                color: AppConstants.getPrimary(isDark),
                 isDark: isDark,
               ),
             ),
@@ -226,11 +226,11 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
             },
             calendarStyle: CalendarStyle(
               todayDecoration: BoxDecoration(
-                color: AppConstants.primaryColor.withOpacity(0.3),
+                color: AppConstants.getPrimary(isDark).withOpacity(0.3),
                 shape: BoxShape.circle,
               ),
               selectedDecoration: BoxDecoration(
-                color: AppConstants.primaryColor,
+                color: AppConstants.getPrimary(isDark),
                 shape: BoxShape.circle,
               ),
               markerDecoration: BoxDecoration(

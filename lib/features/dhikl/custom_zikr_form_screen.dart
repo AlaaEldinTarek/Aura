@@ -210,7 +210,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
                   return ChoiceChip(
                     label: Text('$val'),
                     selected: selected,
-                    selectedColor: AppConstants.primaryColor.withOpacity(0.2),
+                    selectedColor: AppConstants.getPrimary(isDark).withOpacity(0.2),
                     onSelected: (_) {
                       setState(() {
                         _targetController.text = val.toString();
@@ -226,7 +226,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
               ElevatedButton(
                 onPressed: _save,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppConstants.primaryColor,
+                  backgroundColor: AppConstants.getPrimary(isDark),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -262,7 +262,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
         color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(
-          color: AppConstants.primaryColor.withOpacity(0.3),
+          color: AppConstants.getPrimary(isDark).withOpacity(0.3),
           width: 1.5,
         ),
       ),
@@ -281,17 +281,17 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
             children: [
               CircleAvatar(
                 radius: 20,
-                backgroundColor: AppConstants.primaryColor.withOpacity(0.15),
+                backgroundColor: AppConstants.getPrimary(isDark).withOpacity(0.15),
                 child: arabicText.isNotEmpty
                     ? Text(
                         arabicText[0],
                         style: TextStyle(
-                          color: AppConstants.primaryColor,
+                          color: AppConstants.getPrimary(isDark),
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       )
-                    : Icon(Icons.edit_note, color: AppConstants.primaryColor),
+                    : Icon(Icons.edit_note, color: AppConstants.getPrimary(isDark)),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -325,7 +325,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppConstants.primaryColor,
+                      color: AppConstants.getPrimary(isDark),
                     ),
                   ),
                   Text(

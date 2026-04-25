@@ -81,7 +81,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await ref.read(guestModeProvider.notifier).setGuest(true);
 
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/onboarding');
+        await Navigator.of(context).pushNamed('/onboarding');
+        // User pressed back from onboarding — cancel guest mode
+        if (mounted) {
+          await ref.read(guestModeProvider.notifier).setGuest(false);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -153,7 +157,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 if (mounted) _showErrorSnackBar(e.toString());
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppConstants.primaryColor, foregroundColor: Colors.white),
+            style: ElevatedButton.styleFrom(backgroundColor: AppConstants.getPrimary(Theme.of(context).brightness == Brightness.dark), foregroundColor: Colors.white),
             child: Text(isRTL ? 'إرسال' : 'Send'),
           ),
         ],
@@ -201,68 +205,54 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Hero(
                       tag: 'app_logo',
                       child: Image.asset(
-                        'assets/images/logo-0_dark.png',
-                        width: isTablet ? 140 : 120,
-                        height: isTablet ? 140 : 120,
+                        'assets/images/logo.png',
+                        width: isTablet ? 120 : 100,
+                        height: isTablet ? 120 : 100,
                       ),
                     ).animate().fadeIn(duration: 500.ms).scale(
                           duration: 800.ms,
                           curve: Curves.elasticOut,
                         ),
 
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 4),
 
                     // App Name
-                    ShaderMask(
-                      shaderCallback: (bounds) => const LinearGradient(
-                        colors: [
-                          AppConstants.primaryColor,
-                          AppConstants.accentCyan,
+                    RichText(
+                      textAlign: TextAlign.center,
+                      text: TextSpan(
+                        children: [
+                          TextSpan(
+                            text: 'Aura',
+                            style: TextStyle(
+                              fontSize: 30,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'Roboto',
+                              letterSpacing: -0.5,
+                              color: AppConstants.getPrimary(isDark),
+                            ),
+                          ),
+                          TextSpan(
+                            text: ' | ',
+                            style: TextStyle(
+                              fontSize: 30,
+                              fontWeight: FontWeight.w300,
+                              color: AppConstants.getPrimary(isDark),
+                            ),
+                          ),
+                          TextSpan(
+                            text: 'هالة',
+                            style: TextStyle(
+                              fontSize: 30,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'Cairo',
+                              color: AppConstants.getPrimary(isDark),
+                            ),
+                          ),
                         ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ).createShader(bounds),
-                      child: RichText(
-                        textAlign: TextAlign.center,
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: 'Aura',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    fontFamily: 'Roboto',
-                                    letterSpacing: -0.5,
-                                  ),
-                            ),
-                            TextSpan(
-                              text: ' | ',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w300,
-                                    color: AppConstants.primaryColor,
-                                  ),
-                            ),
-                            TextSpan(
-                              text: 'هالة',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    fontFamily: 'Cairo',
-                                  ),
-                            ),
-                          ],
-                        ),
                       ),
                     ).animate().fadeIn(delay: 300.ms, duration: 500.ms),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 2),
 
                     // Tagline - improved styling with letter spacing
                     Text(
@@ -388,8 +378,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-                borderSide: const BorderSide(
-                    color: AppConstants.primaryColor, width: 2),
+                borderSide: BorderSide(
+                    color: AppConstants.getPrimary(isDark), width: 2),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -453,8 +443,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-                borderSide: const BorderSide(
-                    color: AppConstants.primaryColor, width: 2),
+                borderSide: BorderSide(
+                    color: AppConstants.getPrimary(isDark), width: 2),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -497,7 +487,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             child: ElevatedButton(
               onPressed: _isLoading ? null : _signInWithEmail,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppConstants.primaryColor,
+                backgroundColor: AppConstants.getPrimary(isDark),
                 foregroundColor: Colors.white,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -564,10 +554,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             icon: const Icon(Icons.login, size: 18),
             label: Text('auth_login_with_google'.tr(), style: const TextStyle(fontSize: 14)),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppConstants.primaryColor,
+              foregroundColor: AppConstants.getPrimary(isDark),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               side:
-                  BorderSide(color: AppConstants.primaryColor.withOpacity(0.5)),
+                  BorderSide(color: AppConstants.getPrimary(isDark).withOpacity(0.5)),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
               ),
@@ -579,6 +569,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Widget _buildGuestModeButton(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return SizedBox(
       height: 44,
       child: OutlinedButton.icon(
@@ -586,8 +577,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         icon: const Icon(Icons.person_outline, size: 18),
         label: Text('guest_mode'.tr(), style: const TextStyle(fontSize: 14)),
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppConstants.primaryColor,
-          side: BorderSide(color: AppConstants.primaryColor.withOpacity(0.5)),
+          foregroundColor: AppConstants.getPrimary(isDark),
+          side: BorderSide(color: AppConstants.getPrimary(isDark).withOpacity(0.5)),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -613,12 +604,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     Navigator.of(context).pushNamed('/signup');
                   }
                 },
-          child: Text(
-            'auth_signup'.tr(),
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          child: Builder(builder: (context) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+            return Text(
+              'auth_signup'.tr(),
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppConstants.getPrimary(isDark),
+              ),
+            );
+          }),
         ),
       ],
     );

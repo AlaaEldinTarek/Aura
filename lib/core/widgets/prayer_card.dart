@@ -45,15 +45,15 @@ class PrayerCard extends StatelessWidget {
 
     if (isCurrent) {
       cardColor = isDark
-          ? AppConstants.primaryColor.withOpacity(0.15)
-          : AppConstants.primaryColor.withOpacity(0.1);
-      borderColor = AppConstants.primaryColor;
-      iconColor = AppConstants.primaryColor;
+          ? AppConstants.getPrimary(isDark).withOpacity(0.15)
+          : AppConstants.getPrimary(isDark).withOpacity(0.1);
+      borderColor = AppConstants.getPrimary(isDark);
+      iconColor = AppConstants.getPrimary(isDark);
       borderWidth = 2;
     } else if (isNext) {
       cardColor = isDark ? AppConstants.darkCard : AppConstants.lightCard;
-      borderColor = AppConstants.primaryColor.withOpacity(0.5);
-      iconColor = AppConstants.primaryColor;
+      borderColor = AppConstants.getPrimary(isDark).withOpacity(0.5);
+      iconColor = AppConstants.getPrimary(isDark);
       borderWidth = 1.5;
     } else {
       cardColor = isDark ? AppConstants.darkCard : AppConstants.lightCard;
@@ -120,7 +120,7 @@ class PrayerCard extends StatelessWidget {
                                         ? FontWeight.bold
                                         : FontWeight.w600,
                                     color: isCurrent
-                                        ? AppConstants.primaryColor
+                                        ? AppConstants.getPrimary(isDark)
                                         : null,
                                   ),
                               overflow: TextOverflow.ellipsis,
@@ -190,6 +190,7 @@ class PrayerCard extends StatelessWidget {
 
   Widget _buildPrayerIcon(
       BuildContext context, bool isCurrent, bool isNext, Color iconColor) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       width: 52,
       height: 52,
@@ -199,7 +200,7 @@ class PrayerCard extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppConstants.primaryColor,
+                  AppConstants.getPrimary(isDark),
                   AppConstants.accentCyan,
                 ],
               )
@@ -208,19 +209,33 @@ class PrayerCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
       ),
       child: Center(
-        child: Text(
-          _getPrayerEmoji(),
-          style: const TextStyle(fontSize: 28),
-        ),
+        child: _buildPrayerIconChild(iconColor, isCurrent),
       ),
     );
   }
 
+  Widget _buildPrayerIconChild(Color iconColor, bool isCurrent) {
+    final assetPath = _getPrayerIconAsset();
+    if (assetPath != null) {
+      return Image.asset(
+        assetPath,
+        width: 30,
+        height: 30,
+        color: isCurrent ? Colors.white : null,
+      );
+    }
+    return Text(
+      _getPrayerEmoji(),
+      style: const TextStyle(fontSize: 28),
+    );
+  }
+
   Widget _buildCurrentBadge(BuildContext context, bool isArabic) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-        color: AppConstants.primaryColor,
+        color: AppConstants.getPrimary(isDark),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
@@ -260,16 +275,16 @@ class PrayerCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AppConstants.primaryColor.withOpacity(0.1),
+        color: AppConstants.getPrimary(isDark).withOpacity(0.1),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         border: Border.all(
-          color: AppConstants.primaryColor.withOpacity(0.3),
+          color: AppConstants.getPrimary(isDark).withOpacity(0.3),
         ),
       ),
       child: Text(
         countdown,
         style: TextStyle(
-          color: AppConstants.primaryColor,
+          color: AppConstants.getPrimary(isDark),
           fontWeight: FontWeight.bold,
           fontSize: 13,
         ),
@@ -296,6 +311,25 @@ class PrayerCard extends StatelessWidget {
       timeStr = NumberFormatter.withArabicNumeralsByLanguage(timeStr, 'ar');
     }
     return timeStr;
+  }
+
+  String? _getPrayerIconAsset() {
+    switch (prayer.name.toLowerCase()) {
+      case 'fajr':
+      case 'sunrise':
+        return 'assets/images/ic_prayer_fajr.png';
+      case 'dhuhr':
+      case 'zuhr':
+        return 'assets/images/ic_prayer_dhuhr.png';
+      case 'asr':
+        return 'assets/images/ic_prayer_asr.png';
+      case 'maghrib':
+        return 'assets/images/ic_prayer_maghrib.png';
+      case 'isha':
+        return 'assets/images/ic_prayer_isha.png';
+      default:
+        return null;
+    }
   }
 
   String _getPrayerEmoji() {
@@ -374,10 +408,10 @@ class PrayerCard extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: AppConstants.primaryColor.withOpacity(0.1),
+            color: AppConstants.getPrimary(isDark).withOpacity(0.1),
             borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
             border: Border.all(
-              color: AppConstants.primaryColor.withOpacity(0.3),
+              color: AppConstants.getPrimary(isDark).withOpacity(0.3),
             ),
           ),
           child: Row(
@@ -385,14 +419,14 @@ class PrayerCard extends StatelessWidget {
             children: [
               Icon(
                 Icons.check_circle_outline,
-                color: AppConstants.primaryColor,
+                color: AppConstants.getPrimary(isDark),
                 size: 18,
               ),
               const SizedBox(width: 6),
               Text(
                 isArabic ? 'أديت' : 'Prayed',
                 style: TextStyle(
-                  color: AppConstants.primaryColor,
+                  color: AppConstants.getPrimary(isDark),
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
                 ),

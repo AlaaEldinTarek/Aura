@@ -257,13 +257,13 @@ class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingO
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(AppConstants.paddingLarge),
-            color: AppConstants.primaryColor.withOpacity(0.08),
+            color: AppConstants.getPrimary(isDark).withOpacity(0.08),
             child: Column(
               children: [
                 Icon(
                   allGranted ? Icons.check_circle : Icons.security,
                   size: 48,
-                  color: allGranted ? Colors.green : AppConstants.primaryColor,
+                  color: allGranted ? Colors.green : AppConstants.getPrimary(isDark),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -292,7 +292,7 @@ class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingO
                   _GroupHeader(
                     icon: Icons.mosque_outlined,
                     label: isArabic ? '🕌 أذونات الصلاة' : '🕌 Prayer Permissions',
-                    color: AppConstants.primaryColor,
+                    color: AppConstants.getPrimary(isDark),
                     isDark: isDark,
                   ),
                   const SizedBox(height: 8),
@@ -349,7 +349,7 @@ class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingO
                   child: ElevatedButton(
                     onPressed: allGranted ? () => Navigator.pop(context) : _grantAll,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: allGranted ? Colors.green : AppConstants.primaryColor,
+                      backgroundColor: allGranted ? Colors.green : AppConstants.getPrimary(isDark),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                     child: Text(

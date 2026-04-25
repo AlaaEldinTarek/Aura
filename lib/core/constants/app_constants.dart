@@ -8,6 +8,9 @@ class AppConstants {
   static const Color primaryDark = Color(0xFFD4890A);
   static const Color primaryLight = Color(0xFFFFD37A);
 
+  /// Theme-aware primary: #B5821B for light, #F5B301 for dark (matches native widgets)
+  static Color getPrimary(bool isDark) => isDark ? primaryColor : const Color(0xFFB5821B);
+
   // Accent Colors
   static const Color accentCyan = Color(0xFFE8A849);
   static const Color accentPurple = Color(0xFF9D4EDD);

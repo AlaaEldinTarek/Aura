@@ -484,9 +484,9 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(
           color: isSelected
-              ? AppConstants.primaryColor
+              ? AppConstants.getPrimary(isDark)
               : (isDownloaded
-                  ? AppConstants.primaryColor.withOpacity(0.5)
+                  ? AppConstants.getPrimary(isDark).withOpacity(0.5)
                   : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder)),
           width: isSelected ? 2 : 1,
         ),
@@ -503,13 +503,13 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
               height: 60,
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppConstants.primaryColor
-                    : AppConstants.primaryColor.withOpacity(0.1),
+                    ? AppConstants.getPrimary(isDark)
+                    : AppConstants.getPrimary(isDark).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
               ),
               child: Icon(
                 Icons.mosque,
-                color: isSelected ? Colors.white : AppConstants.primaryColor,
+                color: isSelected ? Colors.white : AppConstants.getPrimary(isDark),
                 size: 30,
               ),
             ),
@@ -529,7 +529,7 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppConstants.primaryColor,
+                      color: AppConstants.getPrimary(isDark),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
@@ -557,7 +557,7 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
                 Text(
                   '${reciter.fileSize.toStringAsFixed(1)} MB',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppConstants.primaryColor,
+                        color: AppConstants.getPrimary(isDark),
                         fontSize: 11,
                       ),
                 ),
@@ -585,7 +585,7 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
               child: LinearProgressIndicator(
                 value: progress,
                 backgroundColor: isDark ? Colors.white10 : Colors.black.withOpacity(0.1),
-                valueColor: const AlwaysStoppedAnimation<Color>(AppConstants.primaryColor),
+                valueColor: AlwaysStoppedAnimation<Color>(AppConstants.getPrimary(isDark)),
               ),
             ),
         ],
@@ -603,6 +603,7 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
     bool isSelected,
     bool isArabic,
   ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final playingAdhanId = ref.watch(playingAdhanProvider);
     final isPlaying = playingAdhanId == reciter.id;
 
@@ -610,7 +611,7 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
       return Text(
         '${(progress * 100).toInt()}%',
         style: TextStyle(
-          color: AppConstants.primaryColor,
+          color: AppConstants.getPrimary(isDark),
           fontWeight: FontWeight.bold,
         ),
       );
@@ -627,7 +628,7 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
               height: 32,
               child: IconButton(
                 icon: const Icon(Icons.check_circle_outline, size: 18),
-                color: AppConstants.primaryColor,
+                color: AppConstants.getPrimary(isDark),
                 padding: EdgeInsets.zero,
                 onPressed: () => _setSelectedAdhan(
                   reciter.id,
@@ -721,7 +722,7 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
       icon: const Icon(Icons.download),
       label: Text(isArabic ? 'تحميل' : 'Download'),
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppConstants.primaryColor,
+        backgroundColor: AppConstants.getPrimary(isDark),
         foregroundColor: Colors.white,
       ),
     );

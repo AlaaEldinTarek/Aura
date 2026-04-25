@@ -165,7 +165,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
 
     return Scaffold(
       backgroundColor:
-          isDark ? AppConstants.darkBackground : const Color(0xFFF5F7FA),
+          isDark ? AppConstants.darkBackground : AppConstants.lightBackground,
       appBar: AppBar(
         title: _showSearch
             ? TextField(
@@ -248,7 +248,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                   Icon(Icons.arrow_downward,
                       size: 16,
                       color: _sortOrder == _SortOrder.dateDesc
-                          ? AppConstants.primaryColor
+                          ? AppConstants.getPrimary(isDark)
                           : null),
                   const SizedBox(width: 8),
                   Text(isArabic ? 'الأحدث أولاً' : 'Newest first'),
@@ -260,7 +260,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                   Icon(Icons.arrow_upward,
                       size: 16,
                       color: _sortOrder == _SortOrder.dateAsc
-                          ? AppConstants.primaryColor
+                          ? AppConstants.getPrimary(isDark)
                           : null),
                   const SizedBox(width: 8),
                   Text(isArabic ? 'الأقدم أولاً' : 'Oldest first'),
@@ -272,7 +272,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                   Icon(Icons.flag,
                       size: 16,
                       color: _sortOrder == _SortOrder.priority
-                          ? AppConstants.primaryColor
+                          ? AppConstants.getPrimary(isDark)
                           : null),
                   const SizedBox(width: 8),
                   Text(isArabic ? 'حسب الأولوية' : 'By priority'),
@@ -284,7 +284,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                   Icon(Icons.sort_by_alpha,
                       size: 16,
                       color: _sortOrder == _SortOrder.title
-                          ? AppConstants.primaryColor
+                          ? AppConstants.getPrimary(isDark)
                           : null),
                   const SizedBox(width: 8),
                   Text(isArabic ? 'أبجدياً' : 'Alphabetical'),
@@ -296,7 +296,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                   Icon(Icons.drag_handle,
                       size: 16,
                       color: _sortOrder == _SortOrder.manual
-                          ? AppConstants.primaryColor
+                          ? AppConstants.getPrimary(isDark)
                           : null),
                   const SizedBox(width: 8),
                   Text(isArabic ? 'ترتيب يدوي' : 'Custom Order'),
@@ -314,7 +314,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
           onPressed: () => _showQuickAdd(context, isArabic, isDark),
           icon: const Icon(Icons.add),
           label: Text(isArabic ? 'إضافة سريعة' : 'Quick Add'),
-          backgroundColor: AppConstants.primaryColor,
+          backgroundColor: AppConstants.getPrimary(isDark),
         ),
       ),
       bottomNavigationBar: _selectMode && _selectedTaskIds.isNotEmpty
@@ -358,13 +358,13 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                     child: Row(
                       children: [
-                        Icon(Icons.timer_outlined, size: 14, color: AppConstants.primaryColor),
+                        Icon(Icons.timer_outlined, size: 14, color: AppConstants.getPrimary(isDark)),
                         const SizedBox(width: 4),
                         Text(
                           label,
                           style: TextStyle(
                             fontSize: 12,
-                            color: AppConstants.primaryColor,
+                            color: AppConstants.getPrimary(isDark),
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -509,15 +509,15 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                 ),
                 calendarStyle: CalendarStyle(
                   todayDecoration: BoxDecoration(
-                    color: AppConstants.primaryColor.withOpacity(0.2),
+                    color: AppConstants.getPrimary(isDark).withOpacity(0.2),
                     shape: BoxShape.circle,
                   ),
                   todayTextStyle: TextStyle(
-                    color: AppConstants.primaryColor,
+                    color: AppConstants.getPrimary(isDark),
                     fontWeight: FontWeight.bold,
                   ),
                   selectedDecoration: BoxDecoration(
-                    color: AppConstants.primaryColor,
+                    color: AppConstants.getPrimary(isDark),
                     shape: BoxShape.circle,
                   ),
                   selectedTextStyle: const TextStyle(
@@ -550,7 +550,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                             height: 5,
                             margin: const EdgeInsets.symmetric(horizontal: 1),
                             decoration: BoxDecoration(
-                              color: AppConstants.primaryColor,
+                              color: AppConstants.getPrimary(isDark),
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -579,7 +579,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppConstants.primaryColor.withOpacity(0.15),
+                      color: AppConstants.getPrimary(isDark).withOpacity(0.15),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
@@ -587,7 +587,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.bold,
-                        color: AppConstants.primaryColor,
+                        color: AppConstants.getPrimary(isDark),
                       ),
                     ),
                   ),
@@ -661,7 +661,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               icon: Icons.today,
               label: isArabic ? 'اليوم' : 'Today',
               value: '${stats.dueToday}',
-              color: AppConstants.primaryColor,
+              color: AppConstants.getPrimary(isDark),
               isDark: isDark,
             ),
             const SizedBox(width: 10),
@@ -786,12 +786,12 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
                 color: isSelected
-                    ? AppConstants.primaryColor.withOpacity(0.12)
+                    ? AppConstants.getPrimary(isDark).withOpacity(0.12)
                     : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: isSelected
-                      ? AppConstants.primaryColor
+                      ? AppConstants.getPrimary(isDark)
                       : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
                 ),
               ),
@@ -802,7 +802,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                     icon,
                     size: 14,
                     color: isSelected
-                        ? AppConstants.primaryColor
+                        ? AppConstants.getPrimary(isDark)
                         : (isDark
                             ? Colors.grey.shade400
                             : Colors.grey.shade600),
@@ -813,7 +813,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                     style: TextStyle(
                       fontSize: 12,
                       color: isSelected
-                          ? AppConstants.primaryColor
+                          ? AppConstants.getPrimary(isDark)
                           : (isDark
                               ? Colors.grey.shade300
                               : Colors.grey.shade700),
@@ -859,12 +859,12 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? AppConstants.primaryColor.withOpacity(0.15)
+                        ? AppConstants.getPrimary(isDark).withOpacity(0.15)
                         : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
-                          ? AppConstants.primaryColor
+                          ? AppConstants.getPrimary(isDark)
                           : (isDark
                               ? Colors.grey.shade700
                               : Colors.grey.shade300),
@@ -877,7 +877,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                       fontWeight:
                           isSelected ? FontWeight.bold : FontWeight.normal,
                       color: isSelected
-                          ? AppConstants.primaryColor
+                          ? AppConstants.getPrimary(isDark)
                           : (isDark
                               ? Colors.grey.shade400
                               : Colors.grey.shade600),
@@ -923,9 +923,16 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
     return sorted;
   }
 
+  bool _isCompletedToday(Task t) {
+    if (t.completedAt == null) return true;
+    final now = DateTime.now();
+    final c = t.completedAt!;
+    return c.year == now.year && c.month == now.month && c.day == now.day;
+  }
+
   Widget _buildManualOrderView(List<Task> tasks, bool isDark, bool isArabic) {
     final activeTasks = tasks.where((t) => !t.isCompleted).toList();
-    final completedTasks = tasks.where((t) => t.isCompleted).toList();
+    final completedTasks = tasks.where((t) => t.isCompleted && _isCompletedToday(t)).toList();
 
     if (activeTasks.isEmpty && completedTasks.isEmpty) {
       return _buildEmptyState(isDark, isArabic);
@@ -1102,7 +1109,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
         .toList();
 
     final completedTasks = tasks
-        .where((t) => t.isCompleted && !_recentlyCompleted.contains(t.id))
+        .where((t) => t.isCompleted && !_recentlyCompleted.contains(t.id) && _isCompletedToday(t))
         .toList();
 
     if (tasks.isEmpty) {
@@ -1136,7 +1143,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               icon: Icons.today,
               title: isArabic ? 'مهام اليوم' : "Today's Tasks",
               count: todayTasks.length,
-              color: AppConstants.primaryColor,
+              color: AppConstants.getPrimary(isDark),
               isDark: isDark,
             ),
             const SizedBox(height: 8),
@@ -1178,7 +1185,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               icon: Icons.date_range,
               title: isArabic ? 'هذا الأسبوع' : 'This Week',
               count: thisWeekTasks.length,
-              color: AppConstants.primaryColor,
+              color: AppConstants.getPrimary(isDark),
               isDark: isDark,
             ),
             const SizedBox(height: 8),
@@ -1309,6 +1316,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
 
   /// Task card for reorder mode — no long-press context menu (long press = drag)
   Widget _buildReorderableTaskCard(Task task, bool isArabic) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasFocus = task.focusMode && !task.isCompleted;
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -1338,7 +1346,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppConstants.primaryColor,
+                    color: AppConstants.getPrimary(isDark),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -1382,6 +1390,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
   }
 
   Widget _buildTaskCard(Task task) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final isSelected = _selectedTaskIds.contains(task.id);
 
@@ -1401,7 +1410,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
               border: Border.all(
-                color: isSelected ? AppConstants.primaryColor : Colors.transparent,
+                color: isSelected ? AppConstants.getPrimary(isDark) : Colors.transparent,
                 width: 2,
               ),
             ),
@@ -1418,7 +1427,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                   Positioned.fill(
                     child: Container(
                       decoration: BoxDecoration(
-                        color: AppConstants.primaryColor.withOpacity(0.08),
+                        color: AppConstants.getPrimary(isDark).withOpacity(0.08),
                         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
                       ),
                     ),
@@ -1430,7 +1439,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                     duration: const Duration(milliseconds: 200),
                     child: CircleAvatar(
                       radius: 14,
-                      backgroundColor: AppConstants.primaryColor,
+                      backgroundColor: AppConstants.getPrimary(isDark),
                       child: const Icon(Icons.check, color: Colors.white, size: 18),
                     ),
                   ),
@@ -1472,7 +1481,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AppConstants.primaryColor,
+                    color: AppConstants.getPrimary(isDark),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -1970,7 +1979,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                   leading: Icon(icon, color: color),
                   title: Text(label),
                   trailing: isSelected
-                      ? Icon(Icons.check, color: AppConstants.primaryColor)
+                      ? Icon(Icons.check, color: AppConstants.getPrimary(isDark))
                       : null,
                   onTap: () => Navigator.pop(ctx, p),
                 );
@@ -2311,6 +2320,7 @@ class _CelebrationOverlayState extends State<_CelebrationOverlay>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = widget.isDark;
     return Positioned.fill(
       child: IgnorePointer(
         child: Material(
@@ -2319,7 +2329,7 @@ class _CelebrationOverlayState extends State<_CelebrationOverlay>
           animation: _controller,
           builder: (context, _) {
             return Container(
-              color: AppConstants.primaryColor.withValues(alpha: 0.12 * _opacityAnim.value),
+              color: AppConstants.getPrimary(isDark).withValues(alpha: 0.12 * _opacityAnim.value),
               alignment: Alignment.center,
               child: Opacity(
                 opacity: _opacityAnim.value,
@@ -2331,12 +2341,12 @@ class _CelebrationOverlayState extends State<_CelebrationOverlay>
                       color: widget.isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
                       borderRadius: BorderRadius.circular(28),
                       border: Border.all(
-                        color: AppConstants.primaryColor.withValues(alpha: 0.25),
+                        color: AppConstants.getPrimary(isDark).withValues(alpha: 0.25),
                         width: 1.5,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: AppConstants.primaryColor.withValues(alpha: 0.22),
+                          color: AppConstants.getPrimary(isDark).withValues(alpha: 0.22),
                           blurRadius: 36,
                           offset: const Offset(0, 10),
                           spreadRadius: 2,
@@ -2350,13 +2360,13 @@ class _CelebrationOverlayState extends State<_CelebrationOverlay>
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.symmetric(vertical: 28),
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             gradient: LinearGradient(
-                              colors: [AppConstants.primaryColor, AppConstants.accentCyan],
+                              colors: [AppConstants.getPrimary(isDark), AppConstants.accentCyan],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             ),
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
                           ),
                           child: Column(
                             children: [
@@ -2422,10 +2432,10 @@ class _CelebrationOverlayState extends State<_CelebrationOverlay>
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
                                 decoration: BoxDecoration(
-                                  color: AppConstants.primaryColor.withValues(alpha: 0.1),
+                                  color: AppConstants.getPrimary(isDark).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(30),
                                   border: Border.all(
-                                    color: AppConstants.primaryColor.withValues(alpha: 0.25),
+                                    color: AppConstants.getPrimary(isDark).withValues(alpha: 0.25),
                                   ),
                                 ),
                                 child: Text(
@@ -2433,7 +2443,7 @@ class _CelebrationOverlayState extends State<_CelebrationOverlay>
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
-                                    color: AppConstants.primaryColor,
+                                    color: AppConstants.getPrimary(isDark),
                                   ),
                                 ),
                               ),
@@ -2501,7 +2511,7 @@ class _TaskSettingsSheet extends ConsumerWidget {
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             secondary: Icon(Icons.notifications_outlined,
-                color: isEnabled ? AppConstants.primaryColor : Colors.grey),
+                color: isEnabled ? AppConstants.getPrimary(isDark) : Colors.grey),
             title: Text(
               isArabic ? 'تذكير المهام' : 'Task Reminders',
               style: TextStyle(color: isDark ? Colors.white : Colors.black87),
@@ -2514,7 +2524,7 @@ class _TaskSettingsSheet extends ConsumerWidget {
               ),
             ),
             value: isEnabled,
-            activeColor: AppConstants.primaryColor,
+            activeColor: AppConstants.getPrimary(isDark),
             onChanged: (val) =>
                 ref.read(taskNotificationsEnabledProvider.notifier).setEnabled(val),
           ),
@@ -2543,12 +2553,12 @@ class _TaskSettingsSheet extends ConsumerWidget {
                         horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       color: selected
-                          ? AppConstants.primaryColor.withOpacity(0.12)
+                          ? AppConstants.getPrimary(isDark).withOpacity(0.12)
                           : (isDark ? AppConstants.darkCard : Colors.grey.shade100),
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
                         color: selected
-                            ? AppConstants.primaryColor
+                            ? AppConstants.getPrimary(isDark)
                             : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
                       ),
                     ),
@@ -2558,7 +2568,7 @@ class _TaskSettingsSheet extends ConsumerWidget {
                         fontSize: 13,
                         fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                         color: selected
-                            ? AppConstants.primaryColor
+                            ? AppConstants.getPrimary(isDark)
                             : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
                       ),
                     ),
@@ -2717,20 +2727,20 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                     decoration: BoxDecoration(
-                      color: _dueDate != null ? AppConstants.primaryColor.withValues(alpha: 0.1) : Colors.transparent,
+                      color: _dueDate != null ? AppConstants.getPrimary(isDark).withValues(alpha: 0.1) : Colors.transparent,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: _dueDate != null ? AppConstants.primaryColor : (isDark ? Colors.grey.shade600 : Colors.grey.shade300),
+                        color: _dueDate != null ? AppConstants.getPrimary(isDark) : (isDark ? Colors.grey.shade600 : Colors.grey.shade300),
                       ),
                     ),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       Icon(Icons.calendar_today, size: 13,
-                          color: _dueDate != null ? AppConstants.primaryColor : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+                          color: _dueDate != null ? AppConstants.getPrimary(isDark) : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
                       const SizedBox(width: 3),
                       Text(
                         _dueDate != null ? '${_dueDate!.day}/${_dueDate!.month}' : (isArabic ? 'التاريخ' : 'Date'),
                         style: TextStyle(fontSize: 11,
-                          color: _dueDate != null ? AppConstants.primaryColor : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+                          color: _dueDate != null ? AppConstants.getPrimary(isDark) : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
                       ),
                     ]),
                   ),
@@ -2748,20 +2758,20 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
                       decoration: BoxDecoration(
-                        color: _dueTime != null ? AppConstants.primaryColor.withValues(alpha: 0.1) : Colors.transparent,
+                        color: _dueTime != null ? AppConstants.getPrimary(isDark).withValues(alpha: 0.1) : Colors.transparent,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color: _dueTime != null ? AppConstants.primaryColor : (isDark ? Colors.grey.shade600 : Colors.grey.shade300),
+                          color: _dueTime != null ? AppConstants.getPrimary(isDark) : (isDark ? Colors.grey.shade600 : Colors.grey.shade300),
                         ),
                       ),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
                         Icon(Icons.access_time, size: 13,
-                            color: _dueTime != null ? AppConstants.primaryColor : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+                            color: _dueTime != null ? AppConstants.getPrimary(isDark) : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
                         const SizedBox(width: 3),
                         Text(
                           _dueTime != null ? _dueTime!.format(context) : (isArabic ? 'الوقت' : 'Time'),
                           style: TextStyle(fontSize: 11,
-                            color: _dueTime != null ? AppConstants.primaryColor : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+                            color: _dueTime != null ? AppConstants.getPrimary(isDark) : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
                         ),
                       ]),
                     ),
@@ -2791,20 +2801,20 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: selected ? AppConstants.primaryColor.withValues(alpha: 0.12) : Colors.transparent,
+                          color: selected ? AppConstants.getPrimary(isDark).withValues(alpha: 0.12) : Colors.transparent,
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: selected ? AppConstants.primaryColor : (isDark ? Colors.grey.shade600 : Colors.grey.shade300),
+                            color: selected ? AppConstants.getPrimary(isDark) : (isDark ? Colors.grey.shade600 : Colors.grey.shade300),
                           ),
                         ),
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
                           Icon(icon, size: 12,
-                              color: selected ? AppConstants.primaryColor : (isDark ? Colors.grey.shade500 : Colors.grey.shade600)),
+                              color: selected ? AppConstants.getPrimary(isDark) : (isDark ? Colors.grey.shade500 : Colors.grey.shade600)),
                           const SizedBox(width: 3),
                           Text(label, style: TextStyle(
                             fontSize: 10,
                             fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                            color: selected ? AppConstants.primaryColor : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                            color: selected ? AppConstants.getPrimary(isDark) : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
                           )),
                         ]),
                       ),
@@ -2819,7 +2829,7 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
               child: ElevatedButton(
                 onPressed: _submit,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppConstants.primaryColor,
+                  backgroundColor: AppConstants.getPrimary(isDark),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -3019,7 +3029,7 @@ class _InlineSubtaskCardState extends State<_InlineSubtaskCard> {
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         child: Row(
                           children: [
-                            Icon(Icons.add, size: 18, color: AppConstants.primaryColor),
+                            Icon(Icons.add, size: 18, color: AppConstants.getPrimary(isDark)),
                             const SizedBox(width: 8),
                             Expanded(
                               child: TextField(
@@ -3043,7 +3053,7 @@ class _InlineSubtaskCardState extends State<_InlineSubtaskCard> {
                             else
                               GestureDetector(
                                 onTap: () => _addSubtask(_addController.text),
-                                child: Icon(Icons.send, size: 16, color: AppConstants.primaryColor),
+                                child: Icon(Icons.send, size: 16, color: AppConstants.getPrimary(isDark)),
                               ),
                           ],
                         ),

@@ -124,7 +124,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
                     // Logo
                     Image.asset(
-                      'assets/images/logo-0_dark.png',
+                      'assets/images/logo.png',
                       width: 80,
                       height: 80,
                     ).animate().fadeIn(duration: 500.ms).scale(
@@ -134,9 +134,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
 
                     // App name
                     ShaderMask(
-                      shaderCallback: (bounds) => const LinearGradient(
+                      shaderCallback: (bounds) => LinearGradient(
                         colors: [
-                          AppConstants.primaryColor,
+                          AppConstants.getPrimary(isDark),
                           AppConstants.accentCyan,
                         ],
                         begin: Alignment.topLeft,
@@ -237,8 +237,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-                          borderSide: const BorderSide(
-                              color: AppConstants.primaryColor, width: 2),
+                          borderSide: BorderSide(
+                              color: AppConstants.getPrimary(isDark), width: 2),
                         ),
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -286,8 +286,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-                          borderSide: const BorderSide(
-                              color: AppConstants.primaryColor, width: 2),
+                          borderSide: BorderSide(
+                              color: AppConstants.getPrimary(isDark), width: 2),
                         ),
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -350,8 +350,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-                          borderSide: const BorderSide(
-                              color: AppConstants.primaryColor, width: 2),
+                          borderSide: BorderSide(
+                              color: AppConstants.getPrimary(isDark), width: 2),
                         ),
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -415,8 +415,8 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-                          borderSide: const BorderSide(
-                              color: AppConstants.primaryColor, width: 2),
+                          borderSide: BorderSide(
+                              color: AppConstants.getPrimary(isDark), width: 2),
                         ),
                         errorBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -445,7 +445,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       child: ElevatedButton(
                         onPressed: _isLoading ? null : _signUp,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: AppConstants.primaryColor,
+                          backgroundColor: AppConstants.getPrimary(isDark),
                           foregroundColor: Colors.white,
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(
@@ -486,10 +486,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         icon: const Icon(Icons.login, size: 18),
                         label: Text('auth_signup_with_google'.tr(), style: const TextStyle(fontSize: 14)),
                         style: OutlinedButton.styleFrom(
-                          foregroundColor: AppConstants.primaryColor,
+                          foregroundColor: AppConstants.getPrimary(isDark),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                           side:
-                              BorderSide(color: AppConstants.primaryColor.withOpacity(0.5)),
+                              BorderSide(color: AppConstants.getPrimary(isDark).withOpacity(0.5)),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
                           ),

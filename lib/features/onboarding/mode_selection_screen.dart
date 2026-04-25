@@ -20,7 +20,7 @@ class ModeSelectionScreen extends ConsumerWidget {
         subtitle: isArabic
             ? 'أوقات الصلاة وإدارة المهام معاً'
             : 'Prayer times + Task management',
-        color: AppConstants.primaryColor,
+        color: AppConstants.getPrimary(isDark),
       ),
       _ModeOption(
         mode: AppMode.prayerOnly,
@@ -77,7 +77,7 @@ class ModeSelectionScreen extends ConsumerWidget {
               ElevatedButton(
                 onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppConstants.primaryColor,
+                  backgroundColor: AppConstants.getPrimary(isDark),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(AppConstants.radiusLarge),

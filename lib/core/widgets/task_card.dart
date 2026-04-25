@@ -42,7 +42,7 @@ class TaskCard extends StatelessWidget {
     } else if (isOverdue) {
       leftAccent = Colors.red;
     } else if (isSelected) {
-      leftAccent = AppConstants.primaryColor;
+      leftAccent = AppConstants.getPrimary(isDark);
     } else {
       switch (task.priority) {
         case TaskPriority.high:
@@ -71,7 +71,7 @@ class TaskCard extends StatelessWidget {
             : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         border: isSelected
-            ? Border.all(color: AppConstants.primaryColor, width: 2)
+            ? Border.all(color: AppConstants.getPrimary(isDark), width: 2)
             : Border.all(
                 color:
                     isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
@@ -220,7 +220,7 @@ class TaskCard extends StatelessWidget {
                           color:
                               task.completedSubtasks == task.subtasks.length
                                   ? Colors.green
-                                  : AppConstants.primaryColor,
+                                  : AppConstants.getPrimary(isDark),
                           minHeight: 3,
                         ),
                       ),
@@ -238,14 +238,14 @@ class TaskCard extends StatelessWidget {
                                 horizontal: 15, vertical: 4),
                             decoration: BoxDecoration(
                               color:
-                                  AppConstants.primaryColor.withOpacity(0.1),
+                                  AppConstants.getPrimary(isDark).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
                               '#$tag',
                               style: TextStyle(
                                 fontSize: 10,
-                                color: AppConstants.primaryColor,
+                                color: AppConstants.getPrimary(isDark),
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -344,7 +344,7 @@ class TaskCard extends StatelessWidget {
                   : (isArabic ? 'إتمام' : 'Complete'),
               color: task.isCompleted
                   ? Colors.green
-                  : AppConstants.primaryColor,
+                  : AppConstants.getPrimary(isDark),
               onTap: onToggle!,
             ),
           if (onToggle != null) const SizedBox(width: 6),
@@ -367,7 +367,7 @@ class TaskCard extends StatelessWidget {
                   : (task.subtasks.isNotEmpty
                       ? (isArabic ? 'الفرعية' : 'Subtasks')
                       : (isArabic ? 'إضافة فرعية' : '+ Sub')),
-              color: AppConstants.primaryColor,
+              color: AppConstants.getPrimary(isDark),
               onTap: onExpand!,
             ),
             const SizedBox(width: 6),
@@ -505,6 +505,7 @@ class _CategoryBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final labels = {
       TaskCategory.work: isArabic ? 'عمل' : 'Work',
@@ -517,13 +518,13 @@ class _CategoryBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
       decoration: BoxDecoration(
-          color: AppConstants.primaryColor.withOpacity(0.15),
+          color: AppConstants.getPrimary(isDark).withOpacity(0.15),
           borderRadius: BorderRadius.circular(4)),
       child: Text(labels[category] ?? category.value,
           style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: AppConstants.primaryColor)),
+              color: AppConstants.getPrimary(isDark))),
     );
   }
 }
@@ -657,6 +658,7 @@ class _EstimateBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final h = minutes ~/ 60;
     final m = minutes % 60;
     final label = h > 0
@@ -665,18 +667,18 @@ class _EstimateBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
       decoration: BoxDecoration(
-          color: AppConstants.primaryColor.withOpacity(0.12),
+          color: AppConstants.getPrimary(isDark).withOpacity(0.12),
           borderRadius: BorderRadius.circular(4)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.timer_outlined, size: 11, color: AppConstants.primaryColor),
+          Icon(Icons.timer_outlined, size: 11, color: AppConstants.getPrimary(isDark)),
           const SizedBox(width: 3),
           Text(label,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
-                  color: AppConstants.primaryColor)),
+                  color: AppConstants.getPrimary(isDark))),
         ],
       ),
     );

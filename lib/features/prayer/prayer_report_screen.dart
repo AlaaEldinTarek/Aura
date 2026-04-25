@@ -283,7 +283,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
                   label: isArabic ? 'في الوقت' : 'On Time',
                   value: _n((_onTimeRate * 100).toStringAsFixed(0), isArabic: isArabic) + '%',
                   subtitle: isArabic ? '${_n(_totalOnTime, isArabic: isArabic)} صلاة' : '$_totalOnTime prayers',
-                  color: AppConstants.primaryColor,
+                  color: AppConstants.getPrimary(isDark),
                   isDark: isDark,
                 ),
               ),
@@ -616,7 +616,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
               child: _buildMonthCard(
                 isArabic ? 'هذا الشهر' : 'This Month',
                 _thisMonthRate,
-                AppConstants.primaryColor,
+                AppConstants.getPrimary(isDark),
                 isDark,
                 isArabic: isArabic,
               ),

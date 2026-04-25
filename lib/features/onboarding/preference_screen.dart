@@ -30,6 +30,7 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
 
   // ── Carousel content per mode ─────────────────────────────────────────────
   List<_Slide> get _slides {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     switch (_mode) {
       case AppMode.prayerOnly:
         return [
@@ -121,7 +122,7 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
         return [
           _Slide(
             emoji: '✨',
-            color: AppConstants.primaryColor,
+            color: AppConstants.getPrimary(isDark),
             titleEn: 'Your Complete Companion',
             titleAr: 'رفيقك الشامل',
             subtitleEn: 'Prayer times + Task management in one beautiful app',
@@ -238,7 +239,7 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppConstants.darkBackground : const Color(0xFFF7F9FF),
+      backgroundColor: isDark ? AppConstants.darkBackground : AppConstants.lightBackground,
       body: SafeArea(
         child: Column(
           children: [
@@ -255,7 +256,7 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
                       margin: EdgeInsets.only(right: i < _totalSteps - 1 ? 6 : 0),
                       decoration: BoxDecoration(
                         color: active
-                            ? AppConstants.primaryColor
+                            ? AppConstants.getPrimary(isDark)
                             : (isDark ? Colors.white12 : Colors.black12),
                         borderRadius: BorderRadius.circular(2),
                       ),
@@ -317,7 +318,7 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
                     child: ElevatedButton(
                       onPressed: _saving ? null : _next,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppConstants.primaryColor,
+                        backgroundColor: AppConstants.getPrimary(isDark),
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
@@ -388,7 +389,7 @@ class _LanguageStep extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppConstants.primaryColor.withValues(alpha: 0.15),
+                  AppConstants.getPrimary(isDark).withValues(alpha: 0.15),
                   AppConstants.accentCyan.withValues(alpha: 0.1),
                 ],
               ),
@@ -464,19 +465,19 @@ class _LangCard extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppConstants.primaryColor.withValues(alpha: 0.1)
+              ? AppConstants.getPrimary(isDark).withValues(alpha: 0.1)
               : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: isSelected
-                ? AppConstants.primaryColor
+                ? AppConstants.getPrimary(isDark)
                 : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: AppConstants.primaryColor.withValues(alpha: 0.15),
+                    color: AppConstants.getPrimary(isDark).withValues(alpha: 0.15),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   )
@@ -496,7 +497,7 @@ class _LangCard extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: isSelected ? AppConstants.primaryColor : null,
+                      color: isSelected ? AppConstants.getPrimary(isDark) : null,
                     ),
                   ),
                   Text(
@@ -515,10 +516,10 @@ class _LangCard extends StatelessWidget {
               height: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isSelected ? AppConstants.primaryColor : Colors.transparent,
+                color: isSelected ? AppConstants.getPrimary(isDark) : Colors.transparent,
                 border: Border.all(
                   color: isSelected
-                      ? AppConstants.primaryColor
+                      ? AppConstants.getPrimary(isDark)
                       : (isDark ? Colors.white30 : Colors.black26),
                   width: 2,
                 ),
@@ -552,7 +553,7 @@ class _ThemeStep extends StatelessWidget {
       _ThemeOpt('dark', Icons.dark_mode_rounded, isAr ? 'داكن' : 'Dark',
           isAr ? 'راحة للعين في الليل' : 'Easy on the eyes at night', Colors.indigo),
       _ThemeOpt('system', Icons.brightness_auto_rounded, isAr ? 'تلقائي' : 'System',
-          isAr ? 'يتبع إعداد هاتفك' : 'Follows your device setting', AppConstants.primaryColor),
+          isAr ? 'يتبع إعداد هاتفك' : 'Follows your device setting', AppConstants.getPrimary(isDark)),
     ];
 
     return SingleChildScrollView(
@@ -718,7 +719,7 @@ class _ModeStep extends StatelessWidget {
       _ModeOpt(
         mode: AppMode.both,
         emoji: '✨',
-        color: AppConstants.primaryColor,
+        color: AppConstants.getPrimary(isDark),
         labelEn: 'Full App',
         labelAr: 'التطبيق كاملاً',
         subEn: 'Prayer times + Task management',
@@ -757,7 +758,7 @@ class _ModeStep extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  AppConstants.primaryColor.withValues(alpha: 0.15),
+                  AppConstants.getPrimary(isDark).withValues(alpha: 0.15),
                   AppConstants.accentCyan.withValues(alpha: 0.1),
                 ],
               ),
@@ -1156,15 +1157,15 @@ class _AllSetStep extends StatelessWidget {
             width: 110,
             height: 110,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppConstants.primaryColor, AppConstants.accentCyan],
+              gradient: LinearGradient(
+                colors: [AppConstants.getPrimary(isDark), AppConstants.accentCyan],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: AppConstants.primaryColor.withValues(alpha: 0.35),
+                  color: AppConstants.getPrimary(isDark).withValues(alpha: 0.35),
                   blurRadius: 24,
                   offset: const Offset(0, 8),
                 ),

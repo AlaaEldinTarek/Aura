@@ -93,6 +93,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     }
   }
 
+  String _getPrayerIconAsset(String name) {
+    switch (name.toLowerCase()) {
+      case 'fajr':
+      case 'sunrise':
+        return 'assets/images/ic_prayer_fajr.png';
+      case 'dhuhr':
+      case 'zuhr':
+        return 'assets/images/ic_prayer_dhuhr.png';
+      case 'asr':
+        return 'assets/images/ic_prayer_asr.png';
+      case 'maghrib':
+        return 'assets/images/ic_prayer_maghrib.png';
+      case 'isha':
+        return 'assets/images/ic_prayer_isha.png';
+      default:
+        return 'assets/images/ic_prayer_fajr.png';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -397,11 +416,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           padding: const EdgeInsets.all(AppConstants.paddingMedium),
           decoration: BoxDecoration(
             color: isDark
-                ? AppConstants.primaryColor.withOpacity(0.12)
-                : AppConstants.primaryColor.withOpacity(0.06),
+                ? AppConstants.getPrimary(isDark).withOpacity(0.12)
+                : AppConstants.getPrimary(isDark).withOpacity(0.06),
             borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
             border: Border.all(
-              color: AppConstants.primaryColor.withOpacity(0.25),
+              color: AppConstants.getPrimary(isDark).withOpacity(0.25),
               width: 1.5,
             ),
           ),
@@ -409,18 +428,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               Row(
                 children: [
-                  // Prayer emoji
+                  // Prayer icon
                   Container(
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: AppConstants.primaryColor.withOpacity(0.12),
+                      color: AppConstants.getPrimary(isDark).withOpacity(0.12),
                       borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
                     ),
                     child: Center(
-                      child: Text(
-                        hasData ? _getPrayerEmoji(nextPrayer.name) : '🕌',
-                        style: const TextStyle(fontSize: 26),
+                      child: Image.asset(
+                        hasData
+                            ? _getPrayerIconAsset(nextPrayer.name)
+                            : 'assets/images/ic_prayer_fajr.png',
+                        width: 28,
+                        height: 28,
                       ),
                     ),
                   ),
@@ -462,7 +484,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           Text(
                             _formatCountdown(remaining, isArabic),
                             style: TextStyle(
-                              color: AppConstants.primaryColor,
+                              color: AppConstants.getPrimary(isDark),
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
                             ),
@@ -489,7 +511,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: AppConstants.primaryColor.withOpacity(0.08),
+                    color: AppConstants.getPrimary(isDark).withOpacity(0.08),
                     borderRadius: BorderRadius.circular(AppConstants.radiusSmall),
                   ),
                   child: Row(
@@ -497,7 +519,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.access_time, color: AppConstants.primaryColor.withOpacity(0.7), size: 14),
+                          Icon(Icons.access_time, color: AppConstants.getPrimary(isDark).withOpacity(0.7), size: 14),
                           const SizedBox(width: 4),
                           Text(
                             isArabic
@@ -513,7 +535,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                       Row(
                         children: [
-                          Icon(Icons.check_circle_outline, color: AppConstants.primaryColor.withOpacity(0.7), size: 14),
+                          Icon(Icons.check_circle_outline, color: AppConstants.getPrimary(isDark).withOpacity(0.7), size: 14),
                           const SizedBox(width: 4),
                           Text(
                             isArabic
@@ -547,7 +569,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ) {
     final progress = totalPrayers > 0 ? completedCount / totalPrayers : 0.0;
 
-    final prayerIcons = ['🌙', '☀️', '🌤️', '🌇', '🌃'];
+    final prayerIconAssets = [
+      'assets/images/ic_prayer_fajr.png',
+      'assets/images/ic_prayer_dhuhr.png',
+      'assets/images/ic_prayer_asr.png',
+      'assets/images/ic_prayer_maghrib.png',
+      'assets/images/ic_prayer_isha.png',
+    ];
     final trackablePrayers = kPrayerNames;
 
     return Container(
@@ -576,7 +604,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ? NumberFormatter.withArabicNumeralsByLanguage('$completedCount/${kPrayerNames.length}', 'ar')
                     : '$completedCount/${kPrayerNames.length}',
                 style: TextStyle(
-                  color: AppConstants.primaryColor,
+                  color: AppConstants.getPrimary(isDark),
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),
@@ -593,7 +621,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               minHeight: 6,
               backgroundColor: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
               valueColor: AlwaysStoppedAnimation<Color>(
-                progress >= 1.0 ? Colors.green : AppConstants.primaryColor,
+                progress >= 1.0 ? Colors.green : AppConstants.getPrimary(isDark),
               ),
             ),
           ),
@@ -645,7 +673,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: Center(
                         child: isTracked
                             ? Icon(icon, color: color, size: 20)
-                            : Text(prayerIcons[i], style: const TextStyle(fontSize: 14)),
+                            : Image.asset(prayerIconAssets[i], width: 18, height: 18),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -709,7 +737,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       strokeWidth: 5,
                       backgroundColor: isDark ? Colors.white12 : Colors.black12,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        progress >= 1.0 ? Colors.green : AppConstants.primaryColor,
+                        progress >= 1.0 ? Colors.green : AppConstants.getPrimary(isDark),
                       ),
                     ),
                     Center(
@@ -745,7 +773,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: progress >= 1.0 ? Colors.green : AppConstants.primaryColor,
+                            color: progress >= 1.0 ? Colors.green : AppConstants.getPrimary(isDark),
                           ),
                         ),
                       ],
@@ -759,7 +787,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           minHeight: 5,
                           backgroundColor: isDark ? Colors.white12 : Colors.black12,
                           valueColor: AlwaysStoppedAnimation<Color>(
-                            progress >= 1.0 ? Colors.green : AppConstants.primaryColor,
+                            progress >= 1.0 ? Colors.green : AppConstants.getPrimary(isDark),
                           ),
                         ),
                       ),
@@ -768,7 +796,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     Row(
                       children: [
                         _buildMiniStat(Icons.today, '$todayTotal',
-                            isArabic ? 'اليوم' : 'Today', AppConstants.primaryColor),
+                            isArabic ? 'اليوم' : 'Today', AppConstants.getPrimary(isDark)),
                         const SizedBox(width: 16),
                         _buildMiniStat(Icons.check_circle, '$todayDone',
                             isArabic ? 'مكتمل' : 'Done', Colors.green),
@@ -852,7 +880,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   isArabic ? 'عرض الكل' : 'View All',
                   style: TextStyle(
                     fontSize: 12,
-                    color: AppConstants.primaryColor,
+                    color: AppConstants.getPrimary(isDark),
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -879,7 +907,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         backgroundColor:
                             isDark ? Colors.grey.shade800 : Colors.grey.shade200,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          progress >= 1.0 ? Colors.green : AppConstants.primaryColor,
+                          progress >= 1.0 ? Colors.green : AppConstants.getPrimary(isDark),
                         ),
                       ),
                     ),
@@ -1130,7 +1158,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       strokeWidth: 6,
                       backgroundColor: isDark ? Colors.white12 : Colors.black12,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        progress >= 1.0 ? Colors.green : AppConstants.primaryColor,
+                        progress >= 1.0 ? Colors.green : AppConstants.getPrimary(isDark),
                       ),
                     ),
                     Center(
@@ -1152,9 +1180,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: kPrayerNames.map((name) {
-                    final prayerEmojis = {
-                      'Fajr': '🌙', 'Zuhr': '☀️', 'Asr': '🌤️', 'Maghrib': '🌇', 'Isha': '🌃',
-                    };
                     final prayerNamesAr = {
                       'Fajr': 'الفجر', 'Zuhr': 'الظهر', 'Asr': 'العصر', 'Maghrib': 'المغرب', 'Isha': 'العشاء',
                     };
@@ -1163,7 +1188,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       padding: const EdgeInsets.symmetric(vertical: 2),
                       child: Row(
                         children: [
-                          Text(prayerEmojis[name] ?? '🕌', style: const TextStyle(fontSize: 14)),
+                          Image.asset(_getPrayerIconAsset(name), width: 16, height: 16),
                           const SizedBox(width: 6),
                           Text(displayName, style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.black54)),
                         ],
@@ -1188,9 +1213,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         }
 
         final records = snapshot.data!.take(3).toList();
-        final prayerEmojis = {
-          'Fajr': '🌙', 'Zuhr': '☀️', 'Asr': '🌤️', 'Maghrib': '🌇', 'Isha': '🌃',
-        };
 
         return Container(
           padding: const EdgeInsets.all(AppConstants.paddingMedium),
@@ -1230,7 +1252,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
                     children: [
-                      Text(prayerEmojis[record.prayerName] ?? '🕌', style: const TextStyle(fontSize: 16)),
+                      Image.asset(_getPrayerIconAsset(record.prayerName), width: 20, height: 20),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -1319,6 +1341,7 @@ class _HomeCelebrationOverlayState extends State<_HomeCelebrationOverlay>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = widget.isDark;
     return Positioned.fill(
       child: IgnorePointer(
         child: Material(
@@ -1327,7 +1350,7 @@ class _HomeCelebrationOverlayState extends State<_HomeCelebrationOverlay>
             animation: _controller,
             builder: (context, _) {
               return Container(
-                color: AppConstants.primaryColor.withValues(alpha: 0.12 * _opacityAnim.value),
+                color: AppConstants.getPrimary(isDark).withValues(alpha: 0.12 * _opacityAnim.value),
                 alignment: Alignment.center,
                 child: Opacity(
                   opacity: _opacityAnim.value,
@@ -1339,12 +1362,12 @@ class _HomeCelebrationOverlayState extends State<_HomeCelebrationOverlay>
                         color: widget.isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
                         borderRadius: BorderRadius.circular(28),
                         border: Border.all(
-                          color: AppConstants.primaryColor.withValues(alpha: 0.25),
+                          color: AppConstants.getPrimary(isDark).withValues(alpha: 0.25),
                           width: 1.5,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppConstants.primaryColor.withValues(alpha: 0.22),
+                            color: AppConstants.getPrimary(isDark).withValues(alpha: 0.22),
                             blurRadius: 36,
                             offset: const Offset(0, 10),
                             spreadRadius: 2,
@@ -1357,13 +1380,13 @@ class _HomeCelebrationOverlayState extends State<_HomeCelebrationOverlay>
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.symmetric(vertical: 28),
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [AppConstants.primaryColor, AppConstants.accentCyan],
+                                colors: [AppConstants.getPrimary(isDark), AppConstants.accentCyan],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
-                              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
                             ),
                             child: Column(
                               children: [
@@ -1424,18 +1447,18 @@ class _HomeCelebrationOverlayState extends State<_HomeCelebrationOverlay>
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
                                   decoration: BoxDecoration(
-                                    color: AppConstants.primaryColor.withValues(alpha: 0.1),
+                                    color: AppConstants.getPrimary(isDark).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(30),
                                     border: Border.all(
-                                      color: AppConstants.primaryColor.withValues(alpha: 0.25),
+                                      color: AppConstants.getPrimary(isDark).withValues(alpha: 0.25),
                                     ),
                                   ),
                                   child: Text(
                                     widget.isArabic ? '🎯  يوم منتج!' : '🎯  Productive day!',
-                                    style: const TextStyle(
+                                    style: TextStyle(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
-                                      color: AppConstants.primaryColor,
+                                      color: AppConstants.getPrimary(isDark),
                                     ),
                                   ),
                                 ),

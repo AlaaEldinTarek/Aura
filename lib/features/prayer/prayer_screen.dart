@@ -489,7 +489,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
         children: [
           Icon(
             Icons.location_on,
-            color: AppConstants.primaryColor,
+            color: AppConstants.getPrimary(isDark),
             size: 20,
           ),
           const SizedBox(width: 6),
@@ -528,11 +528,11 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: AppConstants.primaryColor,
+        color: AppConstants.getPrimary(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         boxShadow: [
           BoxShadow(
-            color: AppConstants.primaryColor.withOpacity(0.2),
+            color: AppConstants.getPrimary(isDark).withOpacity(0.2),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -628,7 +628,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
           isArabic ? 'الصلاة القادمة' : 'Next Prayer',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: AppConstants.primaryColor,
+                color: AppConstants.getPrimary(isDark),
               ),
         ),
         const SizedBox(height: AppConstants.paddingMedium),
@@ -710,10 +710,11 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     bool isDark,
     bool isArabic,
   ) {
+    final primary = AppConstants.getPrimary(isDark);
     final actions = [
-      _ToolkitAction(icon: Icons.explore, label: isArabic ? 'القبلة' : 'Qibla', route: '/qibla', color: Colors.teal),
-      _ToolkitAction(icon: Icons.pan_tool, label: isArabic ? 'أذكار' : 'Azkar', route: '/dhikr', color: Colors.purple),
-      _ToolkitAction(icon: Icons.bar_chart, label: isArabic ? 'التقرير' : 'Report', route: '/prayer_report', color: Colors.green),
+      _ToolkitAction(icon: Icons.explore, label: isArabic ? 'القبلة' : 'Qibla', route: '/qibla', color: primary),
+      _ToolkitAction(icon: Icons.pan_tool, label: isArabic ? 'أذكار' : 'Azkar', route: '/dhikr', color: primary),
+      _ToolkitAction(icon: Icons.bar_chart, label: isArabic ? 'التقرير' : 'Report', route: '/prayer_report', color: primary),
     ];
 
     return Container(
@@ -837,6 +838,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
   }
 
   Widget _buildErrorState(BuildContext context, String error, bool isArabic) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
       padding: const EdgeInsets.all(AppConstants.paddingXLarge),
       child: Column(
@@ -868,7 +870,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
             icon: const Icon(Icons.refresh),
             label: Text(isArabic ? 'إعادة المحاولة' : 'Retry'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppConstants.primaryColor,
+              backgroundColor: AppConstants.getPrimary(isDark),
               foregroundColor: Colors.white,
             ),
           ),
@@ -1037,6 +1039,7 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
 
   void _showDurationDialog(BuildContext context) {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final durations = [10, 15, 20, 25, 30];
     showDialog(
       context: context,
@@ -1051,7 +1054,7 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
                 isArabic ? '$duration دقيقة' : '$duration minutes',
               ),
               trailing: _silentModeDuration == duration
-                  ? const Icon(Icons.check, color: AppConstants.primaryColor)
+                  ? Icon(Icons.check, color: AppConstants.getPrimary(isDark))
                   : null,
               onTap: () async {
                 setState(() {
@@ -1104,8 +1107,8 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
           ),
           // Reminder Prayer Toggle
           SwitchListTile(
-            secondary: const Icon(Icons.notifications,
-                color: AppConstants.primaryColor),
+            secondary: Icon(Icons.notifications,
+                color: AppConstants.getPrimary(isDark)),
             title: Text(isArabic ? 'تذكير الصلاة' : 'Reminder Prayer'),
             subtitle: Text(isArabic
                 ? 'تنبيه قبل موعد الصلاة بـ 10 دقائق'
@@ -1122,8 +1125,8 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
           ),
           // Background Notification Toggle
           SwitchListTile(
-            secondary: const Icon(Icons.notifications_active,
-                color: AppConstants.primaryColor),
+            secondary: Icon(Icons.notifications_active,
+                color: AppConstants.getPrimary(isDark)),
             title: Text(isArabic ? 'إشعار الصلاة' : 'Prayer Notification'),
             subtitle: Text(isArabic
                 ? 'عرض موعد الصلاة القادم في الإشعار'
@@ -1167,7 +1170,7 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
           // Adhan Sound Toggle
           SwitchListTile(
             secondary:
-                const Icon(Icons.volume_up, color: AppConstants.primaryColor),
+                Icon(Icons.volume_up, color: AppConstants.getPrimary(isDark)),
             title: Text(isArabic ? 'صوت الأذان' : 'Azan Sound'),
             subtitle: Text(isArabic
                 ? 'تشغيل صوت الأذان عند موعد الصلاة'
@@ -1183,16 +1186,16 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
           const Divider(height: 1),
           // Download Adhan Sounds
           ListTile(
-            leading: const Icon(Icons.download_for_offline_outlined,
-                color: AppConstants.primaryColor),
+            leading: Icon(Icons.download_for_offline_outlined,
+                color: AppConstants.getPrimary(isDark)),
             title: Text(isArabic
                 ? 'تحميل أصوات الأذان'
                 : 'Download Adhan Sounds'),
             subtitle: Text(isArabic
                 ? 'تصفح وتحميل أصوات مؤذنين مختلفين'
                 : 'Browse and download different adhan reciters'),
-            trailing: const Icon(Icons.chevron_right,
-                color: AppConstants.primaryColor),
+            trailing: Icon(Icons.chevron_right,
+                color: AppConstants.getPrimary(isDark)),
             onTap: () {
               Navigator.of(context).pushNamed('/adhan_downloads');
             },
@@ -1200,8 +1203,8 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
           const Divider(height: 1),
           // Silent Mode Automation Toggle
           SwitchListTile(
-            secondary: const Icon(Icons.phone_paused,
-                color: AppConstants.primaryColor),
+            secondary: Icon(Icons.phone_paused,
+                color: AppConstants.getPrimary(isDark)),
             title: Text(isArabic
                 ? 'الوضع الصامت التلقائي'
                 : 'Auto Silent Mode'),
@@ -1222,8 +1225,8 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
           // Silent Mode Duration (only show if silent mode is enabled)
           if (_silentModeEnabled)
             ListTile(
-              leading: const Icon(Icons.timer_outlined,
-                  color: AppConstants.primaryColor),
+              leading: Icon(Icons.timer_outlined,
+                  color: AppConstants.getPrimary(isDark)),
               title: Text(isArabic
                   ? 'مدة الوضع الصامت'
                   : 'Silent Mode Duration'),
@@ -1233,7 +1236,7 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
                     : '$_silentModeDuration minutes',
               ),
               trailing:
-                  const Icon(Icons.chevron_right, color: AppConstants.primaryColor),
+                  Icon(Icons.chevron_right, color: AppConstants.getPrimary(isDark)),
               onTap: () => _showDurationDialog(context),
             ),
 
@@ -1258,14 +1261,14 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
           ),
           // Iqama Times
           ListTile(
-            leading: const Icon(Icons.timer_outlined,
-                color: AppConstants.primaryColor),
+            leading: Icon(Icons.timer_outlined,
+                color: AppConstants.getPrimary(isDark)),
             title: Text(isArabic ? 'أوقات الإقامة' : 'Iqama Times'),
             subtitle: Text(isArabic
                 ? 'تعديل وقت الإقامة لكل صلاة'
                 : 'Adjust iqama time for each prayer'),
-            trailing: const Icon(Icons.chevron_right,
-                color: AppConstants.primaryColor),
+            trailing: Icon(Icons.chevron_right,
+                color: AppConstants.getPrimary(isDark)),
             onTap: () {
               Navigator.of(context).pushNamed('/iqama_settings');
             },
@@ -1273,15 +1276,15 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
           const Divider(height: 1),
           // Calculation Method
           ListTile(
-            leading: const Icon(Icons.calculate_outlined,
-                color: AppConstants.primaryColor),
+            leading: Icon(Icons.calculate_outlined,
+                color: AppConstants.getPrimary(isDark)),
             title: Text(isArabic ? 'طريقة الحساب' : 'Calculation Method'),
             subtitle: Text(
               AdhanCalculationMethod.fromValue(_calculationMethod)
                   .getLocalizedName(isArabic),
             ),
-            trailing: const Icon(Icons.chevron_right,
-                color: AppConstants.primaryColor),
+            trailing: Icon(Icons.chevron_right,
+                color: AppConstants.getPrimary(isDark)),
             onTap: () {
               PrayerCalculationSettingsDialog.show(
                 context: context,
@@ -1305,14 +1308,14 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
           const Divider(height: 1),
           // Asr Madhab
           ListTile(
-            leading: const Icon(Icons.mosque_outlined,
-                color: AppConstants.primaryColor),
+            leading: Icon(Icons.mosque_outlined,
+                color: AppConstants.getPrimary(isDark)),
             title: Text(isArabic ? 'مذهب العصر' : 'Asr Madhab'),
             subtitle: Text(
               AsrMadhab.fromValue(_asrMadhab).getLocalizedName(isArabic),
             ),
-            trailing: const Icon(Icons.chevron_right,
-                color: AppConstants.primaryColor),
+            trailing: Icon(Icons.chevron_right,
+                color: AppConstants.getPrimary(isDark)),
             onTap: () {
               PrayerCalculationSettingsDialog.show(
                 context: context,
@@ -1357,7 +1360,7 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
           ListTile(
             leading: Icon(
               _isPlayingAdhan ? Icons.stop_circle : Icons.play_circle_outline,
-              color: _isPlayingAdhan ? Colors.red : AppConstants.primaryColor,
+              color: _isPlayingAdhan ? Colors.red : AppConstants.getPrimary(isDark),
             ),
             title: Text(
               _isPlayingAdhan
@@ -1377,8 +1380,8 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
           ),
           // Test Adhan Notification Button
           ListTile(
-            leading: const Icon(Icons.notifications_active_outlined,
-                color: AppConstants.primaryColor),
+            leading: Icon(Icons.notifications_active_outlined,
+                color: AppConstants.getPrimary(isDark)),
             title: Text(
               isArabic ? 'اختبار إشعار الأذان' : 'Test Adhan Notification',
             ),
@@ -1387,7 +1390,7 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
                   ? 'يشغل الإشعار والشاشة الكاملة بعد 10 ثوان'
                   : 'Triggers notification & full screen in 10 sec',
             ),
-            trailing: const Icon(Icons.play_arrow, color: AppConstants.primaryColor),
+            trailing: Icon(Icons.play_arrow, color: AppConstants.getPrimary(isDark)),
             onTap: () async {
               await PrayerAlarmService.instance.testAdhanNow('Maghrib');
               if (mounted) {
@@ -1404,12 +1407,12 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
           ),
           // Test Notification Button
           ListTile(
-            leading: const Icon(Icons.notifications_active_outlined,
-                color: AppConstants.primaryColor),
+            leading: Icon(Icons.notifications_active_outlined,
+                color: AppConstants.getPrimary(isDark)),
             title: Text('test_notification'.tr()),
             subtitle: Text('test_notification_desc'.tr()),
-            trailing: const Icon(Icons.chevron_right,
-                color: AppConstants.primaryColor),
+            trailing: Icon(Icons.chevron_right,
+                color: AppConstants.getPrimary(isDark)),
             onTap: () async {
               await NotificationService.instance.showTestNotification();
               if (mounted) {
@@ -1428,8 +1431,8 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
                 color: Colors.orange),
             title: Text('check_notification_status'.tr()),
             subtitle: Text('check_notification_status_desc'.tr()),
-            trailing: const Icon(Icons.chevron_right,
-                color: AppConstants.primaryColor),
+            trailing: Icon(Icons.chevron_right,
+                color: AppConstants.getPrimary(isDark)),
             onTap: () async {
               await NotificationService.instance.debugCheckNotificationStatus();
               if (mounted) {

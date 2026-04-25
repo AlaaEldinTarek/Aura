@@ -78,7 +78,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     AppConstants.darkSurface,
                   ]
                 : [
-                    AppConstants.primaryColor.withOpacity(0.08),
+                    AppConstants.getPrimary(isDark).withOpacity(0.08),
                     AppConstants.lightBackground,
                   ],
           ),
@@ -114,7 +114,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                               .textTheme
                               .displaySmall
                               ?.copyWith(
-                                color: AppConstants.primaryColor,
+                                color: AppConstants.getPrimary(isDark),
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Roboto',
                               ),
@@ -136,7 +136,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                               .textTheme
                               .displaySmall
                               ?.copyWith(
-                                color: AppConstants.primaryColor,
+                                color: AppConstants.getPrimary(isDark),
                                 fontWeight: FontWeight.bold,
                                 fontFamily: 'Cairo',
                               ),
@@ -166,7 +166,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                             valueColor: AlwaysStoppedAnimation(
                               isDark
                                   ? AppConstants.primaryLight
-                                  : AppConstants.primaryColor,
+                                  : AppConstants.getPrimary(isDark),
                             ),
                           )
                         : const SizedBox.shrink(),

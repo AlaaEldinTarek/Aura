@@ -75,8 +75,8 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: [
-                            AppConstants.primaryColor,
-                            AppConstants.primaryColor.withOpacity(0.7),
+                            AppConstants.getPrimary(isDark),
+                            AppConstants.getPrimary(isDark).withOpacity(0.7),
                           ],
                         ),
                         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
@@ -219,12 +219,12 @@ class _AchievementBadge extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isEarned
-            ? AppConstants.primaryColor.withOpacity(0.1)
+            ? AppConstants.getPrimary(isDark).withOpacity(0.1)
             : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         border: Border.all(
           color: isEarned
-              ? AppConstants.primaryColor.withOpacity(0.5)
+              ? AppConstants.getPrimary(isDark).withOpacity(0.5)
               : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
         ),
       ),
@@ -266,7 +266,7 @@ class _AchievementBadge extends StatelessWidget {
           ),
           if (isEarned) ...[
             const SizedBox(height: 4),
-            Icon(Icons.check_circle, color: AppConstants.primaryColor, size: 16),
+            Icon(Icons.check_circle, color: AppConstants.getPrimary(isDark), size: 16),
           ],
         ],
       ),

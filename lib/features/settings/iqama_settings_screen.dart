@@ -84,24 +84,24 @@ class _IqamaSettingsScreenState extends ConsumerState<IqamaSettingsScreen> {
                 end: Alignment.bottomRight,
                 colors: isDark
                     ? [
-                        AppConstants.primaryColor.withOpacity(0.15),
+                        AppConstants.getPrimary(isDark).withOpacity(0.15),
                         AppConstants.accentCyan.withOpacity(0.1),
                       ]
                     : [
-                        AppConstants.primaryColor.withOpacity(0.08),
+                        AppConstants.getPrimary(isDark).withOpacity(0.08),
                         AppConstants.accentCyan.withOpacity(0.05),
                       ],
               ),
               borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
               border: Border.all(
-                color: AppConstants.primaryColor.withOpacity(0.2),
+                color: AppConstants.getPrimary(isDark).withOpacity(0.2),
               ),
             ),
             child: Row(
               children: [
                 Icon(
                   Icons.info_outline,
-                  color: AppConstants.primaryColor,
+                  color: AppConstants.getPrimary(isDark),
                 ),
                 const SizedBox(width: AppConstants.paddingSmall),
                 Expanded(
@@ -139,8 +139,8 @@ class _IqamaSettingsScreenState extends ConsumerState<IqamaSettingsScreen> {
               icon: const Icon(Icons.restore),
               label: Text(isArabic ? 'إعادة تعيين' : 'Reset to Defaults'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: AppConstants.primaryColor,
-                side: BorderSide(color: AppConstants.primaryColor.withOpacity(0.5)),
+                foregroundColor: AppConstants.getPrimary(isDark),
+                side: BorderSide(color: AppConstants.getPrimary(isDark).withOpacity(0.5)),
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
             ),
@@ -186,7 +186,7 @@ class _IqamaSettingsScreenState extends ConsumerState<IqamaSettingsScreen> {
         subtitle: Text(
           isArabic ? '$minutes دقيقة بعد الأذان' : '$minutes minutes after adhan',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: AppConstants.primaryColor,
+                color: AppConstants.getPrimary(isDark),
               ),
         ),
         trailing: Row(
@@ -208,14 +208,14 @@ class _IqamaSettingsScreenState extends ConsumerState<IqamaSettingsScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppConstants.primaryColor.withOpacity(0.1),
+                color: AppConstants.getPrimary(isDark).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(AppConstants.radiusSmall),
               ),
               child: Text(
                 '$minutes',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: AppConstants.primaryColor,
+                  color: AppConstants.getPrimary(isDark),
                 ),
               ),
             ),

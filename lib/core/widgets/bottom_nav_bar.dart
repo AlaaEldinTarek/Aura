@@ -124,7 +124,7 @@ class AuraBottomNavBar extends ConsumerWidget {
                     icon,
                     size: 24,
                     color: isSelected
-                        ? AppConstants.primaryColor
+                        ? AppConstants.getPrimary(isDark)
                         : (isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary),
                   ),
                   if (badge > 0)
@@ -159,7 +159,7 @@ class AuraBottomNavBar extends ConsumerWidget {
                   fontSize: 11,
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   color: isSelected
-                      ? AppConstants.primaryColor
+                      ? AppConstants.getPrimary(isDark)
                       : (isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary),
                 ),
               ),

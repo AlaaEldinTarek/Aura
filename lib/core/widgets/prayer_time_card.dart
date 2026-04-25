@@ -44,7 +44,7 @@ class PrayerTimeCard extends StatelessWidget {
         boxShadow: [
           if (isNext || isCurrent)
             BoxShadow(
-              color: _getPrayerColor(prayerTime.name).withOpacity(0.3),
+              color: _getPrayerColor(prayerTime.name, isDark).withOpacity(0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -152,26 +152,26 @@ class PrayerTimeCard extends StatelessWidget {
     // Use Aura theme gradient (Primary Blue to Accent Cyan)
     if (isDark) {
       return [
-        AppConstants.primaryColor.withOpacity(0.8),
+        AppConstants.getPrimary(isDark).withOpacity(0.8),
         AppConstants.accentCyan.withOpacity(0.6),
       ];
     } else {
       return [
-        AppConstants.primaryColor,
+        AppConstants.getPrimary(isDark),
         AppConstants.accentCyan,
       ];
     }
   }
 
-  Color _getPrayerColor(String prayerName) {
+  Color _getPrayerColor(String prayerName, bool isDark) {
     // Use Aura theme colors for prayer-specific highlights
     switch (prayerName) {
       case 'Fajr':
-        return AppConstants.primaryColor; // Blue
+        return AppConstants.getPrimary(isDark); // Blue
       case 'Sunrise':
         return AppConstants.accentOrange; // Orange
       case 'Zuhr':
-        return AppConstants.primaryColor; // Blue
+        return AppConstants.getPrimary(isDark); // Blue
       case 'Asr':
         return AppConstants.accentPurple; // Purple
       case 'Maghrib':
@@ -179,7 +179,7 @@ class PrayerTimeCard extends StatelessWidget {
       case 'Isha':
         return AppConstants.accentPurple; // Purple
       default:
-        return AppConstants.primaryColor;
+        return AppConstants.getPrimary(isDark);
     }
   }
 }

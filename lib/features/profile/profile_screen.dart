@@ -90,7 +90,7 @@ class ProfileScreen extends ConsumerWidget {
               icon: const Icon(Icons.login),
               label: Text('login'.tr()),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppConstants.primaryColor,
+                backgroundColor: AppConstants.getPrimary(isDark),
                 foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppConstants.paddingXLarge,
@@ -323,17 +323,17 @@ class ProfileScreen extends ConsumerWidget {
           end: Alignment.bottomRight,
           colors: isDark
               ? [
-                  AppConstants.primaryColor.withOpacity(0.15),
+                  AppConstants.getPrimary(isDark).withOpacity(0.15),
                   AppConstants.accentCyan.withOpacity(0.1),
                 ]
               : [
-                  AppConstants.primaryColor.withOpacity(0.05),
+                  AppConstants.getPrimary(isDark).withOpacity(0.05),
                   AppConstants.accentCyan.withOpacity(0.08),
                 ],
         ),
         borderRadius: BorderRadius.circular(AppConstants.radiusXLarge),
         border: Border.all(
-          color: AppConstants.primaryColor.withOpacity(0.2),
+          color: AppConstants.getPrimary(isDark).withOpacity(0.2),
           width: 1,
         ),
       ),
@@ -348,14 +348,14 @@ class ProfileScreen extends ConsumerWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppConstants.primaryColor,
+                  AppConstants.getPrimary(isDark),
                   AppConstants.accentCyan,
                 ],
               ),
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: AppConstants.primaryColor.withOpacity(0.3),
+                  color: AppConstants.getPrimary(isDark).withOpacity(0.3),
                   blurRadius: 15,
                   offset: const Offset(0, 5),
                 ),
@@ -403,7 +403,7 @@ class ProfileScreen extends ConsumerWidget {
                   user.displayName ?? (isArabic ? 'مستخدم' : 'User'),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : AppConstants.primaryColor,
+                        color: isDark ? Colors.white : AppConstants.getPrimary(isDark),
                       ),
                   textAlign: isArabic ? TextAlign.right : TextAlign.left,
                 ),
@@ -441,6 +441,7 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   void _showThemeDialog(BuildContext context, WidgetRef ref, bool isArabic) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeModeAsync = ref.read(themeModeProvider);
     final currentTheme = themeModeAsync.value ?? 'system';
 
@@ -455,7 +456,7 @@ class ProfileScreen extends ConsumerWidget {
               leading: const Icon(Icons.light_mode),
               title: Text(isArabic ? 'وضع فاتح' : 'Light Mode'),
               trailing: currentTheme == 'light'
-                  ? const Icon(Icons.check, color: AppConstants.primaryColor)
+                  ? Icon(Icons.check, color: AppConstants.getPrimary(isDark))
                   : null,
               onTap: () {
                 ref.read(themeModeProvider.notifier).setThemeMode('light');
@@ -466,7 +467,7 @@ class ProfileScreen extends ConsumerWidget {
               leading: const Icon(Icons.dark_mode),
               title: Text(isArabic ? 'وضع داكن' : 'Dark Mode'),
               trailing: currentTheme == 'dark'
-                  ? const Icon(Icons.check, color: AppConstants.primaryColor)
+                  ? Icon(Icons.check, color: AppConstants.getPrimary(isDark))
                   : null,
               onTap: () {
                 ref.read(themeModeProvider.notifier).setThemeMode('dark');
@@ -477,7 +478,7 @@ class ProfileScreen extends ConsumerWidget {
               leading: const Icon(Icons.brightness_auto),
               title: Text(isArabic ? 'النظام' : 'System'),
               trailing: currentTheme == 'system'
-                  ? const Icon(Icons.check, color: AppConstants.primaryColor)
+                  ? Icon(Icons.check, color: AppConstants.getPrimary(isDark))
                   : null,
               onTap: () {
                 ref.read(themeModeProvider.notifier).setThemeMode('system');
@@ -488,7 +489,7 @@ class ProfileScreen extends ConsumerWidget {
               leading: const Icon(Icons.dark_mode_outlined),
               title: Text(isArabic ? 'أسود AMOLED' : 'AMOLED Black'),
               trailing: currentTheme == 'amoled'
-                  ? const Icon(Icons.check, color: AppConstants.primaryColor)
+                  ? Icon(Icons.check, color: AppConstants.getPrimary(isDark))
                   : null,
               onTap: () {
                 ref.read(themeModeProvider.notifier).setThemeMode('amoled');
@@ -554,7 +555,7 @@ class ProfileScreen extends ConsumerWidget {
                   icon: Icons.mosque_outlined,
                   value: NumberFormatter.withArabicNumeralsByLanguage('$totalPrayers', isArabic ? 'ar' : 'en'),
                   label: isArabic ? 'الصلوات' : 'Prayers',
-                  color: AppConstants.primaryColor,
+                  color: AppConstants.getPrimary(isDark),
                   isDark: isDark,
                 ),
               ),
@@ -618,7 +619,7 @@ class ProfileScreen extends ConsumerWidget {
                       value: NumberFormatter.withArabicNumeralsByLanguage(
                           '${stats.dueToday}', isArabic ? 'ar' : 'en'),
                       label: isArabic ? 'اليوم' : 'Today',
-                      color: AppConstants.primaryColor,
+                      color: AppConstants.getPrimary(isDark),
                       isDark: isDark,
                     ),
                   ),
@@ -781,6 +782,7 @@ class ProfileScreen extends ConsumerWidget {
   }
 
   void _showLanguageDialog(BuildContext context, WidgetRef ref, bool isArabic) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final languageAsync = ref.read(languageProvider);
     final currentLanguage = languageAsync.value ?? 'en';
 
@@ -795,7 +797,7 @@ class ProfileScreen extends ConsumerWidget {
               leading: const Text('🇬🇧', style: TextStyle(fontSize: 32)),
               title: const Text('English'),
               trailing: currentLanguage == 'en'
-                  ? const Icon(Icons.check, color: AppConstants.primaryColor)
+                  ? Icon(Icons.check, color: AppConstants.getPrimary(isDark))
                   : null,
               onTap: () {
                 ref.read(languageProvider.notifier).setLanguage('en');
@@ -807,7 +809,7 @@ class ProfileScreen extends ConsumerWidget {
               leading: const Text('🇸🇦', style: TextStyle(fontSize: 32)),
               title: const Text('العربية'),
               trailing: currentLanguage == 'ar'
-                  ? const Icon(Icons.check, color: AppConstants.primaryColor)
+                  ? Icon(Icons.check, color: AppConstants.getPrimary(isDark))
                   : null,
               onTap: () {
                 ref.read(languageProvider.notifier).setLanguage('ar');
@@ -902,7 +904,7 @@ class _JumuahReminderTile extends ConsumerWidget {
       showChevron: false,
       trailing: Switch(
         value: enabled,
-        activeThumbColor: AppConstants.primaryColor,
+        activeThumbColor: AppConstants.getPrimary(isDark),
         onChanged: (value) async {
           await ref.read(jumuahReminderEnabledProvider.notifier).setEnabled(value);
           if (value) {
@@ -939,9 +941,9 @@ class _AppModeTiles extends ConsumerWidget {
           icon: icon,
           title: label,
           subtitle: subtitle,
-          iconColor: isSelected ? AppConstants.primaryColor : null,
+          iconColor: isSelected ? AppConstants.getPrimary(isDark) : null,
           trailing: isSelected
-              ? const Icon(Icons.check_circle, color: AppConstants.primaryColor, size: 20)
+              ? Icon(Icons.check_circle, color: AppConstants.getPrimary(isDark), size: 20)
               : null,
           showChevron: false,
           onTap: () => ref.read(appModeProvider.notifier).setMode(mode),

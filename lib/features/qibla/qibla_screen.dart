@@ -172,7 +172,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
                 title: Text(
                   isArabic ? 'القبلة' : 'Qibla',
                   style: TextStyle(
-                    color: isDark ? Colors.white : AppConstants.primaryColor,
+                    color: isDark ? Colors.white : AppConstants.getPrimary(isDark),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -246,9 +246,9 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(
+              Icon(
                 Icons.location_on,
-                color: AppConstants.primaryColor,
+                color: AppConstants.getPrimary(isDark),
               ),
               const SizedBox(width: 8),
               Text(
@@ -263,7 +263,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
           Text(
             distanceText,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: AppConstants.primaryColor,
+                  color: AppConstants.getPrimary(isDark),
                   fontWeight: FontWeight.bold,
                 ),
           ),
@@ -295,16 +295,16 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
                     end: Alignment.bottomRight,
                     colors: isDark
                         ? [
-                            AppConstants.primaryColor.withValues(alpha: 0.3),
+                            AppConstants.getPrimary(isDark).withValues(alpha: 0.3),
                             AppConstants.accentCyan.withValues(alpha: 0.3),
                           ]
                         : [
-                            AppConstants.primaryColor.withValues(alpha: 0.1),
+                            AppConstants.getPrimary(isDark).withValues(alpha: 0.1),
                             AppConstants.accentCyan.withValues(alpha: 0.1),
                           ],
                   ),
                   border: Border.all(
-                    color: AppConstants.primaryColor.withValues(alpha: 0.3),
+                    color: AppConstants.getPrimary(isDark).withValues(alpha: 0.3),
                     width: 2,
                   ),
                 ),
@@ -326,10 +326,10 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
               height: 60,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: AppConstants.primaryColor,
+                color: AppConstants.getPrimary(isDark),
                 boxShadow: [
                   BoxShadow(
-                    color: AppConstants.primaryColor.withValues(alpha: 0.3),
+                    color: AppConstants.getPrimary(isDark).withValues(alpha: 0.3),
                     blurRadius: 10,
                     spreadRadius: 2,
                   ),
@@ -428,7 +428,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
             icon: const Icon(Icons.refresh),
             label: Text('retry'.tr()),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppConstants.primaryColor,
+              backgroundColor: AppConstants.getPrimary(isDark),
               foregroundColor: Colors.white,
             ),
           ),
@@ -540,7 +540,7 @@ class CompassPainter extends CustomPainter {
     // Draw Qibla direction marker
     final qiblaAngle = (qiblaDirection) * math.pi / 180;
     final qiblaPaint = Paint()
-      ..color = AppConstants.primaryColor
+      ..color = AppConstants.getPrimary(isDark)
       ..strokeWidth = 4;
 
     final qiblaX = center.dx + (radius * 0.6) * math.cos(qiblaAngle - math.pi / 2);
@@ -557,7 +557,7 @@ class CompassPainter extends CustomPainter {
         center.dy + (radius * 0.45) * math.sin(qiblaAngle - math.pi / 2),
       ),
       Paint()
-        ..color = AppConstants.primaryColor.withValues(alpha: 0.3)
+        ..color = AppConstants.getPrimary(isDark).withValues(alpha: 0.3)
         ..strokeWidth = 2
         ..style = PaintingStyle.stroke,
     );

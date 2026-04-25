@@ -23,7 +23,7 @@ class GreetingWidget extends ConsumerWidget {
     final size = MediaQuery.of(context).size;
 
     final hour = DateTime.now().hour;
-    final (greeting, greetingAr, icon, bgColor) = _getTimeBasedGreeting(hour);
+    final (greeting, greetingAr, icon, bgColor) = _getTimeBasedGreeting(hour, isDark);
 
     final displayName = userName?.isNotEmpty == true ? userName : null;
 
@@ -99,58 +99,34 @@ class GreetingWidget extends ConsumerWidget {
         photoURL,
         fit: BoxFit.cover,
         errorBuilder: (_, __, ___) => Image.asset(
-          'assets/images/logo_dark.png',
+          'assets/images/logo.png',
           fit: BoxFit.cover,
         ),
       );
     }
-    return Image.asset('assets/images/logo_dark.png', fit: BoxFit.cover);
+    return Image.asset('assets/images/logo.png', fit: BoxFit.cover);
   }
 
-  (String, String, String, Color) _getTimeBasedGreeting(int hour) {
+  (String, String, String, Color) _getTimeBasedGreeting(int hour, bool isDark) {
+    final primary = AppConstants.getPrimary(isDark);
     // Early Morning (4-6 AM)
     if (hour >= 4 && hour < 6) {
-      return (
-        'Early Morning',
-        'فجر جديد',
-        '🌅',
-        AppConstants.primaryColor
-      );
+      return ('Early Morning', 'فجر جديد', '🌅', primary);
     }
     // Morning (6-12 PM)
     if (hour >= 6 && hour < 12) {
-      return (
-        'Good Morning',
-        'صباح الخير',
-        '☀️',
-        AppConstants.primaryColor
-      );
+      return ('Good Morning', 'صباح الخير', '☀️', primary);
     }
     // Afternoon (12-5 PM)
     if (hour >= 12 && hour < 17) {
-      return (
-        'Good Afternoon',
-        'مساء الخير',
-        '🌤️',
-        AppConstants.primaryColor
-      );
+      return ('Good Afternoon', 'مساء الخير', '🌤️', primary);
     }
     // Evening (5-8 PM)
     if (hour >= 17 && hour < 20) {
-      return (
-        'Good Evening',
-        'مساء الخير',
-        '🌇',
-        AppConstants.primaryColor
-      );
+      return ('Good Evening', 'مساء الخير', '🌇', primary);
     }
     // Night (8 PM - 4 AM)
-    return (
-      'Good Night',
-      'طابت ليلتك',
-      '🌙',
-      AppConstants.primaryColor
-    );
+    return ('Good Night', 'طابت ليلتك', '🌙', primary);
   }
 }
 
@@ -169,9 +145,10 @@ class SimpleGreeting extends StatelessWidget {
   Widget build(BuildContext context) {
     final locale = Localizations.localeOf(context);
     final isArabic = locale.languageCode == 'ar';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final hour = DateTime.now().hour;
-    final (greeting, greetingAr, _, _) = _getTimeBasedGreeting(hour);
+    final (greeting, greetingAr, _, _) = _getTimeBasedGreeting(hour, isDark);
 
     final text = userName?.isNotEmpty == true
         ? (isArabic ? 'مرحباً $userName' : 'Hello, $userName')
@@ -185,15 +162,16 @@ class SimpleGreeting extends StatelessWidget {
     );
   }
 
-  (String, String, String, Color) _getTimeBasedGreeting(int hour) {
+  (String, String, String, Color) _getTimeBasedGreeting(int hour, bool isDark) {
+    final primary = AppConstants.getPrimary(isDark);
     if (hour >= 4 && hour < 12) {
-      return ('Good Morning', 'صباح الخير', '☀️', AppConstants.primaryColor);
+      return ('Good Morning', 'صباح الخير', '☀️', primary);
     } else if (hour >= 12 && hour < 17) {
-      return ('Good Afternoon', 'مساء الخير', '🌤️', AppConstants.primaryColor);
+      return ('Good Afternoon', 'مساء الخير', '🌤️', primary);
     } else if (hour >= 17 && hour < 20) {
-      return ('Good Evening', 'مساء الخير', '🌇', AppConstants.primaryColor);
+      return ('Good Evening', 'مساء الخير', '🌇', primary);
     } else {
-      return ('Good Night', 'طابت ليلتك', '🌙', AppConstants.primaryColor);
+      return ('Good Night', 'طابت ليلتك', '🌙', primary);
     }
   }
 }

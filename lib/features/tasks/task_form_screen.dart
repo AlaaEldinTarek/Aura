@@ -361,7 +361,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                   return ListTile(
                     leading: Icon(
                       _getCategoryIcon(category),
-                      color: isSelected ? AppConstants.primaryColor : Colors.grey,
+                      color: isSelected ? AppConstants.getPrimary(isDark) : Colors.grey,
                     ),
                     title: Text(
                       labels[category]!,
@@ -370,7 +370,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                       ),
                     ),
                     trailing: isSelected
-                        ? Icon(Icons.check_circle, color: AppConstants.primaryColor)
+                        ? Icon(Icons.check_circle, color: AppConstants.getPrimary(isDark))
                         : null,
                     onTap: () {
                       setState(() {
@@ -535,7 +535,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                   children: [
                     Icon(
                       _getCategoryIcon(_selectedCategory),
-                      color: AppConstants.primaryColor,
+                      color: AppConstants.getPrimary(isDark),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -716,7 +716,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           SwitchListTile(
             secondary: Icon(
               Icons.repeat,
-              color: _recurrenceEnabled ? AppConstants.primaryColor : Colors.grey,
+              color: _recurrenceEnabled ? AppConstants.getPrimary(isDark) : Colors.grey,
             ),
             title: Text(isArabic ? 'تكرار المهمة' : 'Repeat Task'),
             subtitle: Text(
@@ -726,12 +726,12 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               style: TextStyle(
                 fontSize: 12,
                 color: _recurrenceEnabled
-                    ? AppConstants.primaryColor
+                    ? AppConstants.getPrimary(isDark)
                     : Colors.grey,
               ),
             ),
             value: _recurrenceEnabled,
-            activeColor: AppConstants.primaryColor,
+            activeColor: AppConstants.getPrimary(isDark),
             onChanged: (val) => setState(() => _recurrenceEnabled = val),
           ),
 
@@ -955,7 +955,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
         children: [
           Row(
             children: [
-              Icon(Icons.timer_outlined, size: 18, color: AppConstants.primaryColor),
+              Icon(Icons.timer_outlined, size: 18, color: AppConstants.getPrimary(isDark)),
               const SizedBox(width: 8),
               Text(
                 isArabic ? 'كم تحتاج من وقت؟' : 'Time Needed',
@@ -965,7 +965,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               Text(
                 _formatMins(_estimatedMinutes),
                 style: TextStyle(
-                  color: AppConstants.primaryColor,
+                  color: AppConstants.getPrimary(isDark),
                   fontWeight: FontWeight.bold,
                   fontSize: 14,
                 ),
@@ -984,8 +984,8 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                   decoration: BoxDecoration(
                     color: _estimatedMinutes == 0
-                        ? AppConstants.primaryColor
-                        : AppConstants.primaryColor.withOpacity(0.1),
+                        ? AppConstants.getPrimary(isDark)
+                        : AppConstants.getPrimary(isDark).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -993,7 +993,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: _estimatedMinutes == 0 ? Colors.white : AppConstants.primaryColor,
+                      color: _estimatedMinutes == 0 ? Colors.white : AppConstants.getPrimary(isDark),
                     ),
                   ),
                 ),
@@ -1005,8 +1005,8 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
                   decoration: BoxDecoration(
                     color: _estimatedMinutes == mins
-                        ? AppConstants.primaryColor
-                        : AppConstants.primaryColor.withOpacity(0.1),
+                        ? AppConstants.getPrimary(isDark)
+                        : AppConstants.getPrimary(isDark).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
@@ -1014,7 +1014,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: _estimatedMinutes == mins ? Colors.white : AppConstants.primaryColor,
+                      color: _estimatedMinutes == mins ? Colors.white : AppConstants.getPrimary(isDark),
                     ),
                   ),
                 ),
@@ -1041,7 +1041,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           SwitchListTile(
             secondary: Icon(
               Icons.center_focus_strong,
-              color: _focusModeEnabled ? AppConstants.primaryColor : Colors.grey,
+              color: _focusModeEnabled ? AppConstants.getPrimary(isDark) : Colors.grey,
             ),
             title: Text(isArabic ? 'وضع التركيز' : 'Focus Mode'),
             subtitle: Text(
@@ -1055,12 +1055,12 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               style: TextStyle(
                 fontSize: 12,
                 color: _focusModeEnabled
-                    ? AppConstants.primaryColor
+                    ? AppConstants.getPrimary(isDark)
                     : Colors.grey,
               ),
             ),
             value: _focusModeEnabled,
-            activeColor: AppConstants.primaryColor,
+            activeColor: AppConstants.getPrimary(isDark),
             onChanged: (val) async {
               if (val) {
                 // Check and request permissions first
@@ -1126,7 +1126,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                             contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
                             border: const OutlineInputBorder(),
                             focusedBorder: OutlineInputBorder(
-                              borderSide: BorderSide(color: AppConstants.primaryColor),
+                              borderSide: BorderSide(color: AppConstants.getPrimary(isDark)),
                             ),
                           ),
                           style: TextStyle(
@@ -1169,12 +1169,12 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
             color: isSelected
-                ? AppConstants.primaryColor
+                ? AppConstants.getPrimary(isDark)
                 : (isDark ? AppConstants.darkCard : Colors.grey.shade100),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: isSelected
-                  ? AppConstants.primaryColor
+                  ? AppConstants.getPrimary(isDark)
                   : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
             ),
           ),
@@ -1195,6 +1195,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   }
 
   Future<bool> _showFocusModeConfirmation(bool isArabic) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -1217,7 +1218,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(
-              foregroundColor: AppConstants.primaryColor,
+              foregroundColor: AppConstants.getPrimary(isDark),
             ),
             child: Text(isArabic ? 'تفعيل' : 'Enable'),
           ),
@@ -1227,6 +1228,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   }
 
   Future<void> _showFocusPermissionDialog(bool isArabic, bool hasOverlay, bool hasDnd) async {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     await showDialog(
       context: context,
       barrierDismissible: false,
@@ -1265,7 +1267,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               }
             },
             style: TextButton.styleFrom(
-              foregroundColor: AppConstants.primaryColor,
+              foregroundColor: AppConstants.getPrimary(isDark),
             ),
             child: Text(isArabic ? 'منح الأذونات' : 'Grant Permissions'),
           ),
@@ -1283,12 +1285,12 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
             color: isSelected
-                ? AppConstants.primaryColor
+                ? AppConstants.getPrimary(isDark)
                 : (isDark ? AppConstants.darkCard : Colors.grey.shade100),
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: isSelected
-                  ? AppConstants.primaryColor
+                  ? AppConstants.getPrimary(isDark)
                   : (isDark ? Colors.grey.shade700 : Colors.grey.shade300),
             ),
           ),
@@ -1392,7 +1394,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: AppConstants.primaryColor.withOpacity(0.12),
+                      color: AppConstants.getPrimary(isDark).withOpacity(0.12),
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Text(
@@ -1400,7 +1402,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        color: AppConstants.primaryColor,
+                        color: AppConstants.getPrimary(isDark),
                       ),
                     ),
                   ),
@@ -1445,7 +1447,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppConstants.primaryColor,
+                      color: AppConstants.getPrimary(isDark),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: const Icon(Icons.add, color: Colors.white, size: 18),
@@ -1464,7 +1466,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                   backgroundColor: isDark ? Colors.grey.shade800 : Colors.grey.shade200,
                   color: completedCount == _subtasks.length
                       ? Colors.green
-                      : AppConstants.primaryColor,
+                      : AppConstants.getPrimary(isDark),
                   minHeight: 3,
                 ),
               ),
@@ -1499,11 +1501,11 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: subtask.isCompleted
-                                  ? AppConstants.primaryColor
+                                  ? AppConstants.getPrimary(isDark)
                                   : Colors.transparent,
                               border: Border.all(
                                 color: subtask.isCompleted
-                                    ? AppConstants.primaryColor
+                                    ? AppConstants.getPrimary(isDark)
                                     : (isDark ? Colors.grey.shade600 : Colors.grey.shade400),
                                 width: 1.5,
                               ),
@@ -1625,7 +1627,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                   child: Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppConstants.primaryColor,
+                      color: AppConstants.getPrimary(isDark),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child:
@@ -1646,7 +1648,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                     label: Text(tag,
                         style:
                             const TextStyle(fontSize: 12, color: Colors.white)),
-                    backgroundColor: AppConstants.primaryColor,
+                    backgroundColor: AppConstants.getPrimary(isDark),
                     deleteIconColor: Colors.white70,
                     onDeleted: () => setState(() => _tags.remove(tag)),
                     padding: const EdgeInsets.symmetric(horizontal: 4),

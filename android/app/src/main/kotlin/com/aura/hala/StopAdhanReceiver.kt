@@ -75,7 +75,7 @@ class StopAdhanReceiver : BroadcastReceiver() {
             }
 
             val builder = androidx.core.app.NotificationCompat.Builder(context, "prayer_times")
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(title)
                 .setContentText(message)
                 .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)

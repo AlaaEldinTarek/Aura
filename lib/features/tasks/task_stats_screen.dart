@@ -74,9 +74,9 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
         elevation: 0,
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppConstants.primaryColor,
+          labelColor: AppConstants.getPrimary(isDark),
           unselectedLabelColor: isDark ? Colors.grey.shade400 : Colors.grey,
-          indicatorColor: AppConstants.primaryColor,
+          indicatorColor: AppConstants.getPrimary(isDark),
           tabs: [
             Tab(text: isArabic ? 'نظرة عامة' : 'Overview'),
             Tab(text: isArabic ? 'التفاصيل' : 'Details'),
@@ -188,7 +188,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
         Expanded(
           child: _buildInfoCard(
             icon: Icons.today,
-            iconColor: AppConstants.primaryColor,
+            iconColor: AppConstants.getPrimary(isDark),
             title: isArabic ? 'اليوم' : 'Today',
             value: '${stats.dueToday}',
             subtitle: stats.overdue > 0
@@ -318,7 +318,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
           Row(
             children: [
               Icon(Icons.bar_chart_rounded,
-                  color: AppConstants.primaryColor, size: 20),
+                  color: AppConstants.getPrimary(isDark), size: 20),
               const SizedBox(width: 8),
               Text(
                 isArabic ? 'آخر 7 أيام' : 'Last 7 Days',
@@ -333,7 +333,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: AppConstants.primaryColor.withOpacity(0.12),
+                  color: AppConstants.getPrimary(isDark).withOpacity(0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -343,7 +343,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
-                    color: AppConstants.primaryColor,
+                    color: AppConstants.getPrimary(isDark),
                   ),
                 ),
               ),
@@ -385,8 +385,8 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                           height: barHeight.clamp(4, 110),
                           decoration: BoxDecoration(
                             color: isToday
-                                ? AppConstants.primaryColor
-                                : AppConstants.primaryColor.withOpacity(0.4),
+                                ? AppConstants.getPrimary(isDark)
+                                : AppConstants.getPrimary(isDark).withOpacity(0.4),
                             borderRadius: BorderRadius.circular(6),
                           ),
                         ),
@@ -397,7 +397,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                           style: TextStyle(
                             fontSize: 10,
                             color: isToday
-                                ? AppConstants.primaryColor
+                                ? AppConstants.getPrimary(isDark)
                                 : (isDark
                                     ? Colors.grey.shade500
                                     : Colors.grey.shade600),
@@ -481,7 +481,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
           Row(
             children: [
               Icon(Icons.category_outlined,
-                  color: AppConstants.primaryColor, size: 20),
+                  color: AppConstants.getPrimary(isDark), size: 20),
               const SizedBox(width: 8),
               Text(
                 isArabic ? 'حسب الفئة' : 'By Category',
@@ -611,7 +611,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
           Row(
             children: [
               Icon(Icons.flag_outlined,
-                  color: AppConstants.primaryColor, size: 20),
+                  color: AppConstants.getPrimary(isDark), size: 20),
               const SizedBox(width: 8),
               Text(
                 isArabic ? 'حسب الأولوية' : 'By Priority',
@@ -776,7 +776,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                     icon: Icons.task_alt,
                     label: isArabic ? 'إجمالي المهام' : 'Total Tasks',
                     value: '${tasks.length}',
-                    color: AppConstants.primaryColor,
+                    color: AppConstants.getPrimary(isDark),
                   ),
                   _DetailItem(
                     icon: Icons.check_circle,
@@ -843,7 +843,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                       Row(
                         children: [
                           Icon(Icons.access_time,
-                              color: AppConstants.primaryColor, size: 20),
+                              color: AppConstants.getPrimary(isDark), size: 20),
                           const SizedBox(width: 8),
                           Text(
                             isArabic ? 'إحصائيات زمنية' : 'Time Stats',

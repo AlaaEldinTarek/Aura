@@ -10,10 +10,12 @@ Future<PrayerStatus?> showPrayerStatusDialog({
 }) {
   return showDialog<PrayerStatus>(
     context: context,
-    builder: (dialogContext) => SimpleDialog(
+    builder: (dialogContext) {
+      final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
+      return SimpleDialog(
       title: Row(
         children: [
-          Icon(Icons.mosque, color: AppConstants.primaryColor),
+          Icon(Icons.mosque, color: AppConstants.getPrimary(isDark)),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
@@ -63,7 +65,8 @@ Future<PrayerStatus?> showPrayerStatusDialog({
           ),
         ),
       ],
-    ),
+    );
+    },
   );
 }
 

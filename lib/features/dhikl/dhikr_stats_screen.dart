@@ -128,7 +128,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
                             icon: Icons.format_list_numbered,
                             label: isArabic ? 'الجلسات' : 'Sessions',
                             value: _n(_stats.totalSessions, isArabic: isArabic),
-                            color: AppConstants.primaryColor,
+                            color: AppConstants.getPrimary(isDark),
                             isDark: isDark,
                           ),
                         ),
@@ -331,7 +331,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
               barRods: [
                 BarChartRodData(
                   toY: entry.value,
-                  color: AppConstants.primaryColor,
+                  color: AppConstants.getPrimary(isDark),
                   width: 28,
                   borderRadius: const BorderRadius.only(
                     topLeft: Radius.circular(6),

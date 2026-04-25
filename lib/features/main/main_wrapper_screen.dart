@@ -187,8 +187,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
           duration: _doubleTapDuration,
           behavior: SnackBarBehavior.floating,
           backgroundColor: isDark
-              ? AppConstants.primaryColor.withOpacity(0.95)
-              : AppConstants.primaryColor,
+              ? AppConstants.getPrimary(isDark).withOpacity(0.95)
+              : AppConstants.getPrimary(isDark),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
           ),
@@ -317,15 +317,15 @@ class _AchievementToastState extends State<_AchievementToast>
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppConstants.primaryColor, AppConstants.accentCyan],
+                    gradient: LinearGradient(
+                      colors: [AppConstants.getPrimary(isDark), AppConstants.accentCyan],
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: AppConstants.primaryColor.withValues(alpha: 0.35),
+                        color: AppConstants.getPrimary(isDark).withValues(alpha: 0.35),
                         blurRadius: 16,
                         offset: const Offset(0, 6),
                       ),

@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Typeface
@@ -311,7 +312,7 @@ class PrayerForegroundService : Service() {
         val isArabic = currentLanguage == "ar"
 
         val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_notification)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
@@ -354,7 +355,13 @@ class PrayerForegroundService : Service() {
                 val prayerName = if (isArabic) nextPrayerNameAr ?: "" else nextPrayerName ?: ""
                 val untilText = if (isArabic) "حتى موعد الأذان" else "Until Azan"
 
-                val layoutId = if (isArabic) R.layout.notification_large_rtl else R.layout.notification_large
+                val isDark = isDarkTheme()
+                val layoutId = when {
+                    isDark && isArabic -> R.layout.notification_large_dark_rtl
+                    isDark -> R.layout.notification_large_dark
+                    isArabic -> R.layout.notification_large_rtl
+                    else -> R.layout.notification_large
+                }
                 val contentView = RemoteViews(packageName, layoutId)
                 contentView.setTextViewText(R.id.notification_header, if (isArabic) "هالة - $nextPrayerText" else "Aura - $nextPrayerText")
                 loadPrayerIcon()?.let { contentView.setImageViewBitmap(R.id.notification_logo, it) } // clock-based for normal mode
@@ -386,7 +393,13 @@ class PrayerForegroundService : Service() {
     ) {
         val isIqamaArrived = iqamaTime > 0 && now >= iqamaTime
 
-        val layoutId = if (isArabic) R.layout.notification_large_rtl else R.layout.notification_large
+        val isDark = isDarkTheme()
+        val layoutId = when {
+            isDark && isArabic -> R.layout.notification_large_dark_rtl
+            isDark -> R.layout.notification_large_dark
+            isArabic -> R.layout.notification_large_rtl
+            else -> R.layout.notification_large
+        }
         val contentView = RemoteViews(packageName, layoutId)
 
         // Header
@@ -470,6 +483,18 @@ class PrayerForegroundService : Service() {
         }
 
         Log.d(TAG, "📱 [ADHAN_MODE] $prayerName | iqamaArrived=$isIqamaArrived | time=$timeText")
+    }
+
+    private fun isDarkTheme(): Boolean {
+        val flutterPrefs = getSharedPreferences("${packageName}_preferences", Context.MODE_PRIVATE)
+        return when (flutterPrefs.getString("theme_mode", "system")) {
+            "dark", "amoled" -> true
+            "light" -> false
+            else -> {
+                val nightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+                nightMode == Configuration.UI_MODE_NIGHT_YES
+            }
+        }
     }
 
     // Mosque icon — shown at iqama time

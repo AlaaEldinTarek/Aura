@@ -703,7 +703,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         // Build notification
         Log.d(TAG, "📱 [NOTIFICATION] Building notification...")
         val builder = NotificationCompat.Builder(context, "prayer_times")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -803,7 +803,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
 
         // Build notification
         val builder = NotificationCompat.Builder(context, "prayer_times")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -883,7 +883,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
 
         // Build notification
         val builder = NotificationCompat.Builder(context, "prayer_times")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
