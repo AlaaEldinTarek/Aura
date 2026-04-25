@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@drawable/bg_notification"
+    android:background="@drawable/bg_notification_dark"
     android:paddingStart="16dp"
     android:paddingEnd="16dp"
     android:paddingTop="4dp"
@@ -32,7 +32,7 @@
             android:layout_marginStart="6dp"
             android:text="Aura - Next Prayer"
             android:textSize="11sp"
-            android:textColor="#99000000"
+            android:textColor="#99FFFFFF"
             android:letterSpacing="0.03" />
 
     </LinearLayout>
@@ -41,7 +41,7 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#1A000000"
+        android:background="#1AFFFFFF"
         android:layout_marginBottom="6dp" />
 
     <!-- Content: Icon + Prayer info -->
@@ -73,15 +73,13 @@
                 android:text="Maghrib"
                 android:textSize="24sp"
                 android:textStyle="bold"
-                android:textColor="#DE000000" />
+                android:textColor="#FFFFFF" />
 
-            <!-- Timer + Until Azan on same line -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="center_vertical"
-                >
+                android:gravity="center_vertical">
 
                 <TextView
                     android:id="@+id/notification_time"
@@ -98,7 +96,7 @@
                     android:layout_height="wrap_content"
                     android:text="Until Azan"
                     android:textSize="12sp"
-                    android:textColor="#99000000"
+                    android:textColor="#99FFFFFF"
                     android:paddingStart="8dp" />
 
             </LinearLayout>

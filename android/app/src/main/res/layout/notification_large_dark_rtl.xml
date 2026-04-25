@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:background="@drawable/bg_notification"
+    android:background="@drawable/bg_notification_dark"
     android:paddingStart="16dp"
     android:paddingEnd="16dp"
     android:paddingTop="4dp"
@@ -35,7 +35,7 @@
             android:layout_marginStart="6dp"
             android:text="هالة - الصلاة القادمة"
             android:textSize="11sp"
-            android:textColor="#99000000"
+            android:textColor="#99FFFFFF"
             android:textDirection="rtl"
             android:letterSpacing="0.03" />
 
@@ -45,7 +45,7 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="1dp"
-        android:background="#1A000000"
+        android:background="#1AFFFFFF"
         android:layout_marginBottom="6dp" />
 
     <!-- Content: Prayer info + Icon (RTL) -->
@@ -71,10 +71,9 @@
                 android:text="المغرب"
                 android:textSize="24sp"
                 android:textStyle="bold"
-                android:textColor="#DE000000"
+                android:textColor="#FFFFFF"
                 android:textDirection="rtl" />
 
-            <!-- Timer + Until Azan on same line -->
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -90,7 +89,7 @@
                     android:textSize="18sp"
                     android:textStyle="bold"
                     android:textColor="#F5B301"
-                    android:textDirection="rtl" />
+                    android:textDirection="ltr" />
 
                 <TextView
                     android:id="@+id/notification_until"
@@ -98,7 +97,7 @@
                     android:layout_height="wrap_content"
                     android:text="حتى موعد الأذان"
                     android:textSize="12sp"
-                    android:textColor="#99000000"
+                    android:textColor="#99FFFFFF"
                     android:paddingEnd="8dp"
                     android:textDirection="rtl" />
 

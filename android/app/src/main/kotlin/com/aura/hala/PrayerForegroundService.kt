@@ -487,7 +487,8 @@ class PrayerForegroundService : Service() {
 
     private fun isDarkTheme(): Boolean {
         val flutterPrefs = getSharedPreferences("${packageName}_preferences", Context.MODE_PRIVATE)
-        return when (flutterPrefs.getString("theme_mode", "system")) {
+        // Flutter shared_preferences stores all keys with "flutter." prefix
+        return when (flutterPrefs.getString("flutter.theme_mode", "system")) {
             "dark", "amoled" -> true
             "light" -> false
             else -> {
