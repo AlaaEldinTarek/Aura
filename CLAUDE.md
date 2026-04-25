@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Location-based prayer time calculations using Adhan library
 - Custom Adhan audio playback with native Android MediaPlayer integration
 - Silent mode automation during prayer times (configurable duration, default 20 min)
-- Three home screen widgets (NextPrayerWidget, AllPrayersWidget, TasksWidget) with light/dark/LTR/RTL variants
+- Four home screen widgets (NextPrayerWidget, AllPrayersWidget, CombinedPrayerWidget, TasksWidget) with light/dark/LTR/RTL variants. CombinedPrayerWidget uses ViewFlipper tabs for Next Prayer + Timeline views
 - Qibla compass pointing to Kaaba
 - Digital Dhikr/Tasbeeh counter with 6 presets + custom, haptic feedback, stats tracking
 - Prayer tracking (on-time/late/missed/excused) with daily stats and prayer reports
@@ -220,7 +220,7 @@ Located at `android/app/src/main/kotlin/com/aura/hala/`:
 | `AdhanPlayer.kt` | Singleton MediaPlayer adhan playback, per-prayer audio, vibration, thread-safe |
 | `SilentModeAutomation.kt` | AudioManager silent mode scheduling with configurable duration |
 | `PrayerForegroundService.kt` | START_STICKY foreground service with next prayer countdown, updates every second |
-| `PrayerWidgets.kt` | NextPrayerWidget + AllPrayersWidget, light/dark/LTR/RTL layouts |
+| `PrayerWidgets.kt` | NextPrayerWidget + AllPrayersWidget + CombinedPrayerWidget (ViewFlipper tabs), light/dark/LTR/RTL layouts |
 | `TasksWidget.kt` | Home screen tasks widget with task count and next due task |
 | `WidgetUpdateService.kt` | Updates widget views from SharedPreferences prayer data |
 | `DailyContentWidget.kt` | Home screen widget for daily Islamic content (ayah/hadith) |
@@ -239,7 +239,7 @@ Located at `android/app/src/main/kotlin/com/aura/hala/`:
 **AndroidManifest.xml declares:**
 - 18 permissions (location, internet, vibration, wake lock, boot, exact alarms, notifications, foreground service, audio, battery, DND, storage, SYSTEM_ALERT_WINDOW, REORDER_TASKS)
 - 8 receivers, 3 services, 3 activities (MainActivity + AdhanFullScreenActivity + FocusModeActivity with lock screen)
-- 70+ drawable XMLs, 10 layout XMLs, widget info XMLs
+- 70+ drawable XMLs, 24 layout XMLs, 6 widget info XMLs
 
 ---
 
@@ -305,7 +305,7 @@ The `getNextPrayer()` method in `PrayerTimesService` handles a critical edge cas
 
 ### Localization Pattern
 - All UI strings use `.tr()` from `easy_localization`
-- 184 translation keys in both `en.json` and `ar.json`
+- 196 translation keys in both `en.json` and `ar.json`
 - Arabic numeral conversion via `NumberFormatter.withArabicNumeralsByLanguage()`
 - RTL support via `context.locale.languageCode == 'ar'`
 - AM/PM replaced with Arabic equivalents (ص/م)
@@ -408,15 +408,15 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 - **Language switching**: `MainWrapperScreen.build()` must call `ref.watch(languageProvider)` — without it, bottom nav labels and screen AppBar titles won't rebuild when the locale changes.
 
 ### Translation Files
-- **`assets/translations/en.json`**: 184 English strings
-- **`assets/translations/ar.json`**: 184 Arabic strings
+- **`assets/translations/en.json`**: 196 English strings
+- **`assets/translations/ar.json`**: 196 Arabic strings
 - **When adding new strings, add to BOTH files**
 
 ### Assets
 - **`assets/animations/splash_logo.json`**: Lottie splash animation
 - **`assets/audio/adhan.mp3`**: Default adhan audio
 - **`assets/fonts/`**: Roboto (Regular/Bold), Cairo (Regular/Bold)
-- **`assets/images/`**: logo.png, logo-0.png, SVG design file
+- **`assets/images/`**: logo.png, logo-0.png, logo_dark.png, logo-0_dark.png, SVG design file
 
 ### Test Files
 - **`test/widget_test.dart`**: Basic smoke test
