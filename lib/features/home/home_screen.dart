@@ -230,10 +230,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildDailyContentCard(BuildContext context, bool isDark, bool isArabic) {
     final content = DailyContentService.instance.getToday();
     final isAyah = content.type == DailyContentType.ayah;
-
-    final Color accentColor = isAyah
-        ? const Color(0xFF00897B)   // teal for Ayah
-        : const Color(0xFFD4A017);  // gold for Hadith
+    final primary = AppConstants.getPrimary(isDark);
 
     final String typeLabel = isAyah
         ? (isArabic ? '📖 آية اليوم' : '📖 Verse of the Day')
@@ -243,72 +240,94 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       onTap: () => Navigator.of(context).pushNamed('/daily_content'),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
           borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
-          border: Border.all(color: accentColor.withValues(alpha: 0.3)),
+          border: Border.all(
+            color: primary.withValues(alpha: 0.25),
+          ),
           boxShadow: [
             BoxShadow(
-              color: accentColor.withValues(alpha: 0.08),
+              color: primary.withValues(alpha: 0.07),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
           ],
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Label row
+            // Header row: label + source badge
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   typeLabel,
                   style: TextStyle(
                     fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: accentColor,
+                    fontWeight: FontWeight.w600,
+                    color: primary,
                     letterSpacing: 0.3,
                   ),
                 ),
-                Text(
-                  content.source,
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: isDark ? Colors.white38 : Colors.black38,
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: primary.withValues(alpha: 0.2)),
+                  ),
+                  child: Text(
+                    content.source,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: primary,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ],
             ),
+            const SizedBox(height: 8),
+            // Divider
+            Divider(height: 1, color: primary.withValues(alpha: 0.2)),
             const SizedBox(height: 10),
-            // Arabic text
+            // Arabic text — centered, RTL
             Text(
               content.arabic,
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 16,
                 fontFamily: 'Cairo',
-                color: isDark ? Colors.white : Colors.black87,
-                height: 1.7,
+                fontWeight: FontWeight.bold,
+                color: isDark ? Colors.white : const Color(0xFF2A2418),
+                height: 1.6,
               ),
-              textAlign: TextAlign.right,
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            // Divider
-            Container(
-              height: 1,
-              color: accentColor.withValues(alpha: 0.15),
+            // Small amber center line
+            Center(
+              child: Container(
+                width: 36,
+                height: 2,
+                decoration: BoxDecoration(
+                  color: primary,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
             ),
             const SizedBox(height: 8),
             // Translation
             Text(
               content.translation,
               style: TextStyle(
-                fontSize: 13,
+                fontSize: 12,
                 fontStyle: FontStyle.italic,
-                color: isDark ? Colors.white60 : Colors.black54,
+                color: isDark ? Colors.white60 : AppConstants.lightTextSecondary,
                 height: 1.5,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),

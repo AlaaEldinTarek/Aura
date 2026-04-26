@@ -179,7 +179,13 @@ class AllPrayersWidget : AppWidgetProvider() {
         // VIEW 0: Next Prayer
         // ══════════════════════════════════════════
 
-        val nextPrayerDisplay = if (isArabic) nextPrayerNameAr else nextPrayerNameEn
+        val isFriday = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY
+        val isZuhrNext = nextPrayerNameEn == "Zuhr" || nextPrayerNameEn == "Dhuhr"
+        val nextPrayerDisplay = when {
+            isFriday && isZuhrNext -> if (isArabic) "الجمعة" else "Jumu'ah"
+            isArabic -> nextPrayerNameAr
+            else -> nextPrayerNameEn
+        }
         views.setTextViewText(R.id.widget_next_prayer_name, nextPrayerDisplay)
 
         // Next prayer time
@@ -332,8 +338,14 @@ class AllPrayersWidget : AppWidgetProvider() {
             }
             views.setImageViewResource(p.dotId, dotRes)
 
-            // Name
-            views.setTextViewText(p.nameId, if (isArabic) p.nameAr else p.nameEn)
+            // Name — show Jumu'ah on Fridays for Zuhr
+            val isZuhr = p.nameEn == "Zuhr" || p.nameEn == "Dhuhr"
+            val displayName = when {
+                isFriday && isZuhr -> if (isArabic) "الجمعة" else "Jumu'ah"
+                isArabic -> p.nameAr
+                else -> p.nameEn
+            }
+            views.setTextViewText(p.nameId, displayName)
             val nameColor = when {
                 isCurrent -> nameColorNow
                 isNext -> nameColorNext

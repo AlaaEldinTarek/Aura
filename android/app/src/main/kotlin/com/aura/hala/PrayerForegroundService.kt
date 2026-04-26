@@ -65,6 +65,20 @@ class PrayerForegroundService : Service() {
             context.stopService(intent)
         }
 
+        // Callable from any context (e.g. PrayerAlarmReceiver) to trigger Flutter refresh
+        fun requestFlutterUpdateStatic(context: Context) {
+            try {
+                val intent = Intent(context, MainActivity::class.java).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    putExtra("refresh_prayer_times", true)
+                }
+                context.startActivity(intent)
+                Log.d(TAG, "✅ [REFRESH] Static: Launched MainActivity to refresh prayer times")
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ [REFRESH] Static: Failed to launch MainActivity: ${e.message}")
+            }
+        }
+
         // Update prayer times from Flutter (called via MethodChannel)
         fun updatePrayerTimes(
             context: Context,
@@ -162,10 +176,10 @@ class PrayerForegroundService : Service() {
                 val time = timeStr.toLongOrNull()
                 if (time != null) {
                     val prayerDay = time / 86400000
-                    // Check if prayer time is from a previous day (more than 1 day old)
-                    if (prayerDay < currentDay - 1) {
+                    // Flag as old if prayer time is from before today
+                    if (prayerDay < currentDay) {
                         hasOldPrayerTimes = true
-                        Log.w(TAG, "Prayer time $prayerKey is from old date ($prayerDay vs $currentDay)")
+                        Log.w(TAG, "⚠️ Prayer time $prayerKey is from previous day ($prayerDay vs today $currentDay)")
                     }
                     prayerTimes[prayerKey] = time
                 }
@@ -253,21 +267,22 @@ class PrayerForegroundService : Service() {
             }
         }
 
-        // If all prayers have passed, return Fajr for tomorrow
+        // All today's prayers have passed — request Flutter to push fresh prayer times
+        // so the next update cycle gets tomorrow's correct data
+        Log.w(TAG, "⚠️ [FIND_NEXT] All prayers passed — requesting Flutter refresh for new day")
+        requestFlutterUpdate()
+
+        // Return tomorrow's Fajr as a temporary placeholder until Flutter updates
         val fajrTime = prayerTimes["fajr_time"]
         if (fajrTime != null) {
-            // Check if fajrTime is from today or yesterday
             val fajrDate = fajrTime / 86400000
             val currentDate = currentTime / 86400000
-
             val tomorrowFajr = if (fajrDate < currentDate) {
-                // Fajr time is from yesterday, add time to reach today first
                 ((currentDate - fajrDate) * 86400000) + fajrTime + 86400000
             } else {
-                // Fajr time is from today, add 24 hours
                 fajrTime + 86400000
             }
-            Log.d(TAG, "✅ [FIND_NEXT] All prayers passed, returning Fajr for tomorrow at $tomorrowFajr (${Date(tomorrowFajr)})")
+            Log.d(TAG, "✅ [FIND_NEXT] Temporary: Fajr tomorrow at $tomorrowFajr (${Date(tomorrowFajr)})")
             return Triple("Fajr", "الفجر", tomorrowFajr)
         }
 
@@ -352,7 +367,7 @@ class PrayerForegroundService : Service() {
             } else {
                 val (_, timeString) = calculateTimeRemaining()
                 val nextPrayerText = if (isArabic) "الصلاة القادمة" else "Next Prayer"
-                val prayerName = if (isArabic) nextPrayerNameAr ?: "" else nextPrayerName ?: ""
+                val prayerName = getDisplayPrayerName(nextPrayerName, nextPrayerNameAr, isArabic)
                 val untilText = if (isArabic) "حتى موعد الأذان" else "Until Azan"
 
                 val isDark = isDarkTheme()
@@ -409,8 +424,8 @@ class PrayerForegroundService : Service() {
         // Prayer icon — always mosque icon during adhan mode (iqama countdown + after)
         loadMosqueIcon()?.let { contentView.setImageViewBitmap(R.id.notification_logo, it) }
 
-        // Prayer name
-        val displayName = if (isArabic) prayerNameAr else prayerName
+        // Prayer name — show Jumu'ah on Fridays for Zuhr
+        val displayName = getDisplayPrayerName(prayerName, prayerNameAr, isArabic)
         contentView.setTextViewText(R.id.notification_title, displayName)
 
         // Time field: iqama countdown OR mosque icon at iqama time
@@ -632,6 +647,16 @@ class PrayerForegroundService : Service() {
      * This ensures fresh prayer times are saved to SharedPreferences when the app
      * hasn't been opened for a new day.
      */
+    private fun getDisplayPrayerName(name: String?, nameAr: String?, isArabic: Boolean): String {
+        val isFriday = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_WEEK) == java.util.Calendar.FRIDAY
+        val isZuhr = name == "Zuhr" || name == "Dhuhr"
+        return when {
+            isFriday && isZuhr -> if (isArabic) "الجمعة" else "Jumu'ah"
+            isArabic -> nameAr ?: name ?: ""
+            else -> name ?: ""
+        }
+    }
+
     private fun requestFlutterUpdate() {
         try {
             val intent = Intent(this, MainActivity::class.java).apply {

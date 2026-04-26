@@ -412,20 +412,41 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             Log.e(TAG, "❌ [FULLSCREEN] Error launching full screen: ${e.message}")
         }
 
+        // ── Activate adhan mode in foreground service ─────────────────────
+        // This switches the persistent notification to show iqama countdown
+        if (prayerName != "Sunrise") {
+            val adhanPrefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+            val iqamaKey = when (prayerName) {
+                "Fajr"         -> "fajr_iqama_time"
+                "Zuhr", "Dhuhr" -> "dhuhr_iqama_time"
+                "Asr"          -> "asr_iqama_time"
+                "Maghrib"      -> "maghrib_iqama_time"
+                "Isha"         -> "isha_iqama_time"
+                else           -> null
+            }
+            val iqamaTimeMs = iqamaKey?.let {
+                adhanPrefs.getString(it, null)?.toLongOrNull()
+            } ?: 0L
+
+            adhanPrefs.edit()
+                .putBoolean("adhan_active", true)
+                .putString("adhan_prayer_name", prayerName)
+                .putString("adhan_prayer_name_ar", prayerNameAr)
+                .putLong("adhan_end_time", currentTime + 20 * 60 * 1000L)
+                .putLong("adhan_iqama_time", iqamaTimeMs)
+                .apply()
+            Log.d(TAG, "✅ [ADHAN_MODE] Activated for $prayerName | iqama=${iqamaTimeMs} | end=${currentTime + 20*60*1000L}")
+        }
+
         // Update next prayer for widget and app
         updateNextPrayer(context, prayerName)
 
-        // After Fajr (first prayer of new day) or Isha (last prayer), trigger reschedule
-        // Fajr: new day started, need fresh prayer times
-        // Isha: last prayer, schedule tomorrow's alarms
+        // After Fajr or Isha, request Flutter to recalculate prayer times for the new day.
+        // PrayerRescheduleService uses placeholder times, so we rely on Flutter (which has
+        // the Adhan library) for accurate rescheduling via requestFlutterUpdate().
         if (prayerName == "Fajr" || prayerName == "Isha") {
-            Log.d(TAG, "Triggering reschedule after $prayerName for fresh prayer times")
-            val serviceIntent = Intent(context, PrayerRescheduleService::class.java)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.startForegroundService(serviceIntent)
-            } else {
-                context.startService(serviceIntent)
-            }
+            Log.d(TAG, "🔄 Triggering Flutter update after $prayerName for fresh prayer times")
+            PrayerForegroundService.requestFlutterUpdateStatic(context)
         }
     }
 

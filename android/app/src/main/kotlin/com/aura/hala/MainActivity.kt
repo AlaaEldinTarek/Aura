@@ -585,6 +585,12 @@ class MainActivity : FlutterActivity() {
         for (appWidgetId in allWidgetIds) {
             AllPrayersWidget().updateAppWidget(this, appWidgetManager, appWidgetId)
         }
+
+        // Update Daily Content Widget
+        val dailyComponent = ComponentName(this, DailyContentWidget::class.java)
+        for (id in appWidgetManager.getAppWidgetIds(dailyComponent)) {
+            DailyContentWidget.updateAppWidget(this, appWidgetManager, id)
+        }
     }
 
     private fun updateTasksWidget() {
@@ -600,6 +606,12 @@ class MainActivity : FlutterActivity() {
         val nextComponent = ComponentName(this, NextTaskWidget::class.java)
         for (id in appWidgetManager.getAppWidgetIds(nextComponent)) {
             NextTaskWidget().updateAppWidget(this, appWidgetManager, id)
+        }
+
+        // Update Daily Content Widget too
+        val dailyComponent = ComponentName(this, DailyContentWidget::class.java)
+        for (id in appWidgetManager.getAppWidgetIds(dailyComponent)) {
+            DailyContentWidget.updateAppWidget(this, appWidgetManager, id)
         }
     }
 }

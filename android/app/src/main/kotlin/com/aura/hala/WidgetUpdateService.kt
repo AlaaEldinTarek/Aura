@@ -28,7 +28,10 @@ class WidgetUpdateService : Service() {
         Thread {
             try {
                 when (action) {
-                    ACTION_UPDATE_NEXT_PRAYER, ACTION_UPDATE_ALL_PRAYERS -> updateAllPrayersWidget()
+                    ACTION_UPDATE_NEXT_PRAYER, ACTION_UPDATE_ALL_PRAYERS -> {
+                        updateAllPrayersWidget()
+                        updateDailyContentWidget()
+                    }
                     else -> {
                         updateAllPrayersWidget()
                         updateDailyContentWidget()

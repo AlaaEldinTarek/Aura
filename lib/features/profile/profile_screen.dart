@@ -10,6 +10,7 @@ import '../../core/utils/haptic_feedback.dart';
 import '../../core/utils/number_formatter.dart';
 import '../../core/services/prayer_tracking_service.dart';
 import '../../core/services/achievement_service.dart';
+import '../../core/models/achievement.dart';
 import '../../core/models/prayer_record.dart';
 import '../../core/providers/task_provider.dart';
 
@@ -180,17 +181,7 @@ class ProfileScreen extends ConsumerWidget {
               icon: Icons.emoji_events,
               title: isArabic ? 'الإنجازات' : 'Achievements',
             ),
-            SettingsCard(
-              children: [
-                SettingTile(
-                  icon: Icons.military_tech,
-                  title: isArabic ? 'عرض الإنجازات' : 'View Achievements',
-                  subtitle: isArabic ? 'الشارات والأوسمة' : 'Badges and milestones',
-                  trailing: Icon(Icons.chevron_right, size: 20, color: isDark ? Colors.white60 : Colors.black54),
-                  onTap: () => Navigator.of(context).pushNamed('/achievements'),
-                ),
-              ],
-            ),
+            _AchievementsBadgeGrid(isDark: isDark, isArabic: isArabic),
             const SizedBox(height: AppConstants.paddingLarge),
 
             // App Settings Section
@@ -949,6 +940,120 @@ class _AppModeTiles extends ConsumerWidget {
           onTap: () => ref.read(appModeProvider.notifier).setMode(mode),
         );
       }).toList(),
+    );
+  }
+}
+
+class _AchievementsBadgeGrid extends StatefulWidget {
+  final bool isDark;
+  final bool isArabic;
+  const _AchievementsBadgeGrid({required this.isDark, required this.isArabic});
+
+  @override
+  State<_AchievementsBadgeGrid> createState() => _AchievementsBadgeGridState();
+}
+
+class _AchievementsBadgeGridState extends State<_AchievementsBadgeGrid> {
+  late Future<List<Achievement>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    final userId = getCurrentUserId();
+    _future = AchievementService.instance
+        .checkAndAward(userId: userId)
+        .then((_) => AchievementService.instance.getEarnedAchievements(userId: userId))
+        .catchError((_) => AchievementService.instance.getEarnedAchievements(userId: userId));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = widget.isDark;
+    final isArabic = widget.isArabic;
+    final primary = AppConstants.getPrimary(isDark);
+    final all = AchievementDefinitions.all;
+
+    return FutureBuilder<List<Achievement>>(
+      future: _future,
+      builder: (context, snapshot) {
+        final earned = snapshot.data ?? [];
+        final earnedIds = earned.map((a) => a.id).toSet();
+
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
+          decoration: BoxDecoration(
+            color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+            borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
+            border: Border.all(color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+          ),
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(AppConstants.paddingMedium),
+                child: Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: all.map((achievement) {
+                    final isEarned = earnedIds.contains(achievement.id);
+                    final isTask = achievement.category == AchievementCategory.tasks;
+                    return Tooltip(
+                      message: isArabic ? achievement.nameAr : achievement.nameEn,
+                      child: Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: isEarned
+                              ? primary.withOpacity(isTask ? 0.15 : 0.08)
+                              : (isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.04)),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isEarned
+                                ? primary.withOpacity(isTask ? 0.6 : 0.35)
+                                : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+                            width: isEarned && isTask ? 2 : 1,
+                          ),
+                        ),
+                        child: Center(
+                          child: Opacity(
+                            opacity: isEarned ? 1.0 : 0.25,
+                            child: Text(achievement.iconEmoji, style: const TextStyle(fontSize: 22)),
+                          ),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ),
+              InkWell(
+                onTap: () => Navigator.of(context).pushNamed('/achievements'),
+                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(AppConstants.radiusLarge)),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: primary.withOpacity(0.06),
+                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(AppConstants.radiusLarge)),
+                    border: Border(top: BorderSide(color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        isArabic
+                            ? '${earned.length} من ${all.length} مكتمل'
+                            : '${earned.length} of ${all.length} unlocked',
+                        style: TextStyle(fontSize: 12, color: primary, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(width: 6),
+                      Icon(Icons.arrow_forward_ios, size: 11, color: primary),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
