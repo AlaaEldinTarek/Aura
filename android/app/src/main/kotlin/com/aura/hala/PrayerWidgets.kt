@@ -97,7 +97,15 @@ class AllPrayersWidget : AppWidgetProvider() {
         val now = System.currentTimeMillis()
 
         // ── Prayer data ──
-        val prayers = listOf(
+        // RTL: reverse order so Isha is rightmost (slot 0) and Fajr leftmost (slot 5)
+        val prayers = if (isArabic) listOf(
+            PrayerInfo("isha_time", "Isha", "العشاء", R.id.timeline_dot_0, R.id.timeline_name_0, R.id.timeline_time_0),
+            PrayerInfo("maghrib_time", "Maghrib", "المغرب", R.id.timeline_dot_1, R.id.timeline_name_1, R.id.timeline_time_1),
+            PrayerInfo("asr_time", "Asr", "العصر", R.id.timeline_dot_2, R.id.timeline_name_2, R.id.timeline_time_2),
+            PrayerInfo("dhuhr_time", "Zuhr", "الظهر", R.id.timeline_dot_3, R.id.timeline_name_3, R.id.timeline_time_3),
+            PrayerInfo("sunrise_time", "Sunrise", "الشروق", R.id.timeline_dot_4, R.id.timeline_name_4, R.id.timeline_time_4),
+            PrayerInfo("fajr_time", "Fajr", "الفجر", R.id.timeline_dot_5, R.id.timeline_name_5, R.id.timeline_time_5)
+        ) else listOf(
             PrayerInfo("fajr_time", "Fajr", "الفجر", R.id.timeline_dot_0, R.id.timeline_name_0, R.id.timeline_time_0),
             PrayerInfo("sunrise_time", "Sunrise", "الشروق", R.id.timeline_dot_1, R.id.timeline_name_1, R.id.timeline_time_1),
             PrayerInfo("dhuhr_time", "Zuhr", "الظهر", R.id.timeline_dot_2, R.id.timeline_name_2, R.id.timeline_time_2),
@@ -385,19 +393,27 @@ class AllPrayersWidget : AppWidgetProvider() {
         val fillColor = if (isDark) 0xFFF5B301.toInt() else 0xFFB5821B.toInt()
         val pTrackColor = if (isDark) Color.argb(20, 255, 255, 255) else Color.argb(26, 60, 45, 20)
 
+        // For RTL: dots are visually reversed (slot 0 = RIGHT), so map array index to visual position
         val progressFraction = if (mostRecentTime > 0 && nextPrayerTime > mostRecentTime) {
             val elapsed = now - mostRecentTime
             val total = nextPrayerTime - mostRecentTime
-            // Bar starts at current prayer dot center, moves toward next prayer dot center
             val curIndex = prayers.indexOfFirst { it.nameEn == currentPrayerNameEn }.coerceIn(0, prayers.size - 1)
             val segFraction = (elapsed.toFloat() / total.toFloat()).coerceIn(0f, 1f)
-            (curIndex + 0.5f + segFraction) / prayers.size.toFloat()
+            if (isArabic) {
+                ((prayers.size - 1 - curIndex) + 0.5f + segFraction) / prayers.size.toFloat()
+            } else {
+                (curIndex + 0.5f + segFraction) / prayers.size.toFloat()
+            }
         } else if (mostRecentTime > 0) {
             val curIndex = prayers.indexOfFirst { it.nameEn == currentPrayerNameEn }.coerceIn(0, prayers.size - 1)
-            (curIndex + 0.5f) / prayers.size.toFloat()
+            if (isArabic) {
+                (prayers.size - 0.5f - curIndex) / prayers.size.toFloat()
+            } else {
+                (curIndex + 0.5f) / prayers.size.toFloat()
+            }
         } else 0f
 
-        val progressBitmap = createProgressBitmap(progressFraction.coerceIn(0f, 1f), fillColor, pTrackColor, progressWidth, progressHeight)
+        val progressBitmap = createProgressBitmap(progressFraction.coerceIn(0f, 1f), fillColor, pTrackColor, progressWidth, progressHeight, isArabic)
         views.setImageViewBitmap(R.id.timeline_progress_bar, progressBitmap)
 
         // ── ViewFlipper ──
@@ -441,7 +457,7 @@ class AllPrayersWidget : AppWidgetProvider() {
         return bitmap
     }
 
-    private fun createProgressBitmap(progress: Float, fillColor: Int, trackColor: Int, width: Int, height: Int): Bitmap {
+    private fun createProgressBitmap(progress: Float, fillColor: Int, trackColor: Int, width: Int, height: Int, isRtl: Boolean = false): Bitmap {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         val r = height / 2f

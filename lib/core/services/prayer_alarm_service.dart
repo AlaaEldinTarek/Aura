@@ -1,8 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import '../models/prayer_time.dart';
+import '../models/prayer_record.dart';
 import 'background_service_manager.dart';
 import 'notification_service.dart';
+import 'prayer_tracking_service.dart';
 
 /// Service for scheduling native Android alarms at exact prayer times
 /// These alarms trigger adhan playback via PrayerAlarmReceiver
@@ -226,6 +228,80 @@ class PrayerAlarmService {
       debugPrint('PrayerAlarmService: All alarms cancelled');
     } catch (e) {
       debugPrint('PrayerAlarmService: Error cancelling alarms - $e');
+    }
+  }
+
+  /// Get prayer statuses saved by native side (from notification action buttons)
+  /// Returns map like {"prayer_status_Zuhr_2026-04-26": "on_time", ...}
+  Future<Map<String, String>> getNativePrayerStatuses() async {
+    if (!_isInitialized) await initialize();
+    try {
+      final result = await _channel.invokeMethod('getNativePrayerStatuses');
+      if (result is Map) {
+        return result.map((k, v) => MapEntry(k.toString(), v.toString()));
+      }
+    } catch (e) {
+      debugPrint('PrayerAlarmService: Error getting native statuses - $e');
+    }
+    return {};
+  }
+
+  /// Clear a specific native prayer status after syncing
+  Future<void> clearNativePrayerStatus(String key) async {
+    if (!_isInitialized) await initialize();
+    try {
+      await _channel.invokeMethod('clearNativePrayerStatus', {'key': key});
+    } catch (e) {
+      debugPrint('PrayerAlarmService: Error clearing native status - $e');
+    }
+  }
+
+  /// Sync native prayer statuses to Firestore
+  /// Called on app resume to pick up any statuses saved while app was in background
+  Future<void> syncNativePrayerStatuses(String userId) async {
+    try {
+      final statuses = await getNativePrayerStatuses();
+      if (statuses.isEmpty) return;
+
+      debugPrint('🔄 [SYNC] Found ${statuses.length} native prayer statuses to sync');
+
+      for (final entry in statuses.entries) {
+        final key = entry.key; // e.g. "prayer_status_Zuhr_2026-04-26"
+        final status = entry.value; // "on_time", "late", "missed"
+
+        // Parse: prayer_status_{name}_{date}
+        final parts = key.replaceFirst('prayer_status_', '').split('_');
+        if (parts.length < 2) continue;
+
+        final dateStr = parts.last; // "2026-04-26"
+        final prayerName = parts.sublist(0, parts.length - 1).join('_'); // "Zuhr"
+
+        // Map status to PrayerStatus
+        final prayerStatus = status == 'on_time'
+            ? PrayerStatus.onTime
+            : status == 'late'
+                ? PrayerStatus.late
+                : PrayerStatus.missed;
+
+        final date = DateTime.parse(dateStr);
+
+        await PrayerTrackingService.instance.recordPrayer(
+          userId: userId,
+          prayerName: prayerName,
+          date: date,
+          prayedAt: DateTime.now(),
+          status: prayerStatus,
+          method: PrayerMethod.alone,
+          notes: 'Logged via notification reminder',
+        );
+
+        // Clear the native key after successful sync
+        await clearNativePrayerStatus(key);
+      }
+
+      debugPrint('✅ [SYNC] Native prayer statuses synced to Firestore');
+    } catch (e) {
+      debugPrint('❌ [SYNC] Error syncing native prayer statuses - $e');
     }
   }
 

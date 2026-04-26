@@ -34,4 +34,12 @@
 
     <!-- Accessibility Service -->
     <string name="accessibility_service_description">Allows Aura to automatically accept screen pinning during Focus Mode so you are not interrupted</string>
+
+    <!-- App Shortcuts -->
+    <string name="shortcut_qibla_short">Qibla</string>
+    <string name="shortcut_qibla_long">Open Qibla Compass</string>
+    <string name="shortcut_dhikr_short">Dhikr</string>
+    <string name="shortcut_dhikr_long">Open Dhikr Counter</string>
+    <string name="shortcut_prayer_short">Prayer Log</string>
+    <string name="shortcut_prayer_long">Open Prayer Tracking</string>
 </resources>

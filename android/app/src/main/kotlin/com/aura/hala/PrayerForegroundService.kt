@@ -346,12 +346,39 @@ class PrayerForegroundService : Service() {
         val adhanPrayerNameAr = adhanPrefs.getString("adhan_prayer_name_ar", null)
         val now = System.currentTimeMillis()
 
+        // Check reminder mode
+        val reminderActive = adhanPrefs.getBoolean("reminder_active", false)
+        val reminderPrayerName = adhanPrefs.getString("reminder_prayer_name", null)
+        val reminderPrayerNameAr = adhanPrefs.getString("reminder_prayer_name_ar", null)
+        val reminderPrayerTime = adhanPrefs.getLong("reminder_prayer_time", 0L)
+
+        // Auto-clear reminder if prayer time has passed (switch to adhan/normal)
+        if (reminderActive && reminderPrayerTime > 0 && now >= reminderPrayerTime) {
+            adhanPrefs.edit().putBoolean("reminder_active", false).apply()
+            Log.d(TAG, "✅ [REMINDER_STATE] Cleared — prayer time reached")
+        }
+
+        val reminderStillActive = adhanPrefs.getBoolean("reminder_active", false)
+
         if (adhanActive && adhanEndTime > 0 && now < adhanEndTime && adhanPrayerName != null) {
             // ── ADHAN MODE ────────────────────────────────────────────────
             showAdhanModeNotification(
                 notificationBuilder, isArabic, now,
                 adhanPrayerName, adhanPrayerNameAr ?: adhanPrayerName,
                 adhanIqamaTime, adhanEndTime
+            )
+        } else if (reminderStillActive && reminderPrayerName != null) {
+            // Auto-clear adhan state when 20 min window passes
+            if (adhanActive) {
+                adhanPrefs.edit().putBoolean("adhan_active", false).apply()
+                Log.d(TAG, "✅ [ADHAN_STATE] Cleared — 20 min window passed")
+            }
+
+            // ── REMINDER MODE ─────────────────────────────────────────────
+            showReminderModeNotification(
+                notificationBuilder, isArabic, now,
+                reminderPrayerName, reminderPrayerNameAr ?: reminderPrayerName,
+                reminderPrayerTime
             )
         } else {
             // Auto-clear adhan state when 20 min window passes
@@ -500,6 +527,114 @@ class PrayerForegroundService : Service() {
         Log.d(TAG, "📱 [ADHAN_MODE] $prayerName | iqamaArrived=$isIqamaArrived | time=$timeText")
     }
 
+    private fun showReminderModeNotification(
+        builder: NotificationCompat.Builder,
+        isArabic: Boolean,
+        now: Long,
+        prayerName: String,
+        prayerNameAr: String,
+        prayerTime: Long
+    ) {
+        val isDark = isDarkTheme()
+        val layoutId = when {
+            isDark && isArabic -> R.layout.notification_large_dark_rtl
+            isDark -> R.layout.notification_large_dark
+            isArabic -> R.layout.notification_large_rtl
+            else -> R.layout.notification_large
+        }
+        val contentView = RemoteViews(packageName, layoutId)
+
+        // Header
+        val headerText = if (isArabic) "هالة - تذكير الصلاة" else "Aura - Prayer Reminder"
+        contentView.setTextViewText(R.id.notification_header, headerText)
+
+        // Mosque icon for reminder mode
+        loadMosqueIcon()?.let { contentView.setImageViewBitmap(R.id.notification_logo, it) }
+
+        // Title: "Did you pray Zuhr?"
+        val displayName = getDisplayPrayerName(prayerName, prayerNameAr, isArabic)
+        val titleText = if (isArabic) "هل صليت $displayName؟" else "Did you pray $displayName?"
+        contentView.setTextViewText(R.id.notification_title, titleText)
+
+        // Subtitle: next prayer countdown or time until azan
+        val timeRemaining = prayerTime - now
+        val minsRemaining = (timeRemaining / 60000).toInt()
+        val timeText = if (minsRemaining > 0) {
+            if (isArabic) {
+                val minsAr = toEasternArabic(minsRemaining.toLong())
+                "بعد $minsAr دقيقة أذان"
+            } else {
+                "$minsRemaining min until azan"
+            }
+        } else {
+            if (isArabic) "حان وقت الأذان" else "Azan time"
+        }
+        contentView.setTextViewText(R.id.notification_time, timeText)
+        contentView.setViewVisibility(R.id.notification_until, android.view.View.GONE)
+
+        builder
+            .setContentTitle(headerText)
+            .setCustomContentView(contentView)
+            .setCustomBigContentView(contentView)
+
+        // ── Action buttons ─────────────────────────────────────────────
+        val prayedLabel = if (isArabic) "صلّيت ✅" else "Prayed ✅"
+        val lateLabel = if (isArabic) "متأخر ⏰" else "Late ⏰"
+        val missedLabel = if (isArabic) "فاتت ❌" else "Missed ❌"
+        val laterLabel = if (isArabic) "ذكّرني لاحقاً 🔕" else "Remind Later 🔕"
+
+        val prayedIntent = Intent(this, PrayerAlarmReceiver::class.java).apply {
+            action = PrayerAlarmReceiver.ACTION_REMINDER_PRAYED
+            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME, prayerName)
+            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME_AR, prayerNameAr)
+            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_TIME, prayerTime)
+        }
+        val prayedPI = PendingIntent.getBroadcast(
+            this, 7001, prayedIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val lateIntent = Intent(this, PrayerAlarmReceiver::class.java).apply {
+            action = PrayerAlarmReceiver.ACTION_REMINDER_LATE
+            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME, prayerName)
+            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME_AR, prayerNameAr)
+            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_TIME, prayerTime)
+        }
+        val latePI = PendingIntent.getBroadcast(
+            this, 7002, lateIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val missedIntent = Intent(this, PrayerAlarmReceiver::class.java).apply {
+            action = PrayerAlarmReceiver.ACTION_REMINDER_MISSED
+            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME, prayerName)
+            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME_AR, prayerNameAr)
+            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_TIME, prayerTime)
+        }
+        val missedPI = PendingIntent.getBroadcast(
+            this, 7003, missedIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val laterIntent = Intent(this, PrayerAlarmReceiver::class.java).apply {
+            action = PrayerAlarmReceiver.ACTION_REMINDER_LATER
+            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME, prayerName)
+            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME_AR, prayerNameAr)
+            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_TIME, prayerTime)
+        }
+        val laterPI = PendingIntent.getBroadcast(
+            this, 7004, laterIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        builder.addAction(android.R.drawable.checkbox_on_background, prayedLabel, prayedPI)
+        builder.addAction(android.R.drawable.ic_menu_recent_history, lateLabel, latePI)
+        builder.addAction(android.R.drawable.ic_delete, missedLabel, missedPI)
+        builder.addAction(android.R.drawable.ic_menu_agenda, laterLabel, laterPI)
+
+        Log.d(TAG, "⏰ [REMINDER_MODE] $prayerName | ${minsRemaining}min until azan | buttons added")
+    }
+
     private fun isDarkTheme(): Boolean {
         val flutterPrefs = getSharedPreferences("${packageName}_preferences", Context.MODE_PRIVATE)
         // Flutter shared_preferences stores all keys with "flutter." prefix
@@ -513,7 +648,7 @@ class PrayerForegroundService : Service() {
         }
     }
 
-    // Mosque icon — shown at iqama time
+    // Mosque icon — shown during adhan mode
     private fun loadMosqueIcon(): Bitmap? = loadIcon(R.drawable.ic_mosque)
 
     // Prayer-specific icon — matches the actual prayer name

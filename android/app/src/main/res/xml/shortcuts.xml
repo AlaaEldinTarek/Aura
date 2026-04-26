@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="qibla"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_qibla"
+        android:shortcutShortLabel="@string/shortcut_qibla_short"
+        android:shortcutLongLabel="@string/shortcut_qibla_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.aura.hala"
+            android:targetClass="com.aura.hala.MainActivity">
+            <extra android:name="route" android:value="/qibla" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="dhikr"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_dhikr"
+        android:shortcutShortLabel="@string/shortcut_dhikr_short"
+        android:shortcutLongLabel="@string/shortcut_dhikr_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.aura.hala"
+            android:targetClass="com.aura.hala.MainActivity">
+            <extra android:name="route" android:value="/dhikr" />
+        </intent>
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="prayer_tracking"
+        android:enabled="true"
+        android:icon="@drawable/ic_shortcut_prayer"
+        android:shortcutShortLabel="@string/shortcut_prayer_short"
+        android:shortcutLongLabel="@string/shortcut_prayer_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="com.aura.hala"
+            android:targetClass="com.aura.hala.MainActivity">
+            <extra android:name="route" android:value="/prayer_tracking" />
+        </intent>
+    </shortcut>
+</shortcuts>

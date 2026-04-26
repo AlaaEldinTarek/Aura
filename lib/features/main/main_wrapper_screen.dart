@@ -12,6 +12,7 @@ import '../../core/providers/prayer_times_provider.dart';
 import '../../core/providers/task_provider.dart';
 import '../../core/services/task_service.dart';
 import '../../core/services/achievement_service.dart';
+import '../../core/services/prayer_alarm_service.dart';
 import '../../core/models/achievement.dart';
 import '../home/home_screen.dart';
 import '../prayer/prayer_screen.dart';
@@ -51,6 +52,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       ref.invalidate(prayerTimesProvider);
       ref.invalidate(tasksProvider(const TaskFilterParams()));
       _handleWidgetIntent();
+      _syncNativePrayerStatuses();
     }
   }
 
@@ -80,6 +82,23 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
         }
       });
       _handleWidgetIntent();
+    });
+
+    // Listen for app shortcut navigation from native side
+    _navigationChannel.setMethodCallHandler((call) async {
+      if (call.method == 'navigateToRoute') {
+        final route = call.arguments['route'] as String?;
+        if (route != null && mounted) {
+          Navigator.of(context).pushNamed(route);
+        }
+      } else if (call.method == 'openReminderPicker') {
+        final prayerName = call.arguments['prayerName'] as String? ?? '';
+        final prayerNameAr = call.arguments['prayerNameAr'] as String? ?? prayerName;
+        final prayerTime = (call.arguments['prayerTime'] as num?)?.toInt() ?? 0;
+        if (mounted) {
+          _showReminderPicker(prayerName, prayerNameAr, prayerTime);
+        }
+      }
     });
   }
 
@@ -131,9 +150,149 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     }
   }
 
+  Future<void> _syncNativePrayerStatuses() async {
+    try {
+      final userId = ref.read(currentUserIdProvider);
+      if (userId != null && userId.isNotEmpty) {
+        await PrayerAlarmService.instance.syncNativePrayerStatuses(userId);
+      }
+    } catch (e) {
+      debugPrint('Error syncing native prayer statuses: $e');
+    }
+  }
+
   void _updateCurrentRoute() {
     final route = _currentIndex == 0 ? '/home' : '/tab/$_currentIndex';
     _navigationChannel.invokeMethod('setCurrentRoute', {'route': route});
+  }
+
+  void _showReminderPicker(String prayerName, String prayerNameAr, int prayerTime) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final now = DateTime.now();
+    final prayerDate = DateTime.fromMillisecondsSinceEpoch(prayerTime);
+    final minutesUntilAzan = prayerDate.difference(now).inMinutes;
+
+    final options = [5, 10, 15, 20, 25, 30]
+        .where((m) => m < minutesUntilAzan)
+        .toList();
+
+    if (options.isEmpty) {
+      // Too close to azan, no remind-later options
+      return;
+    }
+
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1A1B1E) : const Color(0xFFFFF3D6),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
+        ),
+        title: Text(
+          isArabic
+              ? 'ذكّرني لاحقاً - $prayerNameAr'
+              : 'Remind Me Later - $prayerName',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: isArabic ? TextAlign.right : TextAlign.left,
+        ),
+        content: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          alignment: WrapAlignment.center,
+          children: options.map((minutes) {
+            final label = isArabic
+                ? '${_toArabicNumerals(minutes)} دقيقة'
+                : '$minutes min';
+            return ChoiceChip(
+              label: Text(label),
+              selected: false,
+              onSelected: (_) {
+                Navigator.of(ctx).pop();
+                _scheduleRemindLater(prayerName, prayerNameAr, prayerTime, minutes);
+              },
+              backgroundColor: isDark ? const Color(0xFF2A2B2E) : const Color(0xFFFFEACC),
+              selectedColor: AppConstants.primaryColor,
+              labelStyle: TextStyle(
+                color: isDark ? Colors.white : const Color(0xFF2A2418),
+                fontWeight: FontWeight.w600,
+              ),
+            );
+          }).toList(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              isArabic ? 'إلغاء' : 'Cancel',
+              style: TextStyle(color: AppConstants.primaryColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _scheduleRemindLater(
+    String prayerName,
+    String prayerNameAr,
+    int prayerTime,
+    int delayMinutes,
+  ) async {
+    try {
+      // Clear reminder mode so notification returns to normal
+      const bgChannel = MethodChannel('com.aura.hala/background_service');
+      const alarmChannel = MethodChannel('com.aura.hala/prayer_alarms');
+
+      // 1. Clear reminder active flag (notification goes back to normal)
+      final prefs = await SharedPreferences.getInstance();
+      // We can't directly write native prefs, so schedule a new alarm
+      // that will re-activate reminder mode after delayMinutes
+      final newTriggerTime = DateTime.now().add(Duration(minutes: delayMinutes)).millisecondsSinceEpoch;
+
+      // 2. Schedule a re-reminder alarm
+      await alarmChannel.invokeMethod('scheduleReminderAlarm', {
+        'prayerName': prayerName,
+        'prayerNameAr': prayerNameAr,
+        'prayerTime': prayerTime,
+        'requestCode': 7000 + delayMinutes,
+        'delayMinutes': delayMinutes,
+      });
+
+      if (mounted) {
+        final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isArabic
+                  ? 'سأذكرك بعد ${_toArabicNumerals(delayMinutes)} دقيقة'
+                  : 'Will remind you in $delayMinutes minutes',
+              textAlign: TextAlign.center,
+            ),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppConstants.primaryColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error scheduling remind later: $e');
+    }
+  }
+
+  String _toArabicNumerals(int number) {
+    const eastern = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    return number.toString().split('').map((c) {
+      final i = int.tryParse(c);
+      return i != null ? eastern[i] : c;
+    }).join('');
   }
 
   void _handleTabTap(int index) {

@@ -30,11 +30,41 @@ class MainActivity : FlutterActivity() {
     private val FOCUS_MODE_CHANNEL = "com.aura.hala/focus_mode"
 
     private var currentRoute: String = "/"
+    private var navigationChannel: MethodChannel? = null
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
         super.onCreate(savedInstanceState)
         // Create notification channel early to ensure it exists before alarms fire
         createNotificationChannel()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleShortcutIntent(intent)
+        handleReminderPickerIntent(intent)
+    }
+
+    private fun handleShortcutIntent(intent: Intent) {
+        val route = intent.getStringExtra("route")
+        if (route != null) {
+            Log.d("MainActivity", "🔗 [SHORTCUT] Route: $route")
+            navigationChannel?.invokeMethod("navigateToRoute", mapOf("route" to route))
+        }
+    }
+
+    private fun handleReminderPickerIntent(intent: Intent) {
+        if (intent.getBooleanExtra("open_reminder_picker", false)) {
+            val prayerName = intent.getStringExtra("reminder_prayer_name") ?: return
+            val prayerNameAr = intent.getStringExtra("reminder_prayer_name_ar") ?: prayerName
+            val prayerTime = intent.getLongExtra("reminder_prayer_time", 0L)
+            Log.d("MainActivity", "🔕 [REMINDER_PICKER] Opening picker for $prayerName")
+            navigationChannel?.invokeMethod("openReminderPicker", mapOf(
+                "prayerName" to prayerName,
+                "prayerNameAr" to prayerNameAr,
+                "prayerTime" to prayerTime
+            ))
+        }
     }
 
     private fun createNotificationChannel() {
@@ -156,8 +186,9 @@ class MainActivity : FlutterActivity() {
             }
         }
 
-        // Navigation Channel - for tracking current route (future use)
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, NAVIGATION_CHANNEL).setMethodCallHandler { call, result ->
+        // Navigation Channel - for tracking current route and handling shortcuts
+        navigationChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, NAVIGATION_CHANNEL)
+        navigationChannel!!.setMethodCallHandler { call, result ->
             when (call.method) {
                 "setCurrentRoute" -> {
                     val route = call.argument<String>("route")
@@ -171,6 +202,11 @@ class MainActivity : FlutterActivity() {
                 else -> result.notImplemented()
             }
         }
+
+        // Check if launched from a shortcut (cold start)
+        handleShortcutIntent(intent)
+        // Check if launched from reminder picker (cold start)
+        handleReminderPickerIntent(intent)
 
         // Widget Channel - for updating home screen widgets
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, WIDGET_CHANNEL).setMethodCallHandler { call, result ->
@@ -308,9 +344,15 @@ class MainActivity : FlutterActivity() {
                     val prayerNameAr = call.argument<String>("prayerNameAr") ?: prayerName
                     val prayerTime = call.argument<Long>("prayerTime") ?: return@setMethodCallHandler result.error("INVALID_ARGUMENT", "prayerTime required", null)
                     val requestCode = call.argument<Int>("requestCode") ?: 0
+                    val delayMinutes = call.argument<Int>("delayMinutes")
 
-                    Log.d("PrayerChannel", "⏰ Scheduling reminder alarm for $prayerName (10 min before)")
-                    PrayerAlarmReceiver.scheduleReminderAlarm(this, prayerName, prayerNameAr, prayerTime, requestCode)
+                    if (delayMinutes != null && delayMinutes > 0) {
+                        Log.d("PrayerChannel", "🔕 Scheduling delayed reminder for $prayerName ($delayMinutes min)")
+                        PrayerAlarmReceiver.scheduleDelayedReminder(this, prayerName, prayerNameAr, prayerTime, requestCode, delayMinutes)
+                    } else {
+                        Log.d("PrayerChannel", "⏰ Scheduling reminder alarm for $prayerName (45 min before)")
+                        PrayerAlarmReceiver.scheduleReminderAlarm(this, prayerName, prayerNameAr, prayerTime, requestCode)
+                    }
                     result.success(true)
                 }
                 "testAdhanNow" -> {
@@ -362,6 +404,26 @@ class MainActivity : FlutterActivity() {
                 "cancelAllPrayerAlarms" -> {
                     Log.d("PrayerChannel", "Cancelling all prayer alarms")
                     PrayerAlarmReceiver.cancelAllAlarms(this)
+                    result.success(true)
+                }
+                "getNativePrayerStatuses" -> {
+                    val prefs = getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+                    val statuses = mutableMapOf<String, String>()
+                    for ((key, value) in prefs.all) {
+                        if (key.startsWith("prayer_status_") && value is String) {
+                            statuses[key] = value
+                        }
+                    }
+                    Log.d("PrayerChannel", "📊 Returning ${statuses.size} native prayer statuses")
+                    result.success(statuses)
+                }
+                "clearNativePrayerStatus" -> {
+                    val key = call.argument<String>("key")
+                    if (key != null) {
+                        val prefs = getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+                        prefs.edit().remove(key).apply()
+                        Log.d("PrayerChannel", "🗑️ Cleared native prayer status: $key")
+                    }
                     result.success(true)
                 }
                 "canScheduleExactAlarms" -> {
