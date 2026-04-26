@@ -350,14 +350,14 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:gravity="bottom">
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:gravity="bottom">
 
                     <TextView
                         android:id="@+id/timeline_current_name"
@@ -396,14 +396,13 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical"
+                    android:gravity="bottom"
                     android:baselineAligned="false">
 
                     <TextView
                         android:id="@+id/timeline_next_label"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
                         android:text="التالي · "
                         android:textSize="7sp"
                         android:textColor="#A8ADB8"
@@ -414,7 +413,6 @@
                         android:id="@+id/timeline_next_name"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
                         android:text="العصر"
                         android:textSize="11sp"
                         android:textColor="#FFFFFF"
@@ -426,7 +424,6 @@
                         android:id="@+id/timeline_next_suffix"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_gravity="center_vertical"
                         android:text=" بعد"
                         android:textSize="7sp"
                         android:textColor="#A8ADB8"

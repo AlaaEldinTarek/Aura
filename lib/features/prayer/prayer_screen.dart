@@ -17,6 +17,7 @@ import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/offline_banner.dart';
 import '../../core/utils/hijri_date.dart';
 import '../../core/utils/number_formatter.dart';
+import '../../core/utils/date_formatter.dart';
 import '../../core/services/adhan_player_service.dart';
 import '../../core/services/background_service_manager.dart';
 import '../../core/services/location_service.dart';
@@ -635,7 +636,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
         CircularCountdownTimer(
           targetTime: nextPrayer.time,
           prayerName: isArabic ? nextPrayer.nameAr : nextPrayer.name,
-          prayerTime: _formatTime(nextPrayer.time12h, isArabic),
+          prayerTime: DateFormatter.formatTime(nextPrayer.time, languageCode: isArabic ? 'ar' : 'en'),
           onComplete: () {
             // Refresh when prayer time is reached - wrap in microtask to avoid modifying during build
             Future.microtask(() async {
@@ -925,15 +926,6 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     }
 
     return dateStr;
-  }
-
-  String _formatTime(String time, bool isArabic) {
-    if (isArabic) {
-      time = time.replaceAll('AM', 'ص').replaceAll('PM', 'م');
-      // Convert numbers to Arabic numerals
-      time = NumberFormatter.withArabicNumeralsByLanguage(time, 'ar');
-    }
-    return time;
   }
 
   void _showPrayerSettings(BuildContext context, WidgetRef ref, bool isArabic) {

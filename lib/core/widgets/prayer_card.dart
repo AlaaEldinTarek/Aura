@@ -3,6 +3,7 @@ import '../constants/app_constants.dart';
 import '../models/prayer_time.dart';
 import '../models/prayer_record.dart';
 import '../utils/number_formatter.dart';
+import '../utils/date_formatter.dart';
 
 /// A beautiful prayer time card with countdown indicator
 class PrayerCard extends StatelessWidget {
@@ -152,8 +153,8 @@ class PrayerCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           isArabic
-                              ? 'الإقامة: ${_formatTime(prayer.iqamaTime!, isArabic)}'
-                              : 'Iqamah: ${_formatTime(prayer.iqamaTime!, isArabic)}',
+                              ? 'الإقامة: ${DateFormatter.formatTime(prayer.iqamaTime!, languageCode: 'ar')}'
+                              : 'Iqamah: ${DateFormatter.formatTime(prayer.iqamaTime!)}',
                           style: Theme.of(context)
                               .textTheme
                               .bodySmall
@@ -299,18 +300,6 @@ class PrayerCard extends StatelessWidget {
       time = NumberFormatter.withArabicNumeralsByLanguage(time, 'ar');
     }
     return time;
-  }
-
-  String _formatTime(DateTime time, bool isArabic) {
-    final hour = time.hour % 12 == 0 ? 12 : time.hour % 12;
-    final minute = time.minute.toString().padLeft(2, '0');
-    final period = time.hour < 12 ? 'AM' : 'PM';
-    String timeStr = '$hour:$minute $period';
-    if (isArabic) {
-      timeStr = timeStr.replaceAll('AM', 'ص').replaceAll('PM', 'م');
-      timeStr = NumberFormatter.withArabicNumeralsByLanguage(timeStr, 'ar');
-    }
-    return timeStr;
   }
 
   String? _getPrayerIconAsset() {

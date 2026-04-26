@@ -278,21 +278,6 @@ class PrayerTimesService {
     }
   }
 
-  /// Format time to 12-hour format with AM/PM
-  String formatTime(DateTime time) {
-    final hour = time.hour % 12 == 0 ? 12 : time.hour % 12;
-    final minute = time.minute.toString().padLeft(2, '0');
-    final period = time.hour < 12 ? 'AM' : 'PM';
-    return '$hour:$minute $period';
-  }
-
-  /// Format time to 24-hour format
-  String formatTime24(DateTime time) {
-    final hour = time.hour.toString().padLeft(2, '0');
-    final minute = time.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
-  }
-
   /// Calculate time remaining until a prayer
   String getTimeRemaining(DateTime prayerTime) {
     final now = DateTime.now();

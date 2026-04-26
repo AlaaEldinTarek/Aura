@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task.dart';
+import '../utils/date_formatter.dart';
 
 class TaskWidgetService {
   TaskWidgetService._();
@@ -76,7 +77,7 @@ class TaskWidgetService {
           args['task_${i}_subtaskDone'] = t.completedSubtasks;
           args['task_${i}_subtaskTotal'] = t.subtasks.length;
           if (t.hasDueTime && t.dueDate != null) {
-            args['task_${i}_time'] = _formatTime(t.dueDate!, isArabic);
+            args['task_${i}_time'] = DateFormatter.formatTime(t.dueDate!, languageCode: isArabic ? 'ar' : 'en');
           } else {
             args['task_${i}_time'] = '';
           }
@@ -102,22 +103,5 @@ class TaskWidgetService {
 
   Future<void> refreshWidget() async {
     if (_cachedTasks.isNotEmpty) await saveTasks(tasks: _cachedTasks);
-  }
-
-  String _formatTime(DateTime dt, bool isArabic) {
-    final h = dt.hour;
-    final m = dt.minute;
-    final ampm = h < 12 ? (isArabic ? 'ص' : 'AM') : (isArabic ? 'م' : 'PM');
-    final dh = h == 0 ? 12 : (h > 12 ? h - 12 : h);
-    if (isArabic) {
-      return '${_toEA(dh.toString().padLeft(2, '0'))}:${_toEA(m.toString().padLeft(2, '0'))} $ampm';
-    }
-    return '${dh.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')} $ampm';
-  }
-
-  String _toEA(String n) {
-    const w = '0123456789';
-    const e = '٠١٢٣٤٥٦٧٨٩';
-    return n.split('').map((d) { final i = w.indexOf(d); return i >= 0 ? e[i] : d; }).join();
   }
 }

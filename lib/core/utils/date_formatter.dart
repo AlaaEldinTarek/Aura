@@ -1,3 +1,5 @@
+import 'number_formatter.dart';
+
 /// Utility class for date formatting
 class DateFormatter {
   DateFormatter._();
@@ -27,13 +29,31 @@ class DateFormatter {
     return '${formatTime(start)} - ${formatTime(end)}';
   }
 
-  /// Format time to 12-hour format
-  static String formatTime(DateTime time) {
+  /// Format time to 12-hour format with bilingual AM/PM and Arabic numerals
+  static String formatTime(DateTime time, {String languageCode = 'en'}) {
     final hour24 = time.hour;
     final hour = hour24 == 0 ? 12 : (hour24 > 12 ? hour24 - 12 : hour24);
     final minute = time.minute.toString().padLeft(2, '0');
-    final period = hour24 < 12 ? 'AM' : 'PM';
-    return '$hour:$minute $period';
+    final isArabic = languageCode == 'ar';
+    final period = hour24 < 12
+        ? (isArabic ? 'ص' : 'AM')
+        : (isArabic ? 'م' : 'PM');
+    String result = '${hour.toString().padLeft(2, '0')}:$minute $period';
+    if (isArabic) {
+      result = NumberFormatter.withArabicNumeralsByLanguage(result, 'ar');
+    }
+    return result;
+  }
+
+  /// Format time to 24-hour format with optional Arabic numerals
+  static String formatTime24(DateTime time, {String languageCode = 'en'}) {
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    String result = '$hour:$minute';
+    if (languageCode == 'ar') {
+      result = NumberFormatter.withArabicNumeralsByLanguage(result, 'ar');
+    }
+    return result;
   }
 
   // English months
