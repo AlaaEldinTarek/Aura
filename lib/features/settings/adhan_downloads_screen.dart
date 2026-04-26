@@ -402,24 +402,6 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
             icon: const Icon(Icons.settings),
             tooltip: isArabic ? 'الإعدادات' : 'Settings',
           ),
-          // Test Adhan button
-          IconButton(
-            onPressed: () async {
-              // Test adhan immediately for debugging
-              await PrayerAlarmService.instance.testAdhanNow('Zuhr');
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(isArabic ? '🧪 اختبار الأذان...' : '🧪 Testing azan...'),
-                    duration: const Duration(seconds: 2),
-                    backgroundColor: Colors.purple,
-                  ),
-                );
-              }
-            },
-            icon: const Icon(Icons.play_arrow_rounded),
-            tooltip: isArabic ? 'اختبار الأذان' : 'Test Azan',
-          ),
           if (selectedAdhanId != null)
             TextButton.icon(
               onPressed: () async {

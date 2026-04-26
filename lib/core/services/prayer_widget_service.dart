@@ -44,6 +44,15 @@ class PrayerWidgetService {
       // Get theme mode from SharedPreferences
       final themeMode = _prefs?.getString('theme_mode') ?? 'system';
 
+      // Build iqama times map
+      final Map<String, String> iqamaTimesMap = {};
+      for (final prayer in prayerTimes) {
+        if (prayer.iqamaTime != null) {
+          final key = _getIqamaKey(prayer.name);
+          iqamaTimesMap[key] = prayer.iqamaTime!.millisecondsSinceEpoch.toString();
+        }
+      }
+
       // Send to Android via MethodChannel for widgets
       final args = <String, dynamic>{
         'prayerTimes': prayerTimesMap,
@@ -55,6 +64,7 @@ class PrayerWidgetService {
         'language': language,
         'locationName': locationName ?? 'Unknown',
         'themeMode': themeMode,
+        'iqamaTimes': iqamaTimesMap,
       };
 
       await _widgetChannel.invokeMethod('updatePrayerWidgets', args);
@@ -64,15 +74,6 @@ class PrayerWidgetService {
       debugPrint('  Current prayer: ${currentPrayer?.name} at ${currentPrayer?.time}');
       debugPrint('  Location sent to widget: "$locationName"');
       debugPrint('  Theme mode: $themeMode');
-
-      // Build iqama times map
-      final Map<String, String> iqamaTimesMap = {};
-      for (final prayer in prayerTimes) {
-        if (prayer.iqamaTime != null) {
-          final key = _getIqamaKey(prayer.name);
-          iqamaTimesMap[key] = prayer.iqamaTime!.millisecondsSinceEpoch.toString();
-        }
-      }
 
       // Also update the background service notification
       await BackgroundServiceManager.instance.updatePrayerTimes(

@@ -199,6 +199,13 @@ class MainActivity : FlutterActivity() {
                     editor.putString("next_prayer_name", nextPrayerName)
                     editor.putString("next_prayer_name_ar", nextPrayerNameAr)
                     editor.putString("next_prayer_time", nextPrayerTime?.toString())
+
+                    // Save iqama times for adhan mode iqama countdown
+                    val iqamaTimes = call.argument<Map<String, String>>("iqamaTimes")
+                    iqamaTimes?.forEach { (key, value) ->
+                        editor.putString(key, value)
+                    }
+
                     editor.apply()
 
                     // Update widgets
