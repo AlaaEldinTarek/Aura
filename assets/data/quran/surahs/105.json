@@ -1,0 +1,60 @@
+{
+  "number": 105,
+  "name": "سُورَةُ الفِيلِ",
+  "englishName": "Al-Fil",
+  "englishNameTranslation": "The Elephant",
+  "revelationType": "Meccan",
+  "numberOfAyahs": 5,
+  "ayahs": [
+    {
+      "number": 6189,
+      "numberInSurah": 1,
+      "text": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ أَلَمْ تَرَ كَيْفَ فَعَلَ رَبُّكَ بِأَصْحَٰبِ ٱلْفِيلِ",
+      "translation": "ART THOU NOT aware of how thy Sustainer dealt with the Army of the Elephant?",
+      "juz": 30,
+      "page": 601,
+      "ruku": 547,
+      "sajda": false
+    },
+    {
+      "number": 6190,
+      "numberInSurah": 2,
+      "text": "أَلَمْ يَجْعَلْ كَيْدَهُمْ فِى تَضْلِيلٍۢ",
+      "translation": "Did He not utterly confound their artful planning?",
+      "juz": 30,
+      "page": 601,
+      "ruku": 547,
+      "sajda": false
+    },
+    {
+      "number": 6191,
+      "numberInSurah": 3,
+      "text": "وَأَرْسَلَ عَلَيْهِمْ طَيْرًا أَبَابِيلَ",
+      "translation": "Thus, He let loose upon them great swarms of flying creatures",
+      "juz": 30,
+      "page": 601,
+      "ruku": 547,
+      "sajda": false
+    },
+    {
+      "number": 6192,
+      "numberInSurah": 4,
+      "text": "تَرْمِيهِم بِحِجَارَةٍۢ مِّن سِجِّيلٍۢ",
+      "translation": "which smote them with stone-hard blows of chastisement pre-ordained,",
+      "juz": 30,
+      "page": 601,
+      "ruku": 547,
+      "sajda": false
+    },
+    {
+      "number": 6193,
+      "numberInSurah": 5,
+      "text": "فَجَعَلَهُمْ كَعَصْفٍۢ مَّأْكُولٍۭ",
+      "translation": "and caused them to become like a field of grain that has been eaten down to stubble",
+      "juz": 30,
+      "page": 601,
+      "ruku": 547,
+      "sajda": false
+    }
+  ]
+}

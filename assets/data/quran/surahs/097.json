@@ -1,0 +1,60 @@
+{
+  "number": 97,
+  "name": "سُورَةُ القَدۡرِ",
+  "englishName": "Al-Qadr",
+  "englishNameTranslation": "The Power, Fate",
+  "revelationType": "Meccan",
+  "numberOfAyahs": 5,
+  "ayahs": [
+    {
+      "number": 6126,
+      "numberInSurah": 1,
+      "text": "بِّسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ إِنَّآ أَنزَلْنَٰهُ فِى لَيْلَةِ ٱلْقَدْرِ",
+      "translation": "BEHOLD, from on high have We bestowed this [divine writ] on Night of Destiny.",
+      "juz": 30,
+      "page": 598,
+      "ruku": 539,
+      "sajda": false
+    },
+    {
+      "number": 6127,
+      "numberInSurah": 2,
+      "text": "وَمَآ أَدْرَىٰكَ مَا لَيْلَةُ ٱلْقَدْرِ",
+      "translation": "And what could make thee conceive what it is, that Night of Destiny?",
+      "juz": 30,
+      "page": 598,
+      "ruku": 539,
+      "sajda": false
+    },
+    {
+      "number": 6128,
+      "numberInSurah": 3,
+      "text": "لَيْلَةُ ٱلْقَدْرِ خَيْرٌۭ مِّنْ أَلْفِ شَهْرٍۢ",
+      "translation": "The Night of Destiny is better than a thousand months:",
+      "juz": 30,
+      "page": 598,
+      "ruku": 539,
+      "sajda": false
+    },
+    {
+      "number": 6129,
+      "numberInSurah": 4,
+      "text": "تَنَزَّلُ ٱلْمَلَٰٓئِكَةُ وَٱلرُّوحُ فِيهَا بِإِذْنِ رَبِّهِم مِّن كُلِّ أَمْرٍۢ",
+      "translation": "in hosts descend in it the angels, bearing divine inspiration by their Sustainer's leave; from all [evil] that may happen",
+      "juz": 30,
+      "page": 598,
+      "ruku": 539,
+      "sajda": false
+    },
+    {
+      "number": 6130,
+      "numberInSurah": 5,
+      "text": "سَلَٰمٌ هِىَ حَتَّىٰ مَطْلَعِ ٱلْفَجْرِ",
+      "translation": "does it make secure, until the rise of dawn.",
+      "juz": 30,
+      "page": 598,
+      "ruku": 539,
+      "sajda": false
+    }
+  ]
+}

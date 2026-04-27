@@ -1,0 +1,160 @@
+{
+  "number": 91,
+  "name": "سُورَةُ الشَّمۡسِ",
+  "englishName": "Ash-Shams",
+  "englishNameTranslation": "The Sun",
+  "revelationType": "Meccan",
+  "numberOfAyahs": 15,
+  "ayahs": [
+    {
+      "number": 6044,
+      "numberInSurah": 1,
+      "text": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ وَٱلشَّمْسِ وَضُحَىٰهَا",
+      "translation": "CONSIDER the sun and its radiant brightness,",
+      "juz": 30,
+      "page": 595,
+      "ruku": 533,
+      "sajda": false
+    },
+    {
+      "number": 6045,
+      "numberInSurah": 2,
+      "text": "وَٱلْقَمَرِ إِذَا تَلَىٰهَا",
+      "translation": "and the moon as it reflects the sun!",
+      "juz": 30,
+      "page": 595,
+      "ruku": 533,
+      "sajda": false
+    },
+    {
+      "number": 6046,
+      "numberInSurah": 3,
+      "text": "وَٱلنَّهَارِ إِذَا جَلَّىٰهَا",
+      "translation": "Consider the day as it reveals the world,",
+      "juz": 30,
+      "page": 595,
+      "ruku": 533,
+      "sajda": false
+    },
+    {
+      "number": 6047,
+      "numberInSurah": 4,
+      "text": "وَٱلَّيْلِ إِذَا يَغْشَىٰهَا",
+      "translation": "and the night as it veils it darkly!",
+      "juz": 30,
+      "page": 595,
+      "ruku": 533,
+      "sajda": false
+    },
+    {
+      "number": 6048,
+      "numberInSurah": 5,
+      "text": "وَٱلسَّمَآءِ وَمَا بَنَىٰهَا",
+      "translation": "Consider the sky and its wondrous make,",
+      "juz": 30,
+      "page": 595,
+      "ruku": 533,
+      "sajda": false
+    },
+    {
+      "number": 6049,
+      "numberInSurah": 6,
+      "text": "وَٱلْأَرْضِ وَمَا طَحَىٰهَا",
+      "translation": "and the earth and all its expanse!",
+      "juz": 30,
+      "page": 595,
+      "ruku": 533,
+      "sajda": false
+    },
+    {
+      "number": 6050,
+      "numberInSurah": 7,
+      "text": "وَنَفْسٍۢ وَمَا سَوَّىٰهَا",
+      "translation": "Consider the human self, and how it is formed in accordance with what it is meant to be,",
+      "juz": 30,
+      "page": 595,
+      "ruku": 533,
+      "sajda": false
+    },
+    {
+      "number": 6051,
+      "numberInSurah": 8,
+      "text": "فَأَلْهَمَهَا فُجُورَهَا وَتَقْوَىٰهَا",
+      "translation": "and how it is imbued with moral failings as well as with consciousness of God!",
+      "juz": 30,
+      "page": 595,
+      "ruku": 533,
+      "sajda": false
+    },
+    {
+      "number": 6052,
+      "numberInSurah": 9,
+      "text": "قَدْ أَفْلَحَ مَن زَكَّىٰهَا",
+      "translation": "To a happy state shall indeed attain he who causes this [self] to grow in purity,",
+      "juz": 30,
+      "page": 595,
+      "ruku": 533,
+      "sajda": false
+    },
+    {
+      "number": 6053,
+      "numberInSurah": 10,
+      "text": "وَقَدْ خَابَ مَن دَسَّىٰهَا",
+      "translation": "and truly lost is he who buries it [in darkness].",
+      "juz": 30,
+      "page": 595,
+      "ruku": 533,
+      "sajda": false
+    },
+    {
+      "number": 6054,
+      "numberInSurah": 11,
+      "text": "كَذَّبَتْ ثَمُودُ بِطَغْوَىٰهَآ",
+      "translation": "TO [THIS] TRUTH gave the lie, in their overweening arrogance, [the tribe of] Thamud,",
+      "juz": 30,
+      "page": 595,
+      "ruku": 533,
+      "sajda": false
+    },
+    {
+      "number": 6055,
+      "numberInSurah": 12,
+      "text": "إِذِ ٱنۢبَعَثَ أَشْقَىٰهَا",
+      "translation": "when that most hapless wretch from among them rushed forward [to commit his evil deed],",
+      "juz": 30,
+      "page": 595,
+      "ruku": 533,
+      "sajda": false
+    },
+    {
+      "number": 6056,
+      "numberInSurah": 13,
+      "text": "فَقَالَ لَهُمْ رَسُولُ ٱللَّهِ نَاقَةَ ٱللَّهِ وَسُقْيَٰهَا",
+      "translation": "although God's apostle had told them, \"It is a she-camel belonging to God, so let her drink [and do her no harm]!\"",
+      "juz": 30,
+      "page": 595,
+      "ruku": 533,
+      "sajda": false
+    },
+    {
+      "number": 6057,
+      "numberInSurah": 14,
+      "text": "فَكَذَّبُوهُ فَعَقَرُوهَا فَدَمْدَمَ عَلَيْهِمْ رَبُّهُم بِذَنۢبِهِمْ فَسَوَّىٰهَا",
+      "translation": "But they gave him the lie, and cruelly slaughtered her - whereupon their Sustainer visited them with utter destruction for this their sin, destroying them all alike:",
+      "juz": 30,
+      "page": 595,
+      "ruku": 533,
+      "sajda": false
+    },
+    {
+      "number": 6058,
+      "numberInSurah": 15,
+      "text": "وَلَا يَخَافُ عُقْبَٰهَا",
+      "translation": "for none [of them] had any fear of what might befall them.",
+      "juz": 30,
+      "page": 595,
+      "ruku": 533,
+      "sajda": false
+    }
+  ]
+}

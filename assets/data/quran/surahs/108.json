@@ -1,0 +1,40 @@
+{
+  "number": 108,
+  "name": "سُورَةُ الكَوۡثَرِ",
+  "englishName": "Al-Kawthar",
+  "englishNameTranslation": "Abundance",
+  "revelationType": "Meccan",
+  "numberOfAyahs": 3,
+  "ayahs": [
+    {
+      "number": 6205,
+      "numberInSurah": 1,
+      "text": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ إِنَّآ أَعْطَيْنَٰكَ ٱلْكَوْثَرَ",
+      "translation": "BEHOLD, We have bestowed upon thee good in abundance:",
+      "juz": 30,
+      "page": 602,
+      "ruku": 550,
+      "sajda": false
+    },
+    {
+      "number": 6206,
+      "numberInSurah": 2,
+      "text": "فَصَلِّ لِرَبِّكَ وَٱنْحَرْ",
+      "translation": "hence, pray unto thy Sustainer [alone], and sacrifice [unto Him alone].",
+      "juz": 30,
+      "page": 602,
+      "ruku": 550,
+      "sajda": false
+    },
+    {
+      "number": 6207,
+      "numberInSurah": 3,
+      "text": "إِنَّ شَانِئَكَ هُوَ ٱلْأَبْتَرُ",
+      "translation": "Verily, he that hates thee has indeed been cut off [from all that is good]!",
+      "juz": 30,
+      "page": 602,
+      "ruku": 550,
+      "sajda": false
+    }
+  ]
+}

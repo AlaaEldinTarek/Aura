@@ -4,6 +4,7 @@ enum AchievementCategory {
   consistency,
   dhikr,
   tasks,
+  quran,
   special,
 }
 
@@ -231,6 +232,58 @@ class AchievementDefinitions {
       iconEmoji: '📅',
       category: AchievementCategory.tasks,
       threshold: 7,
+    ),
+
+    // Quran
+    Achievement(
+      id: 'quran_first_page',
+      nameEn: 'First Page',
+      nameAr: 'أول صفحة',
+      descriptionEn: 'Read your first Quran page',
+      descriptionAr: 'اقرأ أول صفحة من القرآن',
+      iconEmoji: '📖',
+      category: AchievementCategory.quran,
+      threshold: 1,
+    ),
+    Achievement(
+      id: 'quran_streak_7',
+      nameEn: 'Weekly Reader',
+      nameAr: 'قارئ أسبوعي',
+      descriptionEn: '7-day Quran reading streak',
+      descriptionAr: 'تتابع قراءة ٧ أيام',
+      iconEmoji: '📚',
+      category: AchievementCategory.quran,
+      threshold: 7,
+    ),
+    Achievement(
+      id: 'quran_streak_30',
+      nameEn: 'Monthly Reader',
+      nameAr: 'قارئ شهري',
+      descriptionEn: '30-day Quran reading streak',
+      descriptionAr: 'تتابع قراءة ٣٠ يوم',
+      iconEmoji: '🌙',
+      category: AchievementCategory.quran,
+      threshold: 30,
+    ),
+    Achievement(
+      id: 'quran_first_khatmah',
+      nameEn: 'First Khatmah',
+      nameAr: 'أول ختمة',
+      descriptionEn: 'Complete your first Quran Khatmah',
+      descriptionAr: 'أكمل أول ختمة للقرآن',
+      iconEmoji: '🏆',
+      category: AchievementCategory.quran,
+      threshold: 1,
+    ),
+    Achievement(
+      id: 'quran_100_pages',
+      nameEn: 'Century Pages',
+      nameAr: 'مئة صفحة',
+      descriptionEn: 'Read 100 Quran pages',
+      descriptionAr: 'اقرأ ١٠٠ صفحة من القرآن',
+      iconEmoji: '📃',
+      category: AchievementCategory.quran,
+      threshold: 100,
     ),
 
     // Special

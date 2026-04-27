@@ -17,6 +17,8 @@ import '../../core/models/achievement.dart';
 import '../home/home_screen.dart';
 import '../prayer/prayer_screen.dart';
 import '../profile/profile_screen.dart';
+import '../quran/quran_home_screen.dart';
+import '../quran/quran_reader_screen.dart';
 import '../tasks/tasks_screen.dart';
 
 /// Main wrapper screen with TabController
@@ -61,7 +63,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _currentIndex = widget.initialIndex;
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _tabController.index = _currentIndex;
     _updateCurrentRoute();
 
@@ -97,6 +99,19 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
         final prayerTime = (call.arguments['prayerTime'] as num?)?.toInt() ?? 0;
         if (mounted) {
           _showReminderPicker(prayerName, prayerNameAr, prayerTime);
+        }
+      } else if (call.method == 'openQuranReader') {
+        if (mounted) {
+          // Switch to Quran tab first
+          _handleTabTap(2);
+          // Then push reader with last page
+          final prefs = await SharedPreferences.getInstance();
+          final currentPage = prefs.getInt('quran_current_page') ?? 1;
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => QuranReaderScreen(initialPage: currentPage),
+            ),
+          );
         }
       }
     });
@@ -395,6 +410,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
           children: const [
             HomeScreen(),
             PrayerScreen(),
+            QuranHomeScreen(),
             TasksScreen(),
             ProfileScreen(),
           ],

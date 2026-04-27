@@ -1,0 +1,2280 @@
+{
+  "number": 26,
+  "name": "سُورَةُ الشُّعَرَاءِ",
+  "englishName": "Ash-Shu'araa",
+  "englishNameTranslation": "The Poets",
+  "revelationType": "Meccan",
+  "numberOfAyahs": 227,
+  "ayahs": [
+    {
+      "number": 2933,
+      "numberInSurah": 1,
+      "text": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ طسٓمٓ",
+      "translation": "Ta. Sin, Mim.",
+      "juz": 19,
+      "page": 367,
+      "ruku": 316,
+      "sajda": false
+    },
+    {
+      "number": 2934,
+      "numberInSurah": 2,
+      "text": "تِلْكَ ءَايَٰتُ ٱلْكِتَٰبِ ٱلْمُبِينِ",
+      "translation": "THESE ARE MESSAGES of the divine writ, clear in itself and clearly showing the truth!",
+      "juz": 19,
+      "page": 367,
+      "ruku": 316,
+      "sajda": false
+    },
+    {
+      "number": 2935,
+      "numberInSurah": 3,
+      "text": "لَعَلَّكَ بَٰخِعٌۭ نَّفْسَكَ أَلَّا يَكُونُوا۟ مُؤْمِنِينَ",
+      "translation": "Wouldst thou, perhaps, torment thyself to death [with grief] because they [who live around thee] refuse to believe [in it]?",
+      "juz": 19,
+      "page": 367,
+      "ruku": 316,
+      "sajda": false
+    },
+    {
+      "number": 2936,
+      "numberInSurah": 4,
+      "text": "إِن نَّشَأْ نُنَزِّلْ عَلَيْهِم مِّنَ ٱلسَّمَآءِ ءَايَةًۭ فَظَلَّتْ أَعْنَٰقُهُمْ لَهَا خَٰضِعِينَ",
+      "translation": "Had We so willed, We could have sent down unto them a message from the skies, so that their necks would [be forced to] bow down before it in humility.",
+      "juz": 19,
+      "page": 367,
+      "ruku": 316,
+      "sajda": false
+    },
+    {
+      "number": 2937,
+      "numberInSurah": 5,
+      "text": "وَمَا يَأْتِيهِم مِّن ذِكْرٍۢ مِّنَ ٱلرَّحْمَٰنِ مُحْدَثٍ إِلَّا كَانُوا۟ عَنْهُ مُعْرِضِينَ",
+      "translation": "[But We have not willed it:] and so, whenever there comes unto them any fresh reminder from the Most Gracious, they [who are blind of heart] always - turn their backs upon it:",
+      "juz": 19,
+      "page": 367,
+      "ruku": 316,
+      "sajda": false
+    },
+    {
+      "number": 2938,
+      "numberInSurah": 6,
+      "text": "فَقَدْ كَذَّبُوا۟ فَسَيَأْتِيهِمْ أَنۢبَٰٓؤُا۟ مَا كَانُوا۟ بِهِۦ يَسْتَهْزِءُونَ",
+      "translation": "thus, indeed, have they given the lie (to this message as well). But [in time] they will come to understand what it was that they were wont to deride!",
+      "juz": 19,
+      "page": 367,
+      "ruku": 316,
+      "sajda": false
+    },
+    {
+      "number": 2939,
+      "numberInSurah": 7,
+      "text": "أَوَلَمْ يَرَوْا۟ إِلَى ٱلْأَرْضِ كَمْ أَنۢبَتْنَا فِيهَا مِن كُلِّ زَوْجٍۢ كَرِيمٍ",
+      "translation": "Have they, then, never considered the earth - how much of every noble kind [of life] We have caused to grow thereon?",
+      "juz": 19,
+      "page": 367,
+      "ruku": 316,
+      "sajda": false
+    },
+    {
+      "number": 2940,
+      "numberInSurah": 8,
+      "text": "إِنَّ فِى ذَٰلِكَ لَءَايَةًۭ ۖ وَمَا كَانَ أَكْثَرُهُم مُّؤْمِنِينَ",
+      "translation": "In this, behold, there is a message [unto men], even though most of them will not believe [in it].",
+      "juz": 19,
+      "page": 367,
+      "ruku": 316,
+      "sajda": false
+    },
+    {
+      "number": 2941,
+      "numberInSurah": 9,
+      "text": "وَإِنَّ رَبَّكَ لَهُوَ ٱلْعَزِيزُ ٱلرَّحِيمُ",
+      "translation": "But, verily, thy Sustainer - He alone - is almighty, a dispenser of grace!",
+      "juz": 19,
+      "page": 367,
+      "ruku": 316,
+      "sajda": false
+    },
+    {
+      "number": 2942,
+      "numberInSurah": 10,
+      "text": "وَإِذْ نَادَىٰ رَبُّكَ مُوسَىٰٓ أَنِ ٱئْتِ ٱلْقَوْمَ ٱلظَّٰلِمِينَ",
+      "translation": "HENCE, [remember how it was] when thy Sustainer summoned Moses: “Go unto those evil doing people.",
+      "juz": 19,
+      "page": 367,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2943,
+      "numberInSurah": 11,
+      "text": "قَوْمَ فِرْعَوْنَ ۚ أَلَا يَتَّقُونَ",
+      "translation": "the people of Pharaoh, who refuse to be con­scious of Me!”",
+      "juz": 19,
+      "page": 367,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2944,
+      "numberInSurah": 12,
+      "text": "قَالَ رَبِّ إِنِّىٓ أَخَافُ أَن يُكَذِّبُونِ",
+      "translation": "He answered: “O my Sustainer! Behold, I fear that they will give me the lie,",
+      "juz": 19,
+      "page": 367,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2945,
+      "numberInSurah": 13,
+      "text": "وَيَضِيقُ صَدْرِى وَلَا يَنطَلِقُ لِسَانِى فَأَرْسِلْ إِلَىٰ هَٰرُونَ",
+      "translation": "and then my breast will be straitened and my tongue will not be free: send, then, [this Thy command] to Aaron.",
+      "juz": 19,
+      "page": 367,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2946,
+      "numberInSurah": 14,
+      "text": "وَلَهُمْ عَلَىَّ ذَنۢبٌۭ فَأَخَافُ أَن يَقْتُلُونِ",
+      "translation": "Moreover, they keep a grave charge [pending] against me, and I fear that they will slay me.”",
+      "juz": 19,
+      "page": 367,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2947,
+      "numberInSurah": 15,
+      "text": "قَالَ كَلَّا ۖ فَٱذْهَبَا بِـَٔايَٰتِنَآ ۖ إِنَّا مَعَكُم مُّسْتَمِعُونَ",
+      "translation": "Said He: “Not so, indeed! Go forth, then, both of you, with Our messages: verify, We shall be with you, listening [to your call]!",
+      "juz": 19,
+      "page": 367,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2948,
+      "numberInSurah": 16,
+      "text": "فَأْتِيَا فِرْعَوْنَ فَقُولَآ إِنَّا رَسُولُ رَبِّ ٱلْعَٰلَمِينَ",
+      "translation": "And go, both of you, unto Pharaoh and say, ‘Behold, we bear a message from the Sustainer of all the worlds:",
+      "juz": 19,
+      "page": 367,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2949,
+      "numberInSurah": 17,
+      "text": "أَنْ أَرْسِلْ مَعَنَا بَنِىٓ إِسْرَٰٓءِيلَ",
+      "translation": "Let the children of Israel go with us!’”",
+      "juz": 19,
+      "page": 367,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2950,
+      "numberInSurah": 18,
+      "text": "قَالَ أَلَمْ نُرَبِّكَ فِينَا وَلِيدًۭا وَلَبِثْتَ فِينَا مِنْ عُمُرِكَ سِنِينَ",
+      "translation": "[But when Moses had delivered his message, Pharaoh] said: “Did we not bring thee up among us when thou wert a child? And didst thou not spend among us years of thy [later] life?",
+      "juz": 19,
+      "page": 367,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2951,
+      "numberInSurah": 19,
+      "text": "وَفَعَلْتَ فَعْلَتَكَ ٱلَّتِى فَعَلْتَ وَأَنتَ مِنَ ٱلْكَٰفِرِينَ",
+      "translation": "And yet thou didst commit that [heinous] deed of thine, and [hast thus shown that] thou art one of the ingrate!”",
+      "juz": 19,
+      "page": 367,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2952,
+      "numberInSurah": 20,
+      "text": "قَالَ فَعَلْتُهَآ إِذًۭا وَأَنَا۠ مِنَ ٱلضَّآلِّينَ",
+      "translation": "Replied [Moses]: “I committed it while I was still going astray;",
+      "juz": 19,
+      "page": 368,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2953,
+      "numberInSurah": 21,
+      "text": "فَفَرَرْتُ مِنكُمْ لَمَّا خِفْتُكُمْ فَوَهَبَ لِى رَبِّى حُكْمًۭا وَجَعَلَنِى مِنَ ٱلْمُرْسَلِينَ",
+      "translation": "and I fled from you because I feared you. But [since] then my Sustainer has endowed me with the ability to judge [between right and wrong], and has made me one of [His] message-­bearers.",
+      "juz": 19,
+      "page": 368,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2954,
+      "numberInSurah": 22,
+      "text": "وَتِلْكَ نِعْمَةٌۭ تَمُنُّهَا عَلَىَّ أَنْ عَبَّدتَّ بَنِىٓ إِسْرَٰٓءِيلَ",
+      "translation": "And [as for] that favour of which thou so tauntingly remindest me - [was it not] due to thy having enslaved the children of Israel?”",
+      "juz": 19,
+      "page": 368,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2955,
+      "numberInSurah": 23,
+      "text": "قَالَ فِرْعَوْنُ وَمَا رَبُّ ٱلْعَٰلَمِينَ",
+      "translation": "Said Pharaoh: “And what [and who] is that ‘Sustainer of all the worlds’?”",
+      "juz": 19,
+      "page": 368,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2956,
+      "numberInSurah": 24,
+      "text": "قَالَ رَبُّ ٱلسَّمَٰوَٰتِ وَٱلْأَرْضِ وَمَا بَيْنَهُمَآ ۖ إِن كُنتُم مُّوقِنِينَ",
+      "translation": "[Moses] answered: “[He is] the Sustainer of the heavens and the earth and all that is between them: if you would but [allow yourselves to] be convinced!”",
+      "juz": 19,
+      "page": 368,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2957,
+      "numberInSurah": 25,
+      "text": "قَالَ لِمَنْ حَوْلَهُۥٓ أَلَا تَسْتَمِعُونَ",
+      "translation": "Said [Pharaoh] unto those around him: “Did you hear [what he said]?”",
+      "juz": 19,
+      "page": 368,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2958,
+      "numberInSurah": 26,
+      "text": "قَالَ رَبُّكُمْ وَرَبُّ ءَابَآئِكُمُ ٱلْأَوَّلِينَ",
+      "translation": "[And Moses] continued: “[He is] your Sus­tainer, [too,] as well as the Sustainer of your fore­fathers of old!”",
+      "juz": 19,
+      "page": 368,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2959,
+      "numberInSurah": 27,
+      "text": "قَالَ إِنَّ رَسُولَكُمُ ٱلَّذِىٓ أُرْسِلَ إِلَيْكُمْ لَمَجْنُونٌۭ",
+      "translation": "[Pharaoh] exclaimed: “Behold, [this] your ‘apostle’ who [claims that he] has been sent unto you is mad indeed!",
+      "juz": 19,
+      "page": 368,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2960,
+      "numberInSurah": 28,
+      "text": "قَالَ رَبُّ ٱلْمَشْرِقِ وَٱلْمَغْرِبِ وَمَا بَيْنَهُمَآ ۖ إِن كُنتُمْ تَعْقِلُونَ",
+      "translation": "[But Moses] went on: “[He of whom I speak is] the Sustainer of the east and the west and of all that is between the two”- as you would know] if you would but use your reason!”",
+      "juz": 19,
+      "page": 368,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2961,
+      "numberInSurah": 29,
+      "text": "قَالَ لَئِنِ ٱتَّخَذْتَ إِلَٰهًا غَيْرِى لَأَجْعَلَنَّكَ مِنَ ٱلْمَسْجُونِينَ",
+      "translation": "Said [Pharaoh]: “Indeed, if thou choose to worship any deity other than me, I shall most cer­tainly throw thee into prison!",
+      "juz": 19,
+      "page": 368,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2962,
+      "numberInSurah": 30,
+      "text": "قَالَ أَوَلَوْ جِئْتُكَ بِشَىْءٍۢ مُّبِينٍۢ",
+      "translation": "Said he: “Even if I should bring about before thee something that clearly shows the truth?”",
+      "juz": 19,
+      "page": 368,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2963,
+      "numberInSurah": 31,
+      "text": "قَالَ فَأْتِ بِهِۦٓ إِن كُنتَ مِنَ ٱلصَّٰدِقِينَ",
+      "translation": "[Pharaoh] answered: “Produce it, then, if thou art a man of truth!”",
+      "juz": 19,
+      "page": 368,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2964,
+      "numberInSurah": 32,
+      "text": "فَأَلْقَىٰ عَصَاهُ فَإِذَا هِىَ ثُعْبَانٌۭ مُّبِينٌۭ",
+      "translation": "Thereupon [Moses] threw down his staff - and lo! it was a serpent, plainly visible;",
+      "juz": 19,
+      "page": 368,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2965,
+      "numberInSurah": 33,
+      "text": "وَنَزَعَ يَدَهُۥ فَإِذَا هِىَ بَيْضَآءُ لِلنَّٰظِرِينَ",
+      "translation": "and he drew forth his hand - and lo! it appeared [shining] white to the beholders.",
+      "juz": 19,
+      "page": 368,
+      "ruku": 317,
+      "sajda": false
+    },
+    {
+      "number": 2966,
+      "numberInSurah": 34,
+      "text": "قَالَ لِلْمَلَإِ حَوْلَهُۥٓ إِنَّ هَٰذَا لَسَٰحِرٌ عَلِيمٌۭ",
+      "translation": "Said [pharaoh] unto the great ones around him: “Verily, this is indeed a sorcerer of great knowledge",
+      "juz": 19,
+      "page": 368,
+      "ruku": 318,
+      "sajda": false
+    },
+    {
+      "number": 2967,
+      "numberInSurah": 35,
+      "text": "يُرِيدُ أَن يُخْرِجَكُم مِّنْ أَرْضِكُم بِسِحْرِهِۦ فَمَاذَا تَأْمُرُونَ",
+      "translation": "who wants to drive you out of your land by his sorcery. What, then, do you advise?”",
+      "juz": 19,
+      "page": 368,
+      "ruku": 318,
+      "sajda": false
+    },
+    {
+      "number": 2968,
+      "numberInSurah": 36,
+      "text": "قَالُوٓا۟ أَرْجِهْ وَأَخَاهُ وَٱبْعَثْ فِى ٱلْمَدَآئِنِ حَٰشِرِينَ",
+      "translation": "They answered: “Let him and his brother wait a while, and send unto all cities heralds",
+      "juz": 19,
+      "page": 368,
+      "ruku": 318,
+      "sajda": false
+    },
+    {
+      "number": 2969,
+      "numberInSurah": 37,
+      "text": "يَأْتُوكَ بِكُلِّ سَحَّارٍ عَلِيمٍۢ",
+      "translation": "who shall assemble before thee all sorcerers of great knowl­edge”",
+      "juz": 19,
+      "page": 368,
+      "ruku": 318,
+      "sajda": false
+    },
+    {
+      "number": 2970,
+      "numberInSurah": 38,
+      "text": "فَجُمِعَ ٱلسَّحَرَةُ لِمِيقَٰتِ يَوْمٍۢ مَّعْلُومٍۢ",
+      "translation": "And so the sorcerers were assembled at a set time on a certain day,",
+      "juz": 19,
+      "page": 368,
+      "ruku": 318,
+      "sajda": false
+    },
+    {
+      "number": 2971,
+      "numberInSurah": 39,
+      "text": "وَقِيلَ لِلنَّاسِ هَلْ أَنتُم مُّجْتَمِعُونَ",
+      "translation": "and the people were asked: Are you all present,",
+      "juz": 19,
+      "page": 368,
+      "ruku": 318,
+      "sajda": false
+    },
+    {
+      "number": 2972,
+      "numberInSurah": 40,
+      "text": "لَعَلَّنَا نَتَّبِعُ ٱلسَّحَرَةَ إِن كَانُوا۟ هُمُ ٱلْغَٰلِبِينَ",
+      "translation": "so that we might follow [in the footsteps of] the sorcerers if it is they who prevail?”",
+      "juz": 19,
+      "page": 369,
+      "ruku": 318,
+      "sajda": false
+    },
+    {
+      "number": 2973,
+      "numberInSurah": 41,
+      "text": "فَلَمَّا جَآءَ ٱلسَّحَرَةُ قَالُوا۟ لِفِرْعَوْنَ أَئِنَّ لَنَا لَأَجْرًا إِن كُنَّا نَحْنُ ٱلْغَٰلِبِينَ",
+      "translation": "Now when the sorcerers came, they said unto Pharaoh: “Verily, we ought to have a great reward if it is we who prevail.",
+      "juz": 19,
+      "page": 369,
+      "ruku": 318,
+      "sajda": false
+    },
+    {
+      "number": 2974,
+      "numberInSurah": 42,
+      "text": "قَالَ نَعَمْ وَإِنَّكُمْ إِذًۭا لَّمِنَ ٱلْمُقَرَّبِينَ",
+      "translation": "Answered he: “Yea - and, verily, in that case you shall be among those who are near unto me.",
+      "juz": 19,
+      "page": 369,
+      "ruku": 318,
+      "sajda": false
+    },
+    {
+      "number": 2975,
+      "numberInSurah": 43,
+      "text": "قَالَ لَهُم مُّوسَىٰٓ أَلْقُوا۟ مَآ أَنتُم مُّلْقُونَ",
+      "translation": "[And] Moses said unto them: “Throw whatever you are going to throw!”",
+      "juz": 19,
+      "page": 369,
+      "ruku": 318,
+      "sajda": false
+    },
+    {
+      "number": 2976,
+      "numberInSurah": 44,
+      "text": "فَأَلْقَوْا۟ حِبَالَهُمْ وَعِصِيَّهُمْ وَقَالُوا۟ بِعِزَّةِ فِرْعَوْنَ إِنَّا لَنَحْنُ ٱلْغَٰلِبُونَ",
+      "translation": "Thereupon they threw their [magic ropes and their staffs, and said: “By Pharaoh’s might, behold, it is we indeed who have prevailed!”",
+      "juz": 19,
+      "page": 369,
+      "ruku": 318,
+      "sajda": false
+    },
+    {
+      "number": 2977,
+      "numberInSurah": 45,
+      "text": "فَأَلْقَىٰ مُوسَىٰ عَصَاهُ فَإِذَا هِىَ تَلْقَفُ مَا يَأْفِكُونَ",
+      "translation": "[But] then Moses threw his staff - and lo! it swallowed up all their deceptions.",
+      "juz": 19,
+      "page": 369,
+      "ruku": 318,
+      "sajda": false
+    },
+    {
+      "number": 2978,
+      "numberInSurah": 46,
+      "text": "فَأُلْقِىَ ٱلسَّحَرَةُ سَٰجِدِينَ",
+      "translation": "And down fell the sorcerers, prostrating them­selves in adoration,",
+      "juz": 19,
+      "page": 369,
+      "ruku": 318,
+      "sajda": false
+    },
+    {
+      "number": 2979,
+      "numberInSurah": 47,
+      "text": "قَالُوٓا۟ ءَامَنَّا بِرَبِّ ٱلْعَٰلَمِينَ",
+      "translation": "[and] exclaimed: “We have come to believe in the Sustainer of all the worlds,",
+      "juz": 19,
+      "page": 369,
+      "ruku": 318,
+      "sajda": false
+    },
+    {
+      "number": 2980,
+      "numberInSurah": 48,
+      "text": "رَبِّ مُوسَىٰ وَهَٰرُونَ",
+      "translation": "the Sustainer of Moses and Aaron!”",
+      "juz": 19,
+      "page": 369,
+      "ruku": 318,
+      "sajda": false
+    },
+    {
+      "number": 2981,
+      "numberInSurah": 49,
+      "text": "قَالَ ءَامَنتُمْ لَهُۥ قَبْلَ أَنْ ءَاذَنَ لَكُمْ ۖ إِنَّهُۥ لَكَبِيرُكُمُ ٱلَّذِى عَلَّمَكُمُ ٱلسِّحْرَ فَلَسَوْفَ تَعْلَمُونَ ۚ لَأُقَطِّعَنَّ أَيْدِيَكُمْ وَأَرْجُلَكُم مِّنْ خِلَٰفٍۢ وَلَأُصَلِّبَنَّكُمْ أَجْمَعِينَ",
+      "translation": "Said [Pharaoh]: “Have you come to believe in him ere I have given you permission? Verily, he must be your master who has taught you magic! But in time you shall come to know [my revenge]: most certainly shall I cut off your hands and your feet in great numbers, because of [your] perverseness, and shall most certainly crucify you in great numbers, all together!”",
+      "juz": 19,
+      "page": 369,
+      "ruku": 318,
+      "sajda": false
+    },
+    {
+      "number": 2982,
+      "numberInSurah": 50,
+      "text": "قَالُوا۟ لَا ضَيْرَ ۖ إِنَّآ إِلَىٰ رَبِّنَا مُنقَلِبُونَ",
+      "translation": "They answered: “No harm [canst thou do to us]: verily, unto our Sustainer do we turn!",
+      "juz": 19,
+      "page": 369,
+      "ruku": 318,
+      "sajda": false
+    },
+    {
+      "number": 2983,
+      "numberInSurah": 51,
+      "text": "إِنَّا نَطْمَعُ أَن يَغْفِرَ لَنَا رَبُّنَا خَطَٰيَٰنَآ أَن كُنَّآ أَوَّلَ ٱلْمُؤْمِنِينَ",
+      "translation": "Behold, we [but] ardently desire that our Sustainer forgive us our faults in return for our having been foremost among the believers!”",
+      "juz": 19,
+      "page": 369,
+      "ruku": 318,
+      "sajda": false
+    },
+    {
+      "number": 2984,
+      "numberInSurah": 52,
+      "text": "۞ وَأَوْحَيْنَآ إِلَىٰ مُوسَىٰٓ أَنْ أَسْرِ بِعِبَادِىٓ إِنَّكُم مُّتَّبَعُونَ",
+      "translation": "AND [there came a time when] We inspired Moses thus: “Go forth with My servants by night: for, behold, you will he pursued!”",
+      "juz": 19,
+      "page": 369,
+      "ruku": 318,
+      "sajda": false
+    },
+    {
+      "number": 2985,
+      "numberInSurah": 53,
+      "text": "فَأَرْسَلَ فِرْعَوْنُ فِى ٱلْمَدَآئِنِ حَٰشِرِينَ",
+      "translation": "And Pharaoh sent heralds unto all cities,",
+      "juz": 19,
+      "page": 369,
+      "ruku": 319,
+      "sajda": false
+    },
+    {
+      "number": 2986,
+      "numberInSurah": 54,
+      "text": "إِنَّ هَٰٓؤُلَآءِ لَشِرْذِمَةٌۭ قَلِيلُونَ",
+      "translation": "[bidding them to call out his troops and to proclaim:] “Behold, these [children of Israel] are but a contemptible band;",
+      "juz": 19,
+      "page": 369,
+      "ruku": 319,
+      "sajda": false
+    },
+    {
+      "number": 2987,
+      "numberInSurah": 55,
+      "text": "وَإِنَّهُمْ لَنَا لَغَآئِظُونَ",
+      "translation": "but they are indeed filled with hatred of us",
+      "juz": 19,
+      "page": 369,
+      "ruku": 319,
+      "sajda": false
+    },
+    {
+      "number": 2988,
+      "numberInSurah": 56,
+      "text": "وَإِنَّا لَجَمِيعٌ حَٰذِرُونَ",
+      "translation": "seeing that we are, verily, a nation united, fully prepared against danger –",
+      "juz": 19,
+      "page": 369,
+      "ruku": 319,
+      "sajda": false
+    },
+    {
+      "number": 2989,
+      "numberInSurah": 57,
+      "text": "فَأَخْرَجْنَٰهُم مِّن جَنَّٰتٍۢ وَعُيُونٍۢ",
+      "translation": "and so we have [rightly] driven them out of [their] gardens and springs,",
+      "juz": 19,
+      "page": 369,
+      "ruku": 319,
+      "sajda": false
+    },
+    {
+      "number": 2990,
+      "numberInSurah": 58,
+      "text": "وَكُنُوزٍۢ وَمَقَامٍۢ كَرِيمٍۢ",
+      "translation": "and [deprived them of their erstwhile] station of honour!”",
+      "juz": 19,
+      "page": 369,
+      "ruku": 319,
+      "sajda": false
+    },
+    {
+      "number": 2991,
+      "numberInSurah": 59,
+      "text": "كَذَٰلِكَ وَأَوْرَثْنَٰهَا بَنِىٓ إِسْرَٰٓءِيلَ",
+      "translation": "Thus it was: but [in the course of time] We were to bestow all these [things] as a heritage on the children of Israel.",
+      "juz": 19,
+      "page": 369,
+      "ruku": 319,
+      "sajda": false
+    },
+    {
+      "number": 2992,
+      "numberInSurah": 60,
+      "text": "فَأَتْبَعُوهُم مُّشْرِقِينَ",
+      "translation": "And so [the Egyptians] caught up with them at sunrise;",
+      "juz": 19,
+      "page": 369,
+      "ruku": 319,
+      "sajda": false
+    },
+    {
+      "number": 2993,
+      "numberInSurah": 61,
+      "text": "فَلَمَّا تَرَٰٓءَا ٱلْجَمْعَانِ قَالَ أَصْحَٰبُ مُوسَىٰٓ إِنَّا لَمُدْرَكُونَ",
+      "translation": "and as soon as the two hosts came in sight of one another, the followers of Moses exclaimed: “Behold, we shall certainly be overtaken [and defeated]!”",
+      "juz": 19,
+      "page": 370,
+      "ruku": 319,
+      "sajda": false
+    },
+    {
+      "number": 2994,
+      "numberInSurah": 62,
+      "text": "قَالَ كَلَّآ ۖ إِنَّ مَعِىَ رَبِّى سَيَهْدِينِ",
+      "translation": "He replied: Nay indeed! My Sustainer is with me, [and] He will guide me!”",
+      "juz": 19,
+      "page": 370,
+      "ruku": 319,
+      "sajda": false
+    },
+    {
+      "number": 2995,
+      "numberInSurah": 63,
+      "text": "فَأَوْحَيْنَآ إِلَىٰ مُوسَىٰٓ أَنِ ٱضْرِب بِّعَصَاكَ ٱلْبَحْرَ ۖ فَٱنفَلَقَ فَكَانَ كُلُّ فِرْقٍۢ كَٱلطَّوْدِ ٱلْعَظِيمِ",
+      "translation": "Thereupon We inspired Moses thus: Strike the sea with thy staff!”- whereupon it parted, and each part appeared like a mountain vast.",
+      "juz": 19,
+      "page": 370,
+      "ruku": 319,
+      "sajda": false
+    },
+    {
+      "number": 2996,
+      "numberInSurah": 64,
+      "text": "وَأَزْلَفْنَا ثَمَّ ٱلْءَاخَرِينَ",
+      "translation": "And We caused the pursuers to draw near unto that place:",
+      "juz": 19,
+      "page": 370,
+      "ruku": 319,
+      "sajda": false
+    },
+    {
+      "number": 2997,
+      "numberInSurah": 65,
+      "text": "وَأَنجَيْنَا مُوسَىٰ وَمَن مَّعَهُۥٓ أَجْمَعِينَ",
+      "translation": "and We saved Moses and all who were with him,",
+      "juz": 19,
+      "page": 370,
+      "ruku": 319,
+      "sajda": false
+    },
+    {
+      "number": 2998,
+      "numberInSurah": 66,
+      "text": "ثُمَّ أَغْرَقْنَا ٱلْءَاخَرِينَ",
+      "translation": "and then We caused the others to drown.",
+      "juz": 19,
+      "page": 370,
+      "ruku": 319,
+      "sajda": false
+    },
+    {
+      "number": 2999,
+      "numberInSurah": 67,
+      "text": "إِنَّ فِى ذَٰلِكَ لَءَايَةًۭ ۖ وَمَا كَانَ أَكْثَرُهُم مُّؤْمِنِينَ",
+      "translation": "In this [story] behold, there is a message [unto all men], even though most of them will not believe [in it].",
+      "juz": 19,
+      "page": 370,
+      "ruku": 319,
+      "sajda": false
+    },
+    {
+      "number": 3000,
+      "numberInSurah": 68,
+      "text": "وَإِنَّ رَبَّكَ لَهُوَ ٱلْعَزِيزُ ٱلرَّحِيمُ",
+      "translation": "And yet, verily, thy Sustainer - He alone - is almighty, a dispenser of grace!",
+      "juz": 19,
+      "page": 370,
+      "ruku": 319,
+      "sajda": false
+    },
+    {
+      "number": 3001,
+      "numberInSurah": 69,
+      "text": "وَٱتْلُ عَلَيْهِمْ نَبَأَ إِبْرَٰهِيمَ",
+      "translation": "And convey unto them the story of Abraham –",
+      "juz": 19,
+      "page": 370,
+      "ruku": 319,
+      "sajda": false
+    },
+    {
+      "number": 3002,
+      "numberInSurah": 70,
+      "text": "إِذْ قَالَ لِأَبِيهِ وَقَوْمِهِۦ مَا تَعْبُدُونَ",
+      "translation": "[how it was] when he asked his father and his people, “What is it that you worship?”",
+      "juz": 19,
+      "page": 370,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3003,
+      "numberInSurah": 71,
+      "text": "قَالُوا۟ نَعْبُدُ أَصْنَامًۭا فَنَظَلُّ لَهَا عَٰكِفِينَ",
+      "translation": "They answered: We worship idols, and we remain ever devoted to them.”",
+      "juz": 19,
+      "page": 370,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3004,
+      "numberInSurah": 72,
+      "text": "قَالَ هَلْ يَسْمَعُونَكُمْ إِذْ تَدْعُونَ",
+      "translation": "Said he: “Do [you really think that] they hear you when you invoke them,",
+      "juz": 19,
+      "page": 370,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3005,
+      "numberInSurah": 73,
+      "text": "أَوْ يَنفَعُونَكُمْ أَوْ يَضُرُّونَ",
+      "translation": "or benefit you or do you harm?”",
+      "juz": 19,
+      "page": 370,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3006,
+      "numberInSurah": 74,
+      "text": "قَالُوا۟ بَلْ وَجَدْنَآ ءَابَآءَنَا كَذَٰلِكَ يَفْعَلُونَ",
+      "translation": "They exclaimed: But we found our fore­fathers doing the same!”",
+      "juz": 19,
+      "page": 370,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3007,
+      "numberInSurah": 75,
+      "text": "قَالَ أَفَرَءَيْتُم مَّا كُنتُمْ تَعْبُدُونَ",
+      "translation": "Said [Abraham]: “Have you, then, ever con­sidered what it is that you have been worshipping",
+      "juz": 19,
+      "page": 370,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3008,
+      "numberInSurah": 76,
+      "text": "أَنتُمْ وَءَابَآؤُكُمُ ٱلْأَقْدَمُونَ",
+      "translation": "you and those ancient forebears of yours?",
+      "juz": 19,
+      "page": 370,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3009,
+      "numberInSurah": 77,
+      "text": "فَإِنَّهُمْ عَدُوٌّۭ لِّىٓ إِلَّا رَبَّ ٱلْعَٰلَمِينَ",
+      "translation": "“Now [as for me, I know that,] verily, these [false deities] are my enemies, [and that none is my helper] save the Sustainer of all the worlds,",
+      "juz": 19,
+      "page": 370,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3010,
+      "numberInSurah": 78,
+      "text": "ٱلَّذِى خَلَقَنِى فَهُوَ يَهْدِينِ",
+      "translation": "who has created me and is the One who guides me,",
+      "juz": 19,
+      "page": 370,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3011,
+      "numberInSurah": 79,
+      "text": "وَٱلَّذِى هُوَ يُطْعِمُنِى وَيَسْقِينِ",
+      "translation": "and is the One who gives me to eat and to drink,",
+      "juz": 19,
+      "page": 370,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3012,
+      "numberInSurah": 80,
+      "text": "وَإِذَا مَرِضْتُ فَهُوَ يَشْفِينِ",
+      "translation": "and when I fall ill, is the One who restores me to health,",
+      "juz": 19,
+      "page": 370,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3013,
+      "numberInSurah": 81,
+      "text": "وَٱلَّذِى يُمِيتُنِى ثُمَّ يُحْيِينِ",
+      "translation": "and who will cause me to die and then will bring me back to life –",
+      "juz": 19,
+      "page": 370,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3014,
+      "numberInSurah": 82,
+      "text": "وَٱلَّذِىٓ أَطْمَعُ أَن يَغْفِرَ لِى خَطِيٓـَٔتِى يَوْمَ ٱلدِّينِ",
+      "translation": "and who, [hope, will forgive me my faults on Judgment Day!",
+      "juz": 19,
+      "page": 370,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3015,
+      "numberInSurah": 83,
+      "text": "رَبِّ هَبْ لِى حُكْمًۭا وَأَلْحِقْنِى بِٱلصَّٰلِحِينَ",
+      "translation": "“O my Sustainer! Endow me with the ability to judge [between right and wrong], and make me one with the righteous,",
+      "juz": 19,
+      "page": 370,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3016,
+      "numberInSurah": 84,
+      "text": "وَٱجْعَل لِّى لِسَانَ صِدْقٍۢ فِى ٱلْءَاخِرِينَ",
+      "translation": "and grant me the power to convey the truth unto those who will come after me,",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3017,
+      "numberInSurah": 85,
+      "text": "وَٱجْعَلْنِى مِن وَرَثَةِ جَنَّةِ ٱلنَّعِيمِ",
+      "translation": "and place me among those who shall inherit the garden of bliss!",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3018,
+      "numberInSurah": 86,
+      "text": "وَٱغْفِرْ لِأَبِىٓ إِنَّهُۥ كَانَ مِنَ ٱلضَّآلِّينَ",
+      "translation": "“And forgive my father - for, verily, he is among those who have gone astray –",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3019,
+      "numberInSurah": 87,
+      "text": "وَلَا تُخْزِنِى يَوْمَ يُبْعَثُونَ",
+      "translation": "and do not put me to shame on the Day when all shall be raised from the dead:",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3020,
+      "numberInSurah": 88,
+      "text": "يَوْمَ لَا يَنفَعُ مَالٌۭ وَلَا بَنُونَ",
+      "translation": "the Day on which neither wealth will be of any use, nor children,",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3021,
+      "numberInSurah": 89,
+      "text": "إِلَّا مَنْ أَتَى ٱللَّهَ بِقَلْبٍۢ سَلِيمٍۢ",
+      "translation": "[and when] only he [will be happy] who comes before God with a heart free of evil!”",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3022,
+      "numberInSurah": 90,
+      "text": "وَأُزْلِفَتِ ٱلْجَنَّةُ لِلْمُتَّقِينَ",
+      "translation": "For, [on that Day,] paradise will be brought within sight of the God-conscious,",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3023,
+      "numberInSurah": 91,
+      "text": "وَبُرِّزَتِ ٱلْجَحِيمُ لِلْغَاوِينَ",
+      "translation": "whereas the blazing fire will be laid open before those who had been lost in grievous error;",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3024,
+      "numberInSurah": 92,
+      "text": "وَقِيلَ لَهُمْ أَيْنَ مَا كُنتُمْ تَعْبُدُونَ",
+      "translation": "and they will be asked: “Where now is all that you were wont to worship",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3025,
+      "numberInSurah": 93,
+      "text": "مِن دُونِ ٱللَّهِ هَلْ يَنصُرُونَكُمْ أَوْ يَنتَصِرُونَ",
+      "translation": "instead of God? Can these [things and beings] be of any help to you or to themselves?”",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3026,
+      "numberInSurah": 94,
+      "text": "فَكُبْكِبُوا۟ فِيهَا هُمْ وَٱلْغَاوُۥنَ",
+      "translation": "Thereupon they will be hurled into hell – they, as well as all [others] who had been lost in grievous error,",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3027,
+      "numberInSurah": 95,
+      "text": "وَجُنُودُ إِبْلِيسَ أَجْمَعُونَ",
+      "translation": "and the hosts of Iblis - all together.",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3028,
+      "numberInSurah": 96,
+      "text": "قَالُوا۟ وَهُمْ فِيهَا يَخْتَصِمُونَ",
+      "translation": "And there and then, blaming one another, they [who had grievously sinned in life] will exclaim:",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3029,
+      "numberInSurah": 97,
+      "text": "تَٱللَّهِ إِن كُنَّا لَفِى ضَلَٰلٍۢ مُّبِينٍ",
+      "translation": "“By God, we were most obviously astray",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3030,
+      "numberInSurah": 98,
+      "text": "إِذْ نُسَوِّيكُم بِرَبِّ ٱلْعَٰلَمِينَ",
+      "translation": "when we deemed you [false deities] equal to the Sustainer of all the worlds –",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3031,
+      "numberInSurah": 99,
+      "text": "وَمَآ أَضَلَّنَآ إِلَّا ٱلْمُجْرِمُونَ",
+      "translation": "yet they who have seduced us [into believing in you] are the truly guilty ones!",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3032,
+      "numberInSurah": 100,
+      "text": "فَمَا لَنَا مِن شَٰفِعِينَ",
+      "translation": "And now we have none to intercede for us,",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3033,
+      "numberInSurah": 101,
+      "text": "وَلَا صَدِيقٍ حَمِيمٍۢ",
+      "translation": "nor any loving friend.",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3034,
+      "numberInSurah": 102,
+      "text": "فَلَوْ أَنَّ لَنَا كَرَّةًۭ فَنَكُونَ مِنَ ٱلْمُؤْمِنِينَ",
+      "translation": "Would that we had a second chance [in life], so that we could be among the believers!”",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3035,
+      "numberInSurah": 103,
+      "text": "إِنَّ فِى ذَٰلِكَ لَءَايَةًۭ ۖ وَمَا كَانَ أَكْثَرُهُم مُّؤْمِنِينَ",
+      "translation": "In all this, behold, there is a message [unto men], even though most of them will not believe [in it].",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3036,
+      "numberInSurah": 104,
+      "text": "وَإِنَّ رَبَّكَ لَهُوَ ٱلْعَزِيزُ ٱلرَّحِيمُ",
+      "translation": "But, verily, thy Sustainer - He alone - is almighty, a dispenser of grace!",
+      "juz": 19,
+      "page": 371,
+      "ruku": 320,
+      "sajda": false
+    },
+    {
+      "number": 3037,
+      "numberInSurah": 105,
+      "text": "كَذَّبَتْ قَوْمُ نُوحٍ ٱلْمُرْسَلِينَ",
+      "translation": "The people of Noah [too] gave the lie to [one of God’s] message-bearers",
+      "juz": 19,
+      "page": 371,
+      "ruku": 321,
+      "sajda": false
+    },
+    {
+      "number": 3038,
+      "numberInSurah": 106,
+      "text": "إِذْ قَالَ لَهُمْ أَخُوهُمْ نُوحٌ أَلَا تَتَّقُونَ",
+      "translation": "when their brother Noah said unto them: “Will you not be conscious of God?",
+      "juz": 19,
+      "page": 371,
+      "ruku": 321,
+      "sajda": false
+    },
+    {
+      "number": 3039,
+      "numberInSurah": 107,
+      "text": "إِنِّى لَكُمْ رَسُولٌ أَمِينٌۭ",
+      "translation": "Behold, I am an apostle [sent by Him] to you, [and therefore] worthy of your trust:",
+      "juz": 19,
+      "page": 371,
+      "ruku": 321,
+      "sajda": false
+    },
+    {
+      "number": 3040,
+      "numberInSurah": 108,
+      "text": "فَٱتَّقُوا۟ ٱللَّهَ وَأَطِيعُونِ",
+      "translation": "be, then, conscious of God, and pay heed unto me!",
+      "juz": 19,
+      "page": 371,
+      "ruku": 321,
+      "sajda": false
+    },
+    {
+      "number": 3041,
+      "numberInSurah": 109,
+      "text": "وَمَآ أَسْـَٔلُكُمْ عَلَيْهِ مِنْ أَجْرٍ ۖ إِنْ أَجْرِىَ إِلَّا عَلَىٰ رَبِّ ٱلْعَٰلَمِينَ",
+      "translation": "“And no reward whatever do I ask of you for it: my reward rests with none but the Sustainer of all the worlds.",
+      "juz": 19,
+      "page": 371,
+      "ruku": 321,
+      "sajda": false
+    },
+    {
+      "number": 3042,
+      "numberInSurah": 110,
+      "text": "فَٱتَّقُوا۟ ٱللَّهَ وَأَطِيعُونِ",
+      "translation": "Hence, remain conscious of God, and pay heed unto me!”",
+      "juz": 19,
+      "page": 371,
+      "ruku": 321,
+      "sajda": false
+    },
+    {
+      "number": 3043,
+      "numberInSurah": 111,
+      "text": "۞ قَالُوٓا۟ أَنُؤْمِنُ لَكَ وَٱتَّبَعَكَ ٱلْأَرْذَلُونَ",
+      "translation": "They answered: “Shall we place our faith in thee, even though [only] the most abject [of people] follow thee?”",
+      "juz": 19,
+      "page": 371,
+      "ruku": 321,
+      "sajda": false
+    },
+    {
+      "number": 3044,
+      "numberInSurah": 112,
+      "text": "قَالَ وَمَا عِلْمِى بِمَا كَانُوا۟ يَعْمَلُونَ",
+      "translation": "Said he: “And what knowledge could I have as to what they were doing [before they came to me]?",
+      "juz": 19,
+      "page": 372,
+      "ruku": 321,
+      "sajda": false
+    },
+    {
+      "number": 3045,
+      "numberInSurah": 113,
+      "text": "إِنْ حِسَابُهُمْ إِلَّا عَلَىٰ رَبِّى ۖ لَوْ تَشْعُرُونَ",
+      "translation": "Their reckoning rests with none but my Sus­tainer: if you could but understand [this]!",
+      "juz": 19,
+      "page": 372,
+      "ruku": 321,
+      "sajda": false
+    },
+    {
+      "number": 3046,
+      "numberInSurah": 114,
+      "text": "وَمَآ أَنَا۠ بِطَارِدِ ٱلْمُؤْمِنِينَ",
+      "translation": "Hence, I shall not drive away [any of] those [who profess to be] believers;",
+      "juz": 19,
+      "page": 372,
+      "ruku": 321,
+      "sajda": false
+    },
+    {
+      "number": 3047,
+      "numberInSurah": 115,
+      "text": "إِنْ أَنَا۠ إِلَّا نَذِيرٌۭ مُّبِينٌۭ",
+      "translation": "I am nothing but a plain warner.”",
+      "juz": 19,
+      "page": 372,
+      "ruku": 321,
+      "sajda": false
+    },
+    {
+      "number": 3048,
+      "numberInSurah": 116,
+      "text": "قَالُوا۟ لَئِن لَّمْ تَنتَهِ يَٰنُوحُ لَتَكُونَنَّ مِنَ ٱلْمَرْجُومِينَ",
+      "translation": "Said they: “Indeed, if thou desist not, O Noah, thou wilt surely be stoned to death!”",
+      "juz": 19,
+      "page": 372,
+      "ruku": 321,
+      "sajda": false
+    },
+    {
+      "number": 3049,
+      "numberInSurah": 117,
+      "text": "قَالَ رَبِّ إِنَّ قَوْمِى كَذَّبُونِ",
+      "translation": "[Whereupon] he prayed: “O my Sustainer! Behold, my people have given me the lie:",
+      "juz": 19,
+      "page": 372,
+      "ruku": 321,
+      "sajda": false
+    },
+    {
+      "number": 3050,
+      "numberInSurah": 118,
+      "text": "فَٱفْتَحْ بَيْنِى وَبَيْنَهُمْ فَتْحًۭا وَنَجِّنِى وَمَن مَّعِىَ مِنَ ٱلْمُؤْمِنِينَ",
+      "translation": "hence, lay Thou wide open the truth between me and them, and save me and those of the believers who are with me!”",
+      "juz": 19,
+      "page": 372,
+      "ruku": 321,
+      "sajda": false
+    },
+    {
+      "number": 3051,
+      "numberInSurah": 119,
+      "text": "فَأَنجَيْنَٰهُ وَمَن مَّعَهُۥ فِى ٱلْفُلْكِ ٱلْمَشْحُونِ",
+      "translation": "And so We saved him and those [who were] with him in the fully-laden ark,",
+      "juz": 19,
+      "page": 372,
+      "ruku": 321,
+      "sajda": false
+    },
+    {
+      "number": 3052,
+      "numberInSurah": 120,
+      "text": "ثُمَّ أَغْرَقْنَا بَعْدُ ٱلْبَاقِينَ",
+      "translation": "and then We caused those who stayed behind to drown.",
+      "juz": 19,
+      "page": 372,
+      "ruku": 321,
+      "sajda": false
+    },
+    {
+      "number": 3053,
+      "numberInSurah": 121,
+      "text": "إِنَّ فِى ذَٰلِكَ لَءَايَةًۭ ۖ وَمَا كَانَ أَكْثَرُهُم مُّؤْمِنِينَ",
+      "translation": "In this [story], behold, there is a message [unto men], even though most of them will not believe [in it].",
+      "juz": 19,
+      "page": 372,
+      "ruku": 321,
+      "sajda": false
+    },
+    {
+      "number": 3054,
+      "numberInSurah": 122,
+      "text": "وَإِنَّ رَبَّكَ لَهُوَ ٱلْعَزِيزُ ٱلرَّحِيمُ",
+      "translation": "But, verily, thy Sustainer - He alone - is almighty, a dispenser of grace",
+      "juz": 19,
+      "page": 372,
+      "ruku": 321,
+      "sajda": false
+    },
+    {
+      "number": 3055,
+      "numberInSurah": 123,
+      "text": "كَذَّبَتْ عَادٌ ٱلْمُرْسَلِينَ",
+      "translation": "[AND the tribe of] Ad gave the lie to [one of God’s] message-bearers",
+      "juz": 19,
+      "page": 372,
+      "ruku": 322,
+      "sajda": false
+    },
+    {
+      "number": 3056,
+      "numberInSurah": 124,
+      "text": "إِذْ قَالَ لَهُمْ أَخُوهُمْ هُودٌ أَلَا تَتَّقُونَ",
+      "translation": "when their brother Hud said unto them: “Will you not be conscious of God?",
+      "juz": 19,
+      "page": 372,
+      "ruku": 322,
+      "sajda": false
+    },
+    {
+      "number": 3057,
+      "numberInSurah": 125,
+      "text": "إِنِّى لَكُمْ رَسُولٌ أَمِينٌۭ",
+      "translation": "Behold, I am an apostle [sent by Him] to you, [and therefore] worthy of your trust:",
+      "juz": 19,
+      "page": 372,
+      "ruku": 322,
+      "sajda": false
+    },
+    {
+      "number": 3058,
+      "numberInSurah": 126,
+      "text": "فَٱتَّقُوا۟ ٱللَّهَ وَأَطِيعُونِ",
+      "translation": "be, then, con­scious of God, and pay heed unto me!",
+      "juz": 19,
+      "page": 372,
+      "ruku": 322,
+      "sajda": false
+    },
+    {
+      "number": 3059,
+      "numberInSurah": 127,
+      "text": "وَمَآ أَسْـَٔلُكُمْ عَلَيْهِ مِنْ أَجْرٍ ۖ إِنْ أَجْرِىَ إِلَّا عَلَىٰ رَبِّ ٱلْعَٰلَمِينَ",
+      "translation": "“And no reward whatever do I ask of you for it: my reward rests with none but the Sustainer of all the worlds.",
+      "juz": 19,
+      "page": 372,
+      "ruku": 322,
+      "sajda": false
+    },
+    {
+      "number": 3060,
+      "numberInSurah": 128,
+      "text": "أَتَبْنُونَ بِكُلِّ رِيعٍ ءَايَةًۭ تَعْبَثُونَ",
+      "translation": "“Will you, in your wanton folly, build [idola­trous] altars on every height,",
+      "juz": 19,
+      "page": 372,
+      "ruku": 322,
+      "sajda": false
+    },
+    {
+      "number": 3061,
+      "numberInSurah": 129,
+      "text": "وَتَتَّخِذُونَ مَصَانِعَ لَعَلَّكُمْ تَخْلُدُونَ",
+      "translation": "and make for yourselves mighty castles, [hoping] that you might become immortal?",
+      "juz": 19,
+      "page": 372,
+      "ruku": 322,
+      "sajda": false
+    },
+    {
+      "number": 3062,
+      "numberInSurah": 130,
+      "text": "وَإِذَا بَطَشْتُم بَطَشْتُمْ جَبَّارِينَ",
+      "translation": "And will you [always], whenever you lay hand [on others], lay hand [on them] cruelly, without any restraint?",
+      "juz": 19,
+      "page": 372,
+      "ruku": 322,
+      "sajda": false
+    },
+    {
+      "number": 3063,
+      "numberInSurah": 131,
+      "text": "فَٱتَّقُوا۟ ٱللَّهَ وَأَطِيعُونِ",
+      "translation": "“Be, then, conscious of God and pay heed unto me:",
+      "juz": 19,
+      "page": 372,
+      "ruku": 322,
+      "sajda": false
+    },
+    {
+      "number": 3064,
+      "numberInSurah": 132,
+      "text": "وَٱتَّقُوا۟ ٱلَّذِىٓ أَمَدَّكُم بِمَا تَعْلَمُونَ",
+      "translation": "and [thus] be conscious of Him who has [so] amply provided you with all [the good] that you might think of",
+      "juz": 19,
+      "page": 372,
+      "ruku": 322,
+      "sajda": false
+    },
+    {
+      "number": 3065,
+      "numberInSurah": 133,
+      "text": "أَمَدَّكُم بِأَنْعَٰمٍۢ وَبَنِينَ",
+      "translation": "amply provided you with flocks, and children,",
+      "juz": 19,
+      "page": 372,
+      "ruku": 322,
+      "sajda": false
+    },
+    {
+      "number": 3066,
+      "numberInSurah": 134,
+      "text": "وَجَنَّٰتٍۢ وَعُيُونٍ",
+      "translation": "and gardens, and springs -:",
+      "juz": 19,
+      "page": 372,
+      "ruku": 322,
+      "sajda": false
+    },
+    {
+      "number": 3067,
+      "numberInSurah": 135,
+      "text": "إِنِّىٓ أَخَافُ عَلَيْكُمْ عَذَابَ يَوْمٍ عَظِيمٍۢ",
+      "translation": "for, verily, I fear lest suffering befall you on an awesome day!”",
+      "juz": 19,
+      "page": 372,
+      "ruku": 322,
+      "sajda": false
+    },
+    {
+      "number": 3068,
+      "numberInSurah": 136,
+      "text": "قَالُوا۟ سَوَآءٌ عَلَيْنَآ أَوَعَظْتَ أَمْ لَمْ تَكُن مِّنَ ٱلْوَٰعِظِينَ",
+      "translation": "[But] they answered. “It is all one to us whether thou preachest [something new] or art not of those who [like to] preach.",
+      "juz": 19,
+      "page": 372,
+      "ruku": 322,
+      "sajda": false
+    },
+    {
+      "number": 3069,
+      "numberInSurah": 137,
+      "text": "إِنْ هَٰذَآ إِلَّا خُلُقُ ٱلْأَوَّلِينَ",
+      "translation": "This [religion of ours] is none other than that to which our forebears clung,",
+      "juz": 19,
+      "page": 373,
+      "ruku": 322,
+      "sajda": false
+    },
+    {
+      "number": 3070,
+      "numberInSurah": 138,
+      "text": "وَمَا نَحْنُ بِمُعَذَّبِينَ",
+      "translation": "and we are not going to be chastised [for adhering to it]!”",
+      "juz": 19,
+      "page": 373,
+      "ruku": 322,
+      "sajda": false
+    },
+    {
+      "number": 3071,
+      "numberInSurah": 139,
+      "text": "فَكَذَّبُوهُ فَأَهْلَكْنَٰهُمْ ۗ إِنَّ فِى ذَٰلِكَ لَءَايَةًۭ ۖ وَمَا كَانَ أَكْثَرُهُم مُّؤْمِنِينَ",
+      "translation": "And so they gave him the lie: and thereupon We destroyed them. In this [story], behold, there is a message [unto men], even though most of them will not believe [in it].",
+      "juz": 19,
+      "page": 373,
+      "ruku": 322,
+      "sajda": false
+    },
+    {
+      "number": 3072,
+      "numberInSurah": 140,
+      "text": "وَإِنَّ رَبَّكَ لَهُوَ ٱلْعَزِيزُ ٱلرَّحِيمُ",
+      "translation": "But, verily, thy Sustainer - He alone - is almighty, a dispenser of grace!",
+      "juz": 19,
+      "page": 373,
+      "ruku": 322,
+      "sajda": false
+    },
+    {
+      "number": 3073,
+      "numberInSurah": 141,
+      "text": "كَذَّبَتْ ثَمُودُ ٱلْمُرْسَلِينَ",
+      "translation": "[AND the tribe of] Thamud gave the lie to [one of God’s] message-hearers",
+      "juz": 19,
+      "page": 373,
+      "ruku": 323,
+      "sajda": false
+    },
+    {
+      "number": 3074,
+      "numberInSurah": 142,
+      "text": "إِذْ قَالَ لَهُمْ أَخُوهُمْ صَٰلِحٌ أَلَا تَتَّقُونَ",
+      "translation": "when their brother Salih said unto them: “Will you not be conscious of God?",
+      "juz": 19,
+      "page": 373,
+      "ruku": 323,
+      "sajda": false
+    },
+    {
+      "number": 3075,
+      "numberInSurah": 143,
+      "text": "إِنِّى لَكُمْ رَسُولٌ أَمِينٌۭ",
+      "translation": "Behold, I am an apostle [sent by Him] to you, [and therefore] worthy of your trust:",
+      "juz": 19,
+      "page": 373,
+      "ruku": 323,
+      "sajda": false
+    },
+    {
+      "number": 3076,
+      "numberInSurah": 144,
+      "text": "فَٱتَّقُوا۟ ٱللَّهَ وَأَطِيعُونِ",
+      "translation": "be, then, conscious of God, and pay heed unto me!",
+      "juz": 19,
+      "page": 373,
+      "ruku": 323,
+      "sajda": false
+    },
+    {
+      "number": 3077,
+      "numberInSurah": 145,
+      "text": "وَمَآ أَسْـَٔلُكُمْ عَلَيْهِ مِنْ أَجْرٍ ۖ إِنْ أَجْرِىَ إِلَّا عَلَىٰ رَبِّ ٱلْعَٰلَمِينَ",
+      "translation": "“And no reward whatever do I ask of you for it: my reward rests with none but the Sustainer of all the worlds.",
+      "juz": 19,
+      "page": 373,
+      "ruku": 323,
+      "sajda": false
+    },
+    {
+      "number": 3078,
+      "numberInSurah": 146,
+      "text": "أَتُتْرَكُونَ فِى مَا هَٰهُنَآ ءَامِنِينَ",
+      "translation": "“Do you think that you will be left secure [forever] in the midst of what you have here and now?",
+      "juz": 19,
+      "page": 373,
+      "ruku": 323,
+      "sajda": false
+    },
+    {
+      "number": 3079,
+      "numberInSurah": 147,
+      "text": "فِى جَنَّٰتٍۢ وَعُيُونٍۢ",
+      "translation": "amidst [these] gardens and springs",
+      "juz": 19,
+      "page": 373,
+      "ruku": 323,
+      "sajda": false
+    },
+    {
+      "number": 3080,
+      "numberInSurah": 148,
+      "text": "وَزُرُوعٍۢ وَنَخْلٍۢ طَلْعُهَا هَضِيمٌۭ",
+      "translation": "and fields, and [these] palm-trees with slender spathes? –",
+      "juz": 19,
+      "page": 373,
+      "ruku": 323,
+      "sajda": false
+    },
+    {
+      "number": 3081,
+      "numberInSurah": 149,
+      "text": "وَتَنْحِتُونَ مِنَ ٱلْجِبَالِ بُيُوتًۭا فَٰرِهِينَ",
+      "translation": "and that you will [always be able to] hew dwellings out of the mountains with [the same] great skill?”",
+      "juz": 19,
+      "page": 373,
+      "ruku": 323,
+      "sajda": false
+    },
+    {
+      "number": 3082,
+      "numberInSurah": 150,
+      "text": "فَٱتَّقُوا۟ ٱللَّهَ وَأَطِيعُونِ",
+      "translation": "“Be, then, conscious of God, and pay heed unto me,",
+      "juz": 19,
+      "page": 373,
+      "ruku": 323,
+      "sajda": false
+    },
+    {
+      "number": 3083,
+      "numberInSurah": 151,
+      "text": "وَلَا تُطِيعُوٓا۟ أَمْرَ ٱلْمُسْرِفِينَ",
+      "translation": "and pay no heed to the counsel of those who are given to excesses –",
+      "juz": 19,
+      "page": 373,
+      "ruku": 323,
+      "sajda": false
+    },
+    {
+      "number": 3084,
+      "numberInSurah": 152,
+      "text": "ٱلَّذِينَ يُفْسِدُونَ فِى ٱلْأَرْضِ وَلَا يُصْلِحُونَ",
+      "translation": "those who spread corruption on earth instead of setting things to rights!”",
+      "juz": 19,
+      "page": 373,
+      "ruku": 323,
+      "sajda": false
+    },
+    {
+      "number": 3085,
+      "numberInSurah": 153,
+      "text": "قَالُوٓا۟ إِنَّمَآ أَنتَ مِنَ ٱلْمُسَحَّرِينَ",
+      "translation": "Said they: “Thou art but one of the be­witched!",
+      "juz": 19,
+      "page": 373,
+      "ruku": 323,
+      "sajda": false
+    },
+    {
+      "number": 3086,
+      "numberInSurah": 154,
+      "text": "مَآ أَنتَ إِلَّا بَشَرٌۭ مِّثْلُنَا فَأْتِ بِـَٔايَةٍ إِن كُنتَ مِنَ ٱلصَّٰدِقِينَ",
+      "translation": "Thou art nothing but a mortal like our­selves! Come, then, forward with a token [of thy mission] if thou art a man of truth!”",
+      "juz": 19,
+      "page": 373,
+      "ruku": 323,
+      "sajda": false
+    },
+    {
+      "number": 3087,
+      "numberInSurah": 155,
+      "text": "قَالَ هَٰذِهِۦ نَاقَةٌۭ لَّهَا شِرْبٌۭ وَلَكُمْ شِرْبُ يَوْمٍۢ مَّعْلُومٍۢ",
+      "translation": "Replied he: “This she-camel shall have a share of water, and you shall have a share of water, on the days appointed [therefor];",
+      "juz": 19,
+      "page": 373,
+      "ruku": 323,
+      "sajda": false
+    },
+    {
+      "number": 3088,
+      "numberInSurah": 156,
+      "text": "وَلَا تَمَسُّوهَا بِسُوٓءٍۢ فَيَأْخُذَكُمْ عَذَابُ يَوْمٍ عَظِيمٍۢ",
+      "translation": "and do her no harm, lest suffering befall you on an awesome day!”",
+      "juz": 19,
+      "page": 373,
+      "ruku": 323,
+      "sajda": false
+    },
+    {
+      "number": 3089,
+      "numberInSurah": 157,
+      "text": "فَعَقَرُوهَا فَأَصْبَحُوا۟ نَٰدِمِينَ",
+      "translation": "But they cruelly slaughtered her - and then they had cause to regret it:",
+      "juz": 19,
+      "page": 373,
+      "ruku": 323,
+      "sajda": false
+    },
+    {
+      "number": 3090,
+      "numberInSurah": 158,
+      "text": "فَأَخَذَهُمُ ٱلْعَذَابُ ۗ إِنَّ فِى ذَٰلِكَ لَءَايَةًۭ ۖ وَمَا كَانَ أَكْثَرُهُم مُّؤْمِنِينَ",
+      "translation": "for the suffering [predicted by Salih,] befell them [then and there]. In this [story], behold, there is a message [unto men], even though most of them will not believe [in it].",
+      "juz": 19,
+      "page": 373,
+      "ruku": 323,
+      "sajda": false
+    },
+    {
+      "number": 3091,
+      "numberInSurah": 159,
+      "text": "وَإِنَّ رَبَّكَ لَهُوَ ٱلْعَزِيزُ ٱلرَّحِيمُ",
+      "translation": "But, verily, thy Sustainer - He alone – is almighty, a dispenser of grace!",
+      "juz": 19,
+      "page": 373,
+      "ruku": 323,
+      "sajda": false
+    },
+    {
+      "number": 3092,
+      "numberInSurah": 160,
+      "text": "كَذَّبَتْ قَوْمُ لُوطٍ ٱلْمُرْسَلِينَ",
+      "translation": "[AND] the people of Lot gave the lie to [one of God’s] message-bearers",
+      "juz": 19,
+      "page": 374,
+      "ruku": 324,
+      "sajda": false
+    },
+    {
+      "number": 3093,
+      "numberInSurah": 161,
+      "text": "إِذْ قَالَ لَهُمْ أَخُوهُمْ لُوطٌ أَلَا تَتَّقُونَ",
+      "translation": "when their brother Lot said unto them: “Will you not be conscious of God?",
+      "juz": 19,
+      "page": 374,
+      "ruku": 324,
+      "sajda": false
+    },
+    {
+      "number": 3094,
+      "numberInSurah": 162,
+      "text": "إِنِّى لَكُمْ رَسُولٌ أَمِينٌۭ",
+      "translation": "Behold, I am an apostle [sent by Him] to you, [and therefore] worthy of your trust:",
+      "juz": 19,
+      "page": 374,
+      "ruku": 324,
+      "sajda": false
+    },
+    {
+      "number": 3095,
+      "numberInSurah": 163,
+      "text": "فَٱتَّقُوا۟ ٱللَّهَ وَأَطِيعُونِ",
+      "translation": "be, then, conscious of God, and pay heed unto me!",
+      "juz": 19,
+      "page": 374,
+      "ruku": 324,
+      "sajda": false
+    },
+    {
+      "number": 3096,
+      "numberInSurah": 164,
+      "text": "وَمَآ أَسْـَٔلُكُمْ عَلَيْهِ مِنْ أَجْرٍ ۖ إِنْ أَجْرِىَ إِلَّا عَلَىٰ رَبِّ ٱلْعَٰلَمِينَ",
+      "translation": "“And no reward whatever do I ask of you for it: my reward rests with none but the Sustainer of all the worlds.",
+      "juz": 19,
+      "page": 374,
+      "ruku": 324,
+      "sajda": false
+    },
+    {
+      "number": 3097,
+      "numberInSurah": 165,
+      "text": "أَتَأْتُونَ ٱلذُّكْرَانَ مِنَ ٱلْعَٰلَمِينَ",
+      "translation": "“Must you, of all people, [lustfully] approach men,",
+      "juz": 19,
+      "page": 374,
+      "ruku": 324,
+      "sajda": false
+    },
+    {
+      "number": 3098,
+      "numberInSurah": 166,
+      "text": "وَتَذَرُونَ مَا خَلَقَ لَكُمْ رَبُّكُم مِّنْ أَزْوَٰجِكُم ۚ بَلْ أَنتُمْ قَوْمٌ عَادُونَ",
+      "translation": "keeping yourselves aloof from all the [lawful] spouses whom your Sustainer has created for you? Nay, but you are people who transgress all bounds of what is right!”",
+      "juz": 19,
+      "page": 374,
+      "ruku": 324,
+      "sajda": false
+    },
+    {
+      "number": 3099,
+      "numberInSurah": 167,
+      "text": "قَالُوا۟ لَئِن لَّمْ تَنتَهِ يَٰلُوطُ لَتَكُونَنَّ مِنَ ٱلْمُخْرَجِينَ",
+      "translation": "Said they: “Indeed, If thou desist not, O Lot, thou wilt most certainly be expelled [from this town­ship]!”",
+      "juz": 19,
+      "page": 374,
+      "ruku": 324,
+      "sajda": false
+    },
+    {
+      "number": 3100,
+      "numberInSurah": 168,
+      "text": "قَالَ إِنِّى لِعَمَلِكُم مِّنَ ٱلْقَالِينَ",
+      "translation": "[Lot] exclaimed: “Behold, I am one of those who utterly abhor your doings!”",
+      "juz": 19,
+      "page": 374,
+      "ruku": 324,
+      "sajda": false
+    },
+    {
+      "number": 3101,
+      "numberInSurah": 169,
+      "text": "رَبِّ نَجِّنِى وَأَهْلِى مِمَّا يَعْمَلُونَ",
+      "translation": "[And then he prayed:] “O my Sustainer! Save me and my household from all that they are doing!”",
+      "juz": 19,
+      "page": 374,
+      "ruku": 324,
+      "sajda": false
+    },
+    {
+      "number": 3102,
+      "numberInSurah": 170,
+      "text": "فَنَجَّيْنَٰهُ وَأَهْلَهُۥٓ أَجْمَعِينَ",
+      "translation": "Thereupon We saved him and all his household –",
+      "juz": 19,
+      "page": 374,
+      "ruku": 324,
+      "sajda": false
+    },
+    {
+      "number": 3103,
+      "numberInSurah": 171,
+      "text": "إِلَّا عَجُوزًۭا فِى ٱلْغَٰبِرِينَ",
+      "translation": "all but an old woman, who was among those that stayed behind;",
+      "juz": 19,
+      "page": 374,
+      "ruku": 324,
+      "sajda": false
+    },
+    {
+      "number": 3104,
+      "numberInSurah": 172,
+      "text": "ثُمَّ دَمَّرْنَا ٱلْءَاخَرِينَ",
+      "translation": "and then We utterly destroyed the others,",
+      "juz": 19,
+      "page": 374,
+      "ruku": 324,
+      "sajda": false
+    },
+    {
+      "number": 3105,
+      "numberInSurah": 173,
+      "text": "وَأَمْطَرْنَا عَلَيْهِم مَّطَرًۭا ۖ فَسَآءَ مَطَرُ ٱلْمُنذَرِينَ",
+      "translation": "and rained down upon them a rain [of destruction]: and dire is such rain upon all who let themselves be warned [to no avail]!",
+      "juz": 19,
+      "page": 374,
+      "ruku": 324,
+      "sajda": false
+    },
+    {
+      "number": 3106,
+      "numberInSurah": 174,
+      "text": "إِنَّ فِى ذَٰلِكَ لَءَايَةًۭ ۖ وَمَا كَانَ أَكْثَرُهُم مُّؤْمِنِينَ",
+      "translation": "In this [story], behold, there is a message [unto men], even though most of them will not be­lieve [in it].",
+      "juz": 19,
+      "page": 374,
+      "ruku": 324,
+      "sajda": false
+    },
+    {
+      "number": 3107,
+      "numberInSurah": 175,
+      "text": "وَإِنَّ رَبَّكَ لَهُوَ ٱلْعَزِيزُ ٱلرَّحِيمُ",
+      "translation": "But, verily, thy Sustainer - He alone - is almighty, a dispenser of grace!",
+      "juz": 19,
+      "page": 374,
+      "ruku": 324,
+      "sajda": false
+    },
+    {
+      "number": 3108,
+      "numberInSurah": 176,
+      "text": "كَذَّبَ أَصْحَٰبُ لْـَٔيْكَةِ ٱلْمُرْسَلِينَ",
+      "translation": "[AND] the dwellers of the wooded dales [of Madyan] gave the lie to [one of God’s] message-bearers",
+      "juz": 19,
+      "page": 374,
+      "ruku": 325,
+      "sajda": false
+    },
+    {
+      "number": 3109,
+      "numberInSurah": 177,
+      "text": "إِذْ قَالَ لَهُمْ شُعَيْبٌ أَلَا تَتَّقُونَ",
+      "translation": "when their brother Shu’ayb said unto them: “Will you not be conscious of God?",
+      "juz": 19,
+      "page": 374,
+      "ruku": 325,
+      "sajda": false
+    },
+    {
+      "number": 3110,
+      "numberInSurah": 178,
+      "text": "إِنِّى لَكُمْ رَسُولٌ أَمِينٌۭ",
+      "translation": "Behold, I am an apostle [sent by Him] to you, [and therefore] worthy of your trust:",
+      "juz": 19,
+      "page": 374,
+      "ruku": 325,
+      "sajda": false
+    },
+    {
+      "number": 3111,
+      "numberInSurah": 179,
+      "text": "فَٱتَّقُوا۟ ٱللَّهَ وَأَطِيعُونِ",
+      "translation": "be, then, conscious of God, and pay heed unto me!",
+      "juz": 19,
+      "page": 374,
+      "ruku": 325,
+      "sajda": false
+    },
+    {
+      "number": 3112,
+      "numberInSurah": 180,
+      "text": "وَمَآ أَسْـَٔلُكُمْ عَلَيْهِ مِنْ أَجْرٍ ۖ إِنْ أَجْرِىَ إِلَّا عَلَىٰ رَبِّ ٱلْعَٰلَمِينَ",
+      "translation": "“And no reward whatever do I ask of you for it: my reward rests with none but the Sustainer of all the worlds.",
+      "juz": 19,
+      "page": 374,
+      "ruku": 325,
+      "sajda": false
+    },
+    {
+      "number": 3113,
+      "numberInSurah": 181,
+      "text": "۞ أَوْفُوا۟ ٱلْكَيْلَ وَلَا تَكُونُوا۟ مِنَ ٱلْمُخْسِرِينَ",
+      "translation": "“[Always] give full measure, and be not among those who [unjustly] cause loss [to others];",
+      "juz": 19,
+      "page": 374,
+      "ruku": 325,
+      "sajda": false
+    },
+    {
+      "number": 3114,
+      "numberInSurah": 182,
+      "text": "وَزِنُوا۟ بِٱلْقِسْطَاسِ ٱلْمُسْتَقِيمِ",
+      "translation": "and [in all your dealings] weigh with a true balance,",
+      "juz": 19,
+      "page": 374,
+      "ruku": 325,
+      "sajda": false
+    },
+    {
+      "number": 3115,
+      "numberInSurah": 183,
+      "text": "وَلَا تَبْخَسُوا۟ ٱلنَّاسَ أَشْيَآءَهُمْ وَلَا تَعْثَوْا۟ فِى ٱلْأَرْضِ مُفْسِدِينَ",
+      "translation": "and do not deprive people of what is rightfully theirs; and do not act wickedly on earth by spreading corruption,",
+      "juz": 19,
+      "page": 374,
+      "ruku": 325,
+      "sajda": false
+    },
+    {
+      "number": 3116,
+      "numberInSurah": 184,
+      "text": "وَٱتَّقُوا۟ ٱلَّذِى خَلَقَكُمْ وَٱلْجِبِلَّةَ ٱلْأَوَّلِينَ",
+      "translation": "but be conscious of Him who has created you, just as [He created] those countless generations of old!”",
+      "juz": 19,
+      "page": 375,
+      "ruku": 325,
+      "sajda": false
+    },
+    {
+      "number": 3117,
+      "numberInSurah": 185,
+      "text": "قَالُوٓا۟ إِنَّمَآ أَنتَ مِنَ ٱلْمُسَحَّرِينَ",
+      "translation": "Said they: “Thou art but one of the be­witched,",
+      "juz": 19,
+      "page": 375,
+      "ruku": 325,
+      "sajda": false
+    },
+    {
+      "number": 3118,
+      "numberInSurah": 186,
+      "text": "وَمَآ أَنتَ إِلَّا بَشَرٌۭ مِّثْلُنَا وَإِن نَّظُنُّكَ لَمِنَ ٱلْكَٰذِبِينَ",
+      "translation": "for thou art nothing but a mortal like ourselves! And, behold, we think that thou art a consummate liar!",
+      "juz": 19,
+      "page": 375,
+      "ruku": 325,
+      "sajda": false
+    },
+    {
+      "number": 3119,
+      "numberInSurah": 187,
+      "text": "فَأَسْقِطْ عَلَيْنَا كِسَفًۭا مِّنَ ٱلسَّمَآءِ إِن كُنتَ مِنَ ٱلصَّٰدِقِينَ",
+      "translation": "Cause, then, fragments of the sky to fall down upon us, if thou art a man of truth!”",
+      "juz": 19,
+      "page": 375,
+      "ruku": 325,
+      "sajda": false
+    },
+    {
+      "number": 3120,
+      "numberInSurah": 188,
+      "text": "قَالَ رَبِّىٓ أَعْلَمُ بِمَا تَعْمَلُونَ",
+      "translation": "Answered [Shu’ayb]: “My Sustainer knows fully well what you are doing.”",
+      "juz": 19,
+      "page": 375,
+      "ruku": 325,
+      "sajda": false
+    },
+    {
+      "number": 3121,
+      "numberInSurah": 189,
+      "text": "فَكَذَّبُوهُ فَأَخَذَهُمْ عَذَابُ يَوْمِ ٱلظُّلَّةِ ۚ إِنَّهُۥ كَانَ عَذَابَ يَوْمٍ عَظِيمٍ",
+      "translation": "But they gave him the lie. And thereupon suffering overtook them on a day dark with shadows: and, verily, it was the suffering of an awesome day!",
+      "juz": 19,
+      "page": 375,
+      "ruku": 325,
+      "sajda": false
+    },
+    {
+      "number": 3122,
+      "numberInSurah": 190,
+      "text": "إِنَّ فِى ذَٰلِكَ لَءَايَةًۭ ۖ وَمَا كَانَ أَكْثَرُهُم مُّؤْمِنِينَ",
+      "translation": "In this [story], behold, there is a message [unto men], even though most of them will not believe [in it].",
+      "juz": 19,
+      "page": 375,
+      "ruku": 325,
+      "sajda": false
+    },
+    {
+      "number": 3123,
+      "numberInSurah": 191,
+      "text": "وَإِنَّ رَبَّكَ لَهُوَ ٱلْعَزِيزُ ٱلرَّحِيمُ",
+      "translation": "But, verily, thy Sustainer - He alone - is almighty, a dispenser of grace!",
+      "juz": 19,
+      "page": 375,
+      "ruku": 325,
+      "sajda": false
+    },
+    {
+      "number": 3124,
+      "numberInSurah": 192,
+      "text": "وَإِنَّهُۥ لَتَنزِيلُ رَبِّ ٱلْعَٰلَمِينَ",
+      "translation": "Now, behold, this [divine writ] has indeed been bestowed from on high by the Sustainer of all the worlds:",
+      "juz": 19,
+      "page": 375,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3125,
+      "numberInSurah": 193,
+      "text": "نَزَلَ بِهِ ٱلرُّوحُ ٱلْأَمِينُ",
+      "translation": "trustworthy divine inspiration has alighted with it from on high",
+      "juz": 19,
+      "page": 375,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3126,
+      "numberInSurah": 194,
+      "text": "عَلَىٰ قَلْبِكَ لِتَكُونَ مِنَ ٱلْمُنذِرِينَ",
+      "translation": "upon thy heart, [O Muhammad] so that thou mayest be among those who preach",
+      "juz": 19,
+      "page": 375,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3127,
+      "numberInSurah": 195,
+      "text": "بِلِسَانٍ عَرَبِىٍّۢ مُّبِينٍۢ",
+      "translation": "in the clear Arabic tongue.",
+      "juz": 19,
+      "page": 375,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3128,
+      "numberInSurah": 196,
+      "text": "وَإِنَّهُۥ لَفِى زُبُرِ ٱلْأَوَّلِينَ",
+      "translation": "And, verily, [the essence of] this [revelation] is indeed found in the ancient books of divine wisdom [as well].",
+      "juz": 19,
+      "page": 375,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3129,
+      "numberInSurah": 197,
+      "text": "أَوَلَمْ يَكُن لَّهُمْ ءَايَةً أَن يَعْلَمَهُۥ عُلَمَٰٓؤُا۟ بَنِىٓ إِسْرَٰٓءِيلَ",
+      "translation": "Is it not evidence enough for them that [so many] learned men from among the children of Israel have recognized this [as true]?",
+      "juz": 19,
+      "page": 375,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3130,
+      "numberInSurah": 198,
+      "text": "وَلَوْ نَزَّلْنَٰهُ عَلَىٰ بَعْضِ ٱلْأَعْجَمِينَ",
+      "translation": "But [even] had We bestowed it from on high upon any of the non-Arabs,",
+      "juz": 19,
+      "page": 375,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3131,
+      "numberInSurah": 199,
+      "text": "فَقَرَأَهُۥ عَلَيْهِم مَّا كَانُوا۟ بِهِۦ مُؤْمِنِينَ",
+      "translation": "and had he recited it unto them [in his own tongue], they would not have believed in it.",
+      "juz": 19,
+      "page": 375,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3132,
+      "numberInSurah": 200,
+      "text": "كَذَٰلِكَ سَلَكْنَٰهُ فِى قُلُوبِ ٱلْمُجْرِمِينَ",
+      "translation": "Thus have We caused this [message] to pass [unheeded] through the hearts of those who are lost in sin:",
+      "juz": 19,
+      "page": 375,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3133,
+      "numberInSurah": 201,
+      "text": "لَا يُؤْمِنُونَ بِهِۦ حَتَّىٰ يَرَوُا۟ ٱلْعَذَابَ ٱلْأَلِيمَ",
+      "translation": "they will not believe in it till they behold the grievous suffering",
+      "juz": 19,
+      "page": 375,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3134,
+      "numberInSurah": 202,
+      "text": "فَيَأْتِيَهُم بَغْتَةًۭ وَهُمْ لَا يَشْعُرُونَ",
+      "translation": "that will come upon them [on resurrection,] all of a sudden, without their being aware [of its approach];",
+      "juz": 19,
+      "page": 375,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3135,
+      "numberInSurah": 203,
+      "text": "فَيَقُولُوا۟ هَلْ نَحْنُ مُنظَرُونَ",
+      "translation": "and then they will exclaim, “Could we have a respite?”",
+      "juz": 19,
+      "page": 375,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3136,
+      "numberInSurah": 204,
+      "text": "أَفَبِعَذَابِنَا يَسْتَعْجِلُونَ",
+      "translation": "Do they, then, [really] wish that Our chas­tisement be hastened on?",
+      "juz": 19,
+      "page": 375,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3137,
+      "numberInSurah": 205,
+      "text": "أَفَرَءَيْتَ إِن مَّتَّعْنَٰهُمْ سِنِينَ",
+      "translation": "But hast thou ever considered [this]: If We do allow them to enjoy [this life] for some years,",
+      "juz": 19,
+      "page": 375,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3138,
+      "numberInSurah": 206,
+      "text": "ثُمَّ جَآءَهُم مَّا كَانُوا۟ يُوعَدُونَ",
+      "translation": "and thereupon that [chastisement] which they were promised befalls them –",
+      "juz": 19,
+      "page": 375,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3139,
+      "numberInSurah": 207,
+      "text": "مَآ أَغْنَىٰ عَنْهُم مَّا كَانُوا۟ يُمَتَّعُونَ",
+      "translation": "of what avail to them will be all their past enjoyments?",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3140,
+      "numberInSurah": 208,
+      "text": "وَمَآ أَهْلَكْنَا مِن قَرْيَةٍ إِلَّا لَهَا مُنذِرُونَ",
+      "translation": "And withal, never have We destroyed any community unless it had been warned",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3141,
+      "numberInSurah": 209,
+      "text": "ذِكْرَىٰ وَمَا كُنَّا ظَٰلِمِينَ",
+      "translation": "and reminded: for, never do We wrong [anyone].",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3142,
+      "numberInSurah": 210,
+      "text": "وَمَا تَنَزَّلَتْ بِهِ ٱلشَّيَٰطِينُ",
+      "translation": "And [this divine writ is such a reminder:] no evil spirits have brought it down:",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3143,
+      "numberInSurah": 211,
+      "text": "وَمَا يَنۢبَغِى لَهُمْ وَمَا يَسْتَطِيعُونَ",
+      "translation": "for, neither does it suit their ends, nor is it in their power [to impart it to man]:",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3144,
+      "numberInSurah": 212,
+      "text": "إِنَّهُمْ عَنِ ٱلسَّمْعِ لَمَعْزُولُونَ",
+      "translation": "verily, [even] from hearing it are they utterly debarred!",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3145,
+      "numberInSurah": 213,
+      "text": "فَلَا تَدْعُ مَعَ ٱللَّهِ إِلَٰهًا ءَاخَرَ فَتَكُونَ مِنَ ٱلْمُعَذَّبِينَ",
+      "translation": "Hence, [O man,] do not invoke any other deity side by side with God, lest thou find thyself among those who are made to suffer [on Judgment Day].",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3146,
+      "numberInSurah": 214,
+      "text": "وَأَنذِرْ عَشِيرَتَكَ ٱلْأَقْرَبِينَ",
+      "translation": "And warn [whomever thou canst reach, beginning with] thy kinsfolk,",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3147,
+      "numberInSurah": 215,
+      "text": "وَٱخْفِضْ جَنَاحَكَ لِمَنِ ٱتَّبَعَكَ مِنَ ٱلْمُؤْمِنِينَ",
+      "translation": "and spread the wings of thy tenderness over all of the believers who may follow thee;",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3148,
+      "numberInSurah": 216,
+      "text": "فَإِنْ عَصَوْكَ فَقُلْ إِنِّى بَرِىٓءٌۭ مِّمَّا تَعْمَلُونَ",
+      "translation": "but if they disobey thee, say, “I am free of responsibility for aught that you may do!” –",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3149,
+      "numberInSurah": 217,
+      "text": "وَتَوَكَّلْ عَلَى ٱلْعَزِيزِ ٱلرَّحِيمِ",
+      "translation": "and place thy trust in the Almighty, the Dispenser of Grace,",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3150,
+      "numberInSurah": 218,
+      "text": "ٱلَّذِى يَرَىٰكَ حِينَ تَقُومُ",
+      "translation": "who sees thee when thou standest [alone],",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3151,
+      "numberInSurah": 219,
+      "text": "وَتَقَلُّبَكَ فِى ٱلسَّٰجِدِينَ",
+      "translation": "and [sees] thy behaviour among those who prostrate themselves [before Him]:",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3152,
+      "numberInSurah": 220,
+      "text": "إِنَّهُۥ هُوَ ٱلسَّمِيعُ ٱلْعَلِيمُ",
+      "translation": "for, verily, He alone is all-hearing, all-knowing!",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3153,
+      "numberInSurah": 221,
+      "text": "هَلْ أُنَبِّئُكُمْ عَلَىٰ مَن تَنَزَّلُ ٱلشَّيَٰطِينُ",
+      "translation": "[And] shall I tell you upon whom it is that those evil spirits descend?",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3154,
+      "numberInSurah": 222,
+      "text": "تَنَزَّلُ عَلَىٰ كُلِّ أَفَّاكٍ أَثِيمٍۢ",
+      "translation": "They descend upon all sinful self-deceivers",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3155,
+      "numberInSurah": 223,
+      "text": "يُلْقُونَ ٱلسَّمْعَ وَأَكْثَرُهُمْ كَٰذِبُونَ",
+      "translation": "who readily lend ear [to every falsehood], and most of whom lie to others as well.",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3156,
+      "numberInSurah": 224,
+      "text": "وَٱلشُّعَرَآءُ يَتَّبِعُهُمُ ٱلْغَاوُۥنَ",
+      "translation": "And as for the poets [they, too, are prone to deceive themselves: and so, only] those who are lost in grievous error would follow them.",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3157,
+      "numberInSurah": 225,
+      "text": "أَلَمْ تَرَ أَنَّهُمْ فِى كُلِّ وَادٍۢ يَهِيمُونَ",
+      "translation": "Art thou not aware that they roam confusedly through all the valleys [of words and thoughts],",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3158,
+      "numberInSurah": 226,
+      "text": "وَأَنَّهُمْ يَقُولُونَ مَا لَا يَفْعَلُونَ",
+      "translation": "and that they [so often] say what they do not do [or feel]?",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    },
+    {
+      "number": 3159,
+      "numberInSurah": 227,
+      "text": "إِلَّا ٱلَّذِينَ ءَامَنُوا۟ وَعَمِلُوا۟ ٱلصَّٰلِحَٰتِ وَذَكَرُوا۟ ٱللَّهَ كَثِيرًۭا وَٱنتَصَرُوا۟ مِنۢ بَعْدِ مَا ظُلِمُوا۟ ۗ وَسَيَعْلَمُ ٱلَّذِينَ ظَلَمُوٓا۟ أَىَّ مُنقَلَبٍۢ يَنقَلِبُونَ",
+      "translation": "[Most of them are of this kind] save those who have attained to faith, and do righteous deeds, and remember God unceasingly, and defend them­selves [only] after having been wronged, and [trust in God’s promise that] those who are bent on wrong­doing will in time come to know how evil a turn their destinies are bound to take!",
+      "juz": 19,
+      "page": 376,
+      "ruku": 326,
+      "sajda": false
+    }
+  ]
+}

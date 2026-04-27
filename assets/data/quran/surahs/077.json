@@ -1,0 +1,510 @@
+{
+  "number": 77,
+  "name": "سُورَةُ المُرۡسَلَاتِ",
+  "englishName": "Al-Mursalaat",
+  "englishNameTranslation": "The Emissaries",
+  "revelationType": "Meccan",
+  "numberOfAyahs": 50,
+  "ayahs": [
+    {
+      "number": 5623,
+      "numberInSurah": 1,
+      "text": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ وَٱلْمُرْسَلَٰتِ عُرْفًۭا",
+      "translation": "CONSIDER these [messages,] sent forth in waves",
+      "juz": 29,
+      "page": 580,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5624,
+      "numberInSurah": 2,
+      "text": "فَٱلْعَٰصِفَٰتِ عَصْفًۭا",
+      "translation": "and then storming on with a tempest's force!",
+      "juz": 29,
+      "page": 580,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5625,
+      "numberInSurah": 3,
+      "text": "وَٱلنَّٰشِرَٰتِ نَشْرًۭا",
+      "translation": "Consider these [messages] that spread [the truth] far and wide,",
+      "juz": 29,
+      "page": 580,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5626,
+      "numberInSurah": 4,
+      "text": "فَٱلْفَٰرِقَٰتِ فَرْقًۭا",
+      "translation": "thus separating [right and wrong] with all clarity,",
+      "juz": 29,
+      "page": 580,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5627,
+      "numberInSurah": 5,
+      "text": "فَٱلْمُلْقِيَٰتِ ذِكْرًا",
+      "translation": "and then giving forth a reminder,",
+      "juz": 29,
+      "page": 580,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5628,
+      "numberInSurah": 6,
+      "text": "عُذْرًا أَوْ نُذْرًا",
+      "translation": "[promising] freedom from blame or [offering] a warning!",
+      "juz": 29,
+      "page": 580,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5629,
+      "numberInSurah": 7,
+      "text": "إِنَّمَا تُوعَدُونَ لَوَٰقِعٌۭ",
+      "translation": "BEHOLD, all that you are told to expect will surely come to pass.",
+      "juz": 29,
+      "page": 580,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5630,
+      "numberInSurah": 8,
+      "text": "فَإِذَا ٱلنُّجُومُ طُمِسَتْ",
+      "translation": "Thus, [it will come to pass] when the stars are effaced,",
+      "juz": 29,
+      "page": 580,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5631,
+      "numberInSurah": 9,
+      "text": "وَإِذَا ٱلسَّمَآءُ فُرِجَتْ",
+      "translation": "and when the sky is rent asunder,",
+      "juz": 29,
+      "page": 580,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5632,
+      "numberInSurah": 10,
+      "text": "وَإِذَا ٱلْجِبَالُ نُسِفَتْ",
+      "translation": "and when the mountains are scattered like dust,",
+      "juz": 29,
+      "page": 580,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5633,
+      "numberInSurah": 11,
+      "text": "وَإِذَا ٱلرُّسُلُ أُقِّتَتْ",
+      "translation": "and when all the apostles are called together at a time appointed...",
+      "juz": 29,
+      "page": 580,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5634,
+      "numberInSurah": 12,
+      "text": "لِأَىِّ يَوْمٍ أُجِّلَتْ",
+      "translation": "For what day has the term [of all this] been set?",
+      "juz": 29,
+      "page": 580,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5635,
+      "numberInSurah": 13,
+      "text": "لِيَوْمِ ٱلْفَصْلِ",
+      "translation": "For the Day of Distinction [between the true and the false]!",
+      "juz": 29,
+      "page": 580,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5636,
+      "numberInSurah": 14,
+      "text": "وَمَآ أَدْرَىٰكَ مَا يَوْمُ ٱلْفَصْلِ",
+      "translation": "And what could make thee conceive what that Day of Distinction will be?",
+      "juz": 29,
+      "page": 580,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5637,
+      "numberInSurah": 15,
+      "text": "وَيْلٌۭ يَوْمَئِذٍۢ لِّلْمُكَذِّبِينَ",
+      "translation": "Woe on that Day unto those who give the lie to the truth!",
+      "juz": 29,
+      "page": 580,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5638,
+      "numberInSurah": 16,
+      "text": "أَلَمْ نُهْلِكِ ٱلْأَوَّلِينَ",
+      "translation": "Did We not destroy [so many of] those [sinners] of olden days?",
+      "juz": 29,
+      "page": 580,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5639,
+      "numberInSurah": 17,
+      "text": "ثُمَّ نُتْبِعُهُمُ ٱلْءَاخِرِينَ",
+      "translation": "And We shall let them be followed by those of later times:",
+      "juz": 29,
+      "page": 580,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5640,
+      "numberInSurah": 18,
+      "text": "كَذَٰلِكَ نَفْعَلُ بِٱلْمُجْرِمِينَ",
+      "translation": "[for] thus do We deal with such as are lost in sin.",
+      "juz": 29,
+      "page": 580,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5641,
+      "numberInSurah": 19,
+      "text": "وَيْلٌۭ يَوْمَئِذٍۢ لِّلْمُكَذِّبِينَ",
+      "translation": "Woe on that Day unto those who give the lie to the truth!",
+      "juz": 29,
+      "page": 580,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5642,
+      "numberInSurah": 20,
+      "text": "أَلَمْ نَخْلُقكُّم مِّن مَّآءٍۢ مَّهِينٍۢ",
+      "translation": "Did We not create you out of a humble fluid",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5643,
+      "numberInSurah": 21,
+      "text": "فَجَعَلْنَٰهُ فِى قَرَارٍۢ مَّكِينٍ",
+      "translation": "which We then let remain in [the womb's] firm keeping",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5644,
+      "numberInSurah": 22,
+      "text": "إِلَىٰ قَدَرٍۢ مَّعْلُومٍۢ",
+      "translation": "for a term pre-ordained?",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5645,
+      "numberInSurah": 23,
+      "text": "فَقَدَرْنَا فَنِعْمَ ٱلْقَٰدِرُونَ",
+      "translation": "Thus have We determined [the nature of man's creation]: and excellent indeed is Our power to determine [what is to be]!",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5646,
+      "numberInSurah": 24,
+      "text": "وَيْلٌۭ يَوْمَئِذٍۢ لِّلْمُكَذِّبِينَ",
+      "translation": "Woe, on that Day unto those who give the lie to the truth!",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5647,
+      "numberInSurah": 25,
+      "text": "أَلَمْ نَجْعَلِ ٱلْأَرْضَ كِفَاتًا",
+      "translation": "Have We not caused the earth to hold within itself",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5648,
+      "numberInSurah": 26,
+      "text": "أَحْيَآءًۭ وَأَمْوَٰتًۭا",
+      "translation": "the living and the dead?",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5649,
+      "numberInSurah": 27,
+      "text": "وَجَعَلْنَا فِيهَا رَوَٰسِىَ شَٰمِخَٰتٍۢ وَأَسْقَيْنَٰكُم مَّآءًۭ فُرَاتًۭا",
+      "translation": "and have We not set on it proud, firm mountains, and given you sweet water to drink?",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5650,
+      "numberInSurah": 28,
+      "text": "وَيْلٌۭ يَوْمَئِذٍۢ لِّلْمُكَذِّبِينَ",
+      "translation": "Woe on that Day unto those who give the lie to the truth!",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5651,
+      "numberInSurah": 29,
+      "text": "ٱنطَلِقُوٓا۟ إِلَىٰ مَا كُنتُم بِهِۦ تُكَذِّبُونَ",
+      "translation": "GO ON towards that [resurrection] which you were wont to call a lie!",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5652,
+      "numberInSurah": 30,
+      "text": "ٱنطَلِقُوٓا۟ إِلَىٰ ظِلٍّۢ ذِى ثَلَٰثِ شُعَبٍۢ",
+      "translation": "Go on towards the threefold shadow",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5653,
+      "numberInSurah": 31,
+      "text": "لَّا ظَلِيلٍۢ وَلَا يُغْنِى مِنَ ٱللَّهَبِ",
+      "translation": "that will offer no [cooling] shade and will be of no avail against the flame",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5654,
+      "numberInSurah": 32,
+      "text": "إِنَّهَا تَرْمِى بِشَرَرٍۢ كَٱلْقَصْرِ",
+      "translation": "which – behold!- will throw up sparks like [burning] logs,",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5655,
+      "numberInSurah": 33,
+      "text": "كَأَنَّهُۥ جِمَٰلَتٌۭ صُفْرٌۭ",
+      "translation": "like giant fiery ropes!",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5656,
+      "numberInSurah": 34,
+      "text": "وَيْلٌۭ يَوْمَئِذٍۢ لِّلْمُكَذِّبِينَ",
+      "translation": "Woe on that Day unto those who give the lie to the truth –",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5657,
+      "numberInSurah": 35,
+      "text": "هَٰذَا يَوْمُ لَا يَنطِقُونَ",
+      "translation": "that Day on which they will not [be able to] utter a word,",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5658,
+      "numberInSurah": 36,
+      "text": "وَلَا يُؤْذَنُ لَهُمْ فَيَعْتَذِرُونَ",
+      "translation": "nor be allowed to proffer excuses!",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5659,
+      "numberInSurah": 37,
+      "text": "وَيْلٌۭ يَوْمَئِذٍۢ لِّلْمُكَذِّبِينَ",
+      "translation": "Woe on that Day unto those who give the lie to the truth –",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5660,
+      "numberInSurah": 38,
+      "text": "هَٰذَا يَوْمُ ٱلْفَصْلِ ۖ جَمَعْنَٰكُمْ وَٱلْأَوَّلِينَ",
+      "translation": "that Day of Distinction [between the true and the false, when they will be told]: \"We have brought you together with those [sinners] of olden times;",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5661,
+      "numberInSurah": 39,
+      "text": "فَإِن كَانَ لَكُمْ كَيْدٌۭ فَكِيدُونِ",
+      "translation": "and if you [think that you] have a subterfuge left, try to outwit Me!\"",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5662,
+      "numberInSurah": 40,
+      "text": "وَيْلٌۭ يَوْمَئِذٍۢ لِّلْمُكَذِّبِينَ",
+      "translation": "Woe on that Day unto those who give the lie to the truth!",
+      "juz": 29,
+      "page": 581,
+      "ruku": 516,
+      "sajda": false
+    },
+    {
+      "number": 5663,
+      "numberInSurah": 41,
+      "text": "إِنَّ ٱلْمُتَّقِينَ فِى ظِلَٰلٍۢ وَعُيُونٍۢ",
+      "translation": "[AS AGAINST this,] behold, the God-conscious shall dwell amidst [cooling] shades and springs,",
+      "juz": 29,
+      "page": 581,
+      "ruku": 517,
+      "sajda": false
+    },
+    {
+      "number": 5664,
+      "numberInSurah": 42,
+      "text": "وَفَوَٰكِهَ مِمَّا يَشْتَهُونَ",
+      "translation": "and [partake of] whatever fruit they may desire;",
+      "juz": 29,
+      "page": 581,
+      "ruku": 517,
+      "sajda": false
+    },
+    {
+      "number": 5665,
+      "numberInSurah": 43,
+      "text": "كُلُوا۟ وَٱشْرَبُوا۟ هَنِيٓـًٔۢا بِمَا كُنتُمْ تَعْمَلُونَ",
+      "translation": "[and they will be told:] \"Eat and drink in good cheer in return for what you did [in life]!\"",
+      "juz": 29,
+      "page": 581,
+      "ruku": 517,
+      "sajda": false
+    },
+    {
+      "number": 5666,
+      "numberInSurah": 44,
+      "text": "إِنَّا كَذَٰلِكَ نَجْزِى ٱلْمُحْسِنِينَ",
+      "translation": "Thus, behold, do We reward the doers of good;",
+      "juz": 29,
+      "page": 581,
+      "ruku": 517,
+      "sajda": false
+    },
+    {
+      "number": 5667,
+      "numberInSurah": 45,
+      "text": "وَيْلٌۭ يَوْمَئِذٍۢ لِّلْمُكَذِّبِينَ",
+      "translation": "[but] woe on that Day unto those who give the lie to the truth!",
+      "juz": 29,
+      "page": 581,
+      "ruku": 517,
+      "sajda": false
+    },
+    {
+      "number": 5668,
+      "numberInSurah": 46,
+      "text": "كُلُوا۟ وَتَمَتَّعُوا۟ قَلِيلًا إِنَّكُم مُّجْرِمُونَ",
+      "translation": "EAT [your fill] and enjoy your life for a little while, O you who are lost in sin!",
+      "juz": 29,
+      "page": 581,
+      "ruku": 517,
+      "sajda": false
+    },
+    {
+      "number": 5669,
+      "numberInSurah": 47,
+      "text": "وَيْلٌۭ يَوْمَئِذٍۢ لِّلْمُكَذِّبِينَ",
+      "translation": "[But] woe on that Day unto those who give the lie to the truth,",
+      "juz": 29,
+      "page": 581,
+      "ruku": 517,
+      "sajda": false
+    },
+    {
+      "number": 5670,
+      "numberInSurah": 48,
+      "text": "وَإِذَا قِيلَ لَهُمُ ٱرْكَعُوا۟ لَا يَرْكَعُونَ",
+      "translation": "and when they are told, \"Bow down [before God]\", do not bow down:",
+      "juz": 29,
+      "page": 581,
+      "ruku": 517,
+      "sajda": false
+    },
+    {
+      "number": 5671,
+      "numberInSurah": 49,
+      "text": "وَيْلٌۭ يَوْمَئِذٍۢ لِّلْمُكَذِّبِينَ",
+      "translation": "woe on that Day unto those who give the to the truth!",
+      "juz": 29,
+      "page": 581,
+      "ruku": 517,
+      "sajda": false
+    },
+    {
+      "number": 5672,
+      "numberInSurah": 50,
+      "text": "فَبِأَىِّ حَدِيثٍۭ بَعْدَهُۥ يُؤْمِنُونَ",
+      "translation": "In what other tiding, then, will they, after this, believe?",
+      "juz": 29,
+      "page": 581,
+      "ruku": 517,
+      "sajda": false
+    }
+  ]
+}
