@@ -3,7 +3,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
-import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/prayer_time.dart';
@@ -13,17 +12,6 @@ import '../providers/daily_prayer_status_provider.dart';
 import 'prayer_tracking_service.dart';
 import 'task_service.dart';
 import 'package:flutter/services.dart';
-
-/// Background notification handler — must be top-level for Android background isolate
-@pragma('vm:entry-point')
-Future<void> _notificationBackgroundHandler(NotificationResponse response) async {
-  final prefs = await SharedPreferences.getInstance();
-  if (response.actionId == 'quran_read_now' ||
-      (response.actionId == null && (response.payload ?? '').startsWith('quran_reminder'))) {
-    await prefs.setBool('quran_open_reader', true);
-  }
-  // quran_remind_later is handled natively by _handleQuranRemindLater via scheduleQuranSnooze
-}
 
 /// Service for managing prayer time notifications
 class NotificationService {
@@ -71,8 +59,6 @@ class NotificationService {
   /// Initialize the notification service
   Future<void> initialize() async {
     tz_data.initializeTimeZones();
-    final localTimezone = await FlutterTimezone.getLocalTimezone();
-    tz.setLocalLocation(tz.getLocation(localTimezone));
 
     final AndroidInitializationSettings initializationSettingsAndroid =
         AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -102,6 +88,7 @@ class NotificationService {
         } else if (response.actionId == 'mark_prayed' && response.payload != null) {
           _handleMarkPrayed(response.payload!);
         } else if (response.actionId != null && response.actionId!.startsWith('mark_prayed_') && response.payload != null) {
+          // Handle prayer check "Yes, I prayed" action (mark_prayed_fajr, mark_prayed_zuhr, etc.)
           _handleMarkPrayed(response.payload!);
         } else if (response.actionId != null && response.actionId!.startsWith('post_done_') && response.payload != null) {
           _handlePostPrayerAction(response.payload!, PrayerStatus.onTime);
@@ -110,15 +97,17 @@ class NotificationService {
         } else if (response.actionId != null && response.actionId!.startsWith('post_miss_') && response.payload != null) {
           _handlePostPrayerAction(response.payload!, PrayerStatus.missed);
         } else if (response.actionId != null && response.actionId!.startsWith('task_done_')) {
+          // Handle task "Mark Done" action
           _handleTaskDone(response.actionId!.replaceFirst('task_done_', ''));
         } else if (response.actionId != null && response.actionId!.startsWith('task_snooze_')) {
+          // Handle task "Remind Later" action
           _handleTaskSnooze(response.actionId!.replaceFirst('task_snooze_', ''));
         } else if (response.actionId == null || response.actionId == '') {
-          debugPrint('🔔 [NOTIFICATION] Notification tapped: ${response.payload}');
+          // Notification was tapped (not an action button)
+          debugPrint('🔔 [NOTIFICATION] Notification tapped by user');
         }
         debugPrint('═══════════════════════════════════════');
       },
-      onDidReceiveBackgroundNotificationResponse: _notificationBackgroundHandler,
     );
 
     // Create notification channels for Android
@@ -130,33 +119,6 @@ class NotificationService {
     final jumuahEnabled = _prefs!.getBool('jumua_reminder_enabled') ?? true;
     if (jumuahEnabled) {
       await scheduleJumuahReminder();
-    }
-
-    // Reschedule Quran reminders on every app open via native AlarmManager
-    try {
-      final quranEnabled = _prefs!.getBool('quran_reminder_enabled') ?? false;
-      final hours = <int>[];
-      final mins = <int>[];
-      for (int i = 0; i < 3; i++) {
-        final h = _prefs!.getInt('quran_reminder_hour_$i');
-        final m = _prefs!.getInt('quran_reminder_minute_$i');
-        if (h != null && m != null) { hours.add(h); mins.add(m); }
-      }
-      if (hours.isEmpty) {
-        final h = _prefs!.getInt('quran_reminder_hour');
-        final m = _prefs!.getInt('quran_reminder_minute');
-        if (h != null && m != null) { hours.add(h); mins.add(m); }
-      }
-
-      if (quranEnabled && hours.isNotEmpty) {
-        if (hours.length == 1) {
-          await scheduleQuranReminder(hour: hours[0], minute: mins[0]);
-        } else {
-          await scheduleQuranReminders(hours: hours, minutes: mins);
-        }
-      }
-    } catch (e) {
-      debugPrint('❌ [QURAN_REMINDER] Init scheduling failed: $e');
     }
 
     debugPrint('NotificationService: Initialized');
@@ -233,8 +195,6 @@ class NotificationService {
     await _notifications
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(postCheckChannel);
-
-    // Quran reminder channel created natively in MainActivity
   }
 
   /// Request notification permissions
@@ -453,6 +413,7 @@ class NotificationService {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         uiLocalNotificationDateInterpretation:
             UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
         payload: 'prayer_check|${previousPrayer.name}|${previousPrayer.nameAr}',
       );
 
@@ -1375,101 +1336,5 @@ class NotificationService {
       debugPrint('FocusMode: Error checking completed task - ${e.message}');
       return null;
     }
-  }
-
-  // ─── Quran Reading Reminder (Native AlarmManager) ──────────────────
-
-  static const String _quranAlarmChannel = 'com.aura.hala/prayer_alarms';
-
-  /// Schedule a single Quran reading reminder via native AlarmManager.
-  Future<void> scheduleQuranReminder({
-    required int hour,
-    required int minute,
-    bool cancelShowing = true,
-  }) async {
-    try {
-      final language = await _getLanguagePreference();
-      final prefs = await SharedPreferences.getInstance();
-      final snoozeMinutes = prefs.getInt('quran_snooze_minutes') ?? 30;
-
-      await const MethodChannel(_quranAlarmChannel).invokeMethod('scheduleQuranReminderAlarm', {
-        'hour': hour,
-        'minute': minute,
-        'slot': 0,
-        'language': language,
-        'snoozeMinutes': snoozeMinutes,
-      });
-
-      await prefs.setInt('quran_reminder_hour', hour);
-      await prefs.setInt('quran_reminder_minute', minute);
-      await prefs.setBool('quran_reminder_enabled', true);
-
-      debugPrint('📖 [QURAN_REMINDER] Native alarm scheduled at $hour:$minute');
-    } catch (e) {
-      debugPrint('❌ [QURAN_REMINDER] Native scheduling failed: $e');
-    }
-  }
-
-  /// Schedule multiple Quran reminders per day via native AlarmManager.
-  Future<void> scheduleQuranReminders({
-    required List<int> hours,
-    required List<int> minutes,
-  }) async {
-    try {
-      final language = await _getLanguagePreference();
-      final prefs = await SharedPreferences.getInstance();
-      final snoozeMinutes = prefs.getInt('quran_snooze_minutes') ?? 30;
-
-      for (int i = 0; i < hours.length; i++) {
-        await const MethodChannel(_quranAlarmChannel).invokeMethod('scheduleQuranReminderAlarm', {
-          'hour': hours[i],
-          'minute': minutes[i],
-          'slot': i,
-          'language': language,
-          'snoozeMinutes': snoozeMinutes,
-        });
-      }
-
-      await prefs.setBool('quran_reminder_enabled', true);
-      debugPrint('📖 [QURAN_REMINDER] ${hours.length} native alarms scheduled');
-    } catch (e) {
-      debugPrint('❌ [QURAN_REMINDER] Native scheduling failed: $e');
-    }
-  }
-
-  /// Cancel all Quran reminders via native AlarmManager.
-  Future<void> cancelQuranReminders() async {
-    try {
-      await const MethodChannel(_quranAlarmChannel).invokeMethod('cancelQuranReminderAlarms');
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('quran_reminder_enabled', false);
-      debugPrint('📖 [QURAN_REMINDER] All native alarms cancelled');
-    } catch (e) {
-      debugPrint('❌ [QURAN_REMINDER] Native cancel failed: $e');
-    }
-  }
-
-  /// Fire an immediate test Quran notification via native.
-  Future<void> sendTestQuranNotification() async {
-    try {
-      await const MethodChannel(_quranAlarmChannel).invokeMethod('scheduleQuranReminderAlarm', {
-        'hour': DateTime.now().hour,
-        'minute': DateTime.now().minute + 1, // 1 minute from now
-        'slot': 8, // test slot
-        'language': await _getLanguagePreference(),
-        'snoozeMinutes': 30,
-      });
-      debugPrint('📖 [QURAN_REMINDER] Test alarm scheduled for 1 minute from now');
-    } catch (e) {
-      debugPrint('❌ [QURAN_REMINDER] Test failed: $e');
-    }
-  }
-}
-
-/// Helper for Arabic numeral conversion without importing NumberFormatter
-class NumberFormatterX {
-  static String toArabic(String input) {
-    const arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-    return input.replaceAllMapped(RegExp(r'[0-9]'), (m) => arabic[int.parse(m.group(0)!)]);
   }
 }

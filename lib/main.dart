@@ -38,9 +38,6 @@ import 'features/settings/iqama_settings_screen.dart';
 import 'features/settings/adhan_downloads_screen.dart';
 import 'features/qibla/qibla_screen.dart';
 import 'features/daily_content/daily_content_screen.dart';
-import 'features/quran/quran_reader_screen.dart';
-import 'features/quran/quran_stats_screen.dart';
-import 'core/services/quran_data_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -150,14 +147,6 @@ void main() async {
         debugPrint('✅ TaskService initialized');
       } catch (e, st) {
         debugPrint('❌ TaskService initialization failed: $e');
-      }
-    }(),
-    () async {
-      try {
-        await QuranDataService.instance.initialize();
-        debugPrint('✅ QuranDataService initialized');
-      } catch (e, st) {
-        debugPrint('❌ QuranDataService initialization failed: $e');
       }
     }(),
   ]);
@@ -451,16 +440,6 @@ class AuraAppMaterial extends ConsumerWidget {
       case '/daily_content':
         return MaterialPageRoute(
           builder: (_) => const DailyContentScreen(),
-          settings: settings,
-        );
-      case '/quran_reader':
-        return MaterialPageRoute(
-          builder: (_) => const QuranReaderScreen(),
-          settings: settings,
-        );
-      case '/quran_stats':
-        return MaterialPageRoute(
-          builder: (_) => const QuranStatsScreen(),
           settings: settings,
         );
       default:

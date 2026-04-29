@@ -45,7 +45,6 @@ class MainActivity : FlutterActivity() {
         handleReminderPickerIntent(intent)
         handlePostPrayerPickerIntent(intent)
         handlePrayerStatusUpdateIntent(intent)
-        handleQuranReaderIntent(intent)
     }
 
     private fun handleShortcutIntent(intent: Intent) {
@@ -53,13 +52,6 @@ class MainActivity : FlutterActivity() {
         if (route != null) {
             Log.d("MainActivity", "🔗 [SHORTCUT] Route: $route")
             navigationChannel?.invokeMethod("navigateToRoute", mapOf("route" to route))
-        }
-    }
-
-    private fun handleQuranReaderIntent(intent: Intent) {
-        if (intent.getBooleanExtra("open_quran_reader", false)) {
-            Log.d("MainActivity", "📖 [QURAN] Opening Quran reader")
-            navigationChannel?.invokeMethod("openQuranReader", null)
         }
     }
 
@@ -151,15 +143,6 @@ class MainActivity : FlutterActivity() {
             }
             notificationManager.createNotificationChannel(trackingChannel)
             Log.d("MainActivity", "✅ [CHANNEL] prayer_tracking channel created")
-
-            // Quran reminder channel
-            val quranChannel = NotificationChannel("quran_reminder", "Quran Reminder", NotificationManager.IMPORTANCE_HIGH).apply {
-                description = "Daily Quran reading reminders"
-                enableVibration(true)
-                setShowBadge(true)
-            }
-            notificationManager.createNotificationChannel(quranChannel)
-            Log.d("MainActivity", "✅ [CHANNEL] Quran reminder channel created")
         } else {
             Log.d("MainActivity", "⏭️ [CHANNEL] SDK < O, notification channel not needed")
         }
@@ -544,21 +527,6 @@ class MainActivity : FlutterActivity() {
                 }
                 "cancelDailySummary" -> {
                     DailySummaryReceiver.cancel(this)
-                    result.success(true)
-                }
-                "scheduleQuranReminderAlarm" -> {
-                    val hour = call.argument<Int>("hour") ?: return@setMethodCallHandler result.error("INVALID", "hour required", null)
-                    val minute = call.argument<Int>("minute") ?: return@setMethodCallHandler result.error("INVALID", "minute required", null)
-                    val slot = call.argument<Int>("slot") ?: 0
-                    val language = call.argument<String>("language") ?: "en"
-                    val snoozeMinutes = call.argument<Int>("snoozeMinutes") ?: 30
-                    Log.d("PrayerChannel", "📖 Scheduling Quran reminder slot $slot at $hour:$minute")
-                    PrayerAlarmReceiver.scheduleQuranReminderAlarm(this, hour, minute, slot, language, snoozeMinutes)
-                    result.success(true)
-                }
-                "cancelQuranReminderAlarms" -> {
-                    Log.d("PrayerChannel", "📖 Cancelling all Quran alarms")
-                    PrayerAlarmReceiver.cancelQuranReminderAlarms(this)
                     result.success(true)
                 }
                 "isIgnoringBatteryOptimizations" -> {
