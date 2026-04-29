@@ -529,6 +529,14 @@ class MainActivity : FlutterActivity() {
                     DailySummaryReceiver.cancel(this)
                     result.success(true)
                 }
+                "scheduleJumuahReminder" -> {
+                    JumuahReminderReceiver.schedule(this)
+                    result.success(true)
+                }
+                "cancelJumuahReminder" -> {
+                    JumuahReminderReceiver.cancel(this)
+                    result.success(true)
+                }
                 "isIgnoringBatteryOptimizations" -> {
                     result.success(isIgnoringBatteryOptimizations())
                 }

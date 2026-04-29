@@ -159,6 +159,20 @@ class ProfileScreen extends ConsumerWidget {
                   title: user.displayName ?? (isArabic ? 'اسم المستخدم' : 'Display Name'),
                   subtitle: isArabic ? 'الاسم المعروض' : 'Display Name',
                 ),
+                SettingTile(
+                  icon: Icons.edit_outlined,
+                  title: isArabic ? 'تعديل الاسم' : 'Edit Display Name',
+                  subtitle: isArabic ? 'تغيير اسمك المعروض' : 'Change your display name',
+                  trailing: Icon(Icons.chevron_right, size: 20, color: isDark ? Colors.white60 : Colors.black54),
+                  onTap: () => _showEditNameDialog(context, ref, user, isArabic),
+                ),
+                SettingTile(
+                  icon: Icons.password,
+                  title: isArabic ? 'تغيير كلمة المرور' : 'Change Password',
+                  subtitle: isArabic ? 'تحديث كلمة المرور' : 'Update your password',
+                  trailing: Icon(Icons.chevron_right, size: 20, color: isDark ? Colors.white60 : Colors.black54),
+                  onTap: () => _showChangePasswordDialog(context, ref, isArabic),
+                ),
               ],
             ),
             const SizedBox(height: AppConstants.paddingLarge),
@@ -239,31 +253,6 @@ class ProfileScreen extends ConsumerWidget {
                   icon: Icons.code,
                   title: isArabic ? 'المطور' : 'Developer',
                   subtitle: 'Aura Team',
-                ),
-              ],
-            ),
-            const SizedBox(height: AppConstants.paddingLarge),
-
-            // Account Management Section
-            SettingsSectionHeader(
-              icon: Icons.manage_accounts,
-              title: isArabic ? 'إدارة الحساب' : 'Account Management',
-            ),
-            SettingsCard(
-              children: [
-                SettingTile(
-                  icon: Icons.edit_outlined,
-                  title: isArabic ? 'تعديل الاسم' : 'Edit Display Name',
-                  subtitle: isArabic ? 'تغيير اسمك المعروض' : 'Change your display name',
-                  trailing: Icon(Icons.chevron_right, size: 20, color: isDark ? Colors.white60 : Colors.black54),
-                  onTap: () => _showEditNameDialog(context, ref, user, isArabic),
-                ),
-                SettingTile(
-                  icon: Icons.password,
-                  title: isArabic ? 'تغيير كلمة المرور' : 'Change Password',
-                  subtitle: isArabic ? 'تحديث كلمة المرور' : 'Update your password',
-                  trailing: Icon(Icons.chevron_right, size: 20, color: isDark ? Colors.white60 : Colors.black54),
-                  onTap: () => _showChangePasswordDialog(context, ref, isArabic),
                 ),
               ],
             ),
@@ -387,7 +376,7 @@ class ProfileScreen extends ConsumerWidget {
           // Name and Email
           Expanded(
             child: Column(
-              crossAxisAlignment: isArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Name
                 Text(

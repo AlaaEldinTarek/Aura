@@ -75,21 +75,11 @@
                 android:textDirection="rtl" />
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:gravity="center_vertical"
+                android:gravity="right|center_vertical"
                 android:layoutDirection="rtl">
-
-                <TextView
-                    android:id="@+id/notification_time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="٢ س ١٥ د ٣٠ ث"
-                    android:textSize="18sp"
-                    android:textStyle="bold"
-                    android:textColor="#F5B301"
-                    android:textDirection="ltr" />
 
                 <TextView
                     android:id="@+id/notification_until"
@@ -100,6 +90,16 @@
                     android:textColor="#99FFFFFF"
                     android:paddingEnd="8dp"
                     android:textDirection="rtl" />
+
+                <TextView
+                    android:id="@+id/notification_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="٢ س ١٥ د ٣٠ ث"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:textColor="#F5B301"
+                    android:textDirection="ltr" />
 
             </LinearLayout>
 

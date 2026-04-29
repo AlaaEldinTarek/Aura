@@ -40,6 +40,7 @@ class PrayerBootReceiver : BroadcastReceiver() {
                 android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
                     reschedulePrayerAlarms(context)
                     rescheduleDailySummary(context)
+                    rescheduleJumuahReminder(context)
                 }, 30000) // 30 seconds delay
             }
         }
@@ -73,6 +74,11 @@ class PrayerBootReceiver : BroadcastReceiver() {
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start prayer reschedule service: ${e.message}")
         }
+    }
+
+    private fun rescheduleJumuahReminder(context: Context) {
+        JumuahReminderReceiver.schedule(context)
+        Log.d(TAG, "Jumu'ah reminder rescheduled after boot")
     }
 
     private fun rescheduleDailySummary(context: Context) {

@@ -164,6 +164,12 @@
             android:enabled="true"
             android:exported="false"/>
 
+        <!-- Jumu'ah Reminder Receiver - Fires every Friday before Zuhr -->
+        <receiver
+            android:name=".JumuahReminderReceiver"
+            android:enabled="true"
+            android:exported="false"/>
+
         <!-- Daily Prayer Summary Receiver - Fires at configurable time to remind about untracked prayers -->
         <receiver
             android:name=".DailySummaryReceiver"

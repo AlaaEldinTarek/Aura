@@ -1150,56 +1150,29 @@ class NotificationService {
 
   // ─── Jumu'ah Reminder ────────────────────────────────────────────────────
 
-  /// Schedule a weekly Friday Jumu'ah reminder at 12:00 PM.
+  static const _prayerAlarmsChannel = MethodChannel('com.aura.hala/prayer_alarms');
+
+  /// Schedule weekly Friday Jumu'ah reminder via native AlarmManager (survives reboots).
+  /// Fires 30 min before the stored Zuhr prayer time.
   Future<void> scheduleJumuahReminder() async {
     try {
-      final isArabic = await _getLanguagePreference() == 'ar';
-      final title = isArabic ? 'جمعة مباركة 🕌' : "Jumu'ah Mubarak 🕌";
-      final body = isArabic
-          ? 'اقترب وقت صلاة الجمعة، لا تفوّتها'
-          : "Friday prayer time is approaching. Don't miss it!";
-
-      // Find next Friday at 12:00 PM
-      var now = tz.TZDateTime.now(tz.local);
-      var scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, 12, 0);
-      while (scheduledDate.weekday != DateTime.friday) {
-        scheduledDate = scheduledDate.add(const Duration(days: 1));
-      }
-      if (scheduledDate.isBefore(now)) {
-        scheduledDate = scheduledDate.add(const Duration(days: 7));
-      }
-
-      final androidDetails = AndroidNotificationDetails(
-        _jumuahChannelId,
-        _jumuahChannelName,
-        channelDescription: 'Weekly Friday prayer reminder',
-        importance: Importance.high,
-        priority: Priority.high,
-        showWhen: true,
-        icon: '@mipmap/ic_launcher',
-      );
-
-      await _notifications.zonedSchedule(
-        _jumuahNotificationId,
-        title,
-        body,
-        scheduledDate,
-        NotificationDetails(android: androidDetails),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-        matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
-      );
-
-      debugPrint("✅ [JUMUA] Scheduled weekly Jumu'ah reminder for Fridays at 12:00 PM");
+      // Cancel any old Flutter-scheduled Jumu'ah notification (legacy cleanup)
+      await _notifications.cancel(_jumuahNotificationId);
+      await _prayerAlarmsChannel.invokeMethod('scheduleJumuahReminder');
+      debugPrint("✅ [JUMUA] Jumu'ah reminder scheduled via native");
     } catch (e) {
       debugPrint("❌ [JUMUA] Error scheduling Jumu'ah reminder: $e");
     }
   }
 
   Future<void> cancelJumuahReminder() async {
-    await _notifications.cancel(_jumuahNotificationId);
-    debugPrint("✅ [JUMUA] Cancelled Jumu'ah reminder");
+    try {
+      await _notifications.cancel(_jumuahNotificationId);
+      await _prayerAlarmsChannel.invokeMethod('cancelJumuahReminder');
+      debugPrint("✅ [JUMUA] Jumu'ah reminder cancelled");
+    } catch (e) {
+      debugPrint("❌ [JUMUA] Error cancelling Jumu'ah reminder: $e");
+    }
   }
 
   // ─── Focus Mode ─────────────────────────────────────────────────────────

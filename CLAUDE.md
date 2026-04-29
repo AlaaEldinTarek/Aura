@@ -21,6 +21,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Multi-language support (English/Arabic) with full RTL support
 - Firebase authentication (Email/Password, Google Sign-In, Forgot Password) + guest mode + offline queue
 - Hijri date display with Gregorian-to-Hijri conversion
+- Jumu'ah (Friday) reminder notification 30 min before Zuhr, with bilingual message and weekly auto-reschedule
 - Foreground service for reliable background prayer alerts
 
 ---
@@ -202,22 +203,23 @@ lib/
 | Channel Name | Purpose | Flutter Service | Native Kotlin File |
 |--------------|---------|-----------------|-------------------|
 | `com.aura.hala/adhan` | Adhan audio playback | AdhanPlayerService | AdhanPlayer.kt |
-| `com.aura.hala/prayer_alarms` | Schedule exact prayer alarms + post-prayer checks + daily summary | PrayerAlarmService | PrayerAlarmReceiver.kt + DailySummaryReceiver.kt |
+| `com.aura.hala/prayer_alarms` | Schedule exact prayer alarms + post-prayer checks + daily summary + Jumu'ah reminder | PrayerAlarmService + NotificationService | PrayerAlarmReceiver.kt + DailySummaryReceiver.kt + JumuahReminderReceiver.kt |
 | `com.aura.hala/background_service` | Foreground service control | BackgroundServiceManager | PrayerForegroundService.kt |
 | `com.aura.hala/widgets` | Widget data updates | PrayerWidgetService | WidgetUpdateService.kt |
 | `com.aura.hala/ringer_mode` | Silent/vibrate mode control | SilentModeService | SilentModeAutomation.kt |
 | `com.aura.hala/navigation` | Route tracking + post-prayer/reminder picker callbacks (native→Flutter) | NavigationService | MainActivity.kt |
 | `com.aura.hala/focus_mode` | Focus mode scheduling, overlay/DND permissions, service control | NotificationService | FocusModeService.kt |
 
-### Native Android Architecture (21 Kotlin files)
+### Native Android Architecture (22 Kotlin files)
 
 Located at `android/app/src/main/kotlin/com/aura/hala/`:
 
 | File | Purpose |
 |------|---------|
-| `MainActivity.kt` | FlutterActivity, 8 MethodChannel handlers, notification channels |
+| `MainActivity.kt` | FlutterActivity, 8 MethodChannel handlers (including Jumu'ah reminder schedule/cancel), notification channels |
 | `PrayerAlarmReceiver.kt` | BroadcastReceiver at prayer times, triggers adhan + notification + silent mode. Also handles post-prayer check alarms (30 min after prayer). Notification IDs: 1001-1006 (prayers), 2001-2006 (reminders), 6001-6006 (post-prayer checks) |
 | `DailySummaryReceiver.kt` | BroadcastReceiver firing at configurable daily time. Reads `prayer_status_{name}_{date}` keys from `aura_prayer_times` prefs. If any untracked prayers exist, shows summary notification (ID 7001). Reschedules itself for tomorrow. |
+| `JumuahReminderReceiver.kt` | BroadcastReceiver firing every Friday 30 min before Zuhr. Shows bilingual "Jumu'ah Mubarak" notification (ID 8001, channel `jumuah_reminder`). Reads Zuhr time from `aura_prayer_times` prefs, auto-reschedules weekly. Rescheduled on boot by `PrayerBootReceiver`. |
 | `AdhanPlayer.kt` | Singleton MediaPlayer adhan playback, per-prayer audio, vibration, thread-safe |
 | `SilentModeAutomation.kt` | AudioManager silent mode scheduling with configurable duration |
 | `PrayerForegroundService.kt` | START_STICKY foreground service with next prayer countdown, updates every second |
@@ -231,7 +233,7 @@ Located at `android/app/src/main/kotlin/com/aura/hala/`:
 | `FocusModeActivity.kt` | Full-screen activity for focus mode. Uses startLockTask() for complete phone lockdown. No stopLockTask() at timer end so completion/restart UI stays locked. Only unlocks via finishFocusMode(). DND restored unconditionally on timer end |
 | `AuraAccessibilityService.kt` | Accessibility service that auto-accepts the Android "Screen pinned" dialog by detecting "Screen pinned" text and clicking OK silently. User enables once via permissions page. Prevents users from seeing the system screen pinning dialog |
 | `FocusModeReceiver.kt` | BroadcastReceiver for focus mode alarm, starts FocusModeService |
-| `PrayerBootReceiver.kt` | Reschedules alarms after device boot or app update |
+| `PrayerBootReceiver.kt` | Reschedules all alarms (prayer + daily summary + Jumu'ah reminder) after device boot or app update |
 | `PrayerRescheduleService.kt` | Service for post-boot alarm rescheduling |
 | `StopAdhanReceiver.kt` | Stops adhan from notification action button |
 | `ToggleSilentModeReceiver.kt` | Toggles silent mode from adhan notification |
@@ -240,7 +242,7 @@ Located at `android/app/src/main/kotlin/com/aura/hala/`:
 
 **AndroidManifest.xml declares:**
 - 18 permissions (location, internet, vibration, wake lock, boot, exact alarms, notifications, foreground service, audio, battery, DND, storage, SYSTEM_ALERT_WINDOW, REORDER_TASKS)
-- 10 receivers, 3 services, 3 activities (MainActivity + AdhanFullScreenActivity + FocusModeActivity with lock screen)
+- 11 receivers (10 existing + JumuahReminderReceiver), 3 services, 3 activities (MainActivity + AdhanFullScreenActivity + FocusModeActivity with lock screen)
 - 109 drawable XMLs, 20 layout XMLs, 5 widget info XMLs
 
 ---
@@ -296,6 +298,14 @@ The `getNextPrayer()` method in `PrayerTimesService` handles a critical edge cas
    - The navigation channel (`com.aura.hala/navigation`) receives `openPostPrayerPicker` / `openReminderPicker` / `updatePrayerStatus` callbacks from notification action buttons to drive Flutter UI.
 
 **Notification channel**: `prayer_tracking` (IMPORTANCE_DEFAULT) — created by `DailySummaryReceiver` if absent (receiver fires without app open). Used for post-prayer check (6001-6006) and daily summary (7001) notifications.
+
+### Jumu'ah Reminder Notification (JumuahReminderReceiver)
+- **Channel**: `jumuah_reminder`, **Notification ID**: 8001
+- **Trigger**: Every Friday, 30 minutes before Zuhr prayer time (reads `dhuhr_time` from `aura_prayer_times` SharedPrefs)
+- **Scheduling**: Advances calendar to next Friday if not already Friday; auto-reschedules weekly after firing
+- **Boot reschedule**: `PrayerBootReceiver.rescheduleJumuahReminder()` reschedules on device boot
+- **Flutter control**: `scheduleJumuahReminder` / `cancelJumuahReminder` methods on `com.aura.hala/prayer_alarms` channel
+- **Bilingual**: English "Jumu'ah Mubarak 🕌" / Arabic "جمعة مباركة 🕌"
 
 ### Foreground Service Notification (PrayerForegroundService)
 - **Channel**: `prayer_foreground_channel`, `IMPORTANCE_HIGH`, `VISIBILITY_PUBLIC`

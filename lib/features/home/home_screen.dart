@@ -663,8 +663,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               } else if (status == PrayerStatus.late) {
                 color = Colors.orange;
                 icon = Icons.schedule;
+              } else if (status == PrayerStatus.missed) {
+                color = Colors.red;
+                icon = Icons.cancel;
               } else if (status == PrayerStatus.excused) {
-                // "Missed" in dialog stores as excused with red cancel icon
                 color = Colors.red;
                 icon = Icons.cancel;
               } else {
