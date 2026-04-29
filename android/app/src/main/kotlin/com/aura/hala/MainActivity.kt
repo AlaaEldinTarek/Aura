@@ -43,6 +43,8 @@ class MainActivity : FlutterActivity() {
         setIntent(intent)
         handleShortcutIntent(intent)
         handleReminderPickerIntent(intent)
+        handlePostPrayerPickerIntent(intent)
+        handlePrayerStatusUpdateIntent(intent)
     }
 
     private fun handleShortcutIntent(intent: Intent) {
@@ -60,6 +62,32 @@ class MainActivity : FlutterActivity() {
             val prayerTime = intent.getLongExtra("reminder_prayer_time", 0L)
             Log.d("MainActivity", "🔕 [REMINDER_PICKER] Opening picker for $prayerName")
             navigationChannel?.invokeMethod("openReminderPicker", mapOf(
+                "prayerName" to prayerName,
+                "prayerNameAr" to prayerNameAr,
+                "prayerTime" to prayerTime
+            ))
+        }
+    }
+
+    private fun handlePrayerStatusUpdateIntent(intent: Intent) {
+        if (intent.getBooleanExtra("update_prayer_status", false)) {
+            val prayerName = intent.getStringExtra("prayer_name") ?: return
+            val status = intent.getStringExtra("prayer_status") ?: return
+            Log.d("MainActivity", "📋 [PRAYER_STATUS] Updating $prayerName → $status")
+            navigationChannel?.invokeMethod("updatePrayerStatus", mapOf(
+                "prayerName" to prayerName,
+                "status" to status
+            ))
+        }
+    }
+
+    private fun handlePostPrayerPickerIntent(intent: Intent) {
+        if (intent.getBooleanExtra("open_post_prayer_picker", false)) {
+            val prayerName = intent.getStringExtra("prayer_name") ?: return
+            val prayerNameAr = intent.getStringExtra("prayer_name_ar") ?: prayerName
+            val prayerTime = intent.getLongExtra("prayer_time", 0L)
+            Log.d("MainActivity", "📋 [POST_PRAYER_PICKER] Opening picker for $prayerName")
+            navigationChannel?.invokeMethod("openPostPrayerPicker", mapOf(
                 "prayerName" to prayerName,
                 "prayerNameAr" to prayerNameAr,
                 "prayerTime" to prayerTime
@@ -102,6 +130,19 @@ class MainActivity : FlutterActivity() {
             } else {
                 Log.e("MainActivity", "❌ [CHANNEL] ERROR - Channel not found after creation!")
             }
+
+            // Prayer tracking channel (post-prayer check + daily summary)
+            val trackingChannel = NotificationChannel(
+                "prayer_tracking",
+                "Prayer Tracking",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Post-prayer check and daily summary notifications"
+                enableVibration(false)
+                setShowBadge(true)
+            }
+            notificationManager.createNotificationChannel(trackingChannel)
+            Log.d("MainActivity", "✅ [CHANNEL] prayer_tracking channel created")
         } else {
             Log.d("MainActivity", "⏭️ [CHANNEL] SDK < O, notification channel not needed")
         }
@@ -207,6 +248,8 @@ class MainActivity : FlutterActivity() {
         handleShortcutIntent(intent)
         // Check if launched from reminder picker (cold start)
         handleReminderPickerIntent(intent)
+        handlePostPrayerPickerIntent(intent)
+        handlePrayerStatusUpdateIntent(intent)
 
         // Widget Channel - for updating home screen widgets
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, WIDGET_CHANNEL).setMethodCallHandler { call, result ->
@@ -406,6 +449,30 @@ class MainActivity : FlutterActivity() {
                     PrayerAlarmReceiver.cancelAllAlarms(this)
                     result.success(true)
                 }
+                "schedulePostPrayerCheck" -> {
+                    val prayerName = call.argument<String>("prayerName")
+                        ?: return@setMethodCallHandler result.error("INVALID", "prayerName required", null)
+                    val prayerNameAr = call.argument<String>("prayerNameAr") ?: prayerName
+                    val prayerTime = call.argument<Long>("prayerTime")
+                        ?: return@setMethodCallHandler result.error("INVALID", "prayerTime required", null)
+                    val requestCode = call.argument<Int>("requestCode") ?: 0
+                    PrayerAlarmReceiver.schedulePostPrayerCheck(this, prayerName, prayerNameAr, prayerTime, requestCode)
+                    result.success(true)
+                }
+                "cancelPostPrayerCheck" -> {
+                    val prayerName = call.argument<String>("prayerName")
+                        ?: return@setMethodCallHandler result.error("INVALID", "prayerName required", null)
+                    val requestCode = call.argument<Int>("requestCode") ?: 0
+                    PrayerAlarmReceiver.cancelPostPrayerCheck(this, prayerName, requestCode)
+                    result.success(true)
+                }
+                "markPrayerTracked" -> {
+                    val prayerName = call.argument<String>("prayerName")
+                        ?: return@setMethodCallHandler result.error("INVALID", "prayerName required", null)
+                    val status = call.argument<String>("status") ?: "on_time"
+                    PrayerAlarmReceiver.markPrayerTracked(this, prayerName, status)
+                    result.success(true)
+                }
                 "getNativePrayerStatuses" -> {
                     val prefs = getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
                     val statuses = mutableMapOf<String, String>()
@@ -452,6 +519,15 @@ class MainActivity : FlutterActivity() {
                         Log.e("MainActivity", "❌ Failed to open exact alarm settings: ${e.message}")
                         result.success(true)
                     }
+                }
+                "scheduleDailySummary" -> {
+                    val timeStr = call.argument<String>("time") ?: "21:00"
+                    DailySummaryReceiver.schedule(this, timeStr)
+                    result.success(true)
+                }
+                "cancelDailySummary" -> {
+                    DailySummaryReceiver.cancel(this)
+                    result.success(true)
                 }
                 "isIgnoringBatteryOptimizations" -> {
                     result.success(isIgnoringBatteryOptimizations())

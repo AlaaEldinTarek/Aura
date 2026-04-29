@@ -577,62 +577,7 @@ class PrayerForegroundService : Service() {
             .setCustomContentView(contentView)
             .setCustomBigContentView(contentView)
 
-        // ── Action buttons ─────────────────────────────────────────────
-        val prayedLabel = if (isArabic) "صلّيت ✅" else "Prayed ✅"
-        val lateLabel = if (isArabic) "متأخر ⏰" else "Late ⏰"
-        val missedLabel = if (isArabic) "فاتت ❌" else "Missed ❌"
-        val laterLabel = if (isArabic) "ذكّرني لاحقاً 🔕" else "Remind Later 🔕"
-
-        val prayedIntent = Intent(this, PrayerAlarmReceiver::class.java).apply {
-            action = PrayerAlarmReceiver.ACTION_REMINDER_PRAYED
-            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME, prayerName)
-            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME_AR, prayerNameAr)
-            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_TIME, prayerTime)
-        }
-        val prayedPI = PendingIntent.getBroadcast(
-            this, 7001, prayedIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        val lateIntent = Intent(this, PrayerAlarmReceiver::class.java).apply {
-            action = PrayerAlarmReceiver.ACTION_REMINDER_LATE
-            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME, prayerName)
-            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME_AR, prayerNameAr)
-            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_TIME, prayerTime)
-        }
-        val latePI = PendingIntent.getBroadcast(
-            this, 7002, lateIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        val missedIntent = Intent(this, PrayerAlarmReceiver::class.java).apply {
-            action = PrayerAlarmReceiver.ACTION_REMINDER_MISSED
-            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME, prayerName)
-            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME_AR, prayerNameAr)
-            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_TIME, prayerTime)
-        }
-        val missedPI = PendingIntent.getBroadcast(
-            this, 7003, missedIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        val laterIntent = Intent(this, PrayerAlarmReceiver::class.java).apply {
-            action = PrayerAlarmReceiver.ACTION_REMINDER_LATER
-            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME, prayerName)
-            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME_AR, prayerNameAr)
-            putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_TIME, prayerTime)
-        }
-        val laterPI = PendingIntent.getBroadcast(
-            this, 7004, laterIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
-
-        builder.addAction(android.R.drawable.checkbox_on_background, prayedLabel, prayedPI)
-        builder.addAction(android.R.drawable.ic_menu_recent_history, lateLabel, latePI)
-        builder.addAction(android.R.drawable.ic_delete, missedLabel, missedPI)
-        builder.addAction(android.R.drawable.ic_menu_agenda, laterLabel, laterPI)
-
-        Log.d(TAG, "⏰ [REMINDER_MODE] $prayerName | ${minsRemaining}min until azan | buttons added")
+        Log.d(TAG, "⏰ [REMINDER_MODE] $prayerName | ${minsRemaining}min until azan")
     }
 
     private fun isDarkTheme(): Boolean {

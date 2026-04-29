@@ -723,8 +723,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return statsAsync.when(
       data: (stats) {
-        if (stats.total == 0) return const SizedBox.shrink();
-
         // Show TODAY's task completion progress
         final allTasksAsync = ref.watch(allTasksProvider);
         return allTasksAsync.when(
@@ -892,8 +890,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               ),
               GestureDetector(
                 onTap: () {
-                  // Navigate to main Tasks tab (index 2 in bottom nav)
-                  ref.read(tabNavigationProvider.notifier).state = 2;
+                  // Navigate to main Tasks tab (index 3 in bottom nav)
+                  ref.read(tabNavigationProvider.notifier).state = 3;
                 },
                 child: Text(
                   isArabic ? 'عرض الكل' : 'View All',

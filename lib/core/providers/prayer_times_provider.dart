@@ -220,16 +220,24 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
       _lastSideEffectsDate = todayKey; // Set synchronously to prevent concurrent runs
       () async {
 
-        // Schedule notifications for prayer times (5-minute reminders)
+        // Schedule post-prayer check alarms (30 min after adhan, native AlarmManager)
         try {
-          await NotificationService.instance.scheduleDailyPrayers(updatedPrayerTimes);
-        } catch (e) {
-          debugPrint('PrayerTimesNotifier: Error scheduling notifications - $e');
-        }
-
-        // Schedule post-prayer check notifications (after prayer time, ask if user prayed)
-        try {
-          await NotificationService.instance.schedulePostPrayerCheck(updatedPrayerTimes);
+          const notificationIds = {
+            'Fajr': 1001, 'Sunrise': 1002, 'Zuhr': 1003,
+            'Asr': 1004, 'Maghrib': 1005, 'Isha': 1006,
+          };
+          for (final prayer in updatedPrayerTimes) {
+            if (prayer.name == 'Sunrise') continue;
+            if (prayer.time.isAfter(DateTime.now())) {
+              final requestCode = notificationIds[prayer.name] ?? 1000;
+              await PrayerAlarmService.instance.schedulePostPrayerCheck(
+                prayerName: prayer.name,
+                prayerNameAr: prayer.nameAr,
+                prayerTime: prayer.time,
+                requestCode: requestCode,
+              );
+            }
+          }
         } catch (e) {
           debugPrint('PrayerTimesNotifier: Error scheduling post-prayer checks - $e');
         }

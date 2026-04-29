@@ -162,13 +162,6 @@ class PrayerAlarmService {
           requestCode: requestCode,
         );
 
-        // Schedule the 10-minute reminder alarm
-        await scheduleReminderAlarm(
-          prayerName: prayer.name,
-          prayerNameAr: prayer.nameAr,
-          prayerTime: prayer.time,
-          requestCode: requestCode,
-        );
       } else {
         debugPrint('⏭️ [PRAYER ALARMS] Skipping ${prayer.name} - time has passed');
       }
@@ -228,6 +221,59 @@ class PrayerAlarmService {
       debugPrint('PrayerAlarmService: All alarms cancelled');
     } catch (e) {
       debugPrint('PrayerAlarmService: Error cancelling alarms - $e');
+    }
+  }
+
+  /// Schedule a post-prayer check alarm 30 minutes after prayer time
+  Future<void> schedulePostPrayerCheck({
+    required String prayerName,
+    required String prayerNameAr,
+    required DateTime prayerTime,
+    required int requestCode,
+  }) async {
+    if (!_isInitialized) await initialize();
+    try {
+      await _channel.invokeMethod('schedulePostPrayerCheck', {
+        'prayerName': prayerName,
+        'prayerNameAr': prayerNameAr,
+        'prayerTime': prayerTime.millisecondsSinceEpoch,
+        'requestCode': requestCode,
+      });
+      debugPrint('PrayerAlarmService: Scheduled post-prayer check for $prayerName');
+    } catch (e) {
+      debugPrint('PrayerAlarmService: Error scheduling post-prayer check - $e');
+    }
+  }
+
+  /// Cancel a pending post-prayer check alarm
+  Future<void> cancelPostPrayerCheck({
+    required String prayerName,
+    required int requestCode,
+  }) async {
+    if (!_isInitialized) await initialize();
+    try {
+      await _channel.invokeMethod('cancelPostPrayerCheck', {
+        'prayerName': prayerName,
+        'requestCode': requestCode,
+      });
+    } catch (e) {
+      debugPrint('PrayerAlarmService: Error cancelling post-prayer check - $e');
+    }
+  }
+
+  /// Mark prayer as tracked in native SharedPreferences so 30-min check sees it
+  Future<void> markPrayerTracked({
+    required String prayerName,
+    required String status,
+  }) async {
+    if (!_isInitialized) await initialize();
+    try {
+      await _channel.invokeMethod('markPrayerTracked', {
+        'prayerName': prayerName,
+        'status': status,
+      });
+    } catch (e) {
+      debugPrint('PrayerAlarmService: Error marking prayer tracked - $e');
     }
   }
 
@@ -302,6 +348,26 @@ class PrayerAlarmService {
       debugPrint('✅ [SYNC] Native prayer statuses synced to Firestore');
     } catch (e) {
       debugPrint('❌ [SYNC] Error syncing native prayer statuses - $e');
+    }
+  }
+
+  /// Schedule the daily prayer summary notification at [timeStr] (format "HH:mm")
+  Future<void> scheduleDailySummary(String timeStr) async {
+    try {
+      await _channel.invokeMethod('scheduleDailySummary', {'time': timeStr});
+      debugPrint('📅 [DAILY_SUMMARY] Scheduled for $timeStr');
+    } catch (e) {
+      debugPrint('❌ [DAILY_SUMMARY] Failed to schedule: $e');
+    }
+  }
+
+  /// Cancel the daily prayer summary notification
+  Future<void> cancelDailySummary() async {
+    try {
+      await _channel.invokeMethod('cancelDailySummary');
+      debugPrint('📅 [DAILY_SUMMARY] Cancelled');
+    } catch (e) {
+      debugPrint('❌ [DAILY_SUMMARY] Failed to cancel: $e');
     }
   }
 

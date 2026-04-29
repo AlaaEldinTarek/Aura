@@ -5,6 +5,7 @@ import '../services/shared_preferences_service.dart';
 import '../services/firestore_service.dart';
 import '../services/prayer_widget_service.dart';
 import '../services/task_widget_service.dart';
+import '../services/prayer_alarm_service.dart';
 import 'auth_provider.dart';
 import 'prayer_times_provider.dart';
 
@@ -569,5 +570,50 @@ class AppModeNotifier extends StateNotifier<AppMode> {
       case AppMode.tasksOnly: return 'tasks_only';
       case AppMode.both: return 'both';
     }
+  }
+}
+
+// ─── Prayer Tracking Notifications Provider ───────────────────────────────────
+
+final prayerTrackingEnabledProvider =
+    StateNotifierProvider<PrayerTrackingEnabledNotifier, bool>((ref) {
+  final prefsService = ref.watch(sharedPreferencesServiceProvider);
+  return PrayerTrackingEnabledNotifier(prefsService);
+});
+
+class PrayerTrackingEnabledNotifier extends StateNotifier<bool> {
+  final SharedPreferencesService _prefs;
+  PrayerTrackingEnabledNotifier(this._prefs) : super(true) { _init(); }
+
+  Future<void> _init() async {
+    state = await _prefs.isPrayerTrackingEnabled();
+  }
+
+  Future<void> setEnabled(bool value) async {
+    await _prefs.setPrayerTrackingEnabled(value);
+    state = value;
+  }
+}
+
+// ─── Daily Summary Time Provider ─────────────────────────────────────────────
+
+final dailySummaryTimeProvider =
+    StateNotifierProvider<DailySummaryTimeNotifier, String>((ref) {
+  final prefsService = ref.watch(sharedPreferencesServiceProvider);
+  return DailySummaryTimeNotifier(prefsService);
+});
+
+class DailySummaryTimeNotifier extends StateNotifier<String> {
+  final SharedPreferencesService _prefs;
+  DailySummaryTimeNotifier(this._prefs) : super('21:00') { _init(); }
+
+  Future<void> _init() async {
+    state = await _prefs.getDailySummaryTime();
+  }
+
+  Future<void> setTime(String value) async {
+    await _prefs.setDailySummaryTime(value);
+    state = value;
+    await PrayerAlarmService.instance.scheduleDailySummary(value);
   }
 }

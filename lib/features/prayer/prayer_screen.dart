@@ -28,6 +28,7 @@ import '../settings/prayer_calculation_settings_dialog.dart';
 import '../settings/adhan_calculation_method.dart';
 import '../settings/asr_madhab_selection.dart';
 import '../../core/utils/haptic_feedback.dart' as haptic;
+import '../../core/providers/preferences_provider.dart';
 import '../../core/utils/prayer_time_rules.dart';
 import '../../core/providers/daily_prayer_status_provider.dart';
 
@@ -1140,6 +1141,48 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
               }
             },
           ),
+          // Prayer Tracking Notifications Toggle
+          Consumer(builder: (context, ref, _) {
+            final enabled = ref.watch(prayerTrackingEnabledProvider);
+            final timeStr = ref.watch(dailySummaryTimeProvider);
+            final timeParts = timeStr.split(':');
+            final hour = int.tryParse(timeParts[0]) ?? 21;
+            final minute = int.tryParse(timeParts.length > 1 ? timeParts[1] : '0') ?? 0;
+            return Column(
+              children: [
+                SwitchListTile(
+                  secondary: Icon(Icons.track_changes, color: AppConstants.getPrimary(isDark)),
+                  title: Text(isArabic ? 'تذكير تسجيل الصلاة' : 'Prayer Tracking Reminders'),
+                  subtitle: Text(isArabic
+                      ? 'إشعار بعد الصلاة وملخص يومي'
+                      : 'Post-prayer check & daily summary'),
+                  value: enabled,
+                  onChanged: (value) {
+                    ref.read(prayerTrackingEnabledProvider.notifier).setEnabled(value);
+                  },
+                ),
+                if (enabled)
+                  ListTile(
+                    leading: Icon(Icons.schedule, color: AppConstants.getPrimary(isDark)),
+                    title: Text(isArabic ? 'وقت الملخص اليومي' : 'Daily Summary Time'),
+                    subtitle: Text(isArabic
+                        ? '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}'
+                        : '${hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour)}:${minute.toString().padLeft(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}'),
+                    trailing: Icon(Icons.chevron_right, color: Colors.grey),
+                    onTap: () async {
+                      final picked = await showTimePicker(
+                        context: context,
+                        initialTime: TimeOfDay(hour: hour, minute: minute),
+                      );
+                      if (picked != null) {
+                        final newTime = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+                        await ref.read(dailySummaryTimeProvider.notifier).setTime(newTime);
+                      }
+                    },
+                  ),
+              ],
+            );
+          }),
           const SizedBox(height: AppConstants.paddingLarge),
 
           // ==================== PRAYER ALERTS SECTION ====================

@@ -104,74 +104,64 @@ class PrayerRescheduleService : Service() {
     }
 
     /**
-     * Reschedule all prayer alarms for today and tomorrow
+     * Reschedule prayer alarms using real times saved by Flutter in aura_prayer_times.
+     * Never uses placeholder times — inaccurate placeholders caused double adhan when
+     * a placeholder fired after the real prayer had already played.
      */
     private suspend fun rescheduleAllPrayers() {
-        Log.d(TAG, "Rescheduling all prayer alarms")
+        Log.d(TAG, "Rescheduling prayer alarms from saved real times")
 
-        val sharedPrefs = getSharedPreferences("aura_prefs", Context.MODE_PRIVATE)
-
-        // Get saved location
-        val latitude = sharedPrefs.getFloat("saved_latitude", 0.0f).toDouble()
-        val longitude = sharedPrefs.getFloat("saved_longitude", 0.0f).toDouble()
-
-        if (latitude == 0.0 || longitude == 0.0) {
-            Log.w(TAG, "No saved location, skipping prayer schedule")
-            return
-        }
-
-        // Get calculation method preference
-        val calculationMethod = sharedPrefs.getString("calculation_method", "muslim_world_league") ?: "muslim_world_league"
-
-        Log.d(TAG, "Using location: $latitude, $longitude")
-        Log.d(TAG, "Using calculation method: $calculationMethod")
-
-        // Get prayer times for today (this would use a prayer calculation library)
-        // For now, we'll create placeholder times
+        val prayerPrefs = getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
         val now = System.currentTimeMillis()
-        val prayerTimes = calculatePrayerTimes(now, latitude, longitude)
 
-        // Schedule each prayer alarm
-        for (prayer in prayerTimes) {
-            if (prayer.time > now) {
-                PrayerAlarmReceiver.schedulePrayerAlarm(
-                    this,
-                    prayer.name,
-                    prayer.nameAr,
-                    prayer.time,
-                    PrayerAlarmReceiver.getNotificationId(prayer.name)
-                )
-                val timeStr = DateFormat.format("HH:mm", Date(prayer.time))
-                Log.d(TAG, "Scheduled ${prayer.name} for $timeStr")
-                delay(100) // Small delay between scheduling
+        // Prayers as stored by Flutter's PrayerWidgetService (key → English name, Arabic name)
+        val prayerMap = listOf(
+            Triple("fajr_time",    "Fajr",    "الفجر"),
+            Triple("dhuhr_time",   "Zuhr",    "الظهر"),
+            Triple("asr_time",     "Asr",     "العصر"),
+            Triple("maghrib_time", "Maghrib", "المغرب"),
+            Triple("isha_time",    "Isha",    "العشاء")
+        )
+
+        var scheduled = 0
+        for ((key, name, nameAr) in prayerMap) {
+            val timeMs = prayerPrefs.getString(key, null)?.toLongOrNull() ?: continue
+            if (timeMs <= now) {
+                Log.d(TAG, "⏭️ [RESCHEDULE] $name already passed ($key), skipping")
+                continue
             }
+            PrayerAlarmReceiver.schedulePrayerAlarm(
+                this, name, nameAr, timeMs,
+                PrayerAlarmReceiver.getNotificationId(name)
+            )
+            Log.d(TAG, "✅ [RESCHEDULE] $name → ${DateFormat.format("HH:mm", Date(timeMs))}")
+            scheduled++
+            delay(100)
         }
 
-        Log.d(TAG, "All prayer alarms rescheduled")
+        if (scheduled == 0) {
+            Log.w(TAG, "⚠️ [RESCHEDULE] No real prayer times found in aura_prayer_times — Flutter will reschedule on next launch")
+        } else {
+            Log.d(TAG, "✅ [RESCHEDULE] Scheduled $scheduled prayer alarms from real times")
+        }
     }
 
-    /**
-     * Calculate prayer times for a given date
-     * This is a simplified version - in production, use a proper prayer calculation library
-     */
+    // Kept as dead code reference only — replaced by reading real times from SharedPreferences
+    @Suppress("unused")
     private fun calculatePrayerTimes(dateMillis: Long, latitude: Double, longitude: Double): List<PrayerTime> {
         val calendar = java.util.Calendar.getInstance()
         calendar.timeInMillis = dateMillis
-
-        // Simplified prayer time calculations
-        // In production, use the Adhan library or similar
         val baseTime = calendar.apply {
             set(java.util.Calendar.HOUR_OF_DAY, 6)
             set(java.util.Calendar.MINUTE, 0)
             set(java.util.Calendar.SECOND, 0)
         }.timeInMillis
-
         return listOf(
-            PrayerTime("Fajr", "الفجر", baseTime),                      // 6:00 AM
-            PrayerTime("Sunrise", "الشروق", baseTime + 1800000),      // 6:30 AM
-            PrayerTime("Zuhr", "الظهر", baseTime + 21600000),        // 12:00 PM
-            PrayerTime("Asr", "العصر", baseTime + 36000000),          // 4:00 PM
-            PrayerTime("Maghrib", "المغرب", baseTime + 46800000),     // 6:00 PM
+            PrayerTime("Fajr", "الفجر", baseTime),
+            PrayerTime("Sunrise", "الشروق", baseTime + 1800000),
+            PrayerTime("Zuhr", "الظهر", baseTime + 21600000),
+            PrayerTime("Asr", "العصر", baseTime + 36000000),
+            PrayerTime("Maghrib", "المغرب", baseTime + 46800000),
             PrayerTime("Isha", "العشاء", baseTime + 57600000)          // 8:00 PM
         )
     }

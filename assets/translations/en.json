@@ -221,5 +221,21 @@
   "jumua_reminder_subtitle": "Get notified before Friday prayer",
 
   "overlay_permission_title": "Display Over Apps",
-  "overlay_permission_desc": "Required to show the Focus Mode screen over other apps"
+  "overlay_permission_desc": "Required to show the Focus Mode screen over other apps",
+
+  "post_prayer_done": "Done",
+  "post_prayer_late": "Late",
+  "post_prayer_missed": "Missed",
+  "post_prayer_remind_later": "Remind Later",
+  "post_prayer_next_note": "Next {prayer} will start in {min} min",
+
+  "prayer_tracking_reminders": "Prayer Tracking Reminders",
+  "prayer_tracking_reminders_desc": "Post-prayer check & daily summary",
+  "daily_summary_time": "Daily Summary Time",
+  "untracked_prayers_title": "Untracked Prayers",
+  "untracked_prayers_subtitle": "How did you perform these prayers?",
+  "prayer_status_on_time": "On Time",
+  "prayer_status_later_label": "Later",
+  "daily_summary_notif_title": "Daily Prayer Reminder",
+  "daily_summary_notif_body": "You have {count} untracked {prayers} today"
 }

@@ -4,6 +4,7 @@ import '../models/prayer_record.dart';
 import '../models/achievement.dart';
 import 'achievement_service.dart';
 import 'notification_service.dart';
+import 'prayer_alarm_service.dart';
 
 /// Service for tracking prayer completion
 /// Optimized with local caching and batched writes
@@ -67,6 +68,24 @@ class PrayerTrackingService {
 
       // Cancel the post-prayer check notification since user already logged it
       NotificationService.instance.cancelPostPrayerCheck(prayerName);
+
+      // Mark prayer as tracked in native SharedPreferences so the 30-min check sees it
+      try {
+        const notificationIds = {
+          'Fajr': 1001, 'Sunrise': 1002, 'Zuhr': 1003,
+          'Asr': 1004, 'Maghrib': 1005, 'Isha': 1006,
+        };
+        await PrayerAlarmService.instance.markPrayerTracked(
+          prayerName: prayerName,
+          status: status.value,
+        );
+        await PrayerAlarmService.instance.cancelPostPrayerCheck(
+          prayerName: prayerName,
+          requestCode: notificationIds[prayerName] ?? 1000,
+        );
+      } catch (e) {
+        debugPrint('PrayerTrackingService: Error marking native prayer tracked - $e');
+      }
 
       debugPrint('PrayerTrackingService: Recorded $prayerName for $date');
       return true;

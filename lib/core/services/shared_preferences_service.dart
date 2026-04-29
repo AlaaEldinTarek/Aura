@@ -146,6 +146,23 @@ class SharedPreferencesService {
     return await _prefsInstance.setBool('task_notifications_enabled', value);
   }
 
+  // Prayer Tracking Notifications
+  Future<bool> isPrayerTrackingEnabled() async {
+    return _prefsInstance.getBool('prayer_tracking_notifications_enabled') ?? true;
+  }
+
+  Future<bool> setPrayerTrackingEnabled(bool value) async {
+    return await _prefsInstance.setBool('prayer_tracking_notifications_enabled', value);
+  }
+
+  Future<String> getDailySummaryTime() async {
+    return _prefsInstance.getString('daily_summary_time') ?? '21:00';
+  }
+
+  Future<bool> setDailySummaryTime(String value) async {
+    return await _prefsInstance.setString('daily_summary_time', value);
+  }
+
   // Clear all (except guest mode and first launch)
   Future<bool> clearUserData() async {
     await _prefsInstance.remove(AppConstants.keyThemeMode);

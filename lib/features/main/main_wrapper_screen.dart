@@ -13,7 +13,13 @@ import '../../core/providers/task_provider.dart';
 import '../../core/services/task_service.dart';
 import '../../core/services/achievement_service.dart';
 import '../../core/services/prayer_alarm_service.dart';
+import '../../core/services/prayer_tracking_service.dart';
+import '../../core/models/prayer_record.dart';
+import '../../core/models/prayer_time.dart';
 import '../../core/models/achievement.dart';
+import '../../core/providers/daily_prayer_status_provider.dart';
+import '../../core/providers/auth_provider.dart';
+import '../../core/services/shared_preferences_service.dart';
 import '../home/home_screen.dart';
 import '../prayer/prayer_screen.dart';
 import '../profile/profile_screen.dart';
@@ -49,6 +55,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      // Check untracked prayers BEFORE invalidating provider (would clear prayer times)
+      _checkUntrackedPrayers();
       ref.invalidate(prayerTimesProvider);
       ref.invalidate(tasksProvider(const TaskFilterParams()));
       _handleWidgetIntent();
@@ -82,6 +90,9 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
         }
       });
       _handleWidgetIntent();
+      _scheduleDailySummaryOnStartup();
+      // On cold start, prayer times need time to load — check after a short delay
+      Future.delayed(const Duration(seconds: 3), _checkUntrackedPrayers);
     });
 
     // Listen for app shortcut navigation from native side
@@ -97,6 +108,19 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
         final prayerTime = (call.arguments['prayerTime'] as num?)?.toInt() ?? 0;
         if (mounted) {
           _showReminderPicker(prayerName, prayerNameAr, prayerTime);
+        }
+      } else if (call.method == 'openPostPrayerPicker') {
+        final prayerName = call.arguments['prayerName'] as String? ?? '';
+        final prayerNameAr = call.arguments['prayerNameAr'] as String? ?? prayerName;
+        final prayerTime = (call.arguments['prayerTime'] as num?)?.toInt() ?? 0;
+        if (mounted) {
+          _showPostPrayerReminderPicker(prayerName, prayerNameAr, prayerTime);
+        }
+      } else if (call.method == 'updatePrayerStatus') {
+        final prayerName = call.arguments['prayerName'] as String? ?? '';
+        final statusStr = call.arguments['status'] as String? ?? '';
+        if (prayerName.isNotEmpty && statusStr.isNotEmpty) {
+          await _recordPrayerStatusFromNotification(prayerName, statusStr);
         }
       }
     });
@@ -159,6 +183,171 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     } catch (e) {
       debugPrint('Error syncing native prayer statuses: $e');
     }
+  }
+
+  Future<void> _scheduleDailySummaryOnStartup() async {
+    try {
+      final prefs = SharedPreferencesService.instance;
+      final enabled = await prefs.isPrayerTrackingEnabled();
+      if (!enabled) return;
+      final timeStr = await prefs.getDailySummaryTime();
+      await PrayerAlarmService.instance.scheduleDailySummary(timeStr);
+    } catch (e) {
+      debugPrint('Error scheduling daily summary: $e');
+    }
+  }
+
+  bool _untrackedCheckInProgress = false;
+
+  Future<void> _checkUntrackedPrayers() async {
+    if (_untrackedCheckInProgress) return;
+    _untrackedCheckInProgress = true;
+    try {
+      final prefs = SharedPreferencesService.instance;
+      final enabled = await prefs.isPrayerTrackingEnabled();
+      if (!enabled) return;
+
+      final userId = ref.read(currentUserProvider)?.uid;
+      if (userId == null || userId.isEmpty) return;
+
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final prayerState = ref.read(prayerTimesProvider);
+      if (prayerState.prayerTimes.isEmpty) return;
+
+      // Past prayers = prayers whose adhan time has already passed (excluding Sunrise)
+      final pastPrayers = prayerState.prayerTimes
+          .where((p) => p.name != 'Sunrise' && p.time.isBefore(now))
+          .toList();
+      if (pastPrayers.isEmpty) return;
+
+      // Fetch today's tracked records
+      final tracked = await PrayerTrackingService.instance.getPrayersForDate(
+        userId: userId,
+        date: today,
+      );
+      final trackedNames = tracked.map((r) => r.prayerName.toLowerCase()).toSet();
+
+      final List<PrayerTime> untracked = pastPrayers
+          .where((p) => !trackedNames.contains(p.name.toLowerCase()))
+          .toList();
+
+      if (untracked.isEmpty) return;
+
+      if (!mounted) return;
+      _showUntrackedPrayersSheet(untracked);
+    } catch (e) {
+      debugPrint('Error checking untracked prayers: $e');
+    } finally {
+      _untrackedCheckInProgress = false;
+    }
+  }
+
+  void _showUntrackedPrayersSheet(List<PrayerTime> untrackedPrayers) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    // Mutable copy — rows are removed one-by-one as the user handles each prayer
+    final remaining = List<PrayerTime>.from(untrackedPrayers);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: isDark ? const Color(0xFF1A1B1E) : const Color(0xFFFFF8EB),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: isArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[400],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  isArabic ? 'صلوات لم تُسجَّل' : 'Untracked Prayers',
+                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  textAlign: isArabic ? TextAlign.right : TextAlign.left,
+                ),
+                Text(
+                  isArabic ? 'كيف أدّيت هذه الصلوات؟' : 'How did you perform these prayers?',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
+                  textAlign: isArabic ? TextAlign.right : TextAlign.left,
+                ),
+                const SizedBox(height: 16),
+                ...remaining.map((prayer) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: Row(
+                      children: [
+                        Text(
+                          isArabic ? prayer.nameAr : prayer.name,
+                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                        ),
+                        const Spacer(),
+                        ...[
+                          ('on_time', isArabic ? 'في وقتها' : 'On Time', AppConstants.primaryColor),
+                          ('late', isArabic ? 'متأخر' : 'Late', Colors.orange),
+                          ('missed', isArabic ? 'فاتت' : 'Missed', Colors.red),
+                        ].map((option) {
+                          final (statusStr, label, color) = option;
+                          return Padding(
+                            padding: const EdgeInsets.only(left: 6),
+                            child: TextButton(
+                              onPressed: () async {
+                                setSheetState(() => remaining.remove(prayer));
+                                await _recordPrayerStatusFromNotification(prayer.name, statusStr);
+                                // Auto-close when all prayers are handled
+                                if (remaining.isEmpty && ctx.mounted) {
+                                  Navigator.of(ctx).pop();
+                                }
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor: color,
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  );
+                }),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: isArabic ? Alignment.centerLeft : Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: Text(
+                      isArabic ? 'لاحقاً' : 'Later',
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
   void _updateCurrentRoute() {
@@ -293,6 +482,184 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       final i = int.tryParse(c);
       return i != null ? eastern[i] : c;
     }).join('');
+  }
+
+  void _showPostPrayerReminderPicker(String prayerName, String prayerNameAr, int prayerTime) {
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final prayerState = ref.read(prayerTimesProvider);
+    final now = DateTime.now();
+
+    // Find minutes until next prayer's adhan
+    final prayerOrder = ['Fajr', 'Zuhr', 'Asr', 'Maghrib', 'Isha'];
+    final currentIndex = prayerOrder.indexOf(prayerName);
+
+    int minutesUntilNextAzan = 0;
+    String nextPrayerName = '';
+    String nextPrayerNameAr = '';
+
+    if (currentIndex >= 0) {
+      for (int i = currentIndex + 1; i < prayerOrder.length; i++) {
+        final nextName = prayerOrder[i];
+        try {
+          final nextPrayer = prayerState.prayerTimes.firstWhere(
+            (p) => p.name == nextName,
+          );
+          if (nextPrayer.time.isAfter(now)) {
+            minutesUntilNextAzan = nextPrayer.time.difference(now).inMinutes;
+            nextPrayerName = nextPrayer.name;
+            nextPrayerNameAr = nextPrayer.nameAr;
+            break;
+          }
+        } catch (_) {}
+      }
+    }
+
+    // Filter: only show delays less than time until next azan
+    final allOptions = [5, 10, 15, 20, 30];
+    final options = allOptions.where((m) => m < minutesUntilNextAzan).toList();
+
+    if (options.isEmpty) {
+      // No time for any reminder
+      return;
+    }
+
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF1A1B1E) : const Color(0xFFFFF3D6),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
+        ),
+        title: Text(
+          isArabic
+              ? 'ذكّرني لاحقاً - $prayerNameAr'
+              : 'Remind Me Later - $prayerName',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: isArabic ? TextAlign.right : TextAlign.left,
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: options.map((minutes) {
+                final label = isArabic
+                    ? '${_toArabicNumerals(minutes)} دقيقة'
+                    : '$minutes min';
+                return ChoiceChip(
+                  label: Text(label),
+                  selected: false,
+                  onSelected: (_) {
+                    Navigator.of(ctx).pop();
+                    _schedulePostPrayerRemindLater(prayerName, prayerNameAr, prayerTime, minutes);
+                  },
+                  backgroundColor: isDark ? const Color(0xFF2A2B2E) : const Color(0xFFFFEACC),
+                  selectedColor: AppConstants.primaryColor,
+                  labelStyle: TextStyle(
+                    color: isDark ? Colors.white : const Color(0xFF2A2418),
+                    fontWeight: FontWeight.w600,
+                  ),
+                );
+              }).toList(),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              isArabic
+                  ? 'صلاة $nextPrayerNameAr ستبدأ بعد ${_toArabicNumerals(minutesUntilNextAzan)} دقيقة'
+                  : 'Next $nextPrayerName will start in $minutesUntilNextAzan min',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text(
+              isArabic ? 'إلغاء' : 'Cancel',
+              style: TextStyle(color: AppConstants.primaryColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _recordPrayerStatusFromNotification(String prayerName, String statusStr) async {
+    final status = switch (statusStr) {
+      'on_time' => PrayerStatus.onTime,
+      'late' => PrayerStatus.late,
+      'missed' => PrayerStatus.missed,
+      'excused' => PrayerStatus.excused,
+      _ => null,
+    };
+    if (status == null) return;
+    final userId = ref.read(currentUserProvider)?.uid;
+    if (userId == null) return;
+    try {
+      final now = DateTime.now();
+      await PrayerTrackingService.instance.recordPrayer(
+        userId: userId,
+        prayerName: prayerName,
+        date: DateTime(now.year, now.month, now.day),
+        prayedAt: now,
+        status: status,
+      );
+      if (mounted) {
+        ref.invalidate(dailyPrayerStatusProvider);
+        await ref.read(dailyPrayerStatusProvider.notifier).load();
+      }
+    } catch (e) {
+      debugPrint('Error recording prayer from notification: $e');
+    }
+  }
+
+  Future<void> _schedulePostPrayerRemindLater(
+    String prayerName,
+    String prayerNameAr,
+    int prayerTime,
+    int delayMinutes,
+  ) async {
+    try {
+      const alarmChannel = MethodChannel('com.aura.hala/prayer_alarms');
+      await alarmChannel.invokeMethod('schedulePostPrayerCheck', {
+        'prayerName': prayerName,
+        'prayerNameAr': prayerNameAr,
+        'prayerTime': DateTime.now().add(Duration(minutes: delayMinutes)).millisecondsSinceEpoch,
+        'requestCode': 9000 + delayMinutes,
+      });
+
+      if (mounted) {
+        final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isArabic
+                  ? 'سأذكرك بعد ${_toArabicNumerals(delayMinutes)} دقيقة'
+                  : 'Will remind you in $delayMinutes minutes',
+              textAlign: TextAlign.center,
+            ),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            backgroundColor: AppConstants.primaryColor,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      debugPrint('Error scheduling post-prayer remind later: $e');
+    }
   }
 
   void _handleTabTap(int index) {

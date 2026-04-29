@@ -221,5 +221,21 @@
   "jumua_reminder_subtitle": "إشعار قبل حلول وقت صلاة الجمعة",
 
   "overlay_permission_title": "العرض فوق التطبيقات",
-  "overlay_permission_desc": "مطلوب لعرض شاشة وضع التركيز فوق التطبيقات الأخرى"
+  "overlay_permission_desc": "مطلوب لعرض شاشة وضع التركيز فوق التطبيقات الأخرى",
+
+  "post_prayer_done": "صلّيت",
+  "post_prayer_late": "متأخر",
+  "post_prayer_missed": "فاتتني",
+  "post_prayer_remind_later": "ذكّرني لاحقاً",
+  "post_prayer_next_note": "صلاة {prayer} ستبدأ بعد {min} دقيقة",
+
+  "prayer_tracking_reminders": "تذكير تسجيل الصلاة",
+  "prayer_tracking_reminders_desc": "إشعار بعد الصلاة وملخص يومي",
+  "daily_summary_time": "وقت الملخص اليومي",
+  "untracked_prayers_title": "صلوات لم تُسجَّل",
+  "untracked_prayers_subtitle": "كيف أدّيت هذه الصلوات؟",
+  "prayer_status_on_time": "في وقتها",
+  "prayer_status_later_label": "لاحقاً",
+  "daily_summary_notif_title": "تذكير الصلاة اليومي",
+  "daily_summary_notif_body": "لديك {count} صلوات لم تُسجَّل اليوم"
 }

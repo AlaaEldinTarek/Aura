@@ -202,21 +202,22 @@ lib/
 | Channel Name | Purpose | Flutter Service | Native Kotlin File |
 |--------------|---------|-----------------|-------------------|
 | `com.aura.hala/adhan` | Adhan audio playback | AdhanPlayerService | AdhanPlayer.kt |
-| `com.aura.hala/prayer_alarms` | Schedule exact prayer alarms | PrayerAlarmService | PrayerAlarmReceiver.kt |
+| `com.aura.hala/prayer_alarms` | Schedule exact prayer alarms + post-prayer checks + daily summary | PrayerAlarmService | PrayerAlarmReceiver.kt + DailySummaryReceiver.kt |
 | `com.aura.hala/background_service` | Foreground service control | BackgroundServiceManager | PrayerForegroundService.kt |
 | `com.aura.hala/widgets` | Widget data updates | PrayerWidgetService | WidgetUpdateService.kt |
 | `com.aura.hala/ringer_mode` | Silent/vibrate mode control | SilentModeService | SilentModeAutomation.kt |
-| `com.aura.hala/navigation` | Route tracking | NavigationService | MainActivity.kt |
+| `com.aura.hala/navigation` | Route tracking + post-prayer/reminder picker callbacks (native→Flutter) | NavigationService | MainActivity.kt |
 | `com.aura.hala/focus_mode` | Focus mode scheduling, overlay/DND permissions, service control | NotificationService | FocusModeService.kt |
 
-### Native Android Architecture (20 Kotlin files)
+### Native Android Architecture (21 Kotlin files)
 
 Located at `android/app/src/main/kotlin/com/aura/hala/`:
 
 | File | Purpose |
 |------|---------|
 | `MainActivity.kt` | FlutterActivity, 8 MethodChannel handlers, notification channels |
-| `PrayerAlarmReceiver.kt` | BroadcastReceiver at prayer times, triggers adhan + notification + silent mode. Notification IDs: 1001-1006 (prayers), 2001-2006 (reminders) |
+| `PrayerAlarmReceiver.kt` | BroadcastReceiver at prayer times, triggers adhan + notification + silent mode. Also handles post-prayer check alarms (30 min after prayer). Notification IDs: 1001-1006 (prayers), 2001-2006 (reminders), 6001-6006 (post-prayer checks) |
+| `DailySummaryReceiver.kt` | BroadcastReceiver firing at configurable daily time. Reads `prayer_status_{name}_{date}` keys from `aura_prayer_times` prefs. If any untracked prayers exist, shows summary notification (ID 7001). Reschedules itself for tomorrow. |
 | `AdhanPlayer.kt` | Singleton MediaPlayer adhan playback, per-prayer audio, vibration, thread-safe |
 | `SilentModeAutomation.kt` | AudioManager silent mode scheduling with configurable duration |
 | `PrayerForegroundService.kt` | START_STICKY foreground service with next prayer countdown, updates every second |
@@ -234,11 +235,12 @@ Located at `android/app/src/main/kotlin/com/aura/hala/`:
 | `PrayerRescheduleService.kt` | Service for post-boot alarm rescheduling |
 | `StopAdhanReceiver.kt` | Stops adhan from notification action button |
 | `ToggleSilentModeReceiver.kt` | Toggles silent mode from adhan notification |
+| `SilentOffReceiver.kt` | Auto-restores ringer mode after silent mode timer expires |
 | `BackgroundServiceHandler.kt` | Handler for background service operations |
 
 **AndroidManifest.xml declares:**
 - 18 permissions (location, internet, vibration, wake lock, boot, exact alarms, notifications, foreground service, audio, battery, DND, storage, SYSTEM_ALERT_WINDOW, REORDER_TASKS)
-- 8 receivers, 3 services, 3 activities (MainActivity + AdhanFullScreenActivity + FocusModeActivity with lock screen)
+- 10 receivers, 3 services, 3 activities (MainActivity + AdhanFullScreenActivity + FocusModeActivity with lock screen)
 - 109 drawable XMLs, 20 layout XMLs, 5 widget info XMLs
 
 ---
@@ -265,13 +267,16 @@ Located at `android/app/src/main/kotlin/com/aura/hala/`:
 `/` (splash), `/login`, `/signup`, `/onboarding`, `/mode_selection`, `/home`, `/prayer`, `/prayer_tracking`, `/prayer_report`, `/dhikr`, `/dhikr_stats`, `/achievements`, `/task_form`, `/task_stats`, `/profile`, `/iqama_settings`, `/adhan_downloads`, `/qibla`, `/daily_content`
 
 ### Prayer Time Calculation Flow
-1. `LocationService.getBestLocation()` — Gets GPS (via geolocator) or manual location
+1. `LocationService.getBestLocation()` — Gets GPS (via geolocator) or manual location. **Location cached for 15 minutes** (`_locationCacheTTL`) to avoid GPS on every minute tick.
 2. `PrayerTimesService.getPrayerTimes()` — Calculates 6 prayer times using Adhan library with selected method + Asr madhab
-3. `PrayerTimesNotifier.loadPrayerTimes()` — Loads, caches, and distributes prayer times
+3. `PrayerTimesNotifier.loadPrayerTimes()` — Loads, caches, and distributes prayer times. **Side effects run once per day** (guarded by `_lastSideEffectsDate` — set synchronously before the async block to prevent concurrent runs).
 4. `getNextPrayer()` / `getCurrentPrayer()` — Determines next/current prayer with day transition handling
-5. `NotificationService` schedules 10-minute reminder notifications
-6. `PrayerAlarmService` schedules native exact alarms via MethodChannel
-7. `PrayerWidgetService` updates home screen widgets
+5. Side effects (fire-and-forget, skipped if already ran today):
+   - `PrayerAlarmService.schedulePostPrayerCheck()` — native alarm 30 min after each future prayer
+   - `NotificationService.scheduleDailyTaskDigest()` — 8 AM task count notification
+   - `PrayerAlarmService.scheduleDailyPrayerAlarms()` — native exact alarms for adhan
+   - `PrayerWidgetService.savePrayerTimes()` — updates home screen widgets
+   - `BackgroundServiceManager.updatePrayerTimes()` — updates foreground service notification
 
 ### Critical: Next Prayer Logic
 The `getNextPrayer()` method in `PrayerTimesService` handles a critical edge case:
@@ -281,9 +286,16 @@ The `getNextPrayer()` method in `PrayerTimesService` handles a critical edge cas
 - Only if ALL prayers have passed does it return tomorrow's Fajr
 - PrayerTimesProvider auto-refreshes every minute via timer
 
-### Notification Architecture (Dual System)
-1. **Flutter NotificationService** — 10-minute reminder notifications BEFORE prayer via `flutter_local_notifications` with timezone support and "Remind Me Again" action (5 min before)
-2. **Native PrayerAlarmReceiver** — Exact prayer time notifications via AlarmManager, triggers adhan playback, full-screen intent, and optional silent mode
+### Notification Architecture (Three-Layer System)
+1. **Flutter NotificationService** — 10-minute reminder notifications BEFORE prayer via `flutter_local_notifications` with timezone support and "Remind Me Again" action (5 min before). Also schedules daily 8 AM task digest.
+2. **Native PrayerAlarmReceiver** — Exact prayer time notifications via AlarmManager, triggers adhan playback, full-screen intent, and optional silent mode.
+3. **Post-prayer check + daily summary** — Native alarms track whether each prayer was marked:
+   - 30 min after adhan: `PrayerAlarmReceiver` fires with `is_post_check=true` → notification with Done/Late/Missed/Later actions (IDs 6001-6006). User's tap writes `prayer_status_{name}_{date}` to `aura_prayer_times` SharedPrefs.
+   - At configurable daily time (default 21:00): `DailySummaryReceiver` fires (ID 7001) → counts untracked prayers → shows summary notification → reschedules itself for tomorrow.
+   - On app resume: `MainWrapperScreen._syncNativePrayerStatuses()` calls `PrayerAlarmService.syncNativePrayerStatuses()` → reads native statuses → syncs each to Firestore via `PrayerTrackingService.recordPrayer()` → clears native key.
+   - The navigation channel (`com.aura.hala/navigation`) receives `openPostPrayerPicker` / `openReminderPicker` / `updatePrayerStatus` callbacks from notification action buttons to drive Flutter UI.
+
+**Notification channel**: `prayer_tracking` (IMPORTANCE_DEFAULT) — created by `DailySummaryReceiver` if absent (receiver fires without app open). Used for post-prayer check (6001-6006) and daily summary (7001) notifications.
 
 ### Foreground Service Notification (PrayerForegroundService)
 - **Channel**: `prayer_foreground_channel`, `IMPORTANCE_HIGH`, `VISIBILITY_PUBLIC`
@@ -305,7 +317,7 @@ The `getNextPrayer()` method in `PrayerTimesService` handles a critical edge cas
 
 ### Localization Pattern
 - All UI strings use `.tr()` from `easy_localization`
-- 392 translation keys in both `en.json` and `ar.json`
+- Translation keys in both `en.json` and `ar.json` (kept in sync)
 - Arabic numeral conversion via `NumberFormatter.withArabicNumeralsByLanguage()`
 - RTL support via `context.locale.languageCode == 'ar'`
 - AM/PM replaced with Arabic equivalents (ص/م)
@@ -323,7 +335,7 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 
 | SharedPreferences File | Used By | Contains |
 |------------------------|---------|----------|
-| `aura_prayer_times` | PrayerForegroundService, PrayerAlarmReceiver, AdhanFullScreenActivity, StopAdhanReceiver | Prayer times, next prayer name/Arabic/time, language |
+| `aura_prayer_times` | PrayerForegroundService, PrayerAlarmReceiver, AdhanFullScreenActivity, StopAdhanReceiver, DailySummaryReceiver | Prayer times, next prayer name/Arabic/time, language. Also stores `prayer_status_{name}_{YYYY-MM-DD}` keys written by post-prayer check action buttons; read by DailySummaryReceiver and synced to Firestore on resume. |
 | `aura_silent_mode` | SilentModeAutomation, PrayerAlarmReceiver, AdhanFullScreenActivity | silent_mode_enabled, is_silent_active, saved_ringer_mode |
 | `aura_prefs` | AdhanPlayer | adhan_enabled |
 | `aura_focus_mode` | FocusModeReceiver | completed_task_id, completed_at |
@@ -357,7 +369,8 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 - **Daily summary notification**: ID 3999, scheduled via `matchDateTimeComponents: DateTimeComponents.time`
 - **Task statistics screen** at `/task_stats` — 2 tabs (Overview/Details), 7-day bar chart, category/priority breakdown, streak, time stats
 - **Task notifications**: `scheduleTaskReminder()` in `NotificationService` — tasks with time get 30-min-before reminder; tasks without time get 9:00 AM reminder on due date. Controlled by `task_notifications_enabled` pref. Toggled via `_TaskSettingsSheet` (gear icon in TasksScreen AppBar)
-- **Focus Mode**: System overlay + `startLockTask()` for complete phone lockdown. Flow: alarm fires → `FocusModeReceiver` → starts `FocusModeService` → overlay covers screen → `FocusModeActivity` calls `startLockTask()`. `AuraAccessibilityService` auto-clicks OK on the "Screen pinned" dialog silently. After timer: DND restored unconditionally, touch blocker removed, shows "Did you complete?" prompt. Yes → marks task done via native MethodChannel (`getFocusCompletedTaskId`) — bypasses Flutter SharedPreferences cache. No → restart options (5/10/15/25/45/60 min + custom). Task completion detected in `TasksScreen.didChangeAppLifecycleState`. Home screen also refreshes prayer times + tasks on app resume. `focus_a11y_ever_enabled` SharedPreferences flag prevents re-asking for accessibility permission on Huawei EMUI which kills services between sessions. Requires `SYSTEM_ALERT_WINDOW` permission + `BIND_ACCESSIBILITY_SERVICE`. Task fields: `focusMode` (bool), `focusDurationMinutes` (int, default 25)
+- **Focus Mode**: System overlay + `startLockTask()` for complete phone lockdown. Flow: alarm fires → `FocusModeReceiver` → starts `FocusModeService` → overlay covers screen → `FocusModeActivity` calls `startLockTask()`. `AuraAccessibilityService` auto-clicks OK on the "Screen pinned" dialog silently. After timer: DND restored unconditionally, touch blocker removed, shows "Did you complete?" prompt. Yes → marks task done via native MethodChannel (`getFocusCompletedTaskId`) — bypasses Flutter SharedPreferences cache. No → restart options (5/10/15/25/45/60 min + custom). Task completion detected in `TasksScreen.didChangeAppLifecycleState`. `focus_a11y_ever_enabled` SharedPreferences flag prevents re-asking for accessibility permission on Huawei EMUI which kills services between sessions. Requires `SYSTEM_ALERT_WINDOW` permission + `BIND_ACCESSIBILITY_SERVICE`. Task fields: `focusMode` (bool), `focusDurationMinutes` (int, default 25)
+- **App resume** (`MainWrapperScreen.didChangeAppLifecycleState`): calls `_checkUntrackedPrayers()` (shows post-prayer dialog if any prayer passed without tracking), `ref.invalidate(prayerTimesProvider)`, `ref.invalidate(tasksProvider)`, `_handleWidgetIntent()`, `_syncNativePrayerStatuses()` (syncs any statuses tapped in notifications to Firestore). On cold start: `_scheduleDailySummaryOnStartup()` and `_checkUntrackedPrayers()` after 3s delay.
 - **Search scope**: covers title, description, tags, and subtask titles
 - **Profile stats**: `_buildTaskStatsSummary()` in ProfileScreen shows Today/Done/Pending cards from `taskStatisticsProvider`
 
@@ -398,7 +411,8 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 - **`lib/core/services/prayer_times_service.dart`**: Prayer time calculations — handles day transitions, next/current prayer logic
 - **`lib/core/services/location_service.dart`**: GPS/manual location with 50+ city translations
 - **`lib/core/providers/prayer_times_provider.dart`**: State management, auto-refresh timer, alarm/notification/widget scheduling
-- **`android/.../PrayerAlarmReceiver.kt`**: Native alarm handling — DO NOT modify notification IDs (1001-1006, 2001-2006)
+- **`android/.../PrayerAlarmReceiver.kt`**: Native alarm handling — DO NOT modify notification IDs (1001-1006 prayers, 2001-2006 reminders, 6001-6006 post-prayer checks)
+- **`android/.../DailySummaryReceiver.kt`**: Daily summary — ID 7001. Reads `prayer_status_*` keys from `aura_prayer_times` prefs; do not change key format.
 
 ### Native Code Gotchas
 - **RemoteViews limitations**: Cannot use `<View>` elements (crashes on Android 10). Use `<FrameLayout>` for dividers instead.
@@ -415,8 +429,9 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 ### Assets
 - **`assets/animations/splash_logo.json`**: Lottie splash animation
 - **`assets/audio/adhan.mp3`**: Default adhan audio
-- **`assets/fonts/`**: Roboto (Regular/Bold), Cairo (Regular/Bold)
+- **`assets/fonts/`**: Roboto (Regular/Bold), Cairo (Regular/Bold), HafsSmart_08.ttf (Hafs Quran font for Ayah display)
 - **`assets/images/`**: logo.png, logo-0.png, logo_dark.png, logo-0_dark.png, SVG design file
+- **`assets/data/`**: Offline data files (hadith/ayah/dua)
 
 ### Test Files
 - **`test/widget_test.dart`**: Basic smoke test

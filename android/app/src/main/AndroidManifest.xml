@@ -164,6 +164,16 @@
             android:enabled="true"
             android:exported="false"/>
 
+        <!-- Daily Prayer Summary Receiver - Fires at configurable time to remind about untracked prayers -->
+        <receiver
+            android:name=".DailySummaryReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.aura.hala.DAILY_PRAYER_SUMMARY"/>
+            </intent-filter>
+        </receiver>
+
         <!-- Focus Mode Receiver - Triggers focus mode at task time -->
         <receiver
             android:name=".FocusModeReceiver"
