@@ -22,6 +22,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Firebase authentication (Email/Password, Google Sign-In, Forgot Password) + guest mode + offline queue
 - Hijri date display with Gregorian-to-Hijri conversion
 - Jumu'ah (Friday) reminder notification 30 min before Zuhr, with bilingual message and weekly auto-reschedule
+- Quran reading with full Hafs Smart text (KFGQPC v8), 114 surah list, 30 juz index, search, bookmarks, reading progress (only visible in Full App mode)
 - Foreground service for reliable background prayer alerts
 
 ---
@@ -108,6 +109,12 @@ The app uses `flutter_riverpod` for reactive state management with these key pro
 | `highPriorityTasksProvider` | `task_provider.dart` | High priority tasks |
 | `taskNotificationsEnabledProvider` | `preferences_provider.dart` | Task reminder notifications toggle (key: `task_notifications_enabled`) |
 | `dailyPrayerStatusProvider` | `daily_prayer_status_provider.dart` | Daily prayer tracking status (on-time/late/missed/excused) |
+| `quranDataProvider` | `quran_provider.dart` | Quran text data (12,472 ayahs) |
+| `surahListProvider` | `quran_provider.dart` | 114 surah list with metadata |
+| `quranBookmarksProvider` | `quran_provider.dart` | Quran bookmarks (SharedPreferences) |
+| `quranReadingProgressProvider` | `quran_provider.dart` | Last read position |
+| `quranSearchProvider` | `quran_provider.dart` | Ayah search by Arabic text |
+| `juzListProvider` | `quran_provider.dart` | 30 juz with page ranges and first surah info |
 
 ### Complete Feature Structure
 ```
@@ -124,7 +131,8 @@ lib/
 │   │   ├── task.dart                  # Task, TaskPriority (low/med/high), TaskCategory (7 types)
 │   │   ├── dhikr.dart                 # DhikrSession, DhikrPreset (6 built-in), DhikrStatistics
 │   │   ├── achievement.dart           # Achievement model with unlockable badges
-│   │   └── daily_content.dart         # DailyContent (hadith/ayah/dua) model
+│   │   ├── daily_content.dart         # DailyContent (hadith/ayah/dua) model
+│   │   └── quran_models.dart          # Ayah, SurahMetaData, Surah, Juz, QuranBookmark, QuranReadingProgress, kSurahMetaData (114 surahs)
 │   ├── providers/
 │   │   ├── auth_provider.dart         # Auth state, login/signup/signout, user data sync
 │   │   ├── preferences_provider.dart  # Theme, language, guest mode, vibration, silent mode
@@ -132,6 +140,7 @@ lib/
 │   │   ├── connectivity_provider.dart # Network connectivity monitoring
 │   │   ├── background_service_provider.dart # Foreground service
 │   │   ├── task_provider.dart         # Task streams, filters, statistics
+│   │   ├── quran_provider.dart        # Quran data, surah list, juz list, bookmarks, reading progress, search
 │   │   └── daily_prayer_status_provider.dart # Daily prayer tracking status
 │   ├── services/
 │   │   ├── prayer_times_service.dart  # Adhan library calc, iqama offsets, next/current logic
@@ -157,6 +166,8 @@ lib/
 │   │   ├── dhikr_service.dart         # Dhikr session persistence and statistics
 │   │   ├── offline_queue_service.dart # Offline operation queue for Firestore writes
 │   │   ├── sync_service.dart          # Data sync coordination service
+│   │   ├── quran_service.dart         # Loads quran_hafs.json (12,472 ayahs), getAyahsByPage/Surah/Juz, searchAyahs. LAZY loaded — NOT at startup
+│   │   ├── quran_bookmark_service.dart # SharedPreferences bookmarks + reading progress (keys: quran_bookmarks, quran_reading_progress)
 │   │   └── firebase_options.dart      # Firebase platform config
 │   ├── theme/
 │   │   └── app_theme.dart             # Light/dark/amoled Material 3, primary #B5821B (light) / #F5B301 (dark), secondary #D4A43A
@@ -168,7 +179,7 @@ lib/
 │   │   ├── haptic_feedback.dart       # Light/medium/heavy/selection with enable/simplified
 │   │   └── prayer_time_rules.dart     # Prayer time validation and rule logic
 │   └── widgets/
-│       ├── bottom_nav_bar.dart        # 4-tab nav: Home, Prayer, Tasks, Profile
+│       ├── bottom_nav_bar.dart        # Dynamic nav: Home(0), Prayer(1), Quran(2), Tasks(3), Profile(4). Quran only in AppMode.both
 │       ├── greeting_widget.dart       # Time-based greeting (bilingual)
 │       ├── permission_dialog.dart     # Battery optimization + exact alarm dialogs
 │       ├── app_card.dart              # Reusable card wrapper with .large()
@@ -185,7 +196,7 @@ lib/
     ├── splash/                        # Lottie splash, auth check → login/onboarding/home
     ├── auth/                          # LoginScreen (with forgot password dialog), SignupScreen
     ├── onboarding/                    # PreferenceScreen (language + theme), ModeSelectionScreen
-    ├── main/                          # MainWrapperScreen (4-tab PageView, back-to-exit)
+    ├── main/                          # MainWrapperScreen (5-tab PageView in Full App mode, 4-tab otherwise, back-to-exit)
     ├── home/                          # HomeScreen (with daily content card + Jumu'ah banner), CombinedHomeScreen
     ├── prayer/                        # PrayerScreen, PrayerTrackingScreen, PrayerReportScreen
     ├── profile/                       # ProfileScreen (with task stats summary cards)
@@ -196,6 +207,7 @@ lib/
     ├── achievements/                  # AchievementsScreen (unlockable badge grid)
     ├── dhikl/                         # DhikrScreen, DhikrStatsScreen, CustomZikrFormScreen
     └── daily_content/                 # DailyContentScreen (Hadith, Ayah, Dua)
+    └── quran/                         # QuranScreen (3 tabs: surahs/juz/bookmarks), QuranReaderScreen (mushaf page-by-page, 604 pages, HafsSmart font), QuranSearchScreen
 ```
 
 ### Platform Channel Architecture (7 MethodChannels)
@@ -222,7 +234,7 @@ Located at `android/app/src/main/kotlin/com/aura/hala/`:
 | `JumuahReminderReceiver.kt` | BroadcastReceiver firing every Friday 30 min before Zuhr. Shows bilingual "Jumu'ah Mubarak" notification (ID 8001, channel `jumuah_reminder`). Reads Zuhr time from `aura_prayer_times` prefs, auto-reschedules weekly. Rescheduled on boot by `PrayerBootReceiver`. |
 | `AdhanPlayer.kt` | Singleton MediaPlayer adhan playback, per-prayer audio, vibration, thread-safe |
 | `SilentModeAutomation.kt` | AudioManager silent mode scheduling with configurable duration |
-| `PrayerForegroundService.kt` | START_STICKY foreground service with next prayer countdown, updates every second |
+| `PrayerForegroundService.kt` | START_STICKY foreground service with next prayer countdown, updates every second. **Channel deletion guarded** — only deletes `prayer_foreground_channel_v4` if importance needs upgrade, catches `SecurityException` when foreground service is active |
 | `PrayerWidgets.kt` | CombinedPrayerWidget (AllPrayersWidget class) with ViewFlipper tabs (Next Prayer + Timeline), light/dark/LTR/RTL layouts |
 | `TasksWidget.kt` | Home screen tasks widget with task count and next due task |
 | `WidgetUpdateService.kt` | Updates widget views from SharedPreferences prayer data |
@@ -266,7 +278,7 @@ Located at `android/app/src/main/kotlin/com/aura/hala/`:
 6. `runApp()` → ProviderScope > AuraApp > EasyLocalization > AuraAppMaterial
 
 ### Routes (20 named routes in `_generateRoute`)
-`/` (splash), `/login`, `/signup`, `/onboarding`, `/mode_selection`, `/home`, `/prayer`, `/prayer_tracking`, `/prayer_report`, `/dhikr`, `/dhikr_stats`, `/achievements`, `/task_form`, `/task_stats`, `/profile`, `/iqama_settings`, `/adhan_downloads`, `/qibla`, `/daily_content`
+`/` (splash), `/login`, `/signup`, `/onboarding`, `/mode_selection`, `/home`, `/prayer`, `/prayer_tracking`, `/prayer_report`, `/dhikr`, `/dhikr_stats`, `/achievements`, `/task_form`, `/task_stats`, `/profile`, `/iqama_settings`, `/adhan_downloads`, `/qibla`, `/daily_content`, `/quran`
 
 ### Prayer Time Calculation Flow
 1. `LocationService.getBestLocation()` — Gets GPS (via geolocator) or manual location. **Location cached for 15 minutes** (`_locationCacheTTL`) to avoid GPS on every minute tick.
@@ -427,7 +439,10 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 ### Native Code Gotchas
 - **RemoteViews limitations**: Cannot use `<View>` elements (crashes on Android 10). Use `<FrameLayout>` for dividers instead.
 - **Backup files**: Original notification layouts and PrayerForegroundService are backed up at `android/app/src/main/layout-backup/` (outside `res/` — backup folders inside `res/` break the Android resource merger).
-- **Notification channel importance**: Android won't downgrade an existing channel's importance. Use `deleteNotificationChannel()` before recreating when upgrading importance.
+- **Notification channel importance**: Android won't downgrade an existing channel's importance. Use `deleteNotificationChannel()` before recreating when upgrading importance. **CRITICAL**: Cannot delete a notification channel while a foreground service is using it — wrap in try-catch `SecurityException` (see PrayerForegroundService).
+- **Quran data loading**: `quran_hafs.json` (4.2MB, 12,472 ayahs) is loaded LAZILY on first Quran tab open, NOT at startup. Loading at startup causes crash. Data cached in `QuranService._cachedAyahs` after first load.
+- **HafsSmart font**: Uses Unicode PUA characters — must use `aya_text` field (not `aya_text_emlaey`). Font family: `HafsSmart` mapped to `assets/fonts/HafsSmart_08.ttf`. `aya_text_emlaey` is standard Arabic (used for search only).
+- **TextDirection.rtl conflict**: `easy_localization` exports `intl`'s `TextDirection` which shadows Flutter's. Use `import 'dart:ui' as ui show TextDirection;` and `ui.TextDirection.rtl` in Quran reader.
 - **Dhuhr/Zuhr naming**: SharedPreferences key is always `dhuhr_time`, but UI uses "Zuhr". All switch/map lookups must handle both names.
 - **Language switching**: `MainWrapperScreen.build()` must call `ref.watch(languageProvider)` — without it, bottom nav labels and screen AppBar titles won't rebuild when the locale changes.
 
@@ -439,9 +454,9 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 ### Assets
 - **`assets/animations/splash_logo.json`**: Lottie splash animation
 - **`assets/audio/adhan.mp3`**: Default adhan audio
-- **`assets/fonts/`**: Roboto (Regular/Bold), Cairo (Regular/Bold), HafsSmart_08.ttf (Hafs Quran font for Ayah display)
+- **`assets/fonts/`**: Roboto (Regular/Bold), Cairo (Regular/Bold), HafsSmart_08.ttf (PUA-encoded Hafs Quran font for mushaf display — NOT standard Arabic, only works with `aya_text` field)
 - **`assets/images/`**: logo.png, logo-0.png, logo_dark.png, logo-0_dark.png, SVG design file
-- **`assets/data/`**: Offline data files (hadith/ayah/dua)
+- **`assets/data/`**: Offline data files (hadith/ayah/dua) + `quran_hafs.json` (KFGQPC Hafs Smart v4, 12,472 ayahs with PUA-encoded aya_text)
 
 ### Test Files
 - **`test/widget_test.dart`**: Basic smoke test

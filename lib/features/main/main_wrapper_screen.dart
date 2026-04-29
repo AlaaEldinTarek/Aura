@@ -24,6 +24,7 @@ import '../home/home_screen.dart';
 import '../prayer/prayer_screen.dart';
 import '../profile/profile_screen.dart';
 import '../tasks/tasks_screen.dart';
+import '../quran/quran_screen.dart';
 
 /// Main wrapper screen with TabController
 class MainWrapperScreen extends ConsumerStatefulWidget {
@@ -69,7 +70,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _currentIndex = widget.initialIndex;
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
     _tabController.index = _currentIndex;
     _updateCurrentRoute();
 
@@ -762,6 +763,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
           children: const [
             HomeScreen(),
             PrayerScreen(),
+            QuranScreen(),
             TasksScreen(),
             ProfileScreen(),
           ],

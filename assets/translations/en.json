@@ -237,5 +237,25 @@
   "prayer_status_on_time": "On Time",
   "prayer_status_later_label": "Later",
   "daily_summary_notif_title": "Daily Prayer Reminder",
-  "daily_summary_notif_body": "You have {count} untracked {prayers} today"
+  "daily_summary_notif_body": "You have {count} untracked {prayers} today",
+
+  "quran": "Quran",
+  "surahs": "Surahs",
+  "juz": "Juz",
+  "bookmarks": "Bookmarks",
+  "surah": "Surah",
+  "ayah": "Ayah",
+  "ayah_count": "Ayahs",
+  "page": "Page",
+  "makki": "Makki",
+  "madani": "Madani",
+  "search_quran": "Search Quran...",
+  "search_quran_hint": "Search by Arabic text",
+  "no_results": "No results found",
+  "no_bookmarks": "No bookmarks yet",
+  "last_read": "Last Read",
+  "next_surah": "Next Surah",
+  "previous_surah": "Previous Surah",
+  "bookmark_added": "Bookmark added",
+  "bookmark_removed": "Bookmark removed"
 }

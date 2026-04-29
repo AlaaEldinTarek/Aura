@@ -15,6 +15,7 @@ import 'core/services/adhan_player_service.dart';
 import 'core/services/prayer_alarm_service.dart';
 import 'core/services/background_service_manager.dart';
 import 'core/services/task_service.dart';
+import 'core/services/quran_service.dart';
 import 'core/providers/preferences_provider.dart';
 import 'core/providers/auth_provider.dart';
 import 'features/splash/splash_screen.dart';
@@ -38,6 +39,7 @@ import 'features/settings/iqama_settings_screen.dart';
 import 'features/settings/adhan_downloads_screen.dart';
 import 'features/qibla/qibla_screen.dart';
 import 'features/daily_content/daily_content_screen.dart';
+import 'features/quran/quran_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -440,6 +442,11 @@ class AuraAppMaterial extends ConsumerWidget {
       case '/daily_content':
         return MaterialPageRoute(
           builder: (_) => const DailyContentScreen(),
+          settings: settings,
+        );
+      case '/quran':
+        return MaterialPageRoute(
+          builder: (_) => const QuranScreen(),
           settings: settings,
         );
       default:

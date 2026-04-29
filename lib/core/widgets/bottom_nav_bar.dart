@@ -30,6 +30,7 @@ class AuraBottomNavBar extends ConsumerWidget {
 
     // Build nav items based on mode
     final showPrayer = appMode != AppMode.tasksOnly;
+    final showQuran = appMode == AppMode.both;
     final showTasks = appMode != AppMode.prayerOnly;
 
     return Container(
@@ -64,21 +65,29 @@ class AuraBottomNavBar extends ConsumerWidget {
                   isSelected: currentIndex == 1,
                   onTap: () => onTap(1),
                 ),
+              if (showQuran)
+                _buildNavItem(
+                  context: context,
+                  icon: Icons.menu_book_outlined,
+                  label: 'quran'.tr(),
+                  isSelected: currentIndex == 2,
+                  onTap: () => onTap(2),
+                ),
               if (showTasks)
                 _buildNavItem(
                   context: context,
                   icon: Icons.task_alt_outlined,
                   label: 'task_management'.tr(),
-                  isSelected: currentIndex == 2,
-                  onTap: () => onTap(2),
+                  isSelected: currentIndex == 3,
+                  onTap: () => onTap(3),
                   badge: overdueCount,
                 ),
               _buildNavItem(
                 context: context,
                 icon: Icons.person_outline,
                 label: 'profile'.tr(),
-                isSelected: currentIndex == 3,
-                onTap: () => onTap(3),
+                isSelected: currentIndex == 4,
+                onTap: () => onTap(4),
               ),
             ],
           ),

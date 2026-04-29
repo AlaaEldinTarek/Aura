@@ -237,5 +237,25 @@
   "prayer_status_on_time": "في وقتها",
   "prayer_status_later_label": "لاحقاً",
   "daily_summary_notif_title": "تذكير الصلاة اليومي",
-  "daily_summary_notif_body": "لديك {count} صلوات لم تُسجَّل اليوم"
+  "daily_summary_notif_body": "لديك {count} صلوات لم تُسجَّل اليوم",
+
+  "quran": "القرآن",
+  "surahs": "السور",
+  "juz": "الأجزاء",
+  "bookmarks": "المحفوظات",
+  "surah": "سورة",
+  "ayah": "آية",
+  "ayah_count": "آية",
+  "page": "صفحة",
+  "makki": "مكية",
+  "madani": "مدنية",
+  "search_quran": "بحث في القرآن...",
+  "search_quran_hint": "ابحث بالنص العربي",
+  "no_results": "لا توجد نتائج",
+  "no_bookmarks": "لا توجد محفوظات",
+  "last_read": "آخر قراءة",
+  "next_surah": "السورة التالية",
+  "previous_surah": "السورة السابقة",
+  "bookmark_added": "تمت الإضافة إلى المحفوظات",
+  "bookmark_removed": "تمت الإزالة من المحفوظات"
 }

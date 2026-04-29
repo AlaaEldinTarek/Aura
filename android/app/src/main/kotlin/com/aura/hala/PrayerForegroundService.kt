@@ -129,8 +129,15 @@ class PrayerForegroundService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
-            // Delete old channel to allow importance upgrade
-            manager.deleteNotificationChannel(CHANNEL_ID)
+            // Only delete old channel if importance needs upgrading — skip if foreground service is active
+            val existingChannel = manager.getNotificationChannel(CHANNEL_ID)
+            if (existingChannel != null && existingChannel.importance < NotificationManager.IMPORTANCE_HIGH) {
+                try {
+                    manager.deleteNotificationChannel(CHANNEL_ID)
+                } catch (_: SecurityException) {
+                    // Can't delete while foreground service is using it — that's fine, keep existing
+                }
+            }
 
             val channel = NotificationChannel(
                 CHANNEL_ID,
