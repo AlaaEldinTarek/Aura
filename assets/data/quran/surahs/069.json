@@ -1,0 +1,530 @@
+{
+  "number": 69,
+  "name": "سُورَةُ الحَاقَّةِ",
+  "englishName": "Al-Haaqqa",
+  "englishNameTranslation": "The Reality",
+  "revelationType": "Meccan",
+  "numberOfAyahs": 52,
+  "ayahs": [
+    {
+      "number": 5324,
+      "numberInSurah": 1,
+      "text": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ ٱلْحَآقَّةُ",
+      "translation": "OH, THE LAYING-BARE of the truth!",
+      "juz": 29,
+      "page": 566,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5325,
+      "numberInSurah": 2,
+      "text": "مَا ٱلْحَآقَّةُ",
+      "translation": "How awesome that laying-bare of the truth!",
+      "juz": 29,
+      "page": 566,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5326,
+      "numberInSurah": 3,
+      "text": "وَمَآ أَدْرَىٰكَ مَا ٱلْحَآقَّةُ",
+      "translation": "And what could make thee conceive what that laying-bare of the truth will be?",
+      "juz": 29,
+      "page": 566,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5327,
+      "numberInSurah": 4,
+      "text": "كَذَّبَتْ ثَمُودُ وَعَادٌۢ بِٱلْقَارِعَةِ",
+      "translation": "THE LIE gave [the tribes of] Thamud and ‘Ad to [all tidings of] that sudden calamity!",
+      "juz": 29,
+      "page": 566,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5328,
+      "numberInSurah": 5,
+      "text": "فَأَمَّا ثَمُودُ فَأُهْلِكُوا۟ بِٱلطَّاغِيَةِ",
+      "translation": "Now as for the Thamud - they were destroyed by a violent upheaval [of the earth];",
+      "juz": 29,
+      "page": 566,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5329,
+      "numberInSurah": 6,
+      "text": "وَأَمَّا عَادٌۭ فَأُهْلِكُوا۟ بِرِيحٍۢ صَرْصَرٍ عَاتِيَةٍۢ",
+      "translation": "and as for the ‘Ad - they were destroyed by a storm wind furiously raging,",
+      "juz": 29,
+      "page": 566,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5330,
+      "numberInSurah": 7,
+      "text": "سَخَّرَهَا عَلَيْهِمْ سَبْعَ لَيَالٍۢ وَثَمَٰنِيَةَ أَيَّامٍ حُسُومًۭا فَتَرَى ٱلْقَوْمَ فِيهَا صَرْعَىٰ كَأَنَّهُمْ أَعْجَازُ نَخْلٍ خَاوِيَةٍۢ",
+      "translation": "which He willed against them for seven nights and eight days without cease, so that in the end thou couldst see those people laid low [in death], as though they were so many [uprooted] trunks of hollow palm trees:",
+      "juz": 29,
+      "page": 566,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5331,
+      "numberInSurah": 8,
+      "text": "فَهَلْ تَرَىٰ لَهُم مِّنۢ بَاقِيَةٍۢ",
+      "translation": "and dost thou now see any remnant of them?",
+      "juz": 29,
+      "page": 566,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5332,
+      "numberInSurah": 9,
+      "text": "وَجَآءَ فِرْعَوْنُ وَمَن قَبْلَهُۥ وَٱلْمُؤْتَفِكَٰتُ بِٱلْخَاطِئَةِ",
+      "translation": "And there was Pharaoh, too, and [many of] those who lived before him, and the cities that were overthrown - [all of them] indulged in sin upon sin",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5333,
+      "numberInSurah": 10,
+      "text": "فَعَصَوْا۟ رَسُولَ رَبِّهِمْ فَأَخَذَهُمْ أَخْذَةًۭ رَّابِيَةً",
+      "translation": "and rebelled against their Sustainer's apostles: and so He took them to task with a punishing grasp exceedingly severe!",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5334,
+      "numberInSurah": 11,
+      "text": "إِنَّا لَمَّا طَغَا ٱلْمَآءُ حَمَلْنَٰكُمْ فِى ٱلْجَارِيَةِ",
+      "translation": "[And] behold: when the waters [of Noah's flood] burst beyond all limits, it was We who caused you to be borne [to safety] in that floating ark,",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5335,
+      "numberInSurah": 12,
+      "text": "لِنَجْعَلَهَا لَكُمْ تَذْكِرَةًۭ وَتَعِيَهَآ أُذُنٌۭ وَٰعِيَةٌۭ",
+      "translation": "so that We might make all this a [lasting] reminder to you all, and that every wide-awake ear might consciously take it in.",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5336,
+      "numberInSurah": 13,
+      "text": "فَإِذَا نُفِخَ فِى ٱلصُّورِ نَفْخَةٌۭ وَٰحِدَةٌۭ",
+      "translation": "Hence, [bethink yourselves of the Last Hour,] when the trumpet [of judgment] shall be sounded with a single blast,",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5337,
+      "numberInSurah": 14,
+      "text": "وَحُمِلَتِ ٱلْأَرْضُ وَٱلْجِبَالُ فَدُكَّتَا دَكَّةًۭ وَٰحِدَةًۭ",
+      "translation": "and the earth and the mountains shall be lifted up and crushed with a single stroke!",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5338,
+      "numberInSurah": 15,
+      "text": "فَيَوْمَئِذٍۢ وَقَعَتِ ٱلْوَاقِعَةُ",
+      "translation": "And so, that which must come to pass will on that day have come to pass;",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5339,
+      "numberInSurah": 16,
+      "text": "وَٱنشَقَّتِ ٱلسَّمَآءُ فَهِىَ يَوْمَئِذٍۢ وَاهِيَةٌۭ",
+      "translation": "and the sky will be rent asunder - for, frail will it have become on that Day -;",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5340,
+      "numberInSurah": 17,
+      "text": "وَٱلْمَلَكُ عَلَىٰٓ أَرْجَآئِهَا ۚ وَيَحْمِلُ عَرْشَ رَبِّكَ فَوْقَهُمْ يَوْمَئِذٍۢ ثَمَٰنِيَةٌۭ",
+      "translation": "and the angels [will appear] at its ends, and, above them, eight will bear aloft on that Day the throne of thy Sustainer’s almightiness…",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5341,
+      "numberInSurah": 18,
+      "text": "يَوْمَئِذٍۢ تُعْرَضُونَ لَا تَخْفَىٰ مِنكُمْ خَافِيَةٌۭ",
+      "translation": "On that Day you shall be brought to judgment: not [even] the most hidden of your deeds will remain hidden.",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5342,
+      "numberInSurah": 19,
+      "text": "فَأَمَّا مَنْ أُوتِىَ كِتَٰبَهُۥ بِيَمِينِهِۦ فَيَقُولُ هَآؤُمُ ٱقْرَءُوا۟ كِتَٰبِيَهْ",
+      "translation": "Now as for him whose record shall be placed in his right hand, he will exclaim: \"Come you all!\" Read this my record!",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5343,
+      "numberInSurah": 20,
+      "text": "إِنِّى ظَنَنتُ أَنِّى مُلَٰقٍ حِسَابِيَهْ",
+      "translation": "Behold, I did know that [one day] I would have to face my account!",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5344,
+      "numberInSurah": 21,
+      "text": "فَهُوَ فِى عِيشَةٍۢ رَّاضِيَةٍۢ",
+      "translation": "And so he will find himself in a happy state of life,",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5345,
+      "numberInSurah": 22,
+      "text": "فِى جَنَّةٍ عَالِيَةٍۢ",
+      "translation": "in a lofty paradise,",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5346,
+      "numberInSurah": 23,
+      "text": "قُطُوفُهَا دَانِيَةٌۭ",
+      "translation": "with its fruits within easy reach.",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5347,
+      "numberInSurah": 24,
+      "text": "كُلُوا۟ وَٱشْرَبُوا۟ هَنِيٓـًٔۢا بِمَآ أَسْلَفْتُمْ فِى ٱلْأَيَّامِ ٱلْخَالِيَةِ",
+      "translation": "[And all who are thus blest will be told:] \"Eat and drink with good cheer in return for all [the good deeds] that you have sent ahead in days gone by!\"",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5348,
+      "numberInSurah": 25,
+      "text": "وَأَمَّا مَنْ أُوتِىَ كِتَٰبَهُۥ بِشِمَالِهِۦ فَيَقُولُ يَٰلَيْتَنِى لَمْ أُوتَ كِتَٰبِيَهْ",
+      "translation": "But as for him whose record shall be placed in his left hand, he will exclaim: \"Oh, would that I had never been shown this my record,",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5349,
+      "numberInSurah": 26,
+      "text": "وَلَمْ أَدْرِ مَا حِسَابِيَهْ",
+      "translation": "and neither known this my account!",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5350,
+      "numberInSurah": 27,
+      "text": "يَٰلَيْتَهَا كَانَتِ ٱلْقَاضِيَةَ",
+      "translation": "Oh, would that this [death of mine] had been the end of me!",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5351,
+      "numberInSurah": 28,
+      "text": "مَآ أَغْنَىٰ عَنِّى مَالِيَهْ ۜ",
+      "translation": "Of no avail to me is all that I have [ever] possessed,",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5352,
+      "numberInSurah": 29,
+      "text": "هَلَكَ عَنِّى سُلْطَٰنِيَهْ",
+      "translation": "[and] all my power of argument has died away from me!\"",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5353,
+      "numberInSurah": 30,
+      "text": "خُذُوهُ فَغُلُّوهُ",
+      "translation": "Thereupon the command will go forth:] \"Lay hold of him, and shackle him,",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5354,
+      "numberInSurah": 31,
+      "text": "ثُمَّ ٱلْجَحِيمَ صَلُّوهُ",
+      "translation": "and then let him enter hell,",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5355,
+      "numberInSurah": 32,
+      "text": "ثُمَّ فِى سِلْسِلَةٍۢ ذَرْعُهَا سَبْعُونَ ذِرَاعًۭا فَٱسْلُكُوهُ",
+      "translation": "and then thrust him into a chain [of other sinners like him - a chain] the length whereof is seventy cubits:",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5356,
+      "numberInSurah": 33,
+      "text": "إِنَّهُۥ كَانَ لَا يُؤْمِنُ بِٱللَّهِ ٱلْعَظِيمِ",
+      "translation": "for, behold, he did not believe in God, the Tremendous,",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5357,
+      "numberInSurah": 34,
+      "text": "وَلَا يَحُضُّ عَلَىٰ طَعَامِ ٱلْمِسْكِينِ",
+      "translation": "and did not feel any urge to feed the needy:",
+      "juz": 29,
+      "page": 567,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5358,
+      "numberInSurah": 35,
+      "text": "فَلَيْسَ لَهُ ٱلْيَوْمَ هَٰهُنَا حَمِيمٌۭ",
+      "translation": "and so, no friend has here today,",
+      "juz": 29,
+      "page": 568,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5359,
+      "numberInSurah": 36,
+      "text": "وَلَا طَعَامٌ إِلَّا مِنْ غِسْلِينٍۢ",
+      "translation": "nor any food save the filth",
+      "juz": 29,
+      "page": 568,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5360,
+      "numberInSurah": 37,
+      "text": "لَّا يَأْكُلُهُۥٓ إِلَّا ٱلْخَٰطِـُٔونَ",
+      "translation": "which none but the sinners eat!\"",
+      "juz": 29,
+      "page": 568,
+      "ruku": 500,
+      "sajda": false
+    },
+    {
+      "number": 5361,
+      "numberInSurah": 38,
+      "text": "فَلَآ أُقْسِمُ بِمَا تُبْصِرُونَ",
+      "translation": "BUT NAY! I call to witness an that you can see,",
+      "juz": 29,
+      "page": 568,
+      "ruku": 501,
+      "sajda": false
+    },
+    {
+      "number": 5362,
+      "numberInSurah": 39,
+      "text": "وَمَا لَا تُبْصِرُونَ",
+      "translation": "as well as all that you cannot see!",
+      "juz": 29,
+      "page": 568,
+      "ruku": 501,
+      "sajda": false
+    },
+    {
+      "number": 5363,
+      "numberInSurah": 40,
+      "text": "إِنَّهُۥ لَقَوْلُ رَسُولٍۢ كَرِيمٍۢ",
+      "translation": "Behold, this [Qur’an] is indeed the [inspired] word of a noble apostle,",
+      "juz": 29,
+      "page": 568,
+      "ruku": 501,
+      "sajda": false
+    },
+    {
+      "number": 5364,
+      "numberInSurah": 41,
+      "text": "وَمَا هُوَ بِقَوْلِ شَاعِرٍۢ ۚ قَلِيلًۭا مَّا تُؤْمِنُونَ",
+      "translation": "and is not – however little you may [be prepared to] believe it - the word of a poet;",
+      "juz": 29,
+      "page": 568,
+      "ruku": 501,
+      "sajda": false
+    },
+    {
+      "number": 5365,
+      "numberInSurah": 42,
+      "text": "وَلَا بِقَوْلِ كَاهِنٍۢ ۚ قَلِيلًۭا مَّا تَذَكَّرُونَ",
+      "translation": "and neither is it - however little you may [be prepared to] take it to heart - the word of a soothsayer:",
+      "juz": 29,
+      "page": 568,
+      "ruku": 501,
+      "sajda": false
+    },
+    {
+      "number": 5366,
+      "numberInSurah": 43,
+      "text": "تَنزِيلٌۭ مِّن رَّبِّ ٱلْعَٰلَمِينَ",
+      "translation": "[it is] a revelation from the Sustainer of all the worlds.",
+      "juz": 29,
+      "page": 568,
+      "ruku": 501,
+      "sajda": false
+    },
+    {
+      "number": 5367,
+      "numberInSurah": 44,
+      "text": "وَلَوْ تَقَوَّلَ عَلَيْنَا بَعْضَ ٱلْأَقَاوِيلِ",
+      "translation": "Now if he [whom We have entrusted with it] had dared to attribute some [of his own] sayings unto Us,",
+      "juz": 29,
+      "page": 568,
+      "ruku": 501,
+      "sajda": false
+    },
+    {
+      "number": 5368,
+      "numberInSurah": 45,
+      "text": "لَأَخَذْنَا مِنْهُ بِٱلْيَمِينِ",
+      "translation": "We would indeed have seized him by his right hand,",
+      "juz": 29,
+      "page": 568,
+      "ruku": 501,
+      "sajda": false
+    },
+    {
+      "number": 5369,
+      "numberInSurah": 46,
+      "text": "ثُمَّ لَقَطَعْنَا مِنْهُ ٱلْوَتِينَ",
+      "translation": "and would indeed have cut his life-vein.",
+      "juz": 29,
+      "page": 568,
+      "ruku": 501,
+      "sajda": false
+    },
+    {
+      "number": 5370,
+      "numberInSurah": 47,
+      "text": "فَمَا مِنكُم مِّنْ أَحَدٍ عَنْهُ حَٰجِزِينَ",
+      "translation": "and none of you could have saved him!",
+      "juz": 29,
+      "page": 568,
+      "ruku": 501,
+      "sajda": false
+    },
+    {
+      "number": 5371,
+      "numberInSurah": 48,
+      "text": "وَإِنَّهُۥ لَتَذْكِرَةٌۭ لِّلْمُتَّقِينَ",
+      "translation": "And, verily, this [Qur’an] is a reminder to all the God-conscious!",
+      "juz": 29,
+      "page": 568,
+      "ruku": 501,
+      "sajda": false
+    },
+    {
+      "number": 5372,
+      "numberInSurah": 49,
+      "text": "وَإِنَّا لَنَعْلَمُ أَنَّ مِنكُم مُّكَذِّبِينَ",
+      "translation": "And, behold, well do We know that among you are such as will give the lie to it:",
+      "juz": 29,
+      "page": 568,
+      "ruku": 501,
+      "sajda": false
+    },
+    {
+      "number": 5373,
+      "numberInSurah": 50,
+      "text": "وَإِنَّهُۥ لَحَسْرَةٌ عَلَى ٱلْكَٰفِرِينَ",
+      "translation": "yet, behold, this [rejection] will indeed become a source of bitter regret for all who deny the truth [of God's revelation] –",
+      "juz": 29,
+      "page": 568,
+      "ruku": 501,
+      "sajda": false
+    },
+    {
+      "number": 5374,
+      "numberInSurah": 51,
+      "text": "وَإِنَّهُۥ لَحَقُّ ٱلْيَقِينِ",
+      "translation": "for, verily, it is truth absolute!",
+      "juz": 29,
+      "page": 568,
+      "ruku": 501,
+      "sajda": false
+    },
+    {
+      "number": 5375,
+      "numberInSurah": 52,
+      "text": "فَسَبِّحْ بِٱسْمِ رَبِّكَ ٱلْعَظِيمِ",
+      "translation": "Extol, then the limitless glory of thy Sustainer's mighty name!",
+      "juz": 29,
+      "page": 568,
+      "ruku": 501,
+      "sajda": false
+    }
+  ]
+}

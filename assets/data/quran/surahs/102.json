@@ -1,0 +1,90 @@
+{
+  "number": 102,
+  "name": "سُورَةُ التَّكَاثُرِ",
+  "englishName": "At-Takaathur",
+  "englishNameTranslation": "Competition",
+  "revelationType": "Meccan",
+  "numberOfAyahs": 8,
+  "ayahs": [
+    {
+      "number": 6169,
+      "numberInSurah": 1,
+      "text": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ أَلْهَىٰكُمُ ٱلتَّكَاثُرُ",
+      "translation": "YOU ARE OBSESSED by greed for more and more",
+      "juz": 30,
+      "page": 600,
+      "ruku": 544,
+      "sajda": false
+    },
+    {
+      "number": 6170,
+      "numberInSurah": 2,
+      "text": "حَتَّىٰ زُرْتُمُ ٱلْمَقَابِرَ",
+      "translation": "until you go down to your graves.",
+      "juz": 30,
+      "page": 600,
+      "ruku": 544,
+      "sajda": false
+    },
+    {
+      "number": 6171,
+      "numberInSurah": 3,
+      "text": "كَلَّا سَوْفَ تَعْلَمُونَ",
+      "translation": "Nay, in time you will come to understand!",
+      "juz": 30,
+      "page": 600,
+      "ruku": 544,
+      "sajda": false
+    },
+    {
+      "number": 6172,
+      "numberInSurah": 4,
+      "text": "ثُمَّ كَلَّا سَوْفَ تَعْلَمُونَ",
+      "translation": "And once again: Nay, in time you will come to understand!",
+      "juz": 30,
+      "page": 600,
+      "ruku": 544,
+      "sajda": false
+    },
+    {
+      "number": 6173,
+      "numberInSurah": 5,
+      "text": "كَلَّا لَوْ تَعْلَمُونَ عِلْمَ ٱلْيَقِينِ",
+      "translation": "Nay, if you could but understand [it] with an understanding [born] of certainty,",
+      "juz": 30,
+      "page": 600,
+      "ruku": 544,
+      "sajda": false
+    },
+    {
+      "number": 6174,
+      "numberInSurah": 6,
+      "text": "لَتَرَوُنَّ ٱلْجَحِيمَ",
+      "translation": "you would indeed, most surely, behold the blazing fire [of hell]!",
+      "juz": 30,
+      "page": 600,
+      "ruku": 544,
+      "sajda": false
+    },
+    {
+      "number": 6175,
+      "numberInSurah": 7,
+      "text": "ثُمَّ لَتَرَوُنَّهَا عَيْنَ ٱلْيَقِينِ",
+      "translation": "In the end you will indeed, most surely, behold it with the eye of certainty:",
+      "juz": 30,
+      "page": 600,
+      "ruku": 544,
+      "sajda": false
+    },
+    {
+      "number": 6176,
+      "numberInSurah": 8,
+      "text": "ثُمَّ لَتُسْـَٔلُنَّ يَوْمَئِذٍ عَنِ ٱلنَّعِيمِ",
+      "translation": "and on that Day you will most surely be called to account for [what you did with] the boon of life!",
+      "juz": 30,
+      "page": 600,
+      "ruku": 544,
+      "sajda": false
+    }
+  ]
+}

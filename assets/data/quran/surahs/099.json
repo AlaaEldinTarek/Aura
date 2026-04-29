@@ -1,0 +1,90 @@
+{
+  "number": 99,
+  "name": "سُورَةُ الزَّلۡزَلَةِ",
+  "englishName": "Az-Zalzala",
+  "englishNameTranslation": "The Earthquake",
+  "revelationType": "Medinan",
+  "numberOfAyahs": 8,
+  "ayahs": [
+    {
+      "number": 6139,
+      "numberInSurah": 1,
+      "text": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ إِذَا زُلْزِلَتِ ٱلْأَرْضُ زِلْزَالَهَا",
+      "translation": "WHEN THE EARTH quakes with her [last] mighty quaking,",
+      "juz": 30,
+      "page": 599,
+      "ruku": 541,
+      "sajda": false
+    },
+    {
+      "number": 6140,
+      "numberInSurah": 2,
+      "text": "وَأَخْرَجَتِ ٱلْأَرْضُ أَثْقَالَهَا",
+      "translation": "and [when] the earth yields up her burdens,",
+      "juz": 30,
+      "page": 599,
+      "ruku": 541,
+      "sajda": false
+    },
+    {
+      "number": 6141,
+      "numberInSurah": 3,
+      "text": "وَقَالَ ٱلْإِنسَٰنُ مَا لَهَا",
+      "translation": "and man cries out, \"What has happened to her?\" -",
+      "juz": 30,
+      "page": 599,
+      "ruku": 541,
+      "sajda": false
+    },
+    {
+      "number": 6142,
+      "numberInSurah": 4,
+      "text": "يَوْمَئِذٍۢ تُحَدِّثُ أَخْبَارَهَا",
+      "translation": "on that Day will she recount all her tidings,",
+      "juz": 30,
+      "page": 599,
+      "ruku": 541,
+      "sajda": false
+    },
+    {
+      "number": 6143,
+      "numberInSurah": 5,
+      "text": "بِأَنَّ رَبَّكَ أَوْحَىٰ لَهَا",
+      "translation": "as thy Sustainer will have inspired her to do!",
+      "juz": 30,
+      "page": 599,
+      "ruku": 541,
+      "sajda": false
+    },
+    {
+      "number": 6144,
+      "numberInSurah": 6,
+      "text": "يَوْمَئِذٍۢ يَصْدُرُ ٱلنَّاسُ أَشْتَاتًۭا لِّيُرَوْا۟ أَعْمَٰلَهُمْ",
+      "translation": "On that Day will all men come forward, cut off from one another, to be shown their [past] deeds.",
+      "juz": 30,
+      "page": 599,
+      "ruku": 541,
+      "sajda": false
+    },
+    {
+      "number": 6145,
+      "numberInSurah": 7,
+      "text": "فَمَن يَعْمَلْ مِثْقَالَ ذَرَّةٍ خَيْرًۭا يَرَهُۥ",
+      "translation": "And so, he who shall have done an atom's weight of good, shall behold it;",
+      "juz": 30,
+      "page": 599,
+      "ruku": 541,
+      "sajda": false
+    },
+    {
+      "number": 6146,
+      "numberInSurah": 8,
+      "text": "وَمَن يَعْمَلْ مِثْقَالَ ذَرَّةٍۢ شَرًّۭا يَرَهُۥ",
+      "translation": "and he who shall have done an atom's weight of evil, shall behold it.",
+      "juz": 30,
+      "page": 599,
+      "ruku": 541,
+      "sajda": false
+    }
+  ]
+}

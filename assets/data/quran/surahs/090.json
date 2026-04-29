@@ -1,0 +1,210 @@
+{
+  "number": 90,
+  "name": "سُورَةُ البَلَدِ",
+  "englishName": "Al-Balad",
+  "englishNameTranslation": "The City",
+  "revelationType": "Meccan",
+  "numberOfAyahs": 20,
+  "ayahs": [
+    {
+      "number": 6024,
+      "numberInSurah": 1,
+      "text": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ لَآ أُقْسِمُ بِهَٰذَا ٱلْبَلَدِ",
+      "translation": "NAY! I call to witness this land –",
+      "juz": 30,
+      "page": 594,
+      "ruku": 532,
+      "sajda": false
+    },
+    {
+      "number": 6025,
+      "numberInSurah": 2,
+      "text": "وَأَنتَ حِلٌّۢ بِهَٰذَا ٱلْبَلَدِ",
+      "translation": "this land in which thou art free to dwell -",
+      "juz": 30,
+      "page": 594,
+      "ruku": 532,
+      "sajda": false
+    },
+    {
+      "number": 6026,
+      "numberInSurah": 3,
+      "text": "وَوَالِدٍۢ وَمَا وَلَدَ",
+      "translation": "and [I call to witness] parent and offspring:",
+      "juz": 30,
+      "page": 594,
+      "ruku": 532,
+      "sajda": false
+    },
+    {
+      "number": 6027,
+      "numberInSurah": 4,
+      "text": "لَقَدْ خَلَقْنَا ٱلْإِنسَٰنَ فِى كَبَدٍ",
+      "translation": "Verily, We have created man into [a life of] pain, toil and trial.",
+      "juz": 30,
+      "page": 594,
+      "ruku": 532,
+      "sajda": false
+    },
+    {
+      "number": 6028,
+      "numberInSurah": 5,
+      "text": "أَيَحْسَبُ أَن لَّن يَقْدِرَ عَلَيْهِ أَحَدٌۭ",
+      "translation": "Does he, then, think that no one has power over him?",
+      "juz": 30,
+      "page": 594,
+      "ruku": 532,
+      "sajda": false
+    },
+    {
+      "number": 6029,
+      "numberInSurah": 6,
+      "text": "يَقُولُ أَهْلَكْتُ مَالًۭا لُّبَدًا",
+      "translation": "He boasts, \"I have spent wealth abundant!\"",
+      "juz": 30,
+      "page": 594,
+      "ruku": 532,
+      "sajda": false
+    },
+    {
+      "number": 6030,
+      "numberInSurah": 7,
+      "text": "أَيَحْسَبُ أَن لَّمْ يَرَهُۥٓ أَحَدٌ",
+      "translation": "Does he, then, think that no one sees him?",
+      "juz": 30,
+      "page": 594,
+      "ruku": 532,
+      "sajda": false
+    },
+    {
+      "number": 6031,
+      "numberInSurah": 8,
+      "text": "أَلَمْ نَجْعَل لَّهُۥ عَيْنَيْنِ",
+      "translation": "Have We not given him two eyes,",
+      "juz": 30,
+      "page": 594,
+      "ruku": 532,
+      "sajda": false
+    },
+    {
+      "number": 6032,
+      "numberInSurah": 9,
+      "text": "وَلِسَانًۭا وَشَفَتَيْنِ",
+      "translation": "and a tongue, and a pair of lips,",
+      "juz": 30,
+      "page": 594,
+      "ruku": 532,
+      "sajda": false
+    },
+    {
+      "number": 6033,
+      "numberInSurah": 10,
+      "text": "وَهَدَيْنَٰهُ ٱلنَّجْدَيْنِ",
+      "translation": "and shown him the two highways [of good and evil]?",
+      "juz": 30,
+      "page": 594,
+      "ruku": 532,
+      "sajda": false
+    },
+    {
+      "number": 6034,
+      "numberInSurah": 11,
+      "text": "فَلَا ٱقْتَحَمَ ٱلْعَقَبَةَ",
+      "translation": "But he would not try to ascend the steep uphill road...",
+      "juz": 30,
+      "page": 594,
+      "ruku": 532,
+      "sajda": false
+    },
+    {
+      "number": 6035,
+      "numberInSurah": 12,
+      "text": "وَمَآ أَدْرَىٰكَ مَا ٱلْعَقَبَةُ",
+      "translation": "And what could make thee conceive what it is, that steep uphill road?",
+      "juz": 30,
+      "page": 594,
+      "ruku": 532,
+      "sajda": false
+    },
+    {
+      "number": 6036,
+      "numberInSurah": 13,
+      "text": "فَكُّ رَقَبَةٍ",
+      "translation": "[It is] the freeing of one's neck [from the burden of sin],",
+      "juz": 30,
+      "page": 594,
+      "ruku": 532,
+      "sajda": false
+    },
+    {
+      "number": 6037,
+      "numberInSurah": 14,
+      "text": "أَوْ إِطْعَٰمٌۭ فِى يَوْمٍۢ ذِى مَسْغَبَةٍۢ",
+      "translation": "or the feeding, upon a day of [one's own] hunger,",
+      "juz": 30,
+      "page": 594,
+      "ruku": 532,
+      "sajda": false
+    },
+    {
+      "number": 6038,
+      "numberInSurah": 15,
+      "text": "يَتِيمًۭا ذَا مَقْرَبَةٍ",
+      "translation": "of an orphan near of kin,",
+      "juz": 30,
+      "page": 594,
+      "ruku": 532,
+      "sajda": false
+    },
+    {
+      "number": 6039,
+      "numberInSurah": 16,
+      "text": "أَوْ مِسْكِينًۭا ذَا مَتْرَبَةٍۢ",
+      "translation": "or of a needy [stranger] lying in the dust –",
+      "juz": 30,
+      "page": 594,
+      "ruku": 532,
+      "sajda": false
+    },
+    {
+      "number": 6040,
+      "numberInSurah": 17,
+      "text": "ثُمَّ كَانَ مِنَ ٱلَّذِينَ ءَامَنُوا۟ وَتَوَاصَوْا۟ بِٱلصَّبْرِ وَتَوَاصَوْا۟ بِٱلْمَرْحَمَةِ",
+      "translation": "and being, withal, of those who have attained to faith, and who enjoin upon one another patience in adversity, and enjoin upon one another compassion.",
+      "juz": 30,
+      "page": 594,
+      "ruku": 532,
+      "sajda": false
+    },
+    {
+      "number": 6041,
+      "numberInSurah": 18,
+      "text": "أُو۟لَٰٓئِكَ أَصْحَٰبُ ٱلْمَيْمَنَةِ",
+      "translation": "Such are they that have attained to righteousness;",
+      "juz": 30,
+      "page": 594,
+      "ruku": 532,
+      "sajda": false
+    },
+    {
+      "number": 6042,
+      "numberInSurah": 19,
+      "text": "وَٱلَّذِينَ كَفَرُوا۟ بِـَٔايَٰتِنَا هُمْ أَصْحَٰبُ ٱلْمَشْـَٔمَةِ",
+      "translation": "whereas those who are bent on denying the truth of Our messages – they are such as have lost themselves in evil,",
+      "juz": 30,
+      "page": 594,
+      "ruku": 532,
+      "sajda": false
+    },
+    {
+      "number": 6043,
+      "numberInSurah": 20,
+      "text": "عَلَيْهِمْ نَارٌۭ مُّؤْصَدَةٌۢ",
+      "translation": "[with] fire closing in upon them.",
+      "juz": 30,
+      "page": 594,
+      "ruku": 532,
+      "sajda": false
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "number": 113,
+  "name": "سُورَةُ الفَلَقِ",
+  "englishName": "Al-Falaq",
+  "englishNameTranslation": "The Dawn",
+  "revelationType": "Meccan",
+  "numberOfAyahs": 5,
+  "ayahs": [
+    {
+      "number": 6226,
+      "numberInSurah": 1,
+      "text": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ قُلْ أَعُوذُ بِرَبِّ ٱلْفَلَقِ",
+      "translation": "SAY: \"I seek refuge with the Sustainer of the rising dawn,",
+      "juz": 30,
+      "page": 604,
+      "ruku": 555,
+      "sajda": false
+    },
+    {
+      "number": 6227,
+      "numberInSurah": 2,
+      "text": "مِن شَرِّ مَا خَلَقَ",
+      "translation": "\"from the evil of aught that He has created,",
+      "juz": 30,
+      "page": 604,
+      "ruku": 555,
+      "sajda": false
+    },
+    {
+      "number": 6228,
+      "numberInSurah": 3,
+      "text": "وَمِن شَرِّ غَاسِقٍ إِذَا وَقَبَ",
+      "translation": "\"and from the evil of the black darkness whenever it descends,",
+      "juz": 30,
+      "page": 604,
+      "ruku": 555,
+      "sajda": false
+    },
+    {
+      "number": 6229,
+      "numberInSurah": 4,
+      "text": "وَمِن شَرِّ ٱلنَّفَّٰثَٰتِ فِى ٱلْعُقَدِ",
+      "translation": "\"and from the evil of all human beings bent on occult endeavours,",
+      "juz": 30,
+      "page": 604,
+      "ruku": 555,
+      "sajda": false
+    },
+    {
+      "number": 6230,
+      "numberInSurah": 5,
+      "text": "وَمِن شَرِّ حَاسِدٍ إِذَا حَسَدَ",
+      "translation": "\"and from the evil of the envious when he envies.\"",
+      "juz": 30,
+      "page": 604,
+      "ruku": 555,
+      "sajda": false
+    }
+  ]
+}

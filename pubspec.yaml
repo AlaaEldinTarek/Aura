@@ -47,6 +47,7 @@ dependencies:
   wakelock_plus: ^1.4.0
   vibration: ^2.0.0
   timezone: ^0.9.4
+  flutter_timezone: ^3.0.0
 
   # Sensors & Compass
   flutter_compass: ^0.8.0
@@ -60,6 +61,7 @@ dependencies:
   audioplayers: ^6.0.0
   fl_chart: ^1.2.0
   dynamic_color: ^1.8.1
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:
@@ -75,6 +77,8 @@ flutter:
     - assets/animations/
     - assets/translations/
     - assets/audio/
+    - assets/data/quran/
+    - assets/data/quran/surahs/
 
   fonts:
     - family: Roboto
@@ -87,6 +91,14 @@ flutter:
         - asset: assets/fonts/Cairo-Regular.ttf
         - asset: assets/fonts/Cairo-Bold.ttf
           weight: 700
+    - family: Amiri
+      fonts:
+        - asset: assets/fonts/Amiri-Regular.ttf
+        - asset: assets/fonts/Amiri-Bold.ttf
+          weight: 700
+    - family: UthmanicHafs
+      fonts:
+        - asset: assets/fonts/UthmanicHafs.ttf
 
 # App Icons Configuration
 flutter_launcher_icons:

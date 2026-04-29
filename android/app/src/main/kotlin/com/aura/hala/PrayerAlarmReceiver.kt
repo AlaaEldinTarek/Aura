@@ -35,6 +35,8 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         const val ACTION_REMINDER_LATE = "com.aura.hala.REMINDER_LATE"
         const val ACTION_REMINDER_MISSED = "com.aura.hala.REMINDER_MISSED"
         const val ACTION_REMINDER_LATER = "com.aura.hala.REMINDER_LATER"
+        const val ACTION_QURAN_READ_NOW = "com.aura.hala.QURAN_READ_NOW"
+        const val ACTION_QURAN_REMIND_LATER = "com.aura.hala.QURAN_REMIND_LATER"
 
         // Post-prayer check actions
         const val EXTRA_IS_POST_CHECK = "is_post_check"
@@ -68,6 +70,9 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         private const val POST_CHECK_MAGHRIB = 6005
         private const val POST_CHECK_ISHA = 6006
 
+        // Quran reminder alarm request codes
+        private const val QURAN_ALARM_BASE = 8001
+        private const val QURAN_NOTIFICATION_ID = 5001
 
         fun getNotificationId(prayerName: String): Int {
             return when (prayerName) {
@@ -295,6 +300,179 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         }
 
         /**
+         * Schedule a Quran reading reminder alarm at [hour]:[minute].
+         * [slot] 0-9 identifies the reminder slot.
+         */
+        fun scheduleQuranReminderAlarm(
+            context: Context,
+            hour: Int,
+            minute: Int,
+            slot: Int,
+            language: String,
+            snoozeMinutes: Int
+        ) {
+            // Save language + snooze to native prefs for later use
+            val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+            prefs.edit()
+                .putString("quran_language", language)
+                .putInt("quran_snooze_minutes", snoozeMinutes)
+                .putBoolean("quran_reminder_enabled", true)
+                .apply()
+
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val calendar = java.util.Calendar.getInstance().apply {
+                set(java.util.Calendar.HOUR_OF_DAY, hour)
+                set(java.util.Calendar.MINUTE, minute)
+                set(java.util.Calendar.SECOND, 0)
+                set(java.util.Calendar.MILLISECOND, 0)
+            }
+            if (calendar.timeInMillis <= System.currentTimeMillis()) {
+                calendar.add(java.util.Calendar.DAY_OF_YEAR, 1)
+            }
+
+            val intent = Intent(context, PrayerAlarmReceiver::class.java).apply {
+                putExtra("is_quran_reminder", true)
+                putExtra("quran_slot", slot)
+            }
+
+            val requestCode = QURAN_ALARM_BASE + slot
+            val pendingIntent = PendingIntent.getBroadcast(
+                context, requestCode, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+            } else {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent)
+            }
+
+            val timeStr = DateFormat.format("HH:mm", calendar.time)
+            Log.d(TAG, "📖 [QURAN_ALARM] Scheduled slot $slot at $timeStr (lang=$language)")
+        }
+
+        /**
+         * Schedule a one-time Quran snooze alarm [minutes] from now.
+         */
+        fun scheduleQuranSnoozeAlarm(context: Context, minutes: Int) {
+            val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+            val language = prefs.getString("quran_language", "en") ?: "en"
+
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val triggerTime = System.currentTimeMillis() + (minutes * 60 * 1000L)
+
+            val intent = Intent(context, PrayerAlarmReceiver::class.java).apply {
+                putExtra("is_quran_reminder", true)
+                putExtra("quran_slot", 9) // snooze uses slot 9
+            }
+
+            val pendingIntent = PendingIntent.getBroadcast(
+                context, QURAN_ALARM_BASE + 9, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+            } else {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
+            }
+
+            val timeStr = DateFormat.format("HH:mm", Date(triggerTime))
+            Log.d(TAG, "📖 [QURAN_ALARM] Snoozed for $minutes min → $timeStr")
+        }
+
+        /**
+         * Cancel all Quran reminder alarms
+         */
+        fun cancelQuranReminderAlarms(context: Context) {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            for (i in 0 until 10) {
+                val intent = Intent(context, PrayerAlarmReceiver::class.java)
+                val pendingIntent = PendingIntent.getBroadcast(
+                    context, QURAN_ALARM_BASE + i, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                alarmManager.cancel(pendingIntent)
+            }
+            // Cancel snooze too
+            val snoozeIntent = Intent(context, PrayerAlarmReceiver::class.java)
+            val snoozePending = PendingIntent.getBroadcast(
+                context, QURAN_ALARM_BASE + 9, snoozeIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            alarmManager.cancel(snoozePending)
+
+            val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+            prefs.edit().putBoolean("quran_reminder_enabled", false).apply()
+
+            // Also cancel any showing Quran notification
+            val notificationManager = NotificationManagerCompat.from(context)
+            notificationManager.cancel(QURAN_NOTIFICATION_ID)
+
+            Log.d(TAG, "📖 [QURAN_ALARM] All Quran alarms cancelled")
+        }
+
+        /**
+         * Show Quran reading reminder notification natively.
+         */
+        fun showQuranNotification(context: Context) {
+            val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+            val language = prefs.getString("quran_language", "en") ?: "en"
+            val isArabic = language == "ar"
+
+            val title = if (isArabic) "حان وقت قراءة القرآن 📖" else "Time to read Quran 📖"
+            val body = if (isArabic) "واصل رحلتك مع القرآن اليوم" else "Continue your Quran reading journey"
+
+            // Read Now → opens app
+            val readNowIntent = Intent(context, PrayerAlarmReceiver::class.java).apply {
+                action = ACTION_QURAN_READ_NOW
+            }
+            val readNowPending = PendingIntent.getBroadcast(
+                context, 8501, readNowIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            // Remind Later → reschedules after snooze
+            val remindLaterIntent = Intent(context, PrayerAlarmReceiver::class.java).apply {
+                action = ACTION_QURAN_REMIND_LATER
+            }
+            val remindLaterPending = PendingIntent.getBroadcast(
+                context, 8502, remindLaterIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+            // Tap notification → opens app on Quran reader
+            val contentIntent = Intent(context, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                putExtra("open_quran_reader", true)
+            }
+            val contentPending = PendingIntent.getActivity(
+                context, 8503, contentIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+            )
+
+            val builder = NotificationCompat.Builder(context, "quran_reminder")
+                .setSmallIcon(R.drawable.ic_notification)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                .setAutoCancel(true)
+                .setContentIntent(contentPending)
+                .addAction(0, if (isArabic) "اقرأ الآن" else "Read Now", readNowPending)
+                .addAction(0, if (isArabic) "ذكرني لاحقاً" else "Remind Later", remindLaterPending)
+
+            try {
+                val notificationManager = NotificationManagerCompat.from(context)
+                notificationManager.notify(QURAN_NOTIFICATION_ID, builder.build())
+                Log.d(TAG, "📖 [QURAN] Notification shown successfully")
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ [QURAN] Error showing notification: ${e.message}")
+            }
+        }
+
+        /**
          * Cancel all prayer alarms
          */
         fun cancelAllAlarms(context: Context) {
@@ -396,6 +574,37 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         Log.d(TAG, "═══════════════════════════════════════")
         Log.d(TAG, "🔔 [PRAYER ALARM] Received at $timeStr")
         Log.d(TAG, "🔔 [PRAYER ALARM] Intent action: ${intent.action}")
+
+        // ── Quran reminder handling (check BEFORE prayerName null check) ──
+        val action = intent.action
+
+        if (action == ACTION_QURAN_READ_NOW) {
+            Log.d(TAG, "📖 [QURAN] Read Now tapped → opening app")
+            val launchIntent = Intent(context, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                putExtra("open_quran_reader", true)
+            }
+            context.startActivity(launchIntent)
+            NotificationManagerCompat.from(context).cancel(QURAN_NOTIFICATION_ID)
+            return
+        }
+
+        if (action == ACTION_QURAN_REMIND_LATER) {
+            val qPrefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+            val snoozeMinutes = qPrefs.getInt("quran_snooze_minutes", 30)
+            Log.d(TAG, "📖 [QURAN] Remind Later tapped → snoozing $snoozeMinutes min")
+            NotificationManagerCompat.from(context).cancel(QURAN_NOTIFICATION_ID)
+            scheduleQuranSnoozeAlarm(context, snoozeMinutes)
+            return
+        }
+
+        val isQuranReminder = intent.getBooleanExtra("is_quran_reminder", false)
+        if (isQuranReminder) {
+            Log.d(TAG, "📖 [QURAN] Alarm fired → showing notification")
+            showQuranNotification(context)
+            return
+        }
+        // ── End Quran handling ───────────────────────────────────────────
 
         val prayerName = intent.getStringExtra(EXTRA_PRAYER_NAME) ?: return
         val prayerNameAr = intent.getStringExtra(EXTRA_PRAYER_NAME_AR) ?: prayerName
@@ -880,6 +1089,24 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         prayerTime: Long
     ) {
         val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+
+        // Don't allow marking prayer status before adhan fires
+        if (action == ACTION_REMINDER_PRAYED || action == ACTION_REMINDER_LATE || action == ACTION_REMINDER_MISSED) {
+            val now = System.currentTimeMillis()
+            if (prayerTime > now) {
+                val prayerTimeStr = DateFormat.format("HH:mm", Date(prayerTime))
+                val nowStr = DateFormat.format("HH:mm", Date(now))
+                Log.w(TAG, "⏭️ [REMINDER] Ignoring '$action' for $prayerName — adhan not yet fired (now=$nowStr, prayer=$prayerTimeStr)")
+                // Still clear reminder mode so user isn't stuck
+                prefs.edit()
+                    .putBoolean("reminder_active", false)
+                    .remove("reminder_prayer_name")
+                    .remove("reminder_prayer_name_ar")
+                    .remove("reminder_prayer_time")
+                    .apply()
+                return
+            }
+        }
 
         when (action) {
             ACTION_REMINDER_PRAYED -> {

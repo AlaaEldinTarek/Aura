@@ -1,0 +1,260 @@
+{
+  "number": 84,
+  "name": "سُورَةُ الانشِقَاقِ",
+  "englishName": "Al-Inshiqaaq",
+  "englishNameTranslation": "The Splitting Open",
+  "revelationType": "Meccan",
+  "numberOfAyahs": 25,
+  "ayahs": [
+    {
+      "number": 5885,
+      "numberInSurah": 1,
+      "text": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ إِذَا ٱلسَّمَآءُ ٱنشَقَّتْ",
+      "translation": "WHEN THE SKY is split asunder,",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5886,
+      "numberInSurah": 2,
+      "text": "وَأَذِنَتْ لِرَبِّهَا وَحُقَّتْ",
+      "translation": "obeying its Sustainer, as in truth it must;",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5887,
+      "numberInSurah": 3,
+      "text": "وَإِذَا ٱلْأَرْضُ مُدَّتْ",
+      "translation": "and when the earth is leveled,",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5888,
+      "numberInSurah": 4,
+      "text": "وَأَلْقَتْ مَا فِيهَا وَتَخَلَّتْ",
+      "translation": "and casts forth whatever is in it, and becomes utterly void,",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5889,
+      "numberInSurah": 5,
+      "text": "وَأَذِنَتْ لِرَبِّهَا وَحُقَّتْ",
+      "translation": "obeying its Sustainer, as in truth it must -:",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5890,
+      "numberInSurah": 6,
+      "text": "يَٰٓأَيُّهَا ٱلْإِنسَٰنُ إِنَّكَ كَادِحٌ إِلَىٰ رَبِّكَ كَدْحًۭا فَمُلَٰقِيهِ",
+      "translation": "[then,] O man - thou [that] hast, verily, been toiling towards thy Sustainer in painful toil - then shalt thou meet Him!",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5891,
+      "numberInSurah": 7,
+      "text": "فَأَمَّا مَنْ أُوتِىَ كِتَٰبَهُۥ بِيَمِينِهِۦ",
+      "translation": "And as for him whose record shall be placed in his right hand,",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5892,
+      "numberInSurah": 8,
+      "text": "فَسَوْفَ يُحَاسَبُ حِسَابًۭا يَسِيرًۭا",
+      "translation": "he will in time be called to account with an easy accounting,",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5893,
+      "numberInSurah": 9,
+      "text": "وَيَنقَلِبُ إِلَىٰٓ أَهْلِهِۦ مَسْرُورًۭا",
+      "translation": "and will [be able to] turn joyfully to those of his own kind.",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5894,
+      "numberInSurah": 10,
+      "text": "وَأَمَّا مَنْ أُوتِىَ كِتَٰبَهُۥ وَرَآءَ ظَهْرِهِۦ",
+      "translation": "But as for him whose record shall be given to him behind his back;",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5895,
+      "numberInSurah": 11,
+      "text": "فَسَوْفَ يَدْعُوا۟ ثُبُورًۭا",
+      "translation": "he will in time pray for utter destruction:",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5896,
+      "numberInSurah": 12,
+      "text": "وَيَصْلَىٰ سَعِيرًا",
+      "translation": "but he will enter the blazing flame.",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5897,
+      "numberInSurah": 13,
+      "text": "إِنَّهُۥ كَانَ فِىٓ أَهْلِهِۦ مَسْرُورًا",
+      "translation": "Behold, [in his earthly life] he lived joyfully among people of his own kind",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5898,
+      "numberInSurah": 14,
+      "text": "إِنَّهُۥ ظَنَّ أَن لَّن يَحُورَ",
+      "translation": "for, behold, he never thought that he would have to return [to God].",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5899,
+      "numberInSurah": 15,
+      "text": "بَلَىٰٓ إِنَّ رَبَّهُۥ كَانَ بِهِۦ بَصِيرًۭا",
+      "translation": "Yea indeed! His Sustainer did see all that was in him!",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5900,
+      "numberInSurah": 16,
+      "text": "فَلَآ أُقْسِمُ بِٱلشَّفَقِ",
+      "translation": "BUT NAY! I call to witness the sunset's [fleeting] afterglow,",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5901,
+      "numberInSurah": 17,
+      "text": "وَٱلَّيْلِ وَمَا وَسَقَ",
+      "translation": "and the night, and what it [step by step] unfolds,",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5902,
+      "numberInSurah": 18,
+      "text": "وَٱلْقَمَرِ إِذَا ٱتَّسَقَ",
+      "translation": "and the moon, as it grows to its fullness:",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5903,
+      "numberInSurah": 19,
+      "text": "لَتَرْكَبُنَّ طَبَقًا عَن طَبَقٍۢ",
+      "translation": "[even thus, O men,] are you bound to move; onward from stage to stage.",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5904,
+      "numberInSurah": 20,
+      "text": "فَمَا لَهُمْ لَا يُؤْمِنُونَ",
+      "translation": "What, then, is amiss with them that they will not believe [in a life to come]?",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5905,
+      "numberInSurah": 21,
+      "text": "وَإِذَا قُرِئَ عَلَيْهِمُ ٱلْقُرْءَانُ لَا يَسْجُدُونَ ۩",
+      "translation": "and [that], when the Qur’an is read unto them, they do not fall down in prostration?",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": true
+    },
+    {
+      "number": 5906,
+      "numberInSurah": 22,
+      "text": "بَلِ ٱلَّذِينَ كَفَرُوا۟ يُكَذِّبُونَ",
+      "translation": "Nay, but they who are bent on denying the truth give the lie [to this divine writ]!",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5907,
+      "numberInSurah": 23,
+      "text": "وَٱللَّهُ أَعْلَمُ بِمَا يُوعُونَ",
+      "translation": "Yet God has full knowledge of what they conceal [in their hearts].",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5908,
+      "numberInSurah": 24,
+      "text": "فَبَشِّرْهُم بِعَذَابٍ أَلِيمٍ",
+      "translation": "Hence, give them the tiding of grievous suffering [in the life to come] –",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    },
+    {
+      "number": 5909,
+      "numberInSurah": 25,
+      "text": "إِلَّا ٱلَّذِينَ ءَامَنُوا۟ وَعَمِلُوا۟ ٱلصَّٰلِحَٰتِ لَهُمْ أَجْرٌ غَيْرُ مَمْنُونٍۭ",
+      "translation": "unless it be such [of them] as [repent, and] attain to faith, and do good works: for theirs shall be a reward unending!.",
+      "juz": 30,
+      "page": 589,
+      "ruku": 526,
+      "sajda": false
+    }
+  ]
+}

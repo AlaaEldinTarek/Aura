@@ -1,0 +1,70 @@
+{
+  "number": 109,
+  "name": "سُورَةُ الكَافِرُونَ",
+  "englishName": "Al-Kaafiroon",
+  "englishNameTranslation": "The Disbelievers",
+  "revelationType": "Meccan",
+  "numberOfAyahs": 6,
+  "ayahs": [
+    {
+      "number": 6208,
+      "numberInSurah": 1,
+      "text": "بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ قُلْ يَٰٓأَيُّهَا ٱلْكَٰفِرُونَ",
+      "translation": "SAY: \"O you who deny the truth!",
+      "juz": 30,
+      "page": 603,
+      "ruku": 551,
+      "sajda": false
+    },
+    {
+      "number": 6209,
+      "numberInSurah": 2,
+      "text": "لَآ أَعْبُدُ مَا تَعْبُدُونَ",
+      "translation": "\"I do not worship that which you worship,",
+      "juz": 30,
+      "page": 603,
+      "ruku": 551,
+      "sajda": false
+    },
+    {
+      "number": 6210,
+      "numberInSurah": 3,
+      "text": "وَلَآ أَنتُمْ عَٰبِدُونَ مَآ أَعْبُدُ",
+      "translation": "and neither do you worship that which I worship!",
+      "juz": 30,
+      "page": 603,
+      "ruku": 551,
+      "sajda": false
+    },
+    {
+      "number": 6211,
+      "numberInSurah": 4,
+      "text": "وَلَآ أَنَا۠ عَابِدٌۭ مَّا عَبَدتُّمْ",
+      "translation": "\"And I will not worship ~hat which you have [ever] worshipped,",
+      "juz": 30,
+      "page": 603,
+      "ruku": 551,
+      "sajda": false
+    },
+    {
+      "number": 6212,
+      "numberInSurah": 5,
+      "text": "وَلَآ أَنتُمْ عَٰبِدُونَ مَآ أَعْبُدُ",
+      "translation": "and neither will you [ever] worship that which I worship.",
+      "juz": 30,
+      "page": 603,
+      "ruku": 551,
+      "sajda": false
+    },
+    {
+      "number": 6213,
+      "numberInSurah": 6,
+      "text": "لَكُمْ دِينُكُمْ وَلِىَ دِينِ",
+      "translation": "Unto you, your moral law, and unto me, mine!\"",
+      "juz": 30,
+      "page": 603,
+      "ruku": 551,
+      "sajda": false
+    }
+  ]
+}
