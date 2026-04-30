@@ -441,14 +441,15 @@ Flutter `shared_preferences` does NOT use the same file as native Kotlin. Native
 - **Backup files**: Original notification layouts and PrayerForegroundService are backed up at `android/app/src/main/layout-backup/` (outside `res/` — backup folders inside `res/` break the Android resource merger).
 - **Notification channel importance**: Android won't downgrade an existing channel's importance. Use `deleteNotificationChannel()` before recreating when upgrading importance. **CRITICAL**: Cannot delete a notification channel while a foreground service is using it — wrap in try-catch `SecurityException` (see PrayerForegroundService).
 - **Quran data loading**: `quran_hafs.json` (4.2MB, 12,472 ayahs) is loaded LAZILY on first Quran tab open, NOT at startup. Loading at startup causes crash. Data cached in `QuranService._cachedAyahs` after first load.
+- **Quran reader auto-scaling**: `QuranReaderScreen` scales font size based on page text density. Pages with <2000 chars get up to 12% larger font (`28 * (1 + (1 - ratio) * 0.12)`). Line height scales proportionally up to +0.10. Pages 1-2 (Fatihah/Baqarah start) center vertically. Bottom padding 40px prevents text from hiding behind bottom bar. Scaling is subtle enough that users don't notice page-to-page size differences.
 - **HafsSmart font**: Uses Unicode PUA characters — must use `aya_text` field (not `aya_text_emlaey`). Font family: `HafsSmart` mapped to `assets/fonts/HafsSmart_08.ttf`. `aya_text_emlaey` is standard Arabic (used for search only).
 - **TextDirection.rtl conflict**: `easy_localization` exports `intl`'s `TextDirection` which shadows Flutter's. Use `import 'dart:ui' as ui show TextDirection;` and `ui.TextDirection.rtl` in Quran reader.
 - **Dhuhr/Zuhr naming**: SharedPreferences key is always `dhuhr_time`, but UI uses "Zuhr". All switch/map lookups must handle both names.
 - **Language switching**: `MainWrapperScreen.build()` must call `ref.watch(languageProvider)` — without it, bottom nav labels and screen AppBar titles won't rebuild when the locale changes.
 
 ### Translation Files
-- **`assets/translations/en.json`**: 392 English strings
-- **`assets/translations/ar.json`**: 392 Arabic strings
+- **`assets/translations/en.json`**: 229 English strings
+- **`assets/translations/ar.json`**: 229 Arabic strings
 - **When adding new strings, add to BOTH files**
 
 ### Assets

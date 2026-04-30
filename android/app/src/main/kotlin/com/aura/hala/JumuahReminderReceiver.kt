@@ -32,7 +32,8 @@ class JumuahReminderReceiver : BroadcastReceiver() {
 
             // Read today's Zuhr time (epoch millis) from aura_prayer_times
             val prayerPrefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
-            val zuhrMillis = prayerPrefs.getLong("dhuhr_time", 0L)
+            val zuhrStr = prayerPrefs.getString("dhuhr_time", null)
+            val zuhrMillis = zuhrStr?.toLongOrNull() ?: 0L
 
             var remHour: Int
             var remMinute: Int

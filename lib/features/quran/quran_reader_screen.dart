@@ -202,59 +202,189 @@ class _MushafPage extends StatelessWidget {
         }
         final ayahs = snapshot.data!;
 
+        final totalChars = ayahs.fold<int>(
+            0, (sum, a) => sum + a.ayaText.length);
+        // Scale up subtly for lighter pages, capped at 12% to prevent scroll
+        final ratio = (totalChars / 2000).clamp(0.0, 1.0);
+        final textScale = 1.0 + (1.0 - ratio) * 0.12;
+        final fontSize = 28.0 * textScale;
+        final lineHeight = 1.8 + (1.0 - ratio) * 0.10;
+
+        final isCenterPage = page <= 2;
+
         return Container(
           color: theme.scaffoldBackgroundColor,
-          child: Stack(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(12, 40, 12, 50),
-                child: SingleChildScrollView(
-                  child: Column(
-                    children: [
-                      _PageHeader(ayahs: ayahs, lang: lang),
-                      const SizedBox(height: 12),
-                      Directionality(
-                        textDirection: ui.TextDirection.rtl,
-                        child: Text(
-                          _buildPageText(ayahs),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontFamily: 'HafsSmart',
-                            fontSize: 28,
-                            height: 1.8,
-                            color: isDark ? AppConstants.darkTextPrimary : AppConstants.lightTextPrimary,
-                            letterSpacing: 0,
-                          ),
-                        ),
-                      ),
-                    ],
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 2, 12, 40),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: Column(
+                      mainAxisAlignment: isCenterPage
+                          ? MainAxisAlignment.center
+                          : MainAxisAlignment.start,
+                      children: [
+                        _PageHeader(ayahs: ayahs, lang: lang),
+                        const SizedBox(height: 4),
+                        ..._buildPageSections(ayahs, isDark, fontSize, lineHeight),
+                      ],
+                    ),
                   ),
-                ),
-              ),
-              Positioned(
-                bottom: 58,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: _PageNumber(page: page, lang: lang),
-                ),
-              ),
-            ],
+                );
+              },
+            ),
           ),
         );
       },
     );
   }
 
-  String _buildPageText(List<Ayah> ayahs) {
-    final buffer = StringBuffer();
-    for (int i = 0; i < ayahs.length; i++) {
-      buffer.write(ayahs[i].ayaText);
-      if (i < ayahs.length - 1) {
-        buffer.write(' ');
+  List<Widget> _buildPageSections(List<Ayah> ayahs, bool isDark, double fontSize, double lineHeight) {
+    final sections = <MapEntry<int, List<Ayah>>>[];
+    for (final ayah in ayahs) {
+      if (sections.isEmpty || sections.last.key != ayah.suraNo) {
+        sections.add(MapEntry(ayah.suraNo, [ayah]));
+      } else {
+        sections.last.value.add(ayah);
       }
     }
-    return buffer.toString();
+
+    final primary = AppConstants.getPrimary(isDark);
+    final widgets = <Widget>[];
+    for (int i = 0; i < sections.length; i++) {
+      final sectionAyahs = sections[i].value;
+      final isFirstSection = i == 0;
+      final isSurahStart = sectionAyahs.first.ayaNo == 1;
+
+      // Show surah header for every new surah starting on this page
+      if (isSurahStart || !isFirstSection) {
+        final meta = QuranService.getSurahMeta(sections[i].key);
+        if (meta != null) {
+          if (!isFirstSection) {
+            widgets.add(const SizedBox(height: 3));
+          }
+          widgets.add(_SurahHeader(meta: meta, isDark: isDark));
+          widgets.add(const SizedBox(height: 5));
+        }
+      }
+
+      final buffer = StringBuffer();
+      for (int j = 0; j < sectionAyahs.length; j++) {
+        buffer.write(sectionAyahs[j].ayaText);
+        if (j < sectionAyahs.length - 1) {
+          buffer.write(' ');
+        }
+      }
+
+      final fullText = buffer.toString();
+      widgets.add(
+        Directionality(
+          textDirection: ui.TextDirection.rtl,
+          child: Text(
+            fullText,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'HafsSmart',
+              fontSize: fontSize,
+              height: lineHeight,
+              color: isDark ? AppConstants.darkTextPrimary : AppConstants.lightTextPrimary,
+              letterSpacing: 0,
+            ),
+          ),
+        ),
+      );
+    }
+    return widgets;
+  }
+}
+
+class _SurahHeader extends StatelessWidget {
+  final SurahMetaData meta;
+  final bool isDark;
+
+  const _SurahHeader({required this.meta, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = AppConstants.getPrimary(isDark);
+
+    return Directionality(
+      textDirection: ui.TextDirection.rtl,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _BoldOrnamentalDivider(color: primary),
+          const SizedBox(height: 3),
+          Text(
+            meta.nameAr,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'HafsSmart',
+              fontSize: 26,
+              height: 1.4,
+              color: primary,
+            ),
+          ),
+          const SizedBox(height: 3),
+          _BoldOrnamentalDivider(color: primary),
+          if (meta.suraNo != 9 && meta.suraNo != 1) ...[
+            const SizedBox(height: 4),
+            Text(
+              'بسم الله الرحمن الرحيم',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'HafsSmart',
+                fontSize: 20,
+                height: 1.4,
+                color: primary.withValues(alpha: 0.7),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _BoldOrnamentalDivider extends StatelessWidget {
+  final Color color;
+  const _BoldOrnamentalDivider({required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Container(height: 1.5, color: color.withValues(alpha: 0.35)),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Text('✦', style: TextStyle(color: color, fontSize: 14)),
+        ),
+        Expanded(
+          child: Container(height: 1.5, color: color.withValues(alpha: 0.35)),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Text('✦', style: TextStyle(color: color, fontSize: 14)),
+        ),
+        Expanded(
+          child: Container(height: 1.5, color: color.withValues(alpha: 0.35)),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Text('✦', style: TextStyle(color: color, fontSize: 14)),
+        ),
+        Expanded(
+          child: Container(height: 1.5, color: color.withValues(alpha: 0.35)),
+        ),
+      ],
+    );
   }
 }
 
