@@ -7,6 +7,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.KeyEvent
 import android.view.View
@@ -49,6 +51,55 @@ class AdhanFullScreenActivity : AppCompatActivity() {
     private lateinit var prayerName: String
     private lateinit var prayerNameAr: String
     private var pulseAnimator: ObjectAnimator? = null
+
+    private val tickHandler = Handler(Looper.getMainLooper())
+    private var iqamaTimeMs = 0L
+    private var isArabic = false
+    private var iqamaPhaseStarted = false
+
+    private val tickRunnable = object : Runnable {
+        override fun run() {
+            if (isFinishing || isDestroyed) return
+
+            if (AdhanPlayer.isPlaying()) {
+                // Adhan still playing — check again soon
+                tickHandler.postDelayed(this, 500)
+                return
+            }
+
+            // Adhan audio has stopped — switch to iqama countdown phase
+            if (!iqamaPhaseStarted) {
+                iqamaPhaseStarted = true
+                stopPulseAnimation()
+                findViewById<TextView>(R.id.prayerMessage).visibility = View.GONE
+                val label = findViewById<TextView>(R.id.iqamaLabel)
+                val countdown = findViewById<TextView>(R.id.iqamaCountdown)
+                label.visibility = View.VISIBLE
+                countdown.visibility = View.VISIBLE
+                label.text = if (isArabic) "الإقامة بعد" else "Iqama in"
+            }
+
+            val now = System.currentTimeMillis()
+            val countdown = findViewById<TextView>(R.id.iqamaCountdown)
+            val label = findViewById<TextView>(R.id.iqamaLabel)
+
+            if (iqamaTimeMs > 0 && now < iqamaTimeMs) {
+                val remaining = iqamaTimeMs - now
+                val minutes = (remaining / 60_000).toInt()
+                val seconds = ((remaining % 60_000) / 1000).toInt()
+                countdown.text = String.format("%d:%02d", minutes, seconds)
+                tickHandler.postDelayed(this, 500)
+            } else if (iqamaTimeMs > 0) {
+                // Iqama time reached
+                label.text = if (isArabic) "حان وقت الإقامة" else "Stand for prayer"
+                countdown.text = if (isArabic) "🕌" else "🕌"
+            } else {
+                // No iqama configured — just show a done state
+                label.visibility = View.GONE
+                countdown.text = if (isArabic) "حان وقت الصلاة" else "Time to pray"
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -177,12 +228,7 @@ class AdhanFullScreenActivity : AppCompatActivity() {
             Log.d(TAG, "🔊 [ADHAN] Volume button pressed — stopping adhan")
             if (AdhanPlayer.isPlaying()) {
                 AdhanPlayer.stop()
-                stopPulseAnimation()
-                // Update message
-                val prefs = getSharedPreferences("aura_prayer_times", MODE_PRIVATE)
-                val isArabic = prefs.getString("language", "en") == "ar"
-                findViewById<TextView>(R.id.prayerMessage).text =
-                    if (isArabic) "تم إيقاف الأذان" else "Azan stopped"
+                // The tickRunnable will detect audio stopped and switch to iqama countdown
             }
             // Don't consume — let system adjust volume normally
             return super.onKeyDown(keyCode, event)
@@ -193,7 +239,11 @@ class AdhanFullScreenActivity : AppCompatActivity() {
     private fun setupUI() {
         // Get language from aura_prayer_times (saved by Flutter MethodChannel)
         val prefs = getSharedPreferences("aura_prayer_times", MODE_PRIVATE)
-        val isArabic = prefs.getString("language", "en") == "ar"
+        isArabic = prefs.getString("language", "en") == "ar"
+        iqamaTimeMs = prefs.getLong("adhan_iqama_time", 0L)
+
+        // Start polling for adhan end → iqama countdown
+        tickHandler.post(tickRunnable)
 
         // Set prayer-specific icon
         findViewById<ImageView>(R.id.prayerIcon).setImageResource(getPrayerIconRes())
@@ -217,13 +267,22 @@ class AdhanFullScreenActivity : AppCompatActivity() {
         val msg = if (isArabic) "حان الآن موعد صلاة $prayerNameAr" else "It's time for $prayerName prayer"
         findViewById<TextView>(R.id.prayerMessage).text = msg
 
-        // Stop Vibrate button
+        // X dismiss button at top — always visible
+        findViewById<Button>(R.id.btnDismiss).setOnClickListener {
+            stopAdhanAndFinish()
+        }
+
+        // Vibration control buttons — show only when silent/vibrate mode is active
         val silentPrefs = getSharedPreferences("aura_silent_mode", MODE_PRIVATE)
         val isSilentActive = silentPrefs.getBoolean("is_silent_active", false)
         val silentEnabled = silentPrefs.getBoolean("silent_mode_enabled", true)
-        findViewById<Button>(R.id.btnVibrateAlways).apply {
-            if (silentEnabled && isSilentActive) {
-                visibility = View.VISIBLE
+        val btnContainer = findViewById<android.widget.LinearLayout>(R.id.btnContainer)
+
+        if (silentEnabled && isSilentActive) {
+            btnContainer.visibility = View.VISIBLE
+
+            // Stop Vibrate — turns off vibration then closes
+            findViewById<Button>(R.id.btnVibrateAlways).apply {
                 text = if (isArabic) "إيقاف الاهتزاز" else "Stop Vibrate"
                 setOnClickListener {
                     val dismissIntent = Intent(this@AdhanFullScreenActivity, ToggleSilentModeReceiver::class.java).apply {
@@ -231,22 +290,18 @@ class AdhanFullScreenActivity : AppCompatActivity() {
                         putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME, prayerName)
                     }
                     sendBroadcast(dismissIntent)
-
-                    // Update UI
                     isEnabled = false
                     alpha = 0.5f
                 }
-            } else {
-                visibility = View.GONE
             }
-        }
 
-        // Close button — stops adhan + closes activity
-        findViewById<Button>(R.id.btnClose).apply {
-            text = if (isArabic) "إغلاق" else "Close"
-            setOnClickListener {
-                stopAdhanAndFinish()
+            // Keep Vibrate — closes screen, vibration continues
+            findViewById<Button>(R.id.btnKeepVibrate).apply {
+                text = if (isArabic) "إبقاء الاهتزاز" else "Keep Vibrate"
+                setOnClickListener { finish() }
             }
+        } else {
+            btnContainer.visibility = View.GONE
         }
 
         Log.d(TAG, "✅ [ADHAN] UI setup complete")
@@ -254,6 +309,7 @@ class AdhanFullScreenActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+        tickHandler.removeCallbacks(tickRunnable)
         stopPulseAnimation()
         // Stop adhan when activity is destroyed (swipe away, back button, etc.)
         if (AdhanPlayer.isPlaying()) {

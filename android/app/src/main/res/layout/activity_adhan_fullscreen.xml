@@ -16,6 +16,22 @@
         android:textSize="20sp"
         android:textColor="#4DFFFFFF" />
 
+    <!-- Dismiss X button at top right -->
+    <Button
+        android:id="@+id/btnDismiss"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:text="✕"
+        android:textSize="20sp"
+        android:textColor="#CCFFFFFF"
+        android:background="@drawable/bg_dismiss_circle"
+        android:textAllCaps="false"
+        android:elevation="4dp" />
+
     <!-- Center content -->
     <LinearLayout
         android:id="@+id/contentCenter"
@@ -86,10 +102,36 @@
             android:gravity="center"
             android:maxWidth="320dp" />
 
+        <!-- Iqama label (shown after adhan audio ends) -->
+        <TextView
+            android:id="@+id/iqamaLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Iqama in"
+            android:textSize="16sp"
+            android:textColor="#80FFFFFF"
+            android:gravity="center"
+            android:layout_marginTop="28dp"
+            android:visibility="gone" />
+
+        <!-- Live iqama countdown -->
+        <TextView
+            android:id="@+id/iqamaCountdown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="10:00"
+            android:textSize="64sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:gravity="center"
+            android:layout_marginTop="4dp"
+            android:visibility="gone" />
+
     </LinearLayout>
 
-    <!-- Buttons at bottom -->
+    <!-- Vibration control buttons — shown only when silent/vibrate mode is active -->
     <LinearLayout
+        android:id="@+id/btnContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -97,7 +139,8 @@
         android:layout_alignParentBottom="true"
         android:layout_marginBottom="48dp"
         android:paddingStart="32dp"
-        android:paddingEnd="32dp">
+        android:paddingEnd="32dp"
+        android:visibility="gone">
 
         <!-- Stop Vibrate Button -->
         <Button
@@ -112,14 +155,14 @@
             android:background="@drawable/btn_vibrate_always"
             android:textAllCaps="false" />
 
-        <!-- Close Button -->
+        <!-- Keep Vibrate Button -->
         <Button
-            android:id="@+id/btnClose"
+            android:id="@+id/btnKeepVibrate"
             android:layout_width="0dp"
             android:layout_height="48dp"
             android:layout_weight="1"
             android:layout_marginStart="8dp"
-            android:text="Close"
+            android:text="Keep Vibrate"
             android:textSize="14sp"
             android:textColor="#FFFFFF"
             android:background="@drawable/btn_close"

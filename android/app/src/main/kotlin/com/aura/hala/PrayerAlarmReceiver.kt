@@ -756,57 +756,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             }
         }
 
-        // Create Stop Adhan intent and pending intent
-        val stopIntent = Intent(context, StopAdhanReceiver::class.java).apply {
-            action = ACTION_STOP_ADHAN
-            putExtra(EXTRA_PRAYER_NAME, prayerName)
-        }
-        val stopPendingIntent = PendingIntent.getBroadcast(
-            context,
-            notificationId,
-            stopIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-        )
-
-        // Create Enable Silent Mode intent and pending intent
-        val enableSilentIntent = Intent(context, ToggleSilentModeReceiver::class.java).apply {
-            action = "com.aura.hala.ENABLE_SILENT"
-            putExtra(EXTRA_PRAYER_NAME, prayerName)
-            putExtra(EXTRA_PRAYER_NAME_AR, prayerNameAr)
-        }
-        val enableSilentPendingIntent = PendingIntent.getBroadcast(
-            context,
-            notificationId + 100,
-            enableSilentIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-        )
-
-        // Create Dismiss Silent Mode intent and pending intent
-        val dismissSilentIntent = Intent(context, ToggleSilentModeReceiver::class.java).apply {
-            action = "com.aura.hala.DISMISS_SILENT"
-            putExtra(EXTRA_PRAYER_NAME, prayerName)
-        }
-        val dismissSilentPendingIntent = PendingIntent.getBroadcast(
-            context,
-            notificationId + 101,
-            dismissSilentIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-        )
-
-        // Create Extend Silent Mode intent and pending intent
-        val extendSilentIntent = Intent(context, ToggleSilentModeReceiver::class.java).apply {
-            action = "com.aura.hala.EXTEND_SILENT"
-            putExtra(EXTRA_PRAYER_NAME, prayerName)
-            putExtra(EXTRA_PRAYER_NAME_AR, prayerNameAr)
-        }
-        val extendSilentPendingIntent = PendingIntent.getBroadcast(
-            context,
-            notificationId + 102,
-            extendSilentIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-        )
-
-        // Create full-screen intent for lock screen activity (before builder)
+        // Full-screen intent — launches AdhanFullScreenActivity over lock screen
         val fullScreenIntent = AdhanFullScreenActivity.getIntent(context, prayerName, prayerNameAr)
         val fullScreenPendingIntent = PendingIntent.getActivity(
             context,
@@ -815,53 +765,25 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         )
 
-        // Build notification
-        Log.d(TAG, "📱 [NOTIFICATION] Building notification...")
+        // Minimal notification — required by Android to trigger setFullScreenIntent on locked/doze screens.
+        // No action buttons (all controls are in the full-screen activity).
+        // Auto-dismisses after 3 s so it doesn't stay in the notification shade.
         val builder = NotificationCompat.Builder(context, "prayer_times")
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_ALARM)
-            .setAutoCancel(false)
-            .setOngoing(false)
-            .setShowWhen(true)
+            .setAutoCancel(true)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setVibrate(longArrayOf(0, 500, 200, 500))
-            // Tap notification → opens full-screen adhan → closing stops adhan
             .setContentIntent(fullScreenPendingIntent)
-            // Auto-show full screen on lock screen / when screen is off
             .setFullScreenIntent(fullScreenPendingIntent, true)
-        Log.d(TAG, "📱 [NOTIFICATION] Notification built with contentIntent + fullScreenIntent")
+            .setTimeoutAfter(3000)
 
-        // Add silent mode buttons based on settings and current state
-        if (silentModeEnabled && isSilentActive) {
-            builder.addAction(
-                android.R.drawable.ic_media_play,
-                if (isArabic) "إيقاف الاهتزاز" else "Stop Vibrate",
-                dismissSilentPendingIntent
-            )
-            builder.addAction(
-                android.R.drawable.ic_media_pause,
-                if (isArabic) "اهتزاز دائم" else "Vibrate Always",
-                extendSilentPendingIntent
-            )
-        }
-
-        // Add big text style for expanded content on lock screen
-        val bigTextStyle = NotificationCompat.BigTextStyle()
-            .bigText(message)
-            .setBigContentTitle(title)
-        builder.setStyle(bigTextStyle)
-
-        // Show notification
-        Log.d(TAG, "📱 [NOTIFICATION] ===== CALLING notificationManager.notify() =====")
         val notificationManager = NotificationManagerCompat.from(context)
         try {
             notificationManager.notify(notificationId, builder.build())
-            Log.d(TAG, "✅ [NOTIFICATION] ===== notificationManager.notify() COMPLETED =====")
-            Log.d(TAG, "✅ [NOTIFICATION] Notification SUCCESSFULLY SHOWN for $prayerName (ID: $notificationId)" +
-                      (if (silentModeEnabled) " with SILENT MODE buttons" else " with STOP button only"))
+            Log.d(TAG, "✅ [NOTIFICATION] Full-screen notification posted for $prayerName (auto-dismiss 3s)")
         } catch (e: Exception) {
             Log.e(TAG, "❌ [NOTIFICATION] ERROR showing notification: ${e.message}", e)
         }
