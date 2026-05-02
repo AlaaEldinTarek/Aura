@@ -66,6 +66,13 @@ class PrayerTimesService {
     final adhanCalculationMethod = _mapToAdhanCalculationMethod(calculationMethod);
     final params = adhanCalculationMethod.getParameters();
 
+    // Umm al-Qura (Makkah) has no built-in Dhuhr offset in the adhan library,
+    // but the official implementation and apps like Google add +3 min to match
+    // the standard Umm al-Qura calendar.
+    if (calculationMethod == CalculationMethod.makkah) {
+      params.adjustments.dhuhr = 3;
+    }
+
     // Map custom AsrMadhab enum to Adhan library's Madhab
     params.madhab = _mapToAdhanMadhab(asrMadhab);
 

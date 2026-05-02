@@ -20,6 +20,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
   bool _isLoading = true;
   List<Achievement> _earnedAchievements = [];
   int _totalAchievements = 0;
+  final Set<AchievementCategory> _collapsedCategories = {};
 
   @override
   void initState() {
@@ -154,37 +155,77 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                       AchievementCategory.special: isArabic ? 'خاص' : 'Special',
                     };
 
+                    final isCollapsed = _collapsedCategories.contains(category);
+                    final earnedInCategory = achievements.where((a) => earnedIds.contains(a.id)).length;
+
                     return SliverToBoxAdapter(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: AppConstants.paddingMedium,
-                              vertical: AppConstants.paddingSmall,
-                            ),
-                            child: Text(
-                              categoryNames[category] ?? '',
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
+                          InkWell(
+                            onTap: () => setState(() {
+                              if (isCollapsed) {
+                                _collapsedCategories.remove(category);
+                              } else {
+                                _collapsedCategories.add(category);
+                              }
+                            }),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppConstants.paddingMedium,
+                                vertical: AppConstants.paddingSmall,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      categoryNames[category] ?? '',
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    '$earnedInCategory/${achievements.length}',
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  AnimatedRotation(
+                                    turns: isCollapsed ? 0 : 0.5,
+                                    duration: const Duration(milliseconds: 200),
+                                    child: Icon(
+                                      Icons.expand_more,
+                                      size: 20,
+                                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
-                            child: Wrap(
-                              spacing: 10,
-                              runSpacing: 10,
-                              children: achievements.map((achievement) {
-                                final isEarned = earnedIds.contains(achievement.id);
-                                return _AchievementBadge(
-                                  achievement: achievement,
-                                  isEarned: isEarned,
-                                  isArabic: isArabic,
-                                  isDark: isDark,
-                                );
-                              }).toList(),
-                            ),
+                          AnimatedSize(
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeInOut,
+                            child: isCollapsed
+                                ? const SizedBox.shrink()
+                                : Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
+                                    child: Wrap(
+                                      spacing: 10,
+                                      runSpacing: 10,
+                                      children: achievements.map((achievement) {
+                                        final isEarned = earnedIds.contains(achievement.id);
+                                        return _AchievementBadge(
+                                          achievement: achievement,
+                                          isEarned: isEarned,
+                                          isArabic: isArabic,
+                                          isDark: isDark,
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ),
                           ),
                           const SizedBox(height: AppConstants.paddingMedium),
                         ],

@@ -295,10 +295,10 @@ class AdhanFullScreenActivity : AppCompatActivity() {
                 }
             }
 
-            // Keep Vibrate — closes screen, vibration continues
+            // Keep Vibrate — no-op, vibration continues, screen stays open
             findViewById<Button>(R.id.btnKeepVibrate).apply {
                 text = if (isArabic) "إبقاء الاهتزاز" else "Keep Vibrate"
-                setOnClickListener { finish() }
+                setOnClickListener { }
             }
         } else {
             btnContainer.visibility = View.GONE

@@ -944,6 +944,7 @@ class _AchievementsBadgeGrid extends StatefulWidget {
 
 class _AchievementsBadgeGridState extends State<_AchievementsBadgeGrid> {
   late Future<List<Achievement>> _future;
+  bool _isExpanded = false;
 
   @override
   void initState() {
@@ -953,6 +954,35 @@ class _AchievementsBadgeGridState extends State<_AchievementsBadgeGrid> {
         .checkAndAward(userId: userId)
         .then((_) => AchievementService.instance.getEarnedAchievements(userId: userId))
         .catchError((_) => AchievementService.instance.getEarnedAchievements(userId: userId));
+  }
+
+  Widget _buildBadge(Achievement achievement, bool isEarned, Color primary, bool isDark, bool isArabic) {
+    final isTask = achievement.category == AchievementCategory.tasks;
+    return Tooltip(
+      message: isArabic ? achievement.nameAr : achievement.nameEn,
+      child: Container(
+        width: 52,
+        height: 52,
+        decoration: BoxDecoration(
+          color: isEarned
+              ? primary.withOpacity(isTask ? 0.15 : 0.08)
+              : (isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.04)),
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: isEarned
+                ? primary.withOpacity(isTask ? 0.6 : 0.35)
+                : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+            width: isEarned && isTask ? 2 : 1,
+          ),
+        ),
+        child: Center(
+          child: Opacity(
+            opacity: isEarned ? 1.0 : 0.25,
+            child: Text(achievement.iconEmoji, style: const TextStyle(fontSize: 22)),
+          ),
+        ),
+      ),
+    );
   }
 
   @override
@@ -977,42 +1007,61 @@ class _AchievementsBadgeGridState extends State<_AchievementsBadgeGrid> {
           ),
           child: Column(
             children: [
-              Padding(
-                padding: const EdgeInsets.all(AppConstants.paddingMedium),
-                child: Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: all.map((achievement) {
-                    final isEarned = earnedIds.contains(achievement.id);
-                    final isTask = achievement.category == AchievementCategory.tasks;
-                    return Tooltip(
-                      message: isArabic ? achievement.nameAr : achievement.nameEn,
-                      child: Container(
-                        width: 52,
-                        height: 52,
-                        decoration: BoxDecoration(
-                          color: isEarned
-                              ? primary.withOpacity(isTask ? 0.15 : 0.08)
-                              : (isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.04)),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isEarned
-                                ? primary.withOpacity(isTask ? 0.6 : 0.35)
-                                : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
-                            width: isEarned && isTask ? 2 : 1,
-                          ),
-                        ),
-                        child: Center(
-                          child: Opacity(
-                            opacity: isEarned ? 1.0 : 0.25,
-                            child: Text(achievement.iconEmoji, style: const TextStyle(fontSize: 22)),
+              // Badge grid — collapses to 2 rows
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  const itemSize = 52.0;
+                  const spacing = 10.0;
+                  final innerWidth = constraints.maxWidth - AppConstants.paddingMedium * 2;
+                  final perRow = ((innerWidth + spacing) / (itemSize + spacing)).floor().clamp(1, 100);
+                  final maxCollapsed = perRow * 2;
+                  final hasMore = all.length > maxCollapsed;
+                  final visibleItems = _isExpanded ? all : all.take(maxCollapsed).toList();
+
+                  return Column(
+                    children: [
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeInOut,
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppConstants.paddingMedium),
+                          child: Wrap(
+                            spacing: spacing,
+                            runSpacing: spacing,
+                            children: visibleItems.map((a) => _buildBadge(a, earnedIds.contains(a.id), primary, isDark, isArabic)).toList(),
                           ),
                         ),
                       ),
-                    );
-                  }).toList(),
-                ),
+                      if (hasMore)
+                        InkWell(
+                          onTap: () => setState(() => _isExpanded = !_isExpanded),
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                AnimatedRotation(
+                                  turns: _isExpanded ? 0.5 : 0,
+                                  duration: const Duration(milliseconds: 250),
+                                  child: Icon(Icons.expand_more, size: 18, color: primary),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  _isExpanded
+                                      ? (isArabic ? 'عرض أقل' : 'Show less')
+                                      : (isArabic ? 'عرض الكل (${all.length - maxCollapsed}+)' : 'Show all (+${all.length - maxCollapsed})'),
+                                  style: TextStyle(fontSize: 12, color: primary, fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  );
+                },
               ),
+
+              // Footer — always navigates to full achievements screen
               InkWell(
                 onTap: () => Navigator.of(context).pushNamed('/achievements'),
                 borderRadius: const BorderRadius.vertical(bottom: Radius.circular(AppConstants.radiusLarge)),

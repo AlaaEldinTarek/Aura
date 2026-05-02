@@ -95,7 +95,7 @@ lib/
 | `PrayerForegroundService.kt` | START_STICKY, next prayer countdown every second. Channel deletion guarded — catches `SecurityException` when active |
 | `PrayerWidgets.kt` | CombinedPrayerWidget (AllPrayersWidget) with ViewFlipper tabs (Next Prayer + Timeline), 4 layout variants |
 | `TasksWidget.kt` / `WidgetUpdateService.kt` / `DailyContentWidget.kt` | Home screen widgets |
-| `AdhanFullScreenActivity.kt` | Full-screen intent over lock screen. During adhan: pulse animation. After audio ends: live iqama countdown (polls `AdhanPlayer.isPlaying()` every 500 ms via `Handler`, reads `adhan_iqama_time` from `aura_prayer_times`). Top-right ✕ button always dismisses. Bottom "Stop Vibrate"/"Keep Vibrate" pair shown only when silent mode active. |
+| `AdhanFullScreenActivity.kt` | Full-screen intent over lock screen. During adhan: pulse animation. After audio ends: live iqama countdown (polls `AdhanPlayer.isPlaying()` every 500 ms via `Handler`, reads `adhan_iqama_time` from `aura_prayer_times`). Top-right ✕ (only way to dismiss). Bottom "Stop Vibrate"/"Keep Vibrate" pair shown only when silent mode active — "Keep Vibrate" is a no-op (screen stays open, vibration continues). |
 | `FocusModeService.kt` | START_STICKY, system overlay (TYPE_APPLICATION_OVERLAY), blocks notification shade, countdown timer, restores sound on end |
 | `FocusModeActivity.kt` | `startLockTask()` for complete lockdown; no `stopLockTask()` at timer end; DND restored unconditionally |
 | `AuraAccessibilityService.kt` | Auto-clicks OK on "Screen pinned" dialog silently |
@@ -213,6 +213,9 @@ This was the root cause of Arabic text not showing in full-screen azan and silen
 - **Language switching**: `MainWrapperScreen.build()` must call `ref.watch(languageProvider)` — without it, bottom nav labels won't rebuild on locale change.
 - **Bottom nav Quran tab visibility**: `showQuran = appMode == AppMode.both || appMode == AppMode.prayerOnly` — Quran shows in both `both` and `prayerOnly` modes; hidden only in `tasksOnly`. The PageView always has all 5 screens at fixed indices regardless of mode.
 - **Iqama time in prefs**: `PrayerAlarmReceiver` writes `adhan_iqama_time` (absolute ms timestamp) to `aura_prayer_times` when a prayer alarm fires. `AdhanFullScreenActivity` reads this to drive the post-adhan countdown. Value is 0 if iqama is not configured for that prayer.
+- **Makkah/Umm al-Qura Dhuhr offset**: `adhan` library's `umm_al_qura` method has zero Dhuhr adjustment by default. `PrayerTimesService.getPrayerTimes()` applies `params.adjustments.dhuhr = 3` when `calculationMethod == CalculationMethod.makkah` to match the official Umm al-Qura calendar (+3 min). Do not remove this offset.
+- **Achievements screen collapsible sections**: Each `AchievementCategory` section has a tappable header row (name + earned/total count + rotating chevron). Collapsed state stored in `Set<AchievementCategory> _collapsedCategories` on `_AchievementsScreenState`. Grid animates with `AnimatedSize`.
+- **Profile achievements grid**: `_AchievementsBadgeGrid` shows 2 rows collapsed by default. Uses `LayoutBuilder` to calculate `perRow` dynamically, then `all.take(perRow * 2)`. "Show all / Show less" toggle with `AnimatedSize`. Footer bar always navigates to `/achievements`.
 
 ---
 
