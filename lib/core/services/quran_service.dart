@@ -15,7 +15,7 @@ class QuranService {
     if (_cachedAyahs != null) return _cachedAyahs!;
 
     final String jsonString =
-        await rootBundle.loadString('assets/data/quran_hafs.json');
+        await rootBundle.loadString('assets/data/hafsData_v2-0.json');
     final List<dynamic> jsonList = json.decode(jsonString) as List<dynamic>;
 
     _cachedAyahs =

@@ -8,6 +8,7 @@ import 'package:aura_app/core/providers/quran_provider.dart';
 import 'package:aura_app/core/utils/number_formatter.dart';
 import 'quran_reader_screen.dart';
 import 'quran_search_screen.dart';
+import 'wird_tab.dart';
 
 class QuranScreen extends ConsumerStatefulWidget {
   const QuranScreen({super.key});
@@ -23,7 +24,7 @@ class _QuranScreenState extends ConsumerState<QuranScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
   }
 
   @override
@@ -56,6 +57,7 @@ class _QuranScreenState extends ConsumerState<QuranScreen>
             Tab(text: 'surahs'.tr()),
             Tab(text: 'juz'.tr()),
             Tab(text: 'bookmarks'.tr()),
+            Tab(text: 'wird'.tr()),
           ],
         ),
       ),
@@ -65,6 +67,7 @@ class _QuranScreenState extends ConsumerState<QuranScreen>
           _SurahListTab(lang: lang),
           _JuzTab(lang: lang),
           _BookmarksTab(lang: lang),
+          WirdTab(lang: lang),
         ],
       ),
     );
@@ -184,7 +187,7 @@ class _SurahTile extends StatelessWidget {
       trailing: Text(
         meta.nameAr,
         style: TextStyle(
-          fontFamily: 'HafsSmart',
+          fontFamily: 'UthmanicHafs',
           fontSize: 18,
           color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
         ),
@@ -252,12 +255,17 @@ class _JuzTab extends ConsumerWidget {
 class _BookmarksTab extends ConsumerWidget {
   final String lang;
 
+  static const _bookmarkColors = {
+    BookmarkColor.red: Color(0xFFE53935),
+    BookmarkColor.orange: Color(0xFFFB8C00),
+    BookmarkColor.green: Color(0xFF43A047),
+  };
+
   const _BookmarksTab({required this.lang});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = AppConstants.getPrimary(isDark);
     final bookmarksAsync = ref.watch(quranBookmarksProvider);
 
     return bookmarksAsync.when(
@@ -281,8 +289,16 @@ class _BookmarksTab extends ConsumerWidget {
           itemCount: bookmarks.length,
           itemBuilder: (context, index) {
             final bm = bookmarks[index];
+            final dotColor = _bookmarkColors[bm.color] ?? const Color(0xFF43A047);
             return ListTile(
-              leading: Icon(Icons.bookmark, color: primary),
+              leading: Container(
+                width: 32, height: 32,
+                decoration: BoxDecoration(
+                  color: dotColor.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.bookmark, color: dotColor, size: 18),
+              ),
               title: Text(
                 lang == 'ar' ? bm.suraNameAr : bm.suraNameEn,
                 style: const TextStyle(fontWeight: FontWeight.w600),
@@ -292,17 +308,61 @@ class _BookmarksTab extends ConsumerWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  fontFamily: 'HafsSmart',
+                  fontFamily: 'UthmanicHafs',
                   fontSize: 14,
                   color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
                 ),
               ),
-              trailing: Text(
-                '${NumberFormatter.withArabicNumeralsByLanguage(bm.suraNo.toString(), lang)}:${NumberFormatter.withArabicNumeralsByLanguage(bm.ayaNo.toString(), lang)}',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
-                ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${NumberFormatter.withArabicNumeralsByLanguage(bm.suraNo.toString(), lang)}:${NumberFormatter.withArabicNumeralsByLanguage(bm.ayaNo.toString(), lang)}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  IconButton(
+                    icon: Icon(Icons.delete_outline, size: 20, color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary),
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: Text('bookmark_delete_title'.tr()),
+                          content: Text('bookmark_delete_message'.tr()),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: Text('cancel'.tr()),
+                            ),
+                            FilledButton(
+                              onPressed: () {
+                                Navigator.pop(ctx);
+                                ref.read(quranBookmarksProvider.notifier).removeBookmark(bm.id);
+                                ScaffoldMessenger.of(context).clearSnackBars();
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text('bookmark_deleted'.tr()),
+                                    duration: const Duration(seconds: 4),
+                                    action: SnackBarAction(
+                                      label: 'undo'.tr(),
+                                      onPressed: () {
+                                        ref.read(quranBookmarksProvider.notifier).addBookmark(bm);
+                                      },
+                                    ),
+                                  ),
+                                );
+                              },
+                              child: Text('ok'.tr()),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ],
               ),
               onTap: () {
                 Navigator.push(
@@ -311,9 +371,6 @@ class _BookmarksTab extends ConsumerWidget {
                     builder: (_) => QuranReaderScreen(suraNo: bm.suraNo, scrollToAyaNo: bm.ayaNo, initialPage: bm.page),
                   ),
                 );
-              },
-              onLongPress: () {
-                ref.read(quranBookmarksProvider.notifier).removeBookmark(bm.id);
               },
             );
           },

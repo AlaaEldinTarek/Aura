@@ -12,6 +12,7 @@ dependencies:
 
   # UI & Icons
   cupertino_icons: ^1.0.6
+  flutter_svg: ^2.0.0
   table_calendar: ^3.0.9
 
   # State Management
@@ -88,9 +89,9 @@ flutter:
         - asset: assets/fonts/Cairo-Regular.ttf
         - asset: assets/fonts/Cairo-Bold.ttf
           weight: 700
-    - family: HafsSmart
+    - family: UthmanicHafs
       fonts:
-        - asset: assets/fonts/HafsSmart_08.ttf
+        - asset: assets/fonts/uthmanic_hafs_v20.ttf
 
 # App Icons Configuration
 flutter_launcher_icons:

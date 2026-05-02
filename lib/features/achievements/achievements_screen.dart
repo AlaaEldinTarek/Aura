@@ -150,6 +150,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                       AchievementCategory.consistency: isArabic ? 'الالتزام' : 'Consistency',
                       AchievementCategory.dhikr: isArabic ? 'الأذكار' : 'Zikr',
                       AchievementCategory.tasks: isArabic ? 'المهام' : 'Tasks',
+                      AchievementCategory.quran: isArabic ? 'القرآن' : 'Quran',
                       AchievementCategory.special: isArabic ? 'خاص' : 'Special',
                     };
 

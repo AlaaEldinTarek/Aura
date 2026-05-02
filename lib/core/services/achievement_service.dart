@@ -89,6 +89,9 @@ class AchievementService {
       if (!earnedIds.contains('streak_100') && streak >= 100) {
         await _award(userId, 'streak_100', now, newlyEarned);
       }
+      if (!earnedIds.contains('streak_365') && streak >= 365) {
+        await _award(userId, 'streak_365', now, newlyEarned);
+      }
 
       // ── perfect_day ───────────────────────────────────────────────────────
       if (!earnedIds.contains('perfect_day')) {
@@ -119,6 +122,18 @@ class AchievementService {
         await _award(userId, 'prayers_100', now, newlyEarned);
       }
 
+      // ── prayers_500 ──────────────────────────────────────────────────────
+      if (!earnedIds.contains('prayers_500') && totalPrayers >= 500) {
+        await _award(userId, 'prayers_500', now, newlyEarned);
+      }
+
+      // ── perfect_week (7 consecutive perfect days) ────────────────────────
+      if (!earnedIds.contains('perfect_week')) {
+        if (await _checkPerfectWeek(userId: userId, now: now)) {
+          await _award(userId, 'perfect_week', now, newlyEarned);
+        }
+      }
+
       // ── on_time_50 (50 on-time prayers total) ─────────────────────────────
       if (!earnedIds.contains('on_time_50') && stats365.completedOnTime >= 50) {
         await _award(userId, 'on_time_50', now, newlyEarned);
@@ -142,11 +157,39 @@ class AchievementService {
         }
       }
 
+      // ── fajr_streak_30 ───────────────────────────────────────────────────
+      if (!earnedIds.contains('fajr_streak_30')) {
+        if (await _checkSpecificPrayerStreak(
+          userId: userId, prayerName: 'Fajr', requiredDays: 30, now: now,
+        )) {
+          await _award(userId, 'fajr_streak_30', now, newlyEarned);
+        }
+      }
+
+      // ── isha_streak_30 ───────────────────────────────────────────────────
+      if (!earnedIds.contains('isha_streak_30')) {
+        if (await _checkSpecificPrayerStreak(
+          userId: userId, prayerName: 'Isha', requiredDays: 30, now: now,
+        )) {
+          await _award(userId, 'isha_streak_30', now, newlyEarned);
+        }
+      }
+
+      // ── all_on_time_day (all 5 on-time in one day) ──────────────────────
+      if (!earnedIds.contains('all_on_time_day')) {
+        if (await _checkAllOnTimeDay(userId: userId, now: now)) {
+          await _award(userId, 'all_on_time_day', now, newlyEarned);
+        }
+      }
+
       // ── Dhikr achievements ────────────────────────────────────────────────
       final dhikrStats = await DhikrService.instance.getStatistics(userId: userId);
 
       if (!earnedIds.contains('dhikr_first') && dhikrStats.totalSessions >= 1) {
         await _award(userId, 'dhikr_first', now, newlyEarned);
+      }
+      if (!earnedIds.contains('dhikr_10') && dhikrStats.totalSessions >= 10) {
+        await _award(userId, 'dhikr_10', now, newlyEarned);
       }
       if (!earnedIds.contains('dhikr_50') && dhikrStats.totalSessions >= 50) {
         await _award(userId, 'dhikr_50', now, newlyEarned);
@@ -154,8 +197,12 @@ class AchievementService {
       if (!earnedIds.contains('dhikr_100') && dhikrStats.totalSessions >= 100) {
         await _award(userId, 'dhikr_100', now, newlyEarned);
       }
+      if (!earnedIds.contains('dhikr_200') && dhikrStats.totalSessions >= 200) {
+        await _award(userId, 'dhikr_200', now, newlyEarned);
+      }
 
       // ── Task achievements ─────────────────────────────────────────────────
+      final prefs = await SharedPreferences.getInstance();
       final taskStats = await TaskService.instance.getStatistics(userId: userId);
       final completedTasks = taskStats.completed;
 
@@ -165,16 +212,80 @@ class AchievementService {
       if (!earnedIds.contains('tasks_10') && completedTasks >= 10) {
         await _award(userId, 'tasks_10', now, newlyEarned);
       }
+      if (!earnedIds.contains('tasks_25') && completedTasks >= 25) {
+        await _award(userId, 'tasks_25', now, newlyEarned);
+      }
       if (!earnedIds.contains('tasks_50') && completedTasks >= 50) {
         await _award(userId, 'tasks_50', now, newlyEarned);
+      }
+      if (!earnedIds.contains('tasks_100') && completedTasks >= 100) {
+        await _award(userId, 'tasks_100', now, newlyEarned);
       }
 
       // ── task_streak_7 ─────────────────────────────────────────────────────
       if (!earnedIds.contains('task_streak_7')) {
-        final prefs = await SharedPreferences.getInstance();
         final taskStreak = prefs.getInt('task_streak_count') ?? 0;
         if (taskStreak >= 7) {
           await _award(userId, 'task_streak_7', now, newlyEarned);
+        }
+      }
+
+      // ── task_streak_30 ────────────────────────────────────────────────────
+      if (!earnedIds.contains('task_streak_30')) {
+        final taskStreak = prefs.getInt('task_streak_count') ?? 0;
+        if (taskStreak >= 30) {
+          await _award(userId, 'task_streak_30', now, newlyEarned);
+        }
+      }
+
+      // ── Wird achievements ──────────────────────────────────────────────────
+
+      if (!earnedIds.contains('wird_first')) {
+        final daysCompleted = prefs.getInt('wird_total_days_completed') ?? 0;
+        if (daysCompleted >= 1) {
+          await _award(userId, 'wird_first', now, newlyEarned);
+        }
+      }
+
+      if (!earnedIds.contains('wird_streak_7')) {
+        final wirdStreak = prefs.getInt('wird_streak_count') ?? 0;
+        if (wirdStreak >= 7) {
+          await _award(userId, 'wird_streak_7', now, newlyEarned);
+        }
+      }
+
+      if (!earnedIds.contains('wird_streak_30')) {
+        final wirdStreak = prefs.getInt('wird_streak_count') ?? 0;
+        if (wirdStreak >= 30) {
+          await _award(userId, 'wird_streak_30', now, newlyEarned);
+        }
+      }
+
+      if (!earnedIds.contains('wird_khatma')) {
+        final totalPages = prefs.getInt('wird_total_pages_read') ?? 0;
+        if (totalPages >= 604) {
+          await _award(userId, 'wird_khatma', now, newlyEarned);
+        }
+      }
+
+      if (!earnedIds.contains('wird_streak_100')) {
+        final wirdStreak = prefs.getInt('wird_streak_count') ?? 0;
+        if (wirdStreak >= 100) {
+          await _award(userId, 'wird_streak_100', now, newlyEarned);
+        }
+      }
+
+      if (!earnedIds.contains('wird_pages_100')) {
+        final totalPages = prefs.getInt('wird_total_pages_read') ?? 0;
+        if (totalPages >= 100) {
+          await _award(userId, 'wird_pages_100', now, newlyEarned);
+        }
+      }
+
+      if (!earnedIds.contains('wird_pages_300')) {
+        final totalPages = prefs.getInt('wird_total_pages_read') ?? 0;
+        if (totalPages >= 300) {
+          await _award(userId, 'wird_pages_300', now, newlyEarned);
         }
       }
 
@@ -211,6 +322,64 @@ class AchievementService {
             r.prayerName == prayerName &&
             r.status == PrayerStatus.onTime &&
             DateTime(r.date.year, r.date.month, r.date.day) == day);
+        if (!hasOnTime) return false;
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Returns true if all 5 prayers were completed for 7 consecutive days.
+  Future<bool> _checkPerfectWeek({
+    required String userId,
+    required DateTime now,
+  }) async {
+    try {
+      const prayerNames = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+      final start = now.subtract(const Duration(days: 6));
+      final records = await PrayerTrackingService.instance.getPrayersForDateRange(
+        userId: userId,
+        startDate: start,
+        endDate: now,
+      );
+
+      for (int i = 0; i < 7; i++) {
+        final day = DateTime(now.year, now.month, now.day)
+            .subtract(Duration(days: i));
+        for (final prayer in prayerNames) {
+          final hasRecord = records.any((r) =>
+              r.prayerName == prayer &&
+              r.status != PrayerStatus.missed &&
+              DateTime(r.date.year, r.date.month, r.date.day) == day);
+          if (!hasRecord) return false;
+        }
+      }
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Returns true if all 5 prayers were recorded on-time today.
+  Future<bool> _checkAllOnTimeDay({
+    required String userId,
+    required DateTime now,
+  }) async {
+    try {
+      const prayerNames = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'];
+      final today = DateTime(now.year, now.month, now.day);
+      final records = await PrayerTrackingService.instance.getPrayersForDateRange(
+        userId: userId,
+        startDate: today,
+        endDate: now,
+      );
+
+      for (final prayer in prayerNames) {
+        final hasOnTime = records.any((r) =>
+            r.prayerName == prayer &&
+            r.status == PrayerStatus.onTime &&
+            DateTime(r.date.year, r.date.month, r.date.day) == today);
         if (!hasOnTime) return false;
       }
       return true;

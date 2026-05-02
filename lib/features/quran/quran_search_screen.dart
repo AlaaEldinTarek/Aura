@@ -112,7 +112,7 @@ class _SearchResults extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.right,
                 style: TextStyle(
-                  fontFamily: 'HafsSmart',
+                  fontFamily: 'UthmanicHafs',
                   fontSize: 16,
                   height: 1.8,
                   color: isDark ? Colors.white : Colors.black87,

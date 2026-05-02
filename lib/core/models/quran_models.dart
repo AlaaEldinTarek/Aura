@@ -93,6 +93,8 @@ class Juz {
   });
 }
 
+enum BookmarkColor { red, orange, green }
+
 class QuranBookmark extends Equatable {
   final String id;
   final int suraNo;
@@ -101,6 +103,7 @@ class QuranBookmark extends Equatable {
   final String suraNameAr;
   final String suraNameEn;
   final String ayaText;
+  final BookmarkColor color;
   final DateTime createdAt;
 
   const QuranBookmark({
@@ -111,6 +114,7 @@ class QuranBookmark extends Equatable {
     required this.suraNameAr,
     required this.suraNameEn,
     required this.ayaText,
+    this.color = BookmarkColor.green,
     required this.createdAt,
   });
 
@@ -122,6 +126,7 @@ class QuranBookmark extends Equatable {
         'suraNameAr': suraNameAr,
         'suraNameEn': suraNameEn,
         'ayaText': ayaText,
+        'color': color.name,
         'createdAt': createdAt.toIso8601String(),
       };
 
@@ -133,6 +138,10 @@ class QuranBookmark extends Equatable {
         suraNameAr: json['suraNameAr'] as String,
         suraNameEn: json['suraNameEn'] as String,
         ayaText: json['ayaText'] as String,
+        color: BookmarkColor.values.firstWhere(
+          (c) => c.name == json['color'],
+          orElse: () => BookmarkColor.green,
+        ),
         createdAt: DateTime.parse(json['createdAt'] as String),
       );
 
