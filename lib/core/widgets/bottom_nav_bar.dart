@@ -30,7 +30,7 @@ class AuraBottomNavBar extends ConsumerWidget {
 
     // Build nav items based on mode
     final showPrayer = appMode != AppMode.tasksOnly;
-    final showQuran = appMode == AppMode.both;
+    final showQuran = appMode == AppMode.both || appMode == AppMode.prayerOnly;
     final showTasks = appMode != AppMode.prayerOnly;
 
     return Container(
