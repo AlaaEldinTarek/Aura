@@ -1,7 +1,7 @@
 name: aura_app
 description: Aura (هالة) - A 2-in-1 productivity and spiritual app combining Task Management and Prayer System.
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.0.0+4
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

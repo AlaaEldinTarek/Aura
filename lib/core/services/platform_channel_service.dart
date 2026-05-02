@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -32,7 +33,7 @@ class PlatformChannelService {
     try {
       await _prayerChannel.invokeMethod('openBatteryOptimizationSettings');
     } catch (e) {
-      print('⚠️ [PLATFORM] Failed to open battery optimization via channel: $e');
+      debugPrint('⚠️ [PLATFORM] Failed to open battery optimization via channel: $e');
       // Fallback: open app settings where user can disable battery optimization
       await openAppSettings();
     }

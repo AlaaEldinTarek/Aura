@@ -136,9 +136,9 @@ class DownloadNotifier extends StateNotifier<Map<String, DownloadInfo>> {
   DownloadNotifier() : super({});
 
   Future<void> downloadAdhan(AdhanReciter reciter, Function(double) onProgress) async {
-    print('🔥 [ADHAN DOWNLOAD] Starting download for ${reciter.name}');
-    print('🔥 [ADHAN DOWNLOAD] URL: ${reciter.url}');
-    print('🔥 [ADHAN DOWNLOAD] Filename: ${reciter.fileName}');
+    debugPrint('🔥 [ADHAN DOWNLOAD] Starting download for ${reciter.name}');
+    debugPrint('🔥 [ADHAN DOWNLOAD] URL: ${reciter.url}');
+    debugPrint('🔥 [ADHAN DOWNLOAD] Filename: ${reciter.fileName}');
 
     final current = Map<String, DownloadInfo>.from(state);
     current[reciter.id] = DownloadInfo(status: DownloadStatus.downloading, progress: 0.0);
@@ -146,29 +146,29 @@ class DownloadNotifier extends StateNotifier<Map<String, DownloadInfo>> {
 
     try {
       // Get app documents directory and create adhan subdirectory
-      print('🔥 [ADHAN DOWNLOAD] Getting app directory...');
+      debugPrint('🔥 [ADHAN DOWNLOAD] Getting app directory...');
       final appDir = await getApplicationDocumentsDirectory();
       final adhanDir = Directory('${appDir.path}/adhans');
 
       // Create directory if it doesn't exist
       if (!await adhanDir.exists()) {
-        print('🔥 [ADHAN DOWNLOAD] Creating adhan directory...');
+        debugPrint('🔥 [ADHAN DOWNLOAD] Creating adhan directory...');
         await adhanDir.create(recursive: true);
       }
 
-      print('🔥 [ADHAN DOWNLOAD] Adhan directory: ${adhanDir.path}');
+      debugPrint('🔥 [ADHAN DOWNLOAD] Adhan directory: ${adhanDir.path}');
       final filePath = '${adhanDir.path}/${reciter.fileName}';
-      print('🔥 [ADHAN DOWNLOAD] Full file path: $filePath');
+      debugPrint('🔥 [ADHAN DOWNLOAD] Full file path: $filePath');
 
       // Check if file already exists
       final file = File(filePath);
       if (await file.exists()) {
-        print('🔥 [ADHAN DOWNLOAD] File already exists, deleting old file...');
+        debugPrint('🔥 [ADHAN DOWNLOAD] File already exists, deleting old file...');
         await file.delete();
       }
 
       // Download file with timeout and better error handling
-      print('🔥 [ADHAN DOWNLOAD] Starting dio download...');
+      debugPrint('🔥 [ADHAN DOWNLOAD] Starting dio download...');
       final dio = Dio();
       int lastPercent = 0;
 
@@ -187,7 +187,7 @@ class DownloadNotifier extends StateNotifier<Map<String, DownloadInfo>> {
 
             // Log every 10% progress
             if (percent >= lastPercent + 10 || percent == 100) {
-              print('🔥 [ADHAN DOWNLOAD] Progress: $percent% ($received/$total bytes)');
+              debugPrint('🔥 [ADHAN DOWNLOAD] Progress: $percent% ($received/$total bytes)');
               lastPercent = percent;
             }
 
@@ -199,16 +199,16 @@ class DownloadNotifier extends StateNotifier<Map<String, DownloadInfo>> {
             state = updated;
             onProgress(progress);
           } else {
-            print('🔥 [ADHAN DOWNLOAD] Received $received bytes (total unknown)');
+            debugPrint('🔥 [ADHAN DOWNLOAD] Received $received bytes (total unknown)');
           }
         },
       );
 
-      print('🔥 [ADHAN DOWNLOAD] Download complete, verifying file...');
+      debugPrint('🔥 [ADHAN DOWNLOAD] Download complete, verifying file...');
       final downloadedFile = File(filePath);
       final exists = await downloadedFile.exists();
       final size = exists ? await downloadedFile.length() : 0;
-      print('🔥 [ADHAN DOWNLOAD] File exists: $exists, Size: $size bytes');
+      debugPrint('🔥 [ADHAN DOWNLOAD] File exists: $exists, Size: $size bytes');
 
       if (!exists || size == 0) {
         throw Exception('Download failed - file is empty or does not exist');
@@ -220,11 +220,11 @@ class DownloadNotifier extends StateNotifier<Map<String, DownloadInfo>> {
         progress: 1.0,
       );
       state = updated;
-      print('🔥 [ADHAN DOWNLOAD] ✅ Download successful!');
+      debugPrint('🔥 [ADHAN DOWNLOAD] ✅ Download successful!');
 
     } catch (e) {
-      print('🔥 [ADHAN DOWNLOAD] ❌ ERROR: ${e.toString()}');
-      print('🔥 [ADHAN DOWNLOAD] Error type: ${e.runtimeType}');
+      debugPrint('🔥 [ADHAN DOWNLOAD] ❌ ERROR: ${e.toString()}');
+      debugPrint('🔥 [ADHAN DOWNLOAD] Error type: ${e.runtimeType}');
 
       // Get more detailed error info
       String userFriendlyError = 'Download failed';
@@ -238,7 +238,7 @@ class DownloadNotifier extends StateNotifier<Map<String, DownloadInfo>> {
         userFriendlyError = 'Network error - check your internet connection';
       }
 
-      print('🔥 [ADHAN DOWNLOAD] User error: $userFriendlyError');
+      debugPrint('🔥 [ADHAN DOWNLOAD] User error: $userFriendlyError');
 
       final updated = Map<String, DownloadInfo>.from(state);
       updated[reciter.id] = DownloadInfo(
@@ -261,7 +261,7 @@ class DownloadNotifier extends StateNotifier<Map<String, DownloadInfo>> {
       updated.remove(reciter.id);
       state = updated;
     } catch (e) {
-      print('Error deleting adhan: $e');
+      debugPrint('Error deleting adhan: $e');
     }
   }
 
@@ -711,7 +711,7 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
   }
 
   Future<void> _downloadAdhan(AdhanReciter reciter, bool isArabic) async {
-    print('🔥 [ADHAN DOWNLOAD UI] User pressed download for ${reciter.name}');
+    debugPrint('🔥 [ADHAN DOWNLOAD UI] User pressed download for ${reciter.name}');
 
     // Show download started message
     if (mounted) {
@@ -727,7 +727,7 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
       reciter,
       (progress) {
         // Progress is updated automatically in the notifier
-        print('🔥 [ADHAN DOWNLOAD UI] Progress callback: ${(progress * 100).toInt()}%');
+        debugPrint('🔥 [ADHAN DOWNLOAD UI] Progress callback: ${(progress * 100).toInt()}%');
       },
     );
 
@@ -736,8 +736,8 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
       final downloads = ref.read(downloadProvider);
       final info = downloads[reciter.id];
 
-      print('🔥 [ADHAN DOWNLOAD UI] Final status: ${info?.status}');
-      print('🔥 [ADHAN DOWNLOAD UI] Error: ${info?.error}');
+      debugPrint('🔥 [ADHAN DOWNLOAD UI] Final status: ${info?.status}');
+      debugPrint('🔥 [ADHAN DOWNLOAD UI] Error: ${info?.error}');
 
       if (info?.status == DownloadStatus.downloaded) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -749,7 +749,7 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
         );
       } else if (info?.status == DownloadStatus.error) {
         final errorMessage = info?.error ?? 'Unknown error';
-        print('🔥 [ADHAN DOWNLOAD UI] Showing error to user: $errorMessage');
+        debugPrint('🔥 [ADHAN DOWNLOAD UI] Showing error to user: $errorMessage');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${isArabic ? 'خطأ' : 'Error'}: $errorMessage'),
