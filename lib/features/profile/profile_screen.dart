@@ -908,8 +908,8 @@ class _AppModeTiles extends ConsumerWidget {
     final currentMode = ref.watch(appModeProvider);
 
     final modes = [
-      (AppMode.both, Icons.apps, isArabic ? 'الكل' : 'Full App', isArabic ? 'الصلاة والمهام' : 'Prayer & Tasks'),
-      (AppMode.prayerOnly, Icons.mosque, isArabic ? 'الصلاة فقط' : 'Prayer Only', isArabic ? 'أوقات الصلاة والأذان' : 'Prayer times & Adhan'),
+      (AppMode.both, Icons.apps, isArabic ? 'الكل' : 'Full App', isArabic ? 'الصلاة والقرآن والمهام' : 'Prayer, Quran & Tasks'),
+      (AppMode.prayerOnly, Icons.mosque, isArabic ? 'الصلاة والقرآن' : 'Prayer & Quran', isArabic ? 'أوقات الصلاة والقرآن والأذان' : 'Prayer times, Quran & Adhan'),
       (AppMode.tasksOnly, Icons.task_alt, isArabic ? 'المهام فقط' : 'Tasks Only', isArabic ? 'إدارة المهام' : 'Task management'),
     ];
 

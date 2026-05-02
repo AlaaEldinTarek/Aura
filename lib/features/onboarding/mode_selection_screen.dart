@@ -15,20 +15,20 @@ class ModeSelectionScreen extends ConsumerWidget {
     final modes = [
       _ModeOption(
         mode: AppMode.both,
-        icon: '🕌✅',
+        icon: '🕌📖✅',
         title: isArabic ? 'الكل' : 'Full App',
         subtitle: isArabic
-            ? 'أوقات الصلاة وإدارة المهام معاً'
-            : 'Prayer times + Task management',
+            ? 'أوقات الصلاة والقرآن وإدارة المهام'
+            : 'Prayer times, Quran & Task management',
         color: AppConstants.getPrimary(isDark),
       ),
       _ModeOption(
         mode: AppMode.prayerOnly,
-        icon: '🕌',
-        title: isArabic ? 'الصلاة فقط' : 'Prayer Only',
+        icon: '🕌📖',
+        title: isArabic ? 'الصلاة والقرآن' : 'Prayer & Quran',
         subtitle: isArabic
-            ? 'أوقات الصلاة والأذان والتتبع'
-            : 'Prayer times, adhan & tracking',
+            ? 'أوقات الصلاة والقرآن والأذان والتتبع'
+            : 'Prayer times, Quran, adhan & tracking',
         color: Colors.green,
       ),
       _ModeOption(
