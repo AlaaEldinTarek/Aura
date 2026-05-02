@@ -12,6 +12,7 @@ import '../../core/providers/prayer_times_provider.dart';
 import '../../core/providers/task_provider.dart';
 import '../../core/services/task_service.dart';
 import '../../core/services/achievement_service.dart';
+import '../../core/services/notification_service.dart';
 import '../../core/services/prayer_alarm_service.dart';
 import '../../core/services/prayer_tracking_service.dart';
 import '../../core/models/prayer_record.dart';
@@ -79,6 +80,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       if (!mounted) return;
       final isArabic = Localizations.localeOf(context).languageCode == 'ar';
       _showAchievementToast(achievement, isArabic);
+      NotificationService.instance.showAchievementNotification(achievement, isArabic);
     });
 
     // Listen for tab navigation requests from child screens

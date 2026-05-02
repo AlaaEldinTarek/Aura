@@ -5,6 +5,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/achievement.dart';
 import '../models/prayer_time.dart';
 import '../models/prayer_record.dart' show kPrayerNames, PrayerStatus, PrayerMethod, getCurrentUserId;
 import '../constants/app_constants.dart';
@@ -43,6 +44,16 @@ class NotificationService {
   static const String _jumuahChannelId = 'jumuah_reminder';
   static const String _jumuahChannelName = "Jumu'ah Reminder";
   static const int _jumuahNotificationId = 7001;
+
+  // Wird reminder channel
+  static const String _wirdChannelId = 'wird_reminder';
+  static const String _wirdChannelName = 'Wird Reminder';
+  static const String _wirdChannelDescription = 'Daily Quran reading reminders';
+
+  // Achievement notification channel
+  static const String _achievementChannelId = 'achievement_unlocked';
+  static const String _achievementChannelName = 'Achievements';
+  static const String _achievementChannelDescription = 'Notifications when you earn a new achievement';
 
   // Post-prayer check channel (asks did you pray after prayer time)
   static const String _postCheckChannelId = 'post_prayer_check';
@@ -195,6 +206,34 @@ class NotificationService {
     await _notifications
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(postCheckChannel);
+
+    const AndroidNotificationChannel wirdChannel = AndroidNotificationChannel(
+      _wirdChannelId,
+      _wirdChannelName,
+      description: _wirdChannelDescription,
+      importance: Importance.high,
+      enableVibration: true,
+      playSound: true,
+      showBadge: true,
+    );
+
+    await _notifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(wirdChannel);
+
+    const AndroidNotificationChannel achievementChannel = AndroidNotificationChannel(
+      _achievementChannelId,
+      _achievementChannelName,
+      description: _achievementChannelDescription,
+      importance: Importance.high,
+      enableVibration: true,
+      playSound: true,
+      showBadge: true,
+    );
+
+    await _notifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(achievementChannel);
   }
 
   /// Request notification permissions
@@ -965,6 +1004,105 @@ class NotificationService {
       debugPrint('✅ [DIGEST] Scheduled daily task digest at 8 AM — $todayCount today, $overdueCount overdue');
     } catch (e) {
       debugPrint('❌ [DIGEST] Error scheduling digest: $e');
+    }
+  }
+
+  // ─── Wird Reminders ──────────────────────────────────────────────────────
+
+  /// Schedule daily Wird reminders at the given times.
+  /// Notification IDs: 5100-5119 (max 20 slots).
+  Future<void> scheduleWirdReminders({
+    required List<String> reminderTimes,
+    required int dailyPageGoal,
+  }) async {
+    // Cancel all existing wird notifications
+    await cancelWirdReminders();
+
+    final isArabic = await _getLanguagePreference() == 'ar';
+    final now = DateTime.now();
+
+    for (int i = 0; i < reminderTimes.length && i < 20; i++) {
+      final parts = reminderTimes[i].split(':');
+      final hour = int.parse(parts[0]);
+      final minute = int.parse(parts[1]);
+
+      var scheduled = DateTime(now.year, now.month, now.day, hour, minute);
+      if (scheduled.isBefore(now)) {
+        scheduled = scheduled.add(const Duration(days: 1));
+      }
+
+      final title = isArabic ? 'تذكير الورد' : 'Wird Reminder';
+      final body = isArabic
+          ? 'اقرأ وردك اليومي — $dailyPageGoal صفحة اليوم'
+          : 'Read your daily Wird — $dailyPageGoal pages today';
+
+      final androidDetails = AndroidNotificationDetails(
+        _wirdChannelId,
+        _wirdChannelName,
+        channelDescription: _wirdChannelDescription,
+        importance: Importance.high,
+        priority: Priority.high,
+        showWhen: true,
+        icon: '@mipmap/ic_launcher',
+      );
+
+      final details = NotificationDetails(android: androidDetails);
+      final scheduledDate = tz.TZDateTime.from(scheduled, tz.local);
+
+      await _notifications.zonedSchedule(
+        5100 + i,
+        title,
+        body,
+        scheduledDate,
+        details,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        uiLocalNotificationDateInterpretation:
+            UILocalNotificationDateInterpretation.absoluteTime,
+        matchDateTimeComponents: DateTimeComponents.time,
+        payload: 'wird_reminder',
+      );
+
+      debugPrint('📖 [WIRD] Scheduled reminder #$i at $scheduled');
+    }
+  }
+
+  /// Cancel all wird reminder notifications
+  Future<void> cancelWirdReminders() async {
+    for (int i = 0; i < 20; i++) {
+      await _notifications.cancel(5100 + i);
+    }
+  }
+
+  // ─── Achievement Notifications ────────────────────────────────────────────
+
+  /// Show a system notification when an achievement is unlocked.
+  /// Notification IDs: 7100–8099 (hash-based per achievement, no collisions between types).
+  Future<void> showAchievementNotification(Achievement achievement, bool isArabic) async {
+    try {
+      final id = 7100 + (achievement.id.hashCode.abs() % 1000);
+      final title = isArabic ? '🏆 إنجاز جديد!' : '🏆 Achievement Unlocked!';
+      final body = '${achievement.iconEmoji} ${isArabic ? achievement.nameAr : achievement.nameEn}';
+
+      const androidDetails = AndroidNotificationDetails(
+        _achievementChannelId,
+        _achievementChannelName,
+        channelDescription: _achievementChannelDescription,
+        importance: Importance.high,
+        priority: Priority.high,
+        showWhen: true,
+      );
+
+      await _notifications.show(
+        id,
+        title,
+        body,
+        const NotificationDetails(android: androidDetails),
+        payload: 'achievement:${achievement.id}',
+      );
+
+      debugPrint('🏆 [ACHIEVEMENT] Notification shown: ${achievement.id}');
+    } catch (e) {
+      debugPrint('❌ [ACHIEVEMENT] Error showing notification: $e');
     }
   }
 
