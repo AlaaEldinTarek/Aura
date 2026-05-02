@@ -247,7 +247,7 @@ class ProfileScreen extends ConsumerWidget {
                 SettingTile(
                   icon: Icons.info_outline,
                   title: isArabic ? 'الإصدار' : 'Version',
-                  subtitle: '1.0.0',
+                  subtitle: '1.0.0+1',
                 ),
                 SettingTile(
                   icon: Icons.code,
