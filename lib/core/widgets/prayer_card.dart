@@ -344,7 +344,7 @@ class PrayerCard extends StatelessWidget {
   /// Build completed indicator (green/orange/red badge) - clickable to uncheck
   Widget _buildCompletedIndicator(BuildContext context, bool isArabic, VoidCallback? onUncheck, PrayerStatus? status) {
     final isLate = status == PrayerStatus.late;
-    final isMissed = status == PrayerStatus.excused;
+    final isMissed = status == PrayerStatus.excused || status == PrayerStatus.missed;
     final color = isMissed ? Colors.red : (isLate ? Colors.orange : Colors.green);
 
     return Material(

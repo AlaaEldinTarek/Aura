@@ -164,9 +164,8 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
         _explicitlyMarked.clear();
         for (final entry in statuses.entries) {
           _prayerStatuses[entry.key] = entry.value;
-          if (entry.value != PrayerStatus.missed) {
-            _explicitlyMarked.add(entry.key);
-          }
+          // All prayers with a record are explicitly marked (including missed)
+          _explicitlyMarked.add(entry.key);
         }
       });
     } catch (e) {

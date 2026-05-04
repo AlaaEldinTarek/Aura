@@ -227,6 +227,7 @@ This was the root cause of Arabic text not showing in full-screen azan and silen
 - **Makkah/Umm al-Qura Dhuhr offset**: `adhan` library's `umm_al_qura` method has zero Dhuhr adjustment by default. `PrayerTimesService.getPrayerTimes()` applies `params.adjustments.dhuhr = 3` when `calculationMethod == CalculationMethod.makkah` to match the official Umm al-Qura calendar (+3 min). Do not remove this offset.
 - **Achievements screen collapsible sections**: Each `AchievementCategory` section has a tappable header row (name + earned/total count + rotating chevron). Collapsed state stored in `Set<AchievementCategory> _collapsedCategories` on `_AchievementsScreenState`. Grid animates with `AnimatedSize`.
 - **Profile achievements grid**: `_AchievementsBadgeGrid` shows 2 rows collapsed by default. Uses `LayoutBuilder` to calculate `perRow` dynamically, then `all.take(perRow * 2)`. "Show all / Show less" toggle with `AnimatedSize`. Footer bar always navigates to `/achievements`.
+- **Prayer tracking sync (home ↔ prayer screen)**: Both screens share `dailyPrayerStatusProvider`. In `PrayerScreen._loadCompletedPrayers()`, the `_explicitlyMarked` set must include ALL prayers with records — including `PrayerStatus.missed`. Do not filter out `missed` from `_explicitlyMarked`, or cards on the Prayer Times page won't show the "Missed" badge when the user marks a prayer as missed from the home screen. `PrayerCard._buildCompletedIndicator` treats both `PrayerStatus.excused` and `PrayerStatus.missed` as the red "Missed" badge.
 
 ---
 
