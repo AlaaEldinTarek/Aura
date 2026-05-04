@@ -1530,13 +1530,17 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
     final isArabic = language == 'ar';
     final granted = await NotificationService.instance.canDrawOverlays();
     if (!granted && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(isArabic ? 'يرجى منح إذن العرض فوق التطبيقات' : 'Please grant overlay permission'),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+        margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
         action: SnackBarAction(
           label: isArabic ? 'منح' : 'Grant',
           onPressed: () => NotificationService.instance.requestOverlayPermission(),
         ),
       ));
+      Future.delayed(const Duration(seconds: 4), snackCtrl.close);
       return;
     }
     await NotificationService.instance.startFocusService(
@@ -1741,13 +1745,16 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       ref.invalidate(allTasksProvider);
       ref.invalidate(taskStatisticsProvider);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(isArabic ? 'تم نسخ المهمة' : 'Task duplicated'),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
           ),
         );
+        Future.delayed(const Duration(seconds: 2), snackCtrl.close);
       }
     } catch (e) {
       debugPrint('Error duplicating task: $e');
@@ -1831,14 +1838,17 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
 
     if (mounted) {
       ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      final snackCtrl1 = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
           isArabic ? 'تم إتمام $completed مهام' : '$completed tasks completed',
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
       ));
+      Future.delayed(const Duration(seconds: 2), snackCtrl1.close);
     }
   }
 
@@ -1868,14 +1878,17 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
 
     if (mounted) {
       ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      final snackCtrl2 = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
           isArabic ? 'تم حذف $deleted مهام' : '$deleted tasks deleted',
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
       ));
+      Future.delayed(const Duration(seconds: 2), snackCtrl2.close);
     }
   }
 
@@ -1922,14 +1935,17 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
 
     if (mounted) {
       ScaffoldMessenger.of(context).clearSnackBars();
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      final snackCtrl3 = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
           isArabic ? 'تم حذف $deleted مهام' : '$deleted tasks cleared',
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
       ));
+      Future.delayed(const Duration(seconds: 2), snackCtrl3.close);
     }
   }
 
@@ -2181,7 +2197,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
           backgroundColor: Colors.black87,
           duration: const Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+          margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
           action: SnackBarAction(
             label: isArabic ? 'تراجع' : 'Undo',
             textColor: Colors.white,
@@ -2267,13 +2283,16 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
     ref.invalidate(taskStatisticsProvider);
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(isArabic ? 'تمت إضافة المهمة' : 'Task added'),
           backgroundColor: Colors.green,
           duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
         ),
       );
+      Future.delayed(const Duration(seconds: 2), snackCtrl.close);
     }
   }
 }

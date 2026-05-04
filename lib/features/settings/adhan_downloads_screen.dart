@@ -333,13 +333,16 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
       // Set as custom adhan
       await AdhanPlayerService.instance.setCustomAdhan(path);
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(isArabic ? 'تم تعيين $reciterName كالأذان الافتراضي' : '$reciterName set as default azan'),
           backgroundColor: Colors.green,
           duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
         ),
       );
+      Future.delayed(const Duration(seconds: 2), snackCtrl.close);
     }
   }
 
@@ -389,13 +392,16 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
                     ),
                   );
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(isArabic ? '✅ الإذن ممنوح' : '✅ Permission granted'),
                       duration: const Duration(seconds: 2),
                       backgroundColor: Colors.green,
+                      behavior: SnackBarBehavior.floating,
+                      margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
                     ),
                   );
+                  Future.delayed(const Duration(seconds: 2), snackCtrl.close);
                 }
               }
             },
@@ -410,12 +416,15 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
                 await prefs.remove('selected_adhan_id');
                 if (mounted) {
                   ref.read(selectedAdhanProvider.notifier).state = null;
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(isArabic ? 'تم إعادة تعيين الأذان الافتراضي' : 'Default azan reset'),
                       duration: const Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                      margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
                     ),
                   );
+                  Future.delayed(const Duration(seconds: 2), snackCtrl.close);
                 }
               },
               icon: const Icon(Icons.refresh),
@@ -639,13 +648,16 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
                     ref.read(playingAdhanProvider.notifier).state = null;
                     // Clear any existing snackbars and show stopped message
                     ScaffoldMessenger.of(context).clearSnackBars();
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(isArabic ? 'تم الإيقاف' : 'Stopped'),
                         duration: const Duration(seconds: 1),
                         backgroundColor: Colors.orange,
+                        behavior: SnackBarBehavior.floating,
+                        margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
                       ),
                     );
+                    Future.delayed(const Duration(seconds: 1), snackCtrl.close);
                   }
                 } else {
                   // Stop any currently playing adhan first
@@ -662,11 +674,13 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
                     ref.read(playingAdhanProvider.notifier).state = reciter.id;
                     // Clear any existing snackbars first
                     ScaffoldMessenger.of(context).clearSnackBars();
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(isArabic ? 'جاري التشغيل...' : 'Playing...'),
                         duration: const Duration(seconds: 5),
                         backgroundColor: Colors.green,
+                        behavior: SnackBarBehavior.floating,
+                        margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
                         action: SnackBarAction(
                           label: isArabic ? 'إيقاف' : 'Stop',
                           textColor: Colors.white,
@@ -678,6 +692,7 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
                         ),
                       ),
                     );
+                    Future.delayed(const Duration(seconds: 5), snackCtrl.close);
                   }
                 }
               },
@@ -715,12 +730,15 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
 
     // Show download started message
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(isArabic ? 'بدأ التحميل...' : 'Download started...'),
           duration: const Duration(seconds: 2),
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
         ),
       );
+      Future.delayed(const Duration(seconds: 2), snackCtrl.close);
     }
 
     await ref.read(downloadProvider.notifier).downloadAdhan(
@@ -740,23 +758,29 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
       debugPrint('🔥 [ADHAN DOWNLOAD UI] Error: ${info?.error}');
 
       if (info?.status == DownloadStatus.downloaded) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(isArabic ? 'تم التحميل بنجاح!' : 'Downloaded successfully!'),
             backgroundColor: Colors.green,
             duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
           ),
         );
+        Future.delayed(const Duration(seconds: 2), snackCtrl.close);
       } else if (info?.status == DownloadStatus.error) {
         final errorMessage = info?.error ?? 'Unknown error';
         debugPrint('🔥 [ADHAN DOWNLOAD UI] Showing error to user: $errorMessage');
-        ScaffoldMessenger.of(context).showSnackBar(
+        final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${isArabic ? 'خطأ' : 'Error'}: $errorMessage'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 5),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
           ),
         );
+        Future.delayed(const Duration(seconds: 5), snackCtrl.close);
       }
     }
   }
@@ -811,12 +835,15 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(isArabic ? 'تم الحذف' : 'Deleted'),
             duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
           ),
         );
+        Future.delayed(const Duration(seconds: 2), snackCtrl.close);
       }
     }
   }

@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Multi-language (English/Arabic) with full RTL; Firebase auth (Email/Password, Google, guest mode, offline queue)
 - Hijri date display; Jumu'ah reminder 30 min before Zuhr; Foreground service for background prayer alerts
 - Bookmarks: delete icon per item with confirmation dialog + undo Snackbar (NOT long-press delete)
-- Wird (daily Quran reading commitment): custom page goal (1-604), streak tracking, multiple configurable daily reminders, 4 achievements
+- Wird (daily Quran reading commitment): two tracking modes (pages or juz), custom goal, streak tracking, bookmark color auto-sync, multiple configurable daily reminders, 4 achievements
 
 ---
 
@@ -164,7 +164,7 @@ This was the root cause of Arabic text not showing in full-screen azan and silen
 - Collections: `users`, `tasks`, `prayer_records`
 
 ### Localization
-- All UI strings: `.tr()` from `easy_localization`; keys in both `en.json` and `ar.json` (keep in sync, 229 keys each)
+- All UI strings: `.tr()` from `easy_localization`; keys in both `en.json` and `ar.json` (keep in sync, ~265 keys each)
 - Arabic numerals: `NumberFormatter.withArabicNumeralsByLanguage()`; RTL: `context.locale.languageCode == 'ar'`
 - AM/PM → ص/م; Arabic font: Cairo; English: Roboto
 - Platform channels: always `try-catch`; log with emoji prefixes (`🕌`, `📱`, `🔔`, `✅`, `🔄`)
@@ -190,13 +190,19 @@ This was the root cause of Arabic text not showing in full-screen azan and silen
 
 ### Wird (Daily Quran Reading) System
 - **Tab**: 4th tab in QuranScreen (Surahs, Juz, Bookmarks, **Wird**)
-- **Model** (`lib/core/models/wird.dart`): `WirdSettings` (dailyPageGoal, reminderTimes, remindersEnabled), `WirdProgress` (date, pagesRead, startPage, currentPage, isCompleted), `WirdState` (settings, todayProgress, streakCount, streakDate, totalPagesRead, totalDaysCompleted)
+- **Tracking modes**: `WirdUnit.page` (default) or `WirdUnit.juz`. Each has its own daily goal field (`dailyPageGoal` / `dailyJuzGoal`).
+- **Model** (`lib/core/models/wird.dart`):
+  - `WirdSettings`: `dailyPageGoal`, `dailyJuzGoal`, `wirdUnit` (WirdUnit enum), `reminderTimes`, `remindersEnabled`, `linkedBookmarkColor` (null/'red'/'orange'/'green'), `countedBookmarkPages` (pages already auto-synced)
+  - `WirdProgress`: `date`, `pagesRead`, `startPage`, `currentPage`, `isCompleted`, `juzCompletedToday` (List\<int\> of juz numbers 1-30)
+  - `WirdState`: above + `streakCount`, `streakDate`, `totalPagesRead`, `totalDaysCompleted`, `allCompletedJuz` (List\<int\> of all 30 juz ever completed — drives khatm progress circle)
 - **Service** (`lib/core/services/wird_service.dart`): singleton, SharedPreferences persistence, Firestore sync for logged-in users
-- **Provider** (`lib/core/providers/wird_provider.dart`): `wirdStateProvider` — `WirdNotifier` StateNotifier
+- **Provider** (`lib/core/providers/wird_provider.dart`): `wirdStateProvider` — `WirdNotifier` StateNotifier. Key methods: `setWirdUnit()`, `setDailyJuzGoal()`, `toggleJuzCompleted()`, `markJuzFromBookmarks(Set<int> newJuzNos, Set<int> allBookmarkPages)`, `setLinkedBookmarkColor()`, `syncBookmarkPages()`
 - **SharedPreferences keys**: `wird_settings` (JSON), `wird_streak_count`, `wird_streak_date` ("YYYY-MM-DD"), `wird_total_pages_read`, `wird_total_days_completed`, `wird_progress_history` (JSON list, pruned to 90 days)
 - **Streak logic**: mirrors task streak pattern — increments on first daily completion, resets if >1 day gap. `_refreshStreak()` called on load to detect broken streaks.
 - **Reminders**: channel `wird_reminder`, notification IDs 5100-5119, scheduled via `NotificationService.scheduleWirdReminders()` using `zonedSchedule` with `matchDateTimeComponents: DateTimeComponents.time` for daily repeat. Max 10 reminders.
 - **Page range**: `startPage` to `startPage + dailyPageGoal - 1` (clamped to 604). Tapping opens QuranReaderScreen at that page.
+- **Bookmark auto-sync** (`_WirdContentViewState`): when `linkedBookmarkColor != null`, the `build()` method watches `quranBookmarksProvider` and diffs `countedBookmarkPages` vs current bookmark pages. New pages trigger `syncBookmarkPages()` (page mode) or `markJuzFromBookmarks()` (juz mode) via `addPostFrameCallback`. `_syncInProgress` bool prevents re-entrant calls during the async gap. **Juz sequential assumption**: a bookmark in juz 4 implies juz 1-4 all done — `maxJuz` is found and `List.generate(maxJuz, (i) => i+1)` is marked.
+- **"Add from Bookmarks" dialog flow**: `_BookmarkPagesSheet` lists colors with existing bookmarks. Tapping a color shows an `AlertDialog` ("Add New" / "Choose One"). "Add New" calls `onUseAll` (marks all pages of that color). "Choose One" opens `_BookmarkListSheet` (DraggableScrollableSheet with individual bookmark items). Dismissing both sheets: `Navigator.of(context)..pop()..pop()`.
 - **Achievements**: `wird_first` (1 day), `wird_streak_7`, `wird_streak_30`, `wird_khatma` (604 total pages) in `AchievementCategory.quran`
 
 ---
@@ -207,7 +213,8 @@ This was the root cause of Arabic text not showing in full-screen azan and silen
 - **Notification channel importance**: Android won't downgrade. Call `deleteNotificationChannel()` before recreating. **Cannot delete while foreground service is active** — wrap in try-catch `SecurityException`.
 - **Quran data**: `hafsData_v2-0.json` (12,472 ayahs) loaded **LAZILY** on first Quran tab open — NOT at startup (causes crash). Cached in `QuranService._cachedAyahs`. JSON fields: `sura_no`, `aya_no`, `jozz`, `page`, `line_start`, `line_end`, `aya_text` (PUA), `aya_text_emlaey` (standard Arabic — search only).
 - **UthmanicHafs font**: `assets/fonts/uthmanic_hafs_v20.ttf`, family `UthmanicHafs`. Used in surah list and search for inline ayah text display. Mushaf pages are rendered as SVG (not font text).
-- **SVG Quran reader**: Pages downloaded on-demand from `https://cdn.jsdelivr.net/gh/AlaaEldinTarek/aura-adhans/mushafs/hafs/svg` (files `001.svg`–`604.svg`), cached at `getApplicationDocumentsDirectory()/quran_pages/`. `QuranSvgService` deduplicates concurrent requests and preloads ±1 page. Dark mode inverts via `ColorFiltered` matrix. Tap detection maps widget coords → SVG coords → line number (from `line_start`/`line_end`) → `Ayah`. Pages 1–2 use square viewBox (235×235); pages 3–604 use portrait (345×550).
+- **SVG Quran reader**: Pages downloaded on-demand from `https://cdn.jsdelivr.net/gh/AlaaEldinTarek/aura-adhans/mushafs/hafs/svg` (files `001.svg`–`604.svg`), cached at `getApplicationDocumentsDirectory()/quran_pages/`. `QuranSvgService` deduplicates concurrent requests and preloads ±1 page. Dark mode inverts via `ColorFiltered` matrix. Tap detection maps widget coords → SVG coords → line number (from `line_start`/`line_end`) → `Ayah`. Pages 1–2 use square viewBox (235×235); pages 3–604 use portrait (345×550). There is **no ayah highlight** — `_AyahHighlightPainter` and `_selectedAyah` were removed; tapping an ayah goes straight to the `_AyahSheet` bottom sheet.
+- **Quran reader bookmark color dialog**: `_AyahSheet.onBookmark` signature is `void Function(BuildContext context, BookmarkColor color)` — `BuildContext` is passed through so nested dialogs can be shown from within the sheet. When a color already has existing bookmarks, `_handleAyahTap` shows an `AlertDialog` ("Add New" / "Choose One"). "Choose One" opens `_BookmarkReplaceSheet` (DraggableScrollableSheet). On selection, `Navigator.of(context)..pop()..pop()` closes both sheets.
 - **TextDirection conflict**: `easy_localization` exports `intl`'s `TextDirection`, shadowing Flutter's. Use `import 'dart:ui' as ui show TextDirection;` and `ui.TextDirection.rtl` in Quran reader.
 - **Dhuhr/Zuhr naming**: SharedPreferences key always `dhuhr_time`; UI shows "Zuhr". All switch/map lookups must handle both: Flutter `case 'dhuhr': case 'zuhr':`, Kotlin `"Dhuhr", "Zuhr" ->`. `kPrayerNames` uses `'Zuhr'` as canonical.
 - **Language switching**: `MainWrapperScreen.build()` must call `ref.watch(languageProvider)` — without it, bottom nav labels won't rebuild on locale change.
@@ -245,7 +252,7 @@ Defined in `lib/core/theme/app_theme.dart`. Material 3, two fonts: Roboto (EN) +
 - `android/.../DailySummaryReceiver.kt` — ID 7001, reads `prayer_status_*` from `aura_prayer_times`; do not change key format
 
 ### Assets
-- `assets/translations/en.json` + `ar.json` — ~260 strings each; always add to BOTH
+- `assets/translations/en.json` + `ar.json` — ~265 strings each; always add to BOTH
 - `assets/fonts/uthmanic_hafs_v20.ttf` — Uthmanic Hafs font (family `UthmanicHafs`) for inline ayah text in surah list and search
 - `assets/data/hafsData_v2-0.json` — 12,472 ayahs; `aya_text` is PUA-encoded (display), `aya_text_emlaey` is standard Arabic (search)
 - SVG mushaf pages are NOT bundled — downloaded from CDN and cached at `getApplicationDocumentsDirectory()/quran_pages/`

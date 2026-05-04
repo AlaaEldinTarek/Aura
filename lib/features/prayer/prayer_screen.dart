@@ -201,7 +201,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
       final success = await _trackingService.recordPrayer(
         userId: userId,
         prayerName: prayerName,
-        date: DateTime.now(),
+        date: getPrayerDate(DateTime.now(), fajrTime: _prayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time),
         prayedAt: DateTime.now(),
         status: chosenStatus,
         method: PrayerMethod.congregation,
@@ -221,7 +221,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
             : chosenStatus == PrayerStatus.excused
                 ? Colors.red
                 : Colors.green;
-        ScaffoldMessenger.of(context).showSnackBar(
+        final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               isArabic ? 'تم تسجيل $prayerName' : 'Recorded $prayerName',
@@ -229,19 +229,24 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
             backgroundColor: snackBarColor,
             duration: const Duration(milliseconds: 800),
             behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
           ),
         );
+        Future.delayed(const Duration(milliseconds: 800), snackCtrl.close);
       }
     } catch (e) {
       debugPrint('Error marking prayer as completed: $e');
       haptic.HapticFeedback.error();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(isArabic ? 'خطأ: $e' : 'Error: $e'),
             backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
           ),
         );
+        Future.delayed(const Duration(seconds: 3), snackCtrl.close);
       }
     }
   }
@@ -282,7 +287,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
         haptic.HapticFeedback.error();
         // Delete failed - do not change UI state
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
                 isArabic
@@ -292,8 +297,10 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
               backgroundColor: Colors.red,
               duration: const Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
             ),
           );
+          Future.delayed(const Duration(seconds: 2), snackCtrl.close);
         }
         return;
       }
@@ -307,15 +314,17 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
           _explicitlyMarked.remove(prayerName);
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
+        final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               isArabic ? 'تم إلغاء تسجيل $prayerName' : 'Unmarked $prayerName',
             ),
             duration: const Duration(milliseconds: 800),
             behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
           ),
         );
+        Future.delayed(const Duration(milliseconds: 800), snackCtrl.close);
       }
     } catch (e) {
       debugPrint('Error unmarking prayer: $e');

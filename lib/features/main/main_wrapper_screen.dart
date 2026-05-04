@@ -15,6 +15,7 @@ import '../../core/services/achievement_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/prayer_alarm_service.dart';
 import '../../core/services/prayer_tracking_service.dart';
+import '../../core/utils/prayer_time_rules.dart';
 import '../../core/models/prayer_record.dart';
 import '../../core/models/prayer_time.dart';
 import '../../core/models/achievement.dart';
@@ -457,7 +458,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
 
       if (mounted) {
         final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-        ScaffoldMessenger.of(context).showSnackBar(
+        final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               isArabic
@@ -471,8 +472,10 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
             ),
+            margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
           ),
         );
+        Future.delayed(const Duration(seconds: 2), snackCtrl.close);
       }
     } catch (e) {
       debugPrint('Error scheduling remind later: $e');
@@ -610,10 +613,12 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     if (userId == null) return;
     try {
       final now = DateTime.now();
+      final prayerState = ref.read(prayerTimesProvider);
+      final fajrTime = prayerState.prayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
       await PrayerTrackingService.instance.recordPrayer(
         userId: userId,
         prayerName: prayerName,
-        date: DateTime(now.year, now.month, now.day),
+        date: getPrayerDate(now, fajrTime: fajrTime),
         prayedAt: now,
         status: status,
       );
@@ -643,7 +648,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
 
       if (mounted) {
         final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-        ScaffoldMessenger.of(context).showSnackBar(
+        final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
               isArabic
@@ -657,8 +662,10 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
             ),
+            margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
           ),
         );
+        Future.delayed(const Duration(seconds: 2), snackCtrl.close);
       }
     } catch (e) {
       debugPrint('Error scheduling post-prayer remind later: $e');
@@ -703,7 +710,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       final isDark = Theme.of(context).brightness == Brightness.dark;
       final theme = Theme.of(context);
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             'press_again_to_exit'.tr(),
@@ -723,13 +730,14 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
           ),
           elevation: 8,
           margin: const EdgeInsets.only(
-            bottom: 80,
+            bottom: 82,
             left: 20,
             right: 20,
           ),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         ),
       );
+      Future.delayed(_doubleTapDuration, snackCtrl.close);
     }
 
     return false; // Prevent default back behavior

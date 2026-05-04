@@ -143,12 +143,16 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               language: language,
             );
           }
-          ScaffoldMessenger.of(context).showSnackBar(
+          final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(isArabic ? 'تمت إضافة المهمة' : 'Task added'),
               backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
             ),
           );
+          Future.delayed(const Duration(seconds: 2), snackCtrl.close);
           Navigator.pop(context, true); // true = task was created
         }
       } else {
@@ -190,23 +194,31 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           } else {
             await NotificationService.instance.cancelFocusMode(widget.task!.id);
           }
-          ScaffoldMessenger.of(context).showSnackBar(
+          final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(isArabic ? 'تمت تحديث المهمة' : 'Task updated'),
               backgroundColor: Colors.green,
+              duration: const Duration(seconds: 2),
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
             ),
           );
+          Future.delayed(const Duration(seconds: 2), snackCtrl.close);
           Navigator.pop(context, true);
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(isArabic ? 'حدث خطأ' : 'Error: $e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
           ),
         );
+        Future.delayed(const Duration(seconds: 3), snackCtrl.close);
       }
     }
   }
@@ -1764,22 +1776,30 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(isArabic ? 'تم حذف المهمة' : 'Task deleted'),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
           ),
         );
+        Future.delayed(const Duration(seconds: 2), snackCtrl.close);
         Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(isArabic ? 'حدث خطأ' : 'Error: $e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
           ),
         );
+        Future.delayed(const Duration(seconds: 3), snackCtrl.close);
       }
     }
   }

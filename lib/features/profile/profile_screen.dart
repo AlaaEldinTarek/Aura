@@ -696,9 +696,10 @@ class ProfileScreen extends ConsumerWidget {
                   if (context.mounted) Navigator.pop(context);
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(isArabic ? 'خطأ: $e' : 'Error: $e'), backgroundColor: AppConstants.error),
+                    final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(isArabic ? 'خطأ: $e' : 'Error: $e'), backgroundColor: AppConstants.error, behavior: SnackBarBehavior.floating, margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16)),
                     );
+                    Future.delayed(const Duration(seconds: 3), snackCtrl.close);
                   }
                 }
               }
@@ -738,18 +739,22 @@ class ProfileScreen extends ConsumerWidget {
                   await FirebaseAuth.instance.currentUser?.updatePassword(newPass);
                   if (context.mounted) {
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(isArabic ? 'تم تغيير كلمة المرور' : 'Password updated'),
                         backgroundColor: Colors.green,
+                        behavior: SnackBarBehavior.floating,
+                        margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
                       ),
                     );
+                    Future.delayed(const Duration(seconds: 3), snackCtrl.close);
                   }
                 } catch (e) {
                   if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(isArabic ? 'خطأ: $e' : 'Error: $e'), backgroundColor: AppConstants.error),
+                    final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(isArabic ? 'خطأ: $e' : 'Error: $e'), backgroundColor: AppConstants.error, behavior: SnackBarBehavior.floating, margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16)),
                     );
+                    Future.delayed(const Duration(seconds: 3), snackCtrl.close);
                   }
                 }
               }

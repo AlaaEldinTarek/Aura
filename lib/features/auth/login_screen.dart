@@ -143,15 +143,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     .read(authStateNotifierProvider.notifier)
                     .sendPasswordResetEmail(email);
                 if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     content: Text(isRTL
                         ? 'تم إرسال رابط إعادة التعيين إلى $email'
                         : 'Reset link sent to $email'),
                     backgroundColor: Colors.green,
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    margin: const EdgeInsets.all(AppConstants.paddingMedium),
+                    duration: const Duration(seconds: 3),
+                    margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
                   ));
+                  Future.delayed(const Duration(seconds: 3), snackCtrl.close);
                 }
               } catch (e) {
                 if (mounted) _showErrorSnackBar(e.toString());
@@ -167,7 +169,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: AppConstants.error,
@@ -175,9 +177,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         ),
-        margin: const EdgeInsets.all(AppConstants.paddingMedium),
+        duration: const Duration(seconds: 3),
+        margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
       ),
     );
+    Future.delayed(const Duration(seconds: 3), snackCtrl.close);
   }
 
   @override

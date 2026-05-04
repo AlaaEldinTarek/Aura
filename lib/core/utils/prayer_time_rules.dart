@@ -2,6 +2,20 @@ import 'package:flutter/material.dart';
 import '../models/prayer_time.dart';
 import 'number_formatter.dart';
 
+/// Returns the correct prayer date for [now].
+/// Islamic prayer day starts at Fajr, so between midnight and Fajr,
+/// prayers still belong to the previous day.
+DateTime getPrayerDate(DateTime now, {DateTime? fajrTime}) {
+  if (fajrTime != null) {
+    final todayFajr = DateTime(now.year, now.month, now.day, fajrTime.hour, fajrTime.minute);
+    if (now.isBefore(todayFajr)) {
+      final yesterday = now.subtract(const Duration(days: 1));
+      return DateTime(yesterday.year, yesterday.month, yesterday.day);
+    }
+  }
+  return DateTime(now.year, now.month, now.day);
+}
+
 /// Checks the 20-minute rule: user can only mark a prayer 20 minutes after adhan.
 /// Returns true if allowed, false if denied (and shows a snackbar).
 bool canMarkPrayer({
@@ -19,7 +33,7 @@ bool canMarkPrayer({
       final remaining = earliestMark.difference(now);
       final minutesLeft = remaining.inMinutes + 1;
       final minutesStr = NumberFormatter.withArabicNumeralsByLanguage('$minutesLeft', isArabic ? 'ar' : 'en');
-      ScaffoldMessenger.of(context).showSnackBar(
+      final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
             isArabic
@@ -29,8 +43,10 @@ bool canMarkPrayer({
           duration: const Duration(seconds: 3),
           behavior: SnackBarBehavior.floating,
           backgroundColor: Colors.orange,
+          margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
         ),
       );
+      Future.delayed(const Duration(seconds: 3), snackCtrl.close);
       return false;
     }
   }

@@ -518,7 +518,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
         if (!deleted) {
           haptic.HapticFeedback.error();
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
+            final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
                   isArabic
@@ -528,8 +528,10 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                 backgroundColor: Colors.red,
                 duration: const Duration(seconds: 2),
                 behavior: SnackBarBehavior.floating,
+                margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
               ),
             );
+            Future.delayed(const Duration(seconds: 2), snackCtrl.close);
           }
           return;
         }
@@ -550,15 +552,17 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
         });
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
                 isArabic ? 'تم إلغاء تسجيل $prayerName' : 'Unmarked $prayerName',
               ),
               duration: const Duration(milliseconds: 800),
               behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
             ),
           );
+          Future.delayed(const Duration(milliseconds: 800), snackCtrl.close);
         }
       } else {
         // Show dialog to choose: On Time, Late, or Missed
@@ -583,7 +587,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
         if (!success) {
           haptic.HapticFeedback.error();
           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
+            final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(
                   isArabic
@@ -593,8 +597,10 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                 backgroundColor: Colors.red,
                 duration: const Duration(seconds: 2),
                 behavior: SnackBarBehavior.floating,
+                margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
               ),
             );
+            Future.delayed(const Duration(seconds: 2), snackCtrl.close);
           }
           return;
         }
@@ -623,7 +629,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
         });
 
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
+          final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
                 isArabic ? 'تم تسجيل $prayerName' : 'Recorded $prayerName',
@@ -631,20 +637,26 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
               backgroundColor: Colors.green,
               duration: const Duration(milliseconds: 800),
               behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
             ),
           );
+          Future.delayed(const Duration(milliseconds: 800), snackCtrl.close);
         }
       }
     } catch (e) {
       debugPrint('Error toggling prayer status: $e');
       haptic.HapticFeedback.error();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+        final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(isArabic ? 'خطأ: $e' : 'Error: $e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
           ),
         );
+        Future.delayed(const Duration(seconds: 3), snackCtrl.close);
       }
     }
   }

@@ -90,9 +90,10 @@ class AdhanFullScreenActivity : AppCompatActivity() {
                 countdown.text = String.format("%d:%02d", minutes, seconds)
                 tickHandler.postDelayed(this, 500)
             } else if (iqamaTimeMs > 0) {
-                // Iqama time reached
+                // Iqama time reached — show briefly then auto-close
                 label.text = if (isArabic) "حان وقت الإقامة" else "Stand for prayer"
                 countdown.text = if (isArabic) "🕌" else "🕌"
+                tickHandler.postDelayed({ stopAdhanAndFinish() }, 3000)
             } else {
                 // No iqama configured — just show a done state
                 label.visibility = View.GONE

@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:math' show min, max;
+import 'dart:math' show min, max, pi;
 import 'dart:ui' as ui show TextDirection;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -134,22 +134,72 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
             isDark: isDark,
             primary: primary,
             existingBookmark: existing,
-            onBookmark: (color) {
+            onBookmark: (sheetCtx, color) {
               if (existing != null) {
                 ref.read(quranBookmarksProvider.notifier).removeBookmark(id);
-              } else {
-                ref.read(quranBookmarksProvider.notifier).addBookmark(QuranBookmark(
-                  id: id,
-                  suraNo: ayah.suraNo,
-                  ayaNo: ayah.ayaNo,
-                  page: ayah.page,
-                  suraNameAr: ayah.suraNameAr,
-                  suraNameEn: ayah.suraNameEn,
-                  ayaText: ayah.ayaTextEmlaey,
-                  color: color,
-                  createdAt: DateTime.now(),
-                ));
+                return;
               }
+              final newBm = QuranBookmark(
+                id: id,
+                suraNo: ayah.suraNo,
+                ayaNo: ayah.ayaNo,
+                page: ayah.page,
+                suraNameAr: ayah.suraNameAr,
+                suraNameEn: ayah.suraNameEn,
+                ayaText: ayah.ayaTextEmlaey,
+                color: color,
+                createdAt: DateTime.now(),
+              );
+              final colorBms = bookmarks
+                  .where((b) => b.color == color && b.id != id)
+                  .toList()
+                ..sort((a, b) => b.page.compareTo(a.page));
+              if (colorBms.isEmpty) {
+                ref.read(quranBookmarksProvider.notifier).addBookmark(newBm);
+                return;
+              }
+              showDialog(
+                context: sheetCtx,
+                builder: (dialogCtx) => AlertDialog(
+                  title: Text('wird_bookmark_pages_title'.tr()),
+                  content: Text('wird_bookmark_mode_desc'.tr()),
+                  actionsAlignment: MainAxisAlignment.spaceEvenly,
+                  actions: [
+                    OutlinedButton(
+                      onPressed: () {
+                        Navigator.pop(dialogCtx);
+                        ref.read(quranBookmarksProvider.notifier).addBookmark(newBm);
+                      },
+                      child: Text('wird_bookmark_mode_new'.tr()),
+                    ),
+                    FilledButton(
+                      onPressed: () {
+                        Navigator.pop(dialogCtx);
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                          ),
+                          builder: (_) => _BookmarkReplaceSheet(
+                            lang: lang,
+                            color: color,
+                            bookmarks: colorBms,
+                            onSelect: (oldBm) {
+                              final nav = Navigator.of(context);
+                              nav.pop();
+                              nav.pop();
+                              ref.read(quranBookmarksProvider.notifier).removeBookmark(oldBm.id);
+                              ref.read(quranBookmarksProvider.notifier).addBookmark(newBm);
+                            },
+                          ),
+                        );
+                      },
+                      child: Text('wird_bookmark_mode_update'.tr()),
+                    ),
+                  ],
+                ),
+              );
             },
             onRemove: () {
               ref.read(quranBookmarksProvider.notifier).removeBookmark(id);
@@ -177,14 +227,48 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
             PageView.builder(
               controller: _pageController,
               itemCount: 604,
-              reverse: isArabic,
               onPageChanged: _onPageChanged,
               itemBuilder: (context, index) {
-                return _MushafPage(
-                  key: ValueKey(index + 1),
-                  page: index + 1,
-                  onAyahTap: _handleAyahTap,
-                  onEmptyTap: () => setState(() => _showUI = !_showUI),
+                return AnimatedBuilder(
+                  animation: _pageController,
+                  builder: (context, child) {
+                    double value = 0;
+                    if (_pageController.hasClients &&
+                        _pageController.position.haveDimensions) {
+                      value = (_pageController.page ?? 0) - index;
+                    }
+
+                    final abs = value.abs().clamp(0.0, 1.0);
+
+                    // Scale down as page scrolls away
+                    final scale = 1.0 - abs * 0.12;
+
+                    // Fade out
+                    final opacity = (1 - abs).clamp(0.0, 1.0);
+
+                    // 3D perspective rotation around Y axis
+                    final angle = value * -0.15;
+
+                    return Opacity(
+                      opacity: opacity,
+                      child: Transform(
+                        alignment: value > 0
+                            ? Alignment.centerLeft
+                            : Alignment.centerRight,
+                        transform: Matrix4.identity()
+                          ..setEntry(3, 2, 0.002)
+                          ..rotateY(angle)
+                          ..scale(scale),
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: _MushafPage(
+                    key: ValueKey(index + 1),
+                    page: index + 1,
+                    onAyahTap: _handleAyahTap,
+                    onEmptyTap: () => setState(() => _showUI = !_showUI),
+                  ),
                 );
               },
             ),
@@ -212,15 +296,15 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
                   currentPage: _currentPage,
                   totalPages: 604,
                   lang: lang,
-                  onPrevious: _currentPage < 604
-                      ? () => _pageController.nextPage(
-                            duration: const Duration(milliseconds: 300),
+                  onGoToPrevious: _currentPage > 1
+                      ? () => _pageController.previousPage(
+                            duration: const Duration(milliseconds: 350),
                             curve: Curves.easeInOut,
                           )
                       : null,
-                  onNext: _currentPage > 1
-                      ? () => _pageController.previousPage(
-                            duration: const Duration(milliseconds: 300),
+                  onGoToNext: _currentPage < 604
+                      ? () => _pageController.nextPage(
+                            duration: const Duration(milliseconds: 350),
                             curve: Curves.easeInOut,
                           )
                       : null,
@@ -253,7 +337,6 @@ class _MushafPage extends ConsumerStatefulWidget {
 
 class _MushafPageState extends ConsumerState<_MushafPage> {
   late Future<(String, List<Ayah>)> _pageFuture;
-  Ayah? _selectedAyah;
 
   // Pages 1–2 use a square viewBox; all other pages use a portrait viewBox.
   static const _vbSquare = Size(235, 235);
@@ -394,34 +477,12 @@ class _MushafPageState extends ConsumerState<_MushafPage> {
                   }
                   final ayah = _findAyah(svgCoord.dy, ayahs);
                   if (ayah != null) {
-                    setState(() => _selectedAyah = ayah);
-                    widget.onAyahTap(ayah).then((_) {
-                      if (mounted) setState(() => _selectedAyah = null);
-                    });
+                    widget.onAyahTap(ayah);
                   } else {
                     widget.onEmptyTap();
                   }
                 },
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    svgWidget,
-                    if (_selectedAyah != null)
-                      Positioned.fill(
-                        child: IgnorePointer(
-                          child: CustomPaint(
-                            painter: _AyahHighlightPainter(
-                              ayah: _selectedAyah!,
-                              allAyahs: ayahs,
-                              viewBox: _viewBox,
-                              contentTop: _contentTop,
-                              contentBottom: _contentBottom,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
+                child: svgWidget,
               );
             },
           );
@@ -439,7 +500,7 @@ class _AyahSheet extends StatelessWidget {
   final bool isDark;
   final Color primary;
   final QuranBookmark? existingBookmark;
-  final void Function(BookmarkColor color) onBookmark;
+  final void Function(BuildContext context, BookmarkColor color) onBookmark;
   final VoidCallback onRemove;
 
   static const _colorMap = {
@@ -537,7 +598,7 @@ class _AyahSheet extends StatelessWidget {
                 _ColorButton(
                   color: entry.value,
                   selected: existingBookmark?.color == entry.key,
-                  onTap: () => onBookmark(entry.key),
+                  onTap: () => onBookmark(context, entry.key),
                 ),
                 const SizedBox(width: 12),
               ],
@@ -585,6 +646,125 @@ class _ColorButton extends StatelessWidget {
         child: selected
             ? const Icon(Icons.bookmark, color: Colors.white, size: 20)
             : null,
+      ),
+    );
+  }
+}
+
+// ── Bookmark Replace Sheet ─────────────────────────────────────────────────────
+
+class _BookmarkReplaceSheet extends StatelessWidget {
+  final String lang;
+  final BookmarkColor color;
+  final List<QuranBookmark> bookmarks;
+  final void Function(QuranBookmark bookmark) onSelect;
+
+  const _BookmarkReplaceSheet({
+    required this.lang,
+    required this.color,
+    required this.bookmarks,
+    required this.onSelect,
+  });
+
+  static const _colorValues = {
+    BookmarkColor.red: Color(0xFFE53935),
+    BookmarkColor.orange: Color(0xFFFB8C00),
+    BookmarkColor.green: Color(0xFF43A047),
+  };
+
+  static const _colorNameKeys = {
+    BookmarkColor.red: 'wird_bookmark_color_red',
+    BookmarkColor.orange: 'wird_bookmark_color_orange',
+    BookmarkColor.green: 'wird_bookmark_color_green',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final displayColor = _colorValues[color]!;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final secondary = isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary;
+
+    return DraggableScrollableSheet(
+      initialChildSize: 0.55,
+      minChildSize: 0.3,
+      maxChildSize: 0.9,
+      expand: false,
+      builder: (_, scrollController) => Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Column(
+              children: [
+                Center(
+                  child: Container(
+                    width: 40, height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? Colors.white38 : Colors.black38,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Container(
+                      width: 12, height: 12,
+                      decoration: BoxDecoration(color: displayColor, shape: BoxShape.circle),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _colorNameKeys[color]!.tr(),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                    const Spacer(),
+                    Text(
+                      'wird_bookmark_unique_pages'.tr().replaceAll('%d', bookmarks.length.toString()),
+                      style: TextStyle(fontSize: 12, color: secondary),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                const Divider(height: 1),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              controller: scrollController,
+              itemCount: bookmarks.length,
+              itemBuilder: (_, i) {
+                final bm = bookmarks[i];
+                final name = lang == 'ar' ? bm.suraNameAr : bm.suraNameEn;
+                return ListTile(
+                  leading: Container(
+                    width: 46, height: 46,
+                    decoration: BoxDecoration(
+                      color: displayColor.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(
+                      child: Text(
+                        NumberFormatter.withArabicNumeralsByLanguage(bm.page.toString(), lang),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: displayColor,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                  title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                  subtitle: Text(
+                    '${'ayah'.tr()} ${NumberFormatter.withArabicNumeralsByLanguage(bm.ayaNo.toString(), lang)}',
+                    style: TextStyle(fontSize: 12, color: secondary),
+                  ),
+                  trailing: Icon(Icons.swap_horiz, color: displayColor),
+                  onTap: () => onSelect(bm),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -707,64 +887,6 @@ class _AyahMarkerColorizer {
   }
 }
 
-// ── Ayah highlight painter ────────────────────────────────────────────────────
-
-class _AyahHighlightPainter extends CustomPainter {
-  final Ayah ayah;
-  final List<Ayah> allAyahs;
-  final Size viewBox;
-  final double contentTop;
-  final double contentBottom;
-
-  const _AyahHighlightPainter({
-    required this.ayah,
-    required this.allAyahs,
-    required this.viewBox,
-    required this.contentTop,
-    required this.contentBottom,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    if (allAyahs.isEmpty) return;
-
-    final scale = min(size.width / viewBox.width, size.height / viewBox.height);
-    final ox = (size.width - viewBox.width * scale) / 2;
-    final oy = (size.height - viewBox.height * scale) / 2;
-
-    final minLine = allAyahs.map((a) => a.lineStart).reduce(min).toDouble();
-    final maxLine = allAyahs.map((a) => a.lineEnd).reduce(max).toDouble();
-    final lineSpan = maxLine - minLine;
-    if (lineSpan == 0) return;
-
-    final contentHeight = contentBottom - contentTop;
-
-    // Map line numbers back to SVG y-coords with half-line padding.
-    final topRatio = ((ayah.lineStart - minLine - 0.5) / lineSpan).clamp(0.0, 1.0);
-    final bottomRatio = ((ayah.lineEnd - minLine + 0.5) / lineSpan).clamp(0.0, 1.0);
-    final svgTop = contentTop + topRatio * contentHeight;
-    final svgBottom = contentTop + bottomRatio * contentHeight;
-
-    final left = ox;
-    final right = ox + viewBox.width * scale;
-    final top = svgTop * scale + oy;
-    final bottom = svgBottom * scale + oy;
-
-    final paint = Paint()..color = const Color(0xFFF5B301).withValues(alpha: 0.28);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTRB(left, top, right, bottom),
-        const Radius.circular(4),
-      ),
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_AyahHighlightPainter old) =>
-      old.ayah != ayah || old.allAyahs != allAyahs;
-}
-
 // ── Top bar ───────────────────────────────────────────────────────────────────
 
 class _TopBar extends StatelessWidget {
@@ -838,15 +960,15 @@ class _BottomBar extends StatelessWidget {
   final int currentPage;
   final int totalPages;
   final String lang;
-  final VoidCallback? onPrevious;
-  final VoidCallback? onNext;
+  final VoidCallback? onGoToPrevious;
+  final VoidCallback? onGoToNext;
 
   const _BottomBar({
     required this.currentPage,
     required this.totalPages,
     required this.lang,
-    this.onPrevious,
-    this.onNext,
+    this.onGoToPrevious,
+    this.onGoToNext,
   });
 
   @override
@@ -869,9 +991,9 @@ class _BottomBar extends StatelessWidget {
         child: Row(
           children: [
             IconButton(
-              onPressed: onNext,
+              onPressed: onGoToPrevious,
               icon: Icon(
-                lang == 'ar' ? Icons.arrow_forward : Icons.arrow_back,
+                Icons.arrow_back,
                 color: currentPage > 1 ? primary : Colors.grey,
               ),
             ),
@@ -887,9 +1009,9 @@ class _BottomBar extends StatelessWidget {
               ),
             ),
             IconButton(
-              onPressed: onPrevious,
+              onPressed: onGoToNext,
               icon: Icon(
-                lang == 'ar' ? Icons.arrow_back : Icons.arrow_forward,
+                Icons.arrow_forward,
                 color: currentPage < totalPages ? primary : Colors.grey,
               ),
             ),

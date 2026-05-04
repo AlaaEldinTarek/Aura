@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'offline_queue_service.dart';
+import 'wird_service.dart';
 
 /// Service that syncs queued offline operations when connectivity is restored
 class SyncService {
@@ -22,6 +24,12 @@ class SyncService {
     int synced = 0;
 
     try {
+      // Push wird data that was written while offline
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        await WirdService.instance.syncToFirestore(uid);
+      }
+
       final queue = _queueService.getQueue();
 
       if (queue.isEmpty) {

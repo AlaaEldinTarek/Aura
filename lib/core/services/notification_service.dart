@@ -13,6 +13,8 @@ import '../providers/daily_prayer_status_provider.dart';
 import 'prayer_tracking_service.dart';
 import 'task_service.dart';
 import 'package:flutter/services.dart';
+import '../utils/prayer_time_rules.dart';
+import '../providers/prayer_times_provider.dart';
 
 /// Service for managing prayer time notifications
 class NotificationService {
@@ -550,10 +552,13 @@ class NotificationService {
 
     try {
       final userId = getCurrentUserId();
+      final now = DateTime.now();
+      final fajrTime = _container?.read(prayerTimesProvider).prayerTimes
+          .where((p) => p.name == 'Fajr').firstOrNull?.time;
       final success = await PrayerTrackingService.instance.recordPrayer(
         userId: userId,
         prayerName: prayerName,
-        date: DateTime.now(),
+        date: getPrayerDate(now, fajrTime: fajrTime),
         prayedAt: DateTime.now(),
         status: PrayerStatus.onTime,
         method: PrayerMethod.congregation,
@@ -1264,10 +1269,12 @@ class NotificationService {
       if (userId.isEmpty) return;
 
       final now = DateTime.now();
+      final fajrTime = _container?.read(prayerTimesProvider).prayerTimes
+          .where((p) => p.name == 'Fajr').firstOrNull?.time;
       await PrayerTrackingService.instance.recordPrayer(
         userId: userId,
         prayerName: prayerName,
-        date: now,
+        date: getPrayerDate(now, fajrTime: fajrTime),
         prayedAt: now,
         status: status,
         method: PrayerMethod.alone,

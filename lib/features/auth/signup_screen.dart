@@ -79,7 +79,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   }
 
   void _showErrorSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
+    final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
         backgroundColor: AppConstants.error,
@@ -87,9 +87,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         ),
-        margin: const EdgeInsets.all(AppConstants.paddingMedium),
+        duration: const Duration(seconds: 3),
+        margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
       ),
     );
+    Future.delayed(const Duration(seconds: 3), snackCtrl.close);
   }
 
   @override

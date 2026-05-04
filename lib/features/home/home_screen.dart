@@ -1038,10 +1038,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     final userId = getCurrentUserId();
     final now = DateTime.now();
+    final fajrTime = prayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
     await PrayerTrackingService.instance.recordPrayer(
       userId: userId,
       prayerName: prayerName,
-      date: now,
+      date: getPrayerDate(now, fajrTime: fajrTime),
       prayedAt: now,
       status: chosenStatus,
     );

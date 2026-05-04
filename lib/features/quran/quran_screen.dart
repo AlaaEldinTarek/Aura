@@ -37,7 +37,8 @@ class _QuranScreenState extends ConsumerState<QuranScreen>
   Widget build(BuildContext context) {
     final lang = context.locale.languageCode;
 
-    return Scaffold(
+    return ScaffoldMessenger(
+      child: Scaffold(
       appBar: AppBar(
         title: Text('quran'.tr()),
         actions: [
@@ -70,6 +71,7 @@ class _QuranScreenState extends ConsumerState<QuranScreen>
           WirdTab(lang: lang),
         ],
       ),
+    ),
     );
   }
 }
@@ -339,13 +341,16 @@ class _BookmarksTab extends ConsumerWidget {
                             ),
                             FilledButton(
                               onPressed: () {
+                                final messenger = ScaffoldMessenger.of(context);
                                 Navigator.pop(ctx);
                                 ref.read(quranBookmarksProvider.notifier).removeBookmark(bm.id);
-                                ScaffoldMessenger.of(context).clearSnackBars();
-                                ScaffoldMessenger.of(context).showSnackBar(
+                                messenger.clearSnackBars();
+                                final controller = messenger.showSnackBar(
                                   SnackBar(
                                     content: Text('bookmark_deleted'.tr()),
-                                    duration: const Duration(seconds: 4),
+                                    duration: const Duration(seconds: 3),
+                                    behavior: SnackBarBehavior.floating,
+                                    margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
                                     action: SnackBarAction(
                                       label: 'undo'.tr(),
                                       onPressed: () {
@@ -354,6 +359,7 @@ class _BookmarksTab extends ConsumerWidget {
                                     ),
                                   ),
                                 );
+                                Future.delayed(const Duration(seconds: 3), controller.close);
                               },
                               child: Text('ok'.tr()),
                             ),
