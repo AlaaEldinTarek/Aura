@@ -167,6 +167,7 @@ This was the root cause of Arabic text not showing in full-screen azan and silen
 - All UI strings: `.tr()` from `easy_localization`; keys in both `en.json` and `ar.json` (keep in sync, ~265 keys each)
 - Arabic numerals: `NumberFormatter.withArabicNumeralsByLanguage()`; RTL: `context.locale.languageCode == 'ar'`
 - AM/PM → ص/م; Arabic font: Cairo; English: Roboto
+- **`getPrayerDisplayName(name, {required bool isArabic})`** in `lib/core/utils/prayer_time_rules.dart` — use this everywhere a prayer name is displayed. Handles Arabic translation, Dhuhr/Zuhr both-forms, and returns "Jumu'ah"/"الجمعة" on Fridays for Zuhr automatically.
 - Platform channels: always `try-catch`; log with emoji prefixes (`🕌`, `📱`, `🔔`, `✅`, `🔄`)
 
 ### Task System
@@ -217,6 +218,8 @@ This was the root cause of Arabic text not showing in full-screen azan and silen
 - **Quran reader bookmark color dialog**: `_AyahSheet.onBookmark` signature is `void Function(BuildContext context, BookmarkColor color)` — `BuildContext` is passed through so nested dialogs can be shown from within the sheet. When a color already has existing bookmarks, `_handleAyahTap` shows an `AlertDialog` ("Add New" / "Choose One"). "Choose One" opens `_BookmarkReplaceSheet` (DraggableScrollableSheet). On selection, `Navigator.of(context)..pop()..pop()` closes both sheets.
 - **TextDirection conflict**: `easy_localization` exports `intl`'s `TextDirection`, shadowing Flutter's. Use `import 'dart:ui' as ui show TextDirection;` and `ui.TextDirection.rtl` in Quran reader.
 - **Dhuhr/Zuhr naming**: SharedPreferences key always `dhuhr_time`; UI shows "Zuhr". All switch/map lookups must handle both: Flutter `case 'dhuhr': case 'zuhr':`, Kotlin `"Dhuhr", "Zuhr" ->`. `kPrayerNames` uses `'Zuhr'` as canonical.
+- **HomeScreen timer lifecycle**: `_HomeScreenState` mixes in `WidgetsBindingObserver` and overrides `didChangeAppLifecycleState` to pause `Timer.periodic` countdown when app is backgrounded and resume it on foreground. Use `_startCountdownTimer()` helper — never restart the timer directly.
+- **HomeScreen provider scoping**: uses `ref.watch(provider.select(...))` for `prayerTimesProvider`, `currentUserProvider`, and `dailyPrayerStatusProvider` to prevent full-screen rebuilds on every prayer tick. Follow the same pattern when adding new provider watches to `HomeScreen`.
 - **Language switching**: `MainWrapperScreen.build()` must call `ref.watch(languageProvider)` — without it, bottom nav labels won't rebuild on locale change.
 - **Mode naming**: `AppMode.prayerOnly` is labelled "Prayer & Quran" (EN) / "الصلاة والقرآن" (AR) everywhere — onboarding mode selection and Profile app mode tiles. Keep these in sync if labels change.
 - **Bottom nav Quran tab visibility**: `showQuran = appMode == AppMode.both || appMode == AppMode.prayerOnly` — Quran shows in both `both` and `prayerOnly` modes; hidden only in `tasksOnly`. The PageView always has all 5 screens at fixed indices regardless of mode.
