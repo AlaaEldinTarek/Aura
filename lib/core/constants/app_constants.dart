@@ -85,4 +85,7 @@ class AppConstants {
 
   // Minimum Password Length
   static const int minPasswordLength = 6;
+
+  // Task tag display prefix
+  static const String tagPrefix = '#';
 }

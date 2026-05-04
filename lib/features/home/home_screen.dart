@@ -7,6 +7,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/preferences_provider.dart';
+import '../../core/models/prayer_time.dart';
 import '../../core/providers/prayer_times_provider.dart';
 import '../../core/providers/daily_prayer_status_provider.dart';
 import '../../core/providers/task_provider.dart';
@@ -32,7 +33,7 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
   Timer? _countdownTimer;
 
   // ValueNotifier for countdown - only rebuilds the countdown widget, not entire screen
@@ -41,8 +42,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     // Load prayer statuses via shared provider (cached, won't hit Firestore if fresh)
     Future.microtask(() => ref.read(dailyPrayerStatusProvider.notifier).load());
+    _startCountdownTimer();
+  }
+
+  void _startCountdownTimer() {
+    _countdownTimer?.cancel();
     _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       final prayer = ref.read(prayerTimesProvider).nextPrayer;
@@ -53,7 +60,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+      _countdownTimer?.cancel();
+    } else if (state == AppLifecycleState.resumed) {
+      _startCountdownTimer();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _countdownTimer?.cancel();
     _countdownNotifier.dispose();
     super.dispose();
@@ -116,17 +133,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final prayerState = ref.watch(prayerTimesProvider);
-
-    final user = ref.watch(currentUserProvider);
-    final userName = user?.displayName ?? 'User';
+    // select() ensures rebuild only when the specific field changes, not the entire provider state
+    final nextPrayer = ref.watch(prayerTimesProvider.select((s) => s.nextPrayer));
+    final userName = ref.watch(currentUserProvider.select((u) => u?.displayName)) ?? 'User';
     final isGuest = ref.watch(guestModeProvider.select((async) => async.value ?? false));
-    final appMode = ref.watch(appModeProvider);
+    final appMode = ref.watch(appModeProvider.select((m) => m));
     final showPrayer = appMode != AppMode.tasksOnly;
     final showTasks = appMode != AppMode.prayerOnly;
 
     // Calculate prayer progress from shared provider
-    final prayerStatuses = ref.watch(dailyPrayerStatusProvider).statuses;
+    final prayerStatuses = ref.watch(dailyPrayerStatusProvider.select((s) => s.statuses));
     final trackablePrayers = kPrayerNames;
     final completedCount = trackablePrayers.where((p) {
       final status = prayerStatuses[p];
@@ -174,7 +190,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                     // Next Prayer Mini Card
                     if (showPrayer)
-                      _buildNextPrayerCard(context, prayerState, isDark, isArabic, completedCount, totalPrayers)
+                      _buildNextPrayerCard(context, nextPrayer, isDark, isArabic, completedCount, totalPrayers)
                           .animate().fadeIn(delay: 100.ms, duration: 400.ms).slideY(begin: 0.1),
 
                     if (showPrayer) const SizedBox(height: AppConstants.paddingMedium),
@@ -335,16 +351,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  String _getDisplayPrayerName(String name, bool isArabic) {
-    final isFriday = DateTime.now().weekday == DateTime.friday;
-    final isZuhr = name == 'Zuhr' || name == 'Dhuhr';
-    if (isFriday && isZuhr) {
-      return isArabic ? 'الجمعة' : "Jumu'ah";
-    }
-    return isArabic
-        ? {'Fajr': 'الفجر', 'Zuhr': 'الظهر', 'Dhuhr': 'الظهر', 'Asr': 'العصر', 'Maghrib': 'المغرب', 'Isha': 'العشاء', 'Sunrise': 'الشروق'}[name] ?? name
-        : name;
-  }
+  String _getDisplayPrayerName(String name, bool isArabic) =>
+      getPrayerDisplayName(name, isArabic: isArabic);
 
   Widget _buildJumuahBanner(BuildContext context, bool isDark, bool isArabic) {
     return Container(
@@ -417,13 +425,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildNextPrayerCard(
     BuildContext context,
-    PrayerTimesState? prayerState,
+    PrayerTime? nextPrayer,
     bool isDark,
     bool isArabic,
     int completedCount,
     int totalPrayers,
   ) {
-    final nextPrayer = prayerState?.nextPrayer;
     final hasData = nextPrayer != null;
 
     return Material(
@@ -981,31 +988,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 );
               }
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (todayTasks.isEmpty && upcomingTasks.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Text(
-                        isArabic ? 'قريباً' : 'Upcoming',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.orange.shade700,
+              return AnimatedSwitcher(
+                duration: const Duration(milliseconds: 280),
+                transitionBuilder: (child, anim) => FadeTransition(opacity: anim, child: child),
+                child: Column(
+                  key: ValueKey(toShow.take(3).map((t) => t.id).join()),
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (todayTasks.isEmpty && upcomingTasks.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          isArabic ? 'قريباً' : 'Upcoming',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.orange.shade700,
+                          ),
                         ),
                       ),
-                    ),
-                  ...toShow.take(3).map((task) => Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: TaskCard(
-                          key: ValueKey(task.id),
-                          task: task,
-                          onTap: () => _editTask(task),
-                          onToggle: () => _toggleTask(task.id),
-                        ),
-                      )),
-                ],
+                    ...toShow.take(3).map((task) => Padding(
+                          padding: const EdgeInsets.only(bottom: 6),
+                          child: TaskCard(
+                            key: ValueKey(task.id),
+                            task: task,
+                            onTap: () => _editTask(task),
+                            onToggle: () => _toggleTask(task.id),
+                          ),
+                        )),
+                  ],
+                ),
               );
             },
             loading: () => const Padding(
@@ -1036,6 +1048,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
     if (chosenStatus == null || !mounted) return;
 
+    // Optimistic update: UI reflects change instantly before Firestore write
+    ref.read(dailyPrayerStatusProvider.notifier).updatePrayer(prayerName, chosenStatus);
+
     final userId = getCurrentUserId();
     final now = DateTime.now();
     final fajrTime = prayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
@@ -1046,7 +1061,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       prayedAt: now,
       status: chosenStatus,
     );
-    ref.read(dailyPrayerStatusProvider.notifier).updatePrayer(prayerName, chosenStatus);
   }
 
   Future<void> _toggleTask(String taskId) async {

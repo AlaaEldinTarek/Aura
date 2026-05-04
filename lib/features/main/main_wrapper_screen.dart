@@ -319,6 +319,13 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
                                 // Auto-close when all prayers are handled
                                 if (remaining.isEmpty && ctx.mounted) {
                                   Navigator.of(ctx).pop();
+                                  if (mounted) {
+                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                      content: Text(isArabic ? '✅ أحسنت! جميع الصلوات مسجّلة' : '✅ All caught up!'),
+                                      duration: const Duration(seconds: 2),
+                                      behavior: SnackBarBehavior.floating,
+                                    ));
+                                  }
                                 }
                               },
                               style: TextButton.styleFrom(
@@ -422,7 +429,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text(
               isArabic ? 'إلغاء' : 'Cancel',
-              style: TextStyle(color: AppConstants.primaryColor),
+              style: const TextStyle(color: AppConstants.primaryColor),
             ),
           ),
         ],
@@ -592,7 +599,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text(
               isArabic ? 'إلغاء' : 'Cancel',
-              style: TextStyle(color: AppConstants.primaryColor),
+              style: const TextStyle(color: AppConstants.primaryColor),
             ),
           ),
         ],

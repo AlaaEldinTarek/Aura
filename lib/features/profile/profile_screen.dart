@@ -15,6 +15,7 @@ import '../../core/models/prayer_record.dart';
 import '../../core/providers/task_provider.dart';
 
 import '../../core/widgets/setting_tile.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import '../../core/services/notification_service.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -36,11 +37,52 @@ class ProfileScreen extends ConsumerWidget {
         return _buildProfileContent(context, ref, user, isDark, isArabic);
       },
       loading: () => Scaffold(
-        appBar: AppBar(
-          title: Text('profile'.tr()),
-        ),
-        body: const Center(
-          child: CircularProgressIndicator(),
+        appBar: AppBar(title: Text('profile'.tr())),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(AppConstants.paddingMedium),
+          child: ShimmerLoading(
+            child: Column(
+              children: [
+                // Header card skeleton (avatar + name + email)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
+                  ),
+                  child: Row(
+                    children: [
+                      const ShimmerBox(width: 64, height: 64, borderRadius: BorderRadius.all(Radius.circular(32))),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            ShimmerBox(width: double.infinity, height: 16, borderRadius: BorderRadius.circular(8)),
+                            const SizedBox(height: 8),
+                            ShimmerBox(width: 160, height: 12, borderRadius: BorderRadius.circular(6)),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppConstants.paddingMedium),
+                // Stats row skeletons
+                const ShimmerCard(height: 80),
+                const SizedBox(height: AppConstants.paddingMedium),
+                const ShimmerCard(height: 80),
+                const SizedBox(height: AppConstants.paddingMedium),
+                // Settings tile skeletons
+                const ShimmerCard(height: 56),
+                const SizedBox(height: 8),
+                const ShimmerCard(height: 56),
+                const SizedBox(height: 8),
+                const ShimmerCard(height: 56),
+              ],
+            ),
+          ),
         ),
       ),
       error: (_, __) => Scaffold(

@@ -6,6 +6,7 @@ import 'package:aura_app/core/models/quran_models.dart';
 import 'package:aura_app/core/services/quran_service.dart';
 import 'package:aura_app/core/providers/quran_provider.dart';
 import 'package:aura_app/core/utils/number_formatter.dart';
+import '../../core/widgets/shimmer_loading.dart';
 import 'quran_reader_screen.dart';
 import 'quran_search_screen.dart';
 import 'wird_tab.dart';
@@ -86,7 +87,13 @@ class _SurahListTab extends ConsumerWidget {
     final surahsAsync = ref.watch(surahListProvider);
 
     return surahsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => ListView.builder(
+        itemCount: 12,
+        itemBuilder: (_, __) => const Padding(
+          padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+          child: ShimmerListTile(),
+        ),
+      ),
       error: (e, _) => Center(child: Text('Error: $e')),
       data: (surahs) {
         final progressAsync = ref.watch(quranReadingProgressProvider);
@@ -216,7 +223,13 @@ class _JuzTab extends ConsumerWidget {
     final juzAsync = ref.watch(juzListProvider);
 
     return juzAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => ListView.builder(
+        itemCount: 10,
+        itemBuilder: (_, __) => const Padding(
+          padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+          child: ShimmerListTile(),
+        ),
+      ),
       error: (e, _) => Center(child: Text('Error: $e')),
       data: (juzList) => ListView.builder(
         itemCount: juzList.length,
@@ -271,7 +284,13 @@ class _BookmarksTab extends ConsumerWidget {
     final bookmarksAsync = ref.watch(quranBookmarksProvider);
 
     return bookmarksAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => ListView.builder(
+        itemCount: 8,
+        itemBuilder: (_, __) => const Padding(
+          padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+          child: ShimmerListTile(),
+        ),
+      ),
       error: (e, _) => Center(child: Text('Error: $e')),
       data: (bookmarks) {
         if (bookmarks.isEmpty) {

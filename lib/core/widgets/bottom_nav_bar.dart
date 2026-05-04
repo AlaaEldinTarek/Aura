@@ -136,10 +136,13 @@ class AuraBottomNavBar extends ConsumerWidget {
                         ? AppConstants.getPrimary(isDark)
                         : (isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary),
                   ),
-                  if (badge > 0)
-                    Positioned(
-                      right: -8,
-                      top: -4,
+                  Positioned(
+                    right: -8,
+                    top: -4,
+                    child: AnimatedScale(
+                      scale: badge > 0 ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.elasticOut,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 4),
                         constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
@@ -148,17 +151,22 @@ class AuraBottomNavBar extends ConsumerWidget {
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Center(
-                          child: Text(
-                            '$badge',
-                            style: const TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 150),
+                            child: Text(
+                              '$badge',
+                              key: ValueKey(badge),
+                              style: const TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
+                  ),
                 ],
               ),
               SizedBox(height: isComingSoon ? 1 : 2),
@@ -182,7 +190,7 @@ class AuraBottomNavBar extends ConsumerWidget {
                   ),
                   child: Text(
                     'coming_soon'.tr(),
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 7,
                       fontWeight: FontWeight.bold,
                       color: AppConstants.warning,

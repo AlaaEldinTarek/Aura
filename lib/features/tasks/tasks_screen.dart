@@ -320,9 +320,12 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       bottomNavigationBar: _selectMode && _selectedTaskIds.isNotEmpty
           ? _buildBulkActionBar(isDark, isArabic)
           : null,
-      body: _showCalendar
-          ? _buildCalendarView(allTasksAsync, isDark, isArabic)
-          : RefreshIndicator(
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 220),
+        transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
+        child: _showCalendar
+          ? KeyedSubtree(key: const ValueKey('calendar_view'), child: _buildCalendarView(allTasksAsync, isDark, isArabic))
+          : KeyedSubtree(key: const ValueKey('list_view'), child: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(allTasksProvider);
           ref.invalidate(taskStatisticsProvider);
@@ -393,18 +396,24 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
 
             // Task Sections
             SliverToBoxAdapter(
-              child: allTasksAsync.when(
-                data: (tasks) => _buildSections(tasks, isDark, isArabic),
-                loading: () => const Padding(
-                  padding: EdgeInsets.all(16),
-                  child: ShimmerListTile(),
-                ),
-                error: (error, _) => Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Text(isArabic
-                        ? 'خطأ في تحميل المهام'
-                        : 'Error loading tasks'),
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 280),
+                transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
+                child: allTasksAsync.when(
+                  data: (tasks) => _buildSections(tasks, isDark, isArabic),
+                  loading: () => const Padding(
+                    key: ValueKey('tasks_loading'),
+                    padding: EdgeInsets.all(16),
+                    child: ShimmerListTile(),
+                  ),
+                  error: (error, _) => Center(
+                    key: const ValueKey('tasks_error'),
+                    child: Padding(
+                      padding: const EdgeInsets.all(32),
+                      child: Text(isArabic
+                          ? 'خطأ في تحميل المهام'
+                          : 'Error loading tasks'),
+                    ),
                   ),
                 ),
               ),
@@ -413,7 +422,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
             const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
-      ),
+      )),  // closes RefreshIndicator + KeyedSubtree (list_view branch)
+      ),   // closes AnimatedSwitcher
     );
   }
 

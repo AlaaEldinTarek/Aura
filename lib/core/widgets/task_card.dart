@@ -242,7 +242,7 @@ class TaskCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              '#$tag',
+                              '${AppConstants.tagPrefix}$tag',
                               style: TextStyle(
                                 fontSize: 10,
                                 color: AppConstants.getPrimary(isDark),
@@ -280,7 +280,7 @@ class TaskCard extends StatelessWidget {
                 width: 5,
                 decoration: BoxDecoration(
                   color: leftAccent,
-                  borderRadius: BorderRadius.only(
+                  borderRadius: const BorderRadius.only(
                     topLeft:
                         Radius.circular(AppConstants.radiusMedium),
                     bottomLeft:
@@ -297,6 +297,8 @@ class TaskCard extends StatelessWidget {
 
     return Dismissible(
       key: ValueKey('dismissible_${task.id}'),
+      movementDuration: const Duration(milliseconds: 250),
+      resizeDuration: const Duration(milliseconds: 200),
       background: _buildSwipeBackground(
         alignment: Alignment.centerLeft,
         color: task.isCompleted ? Colors.orange : Colors.green,

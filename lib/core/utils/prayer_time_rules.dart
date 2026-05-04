@@ -52,3 +52,21 @@ bool canMarkPrayer({
   }
   return true;
 }
+
+const _prayerNamesAr = {
+  'Fajr': 'الفجر',
+  'Zuhr': 'الظهر',
+  'Dhuhr': 'الظهر',
+  'Asr': 'العصر',
+  'Maghrib': 'المغرب',
+  'Isha': 'العشاء',
+  'Sunrise': 'الشروق',
+};
+
+/// Returns the localised display name for a prayer, including Jumu'ah on Fridays.
+String getPrayerDisplayName(String name, {required bool isArabic}) {
+  final isFriday = DateTime.now().weekday == DateTime.friday;
+  final isZuhr = name == 'Zuhr' || name == 'Dhuhr';
+  if (isFriday && isZuhr) return isArabic ? 'الجمعة' : "Jumu'ah";
+  return isArabic ? (_prayerNamesAr[name] ?? name) : name;
+}
