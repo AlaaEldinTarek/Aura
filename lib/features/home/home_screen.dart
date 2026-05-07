@@ -29,6 +29,9 @@ import '../../core/services/daily_content_service.dart';
 import '../../core/widgets/prayer_status_dialog.dart';
 import '../../core/services/prayer_tracking_service.dart' show PrayerTrackingService;
 import '../../core/utils/prayer_time_rules.dart';
+import '../../core/providers/islamic_events_provider.dart';
+import '../../core/models/islamic_event.dart';
+import '../../core/utils/hijri_date.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -278,6 +281,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       _buildJumuahBanner(context, isDark, isArabic)
                           .animate().fadeIn(delay: 80.ms, duration: 500.ms).slideY(begin: 0.08),
                     ],
+
+                    // Islamic Events Countdown (when next event is within 30 days)
+                    if (showPrayer) Builder(builder: (ctx) {
+                      final events = ref.watch(islamicEventsProvider);
+                      if (events.isEmpty || events.first.daysUntil > 30) {
+                        return const SizedBox.shrink();
+                      }
+                      return Column(children: [
+                        const SizedBox(height: AppConstants.paddingLarge),
+                        _buildIslamicEventCard(context, events.first, isDark, isArabic)
+                            .animate().fadeIn(delay: 90.ms, duration: 400.ms).slideY(begin: 0.08),
+                      ]);
+                    }),
 
                     const SizedBox(height: AppConstants.paddingLarge),
 
@@ -529,6 +545,109 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildIslamicEventCard(
+    BuildContext context,
+    IslamicEventWithDate item,
+    bool isDark,
+    bool isArabic,
+  ) {
+    final primary = AppConstants.getPrimary(isDark);
+    final Color accent = item.daysUntil == 0
+        ? Colors.green
+        : item.daysUntil <= 7
+            ? const Color(0xFFFF8F00)
+            : primary;
+
+    String countdown;
+    if (item.daysUntil == 0) {
+      countdown = isArabic ? 'اليوم!' : 'Today!';
+    } else if (item.daysUntil == 1) {
+      countdown = isArabic ? 'غداً' : 'Tomorrow';
+    } else {
+      final n = NumberFormatter.withArabicNumeralsByLanguage(
+        item.daysUntil.toString(),
+        isArabic ? 'ar' : 'en',
+      );
+      countdown = isArabic ? 'بعد $n يوم' : 'in $n days';
+    }
+
+    final h = HijriDate.toHijri(item.date);
+    final hijriLabel = isArabic ? HijriDate.formatAr(h) : HijriDate.formatEn(h);
+
+    return GestureDetector(
+      onTap: () => Navigator.of(context).pushNamed('/islamic_events'),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppConstants.paddingMedium),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [accent.withOpacity(0.15), accent.withOpacity(0.04)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
+          border: Border.all(color: accent.withOpacity(0.35), width: 1.5),
+          boxShadow: [
+            BoxShadow(color: accent.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 3)),
+          ],
+        ),
+        child: Row(
+          children: [
+            Text(item.event.emoji, style: const TextStyle(fontSize: 30)),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isArabic ? item.event.nameAr : item.event.nameEn,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black87,
+                      fontFamily: isArabic ? 'Cairo' : null,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    hijriLabel,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark ? Colors.white54 : Colors.black45,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: accent.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: accent.withOpacity(0.4)),
+                  ),
+                  child: Text(
+                    countdown,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: accent,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Icon(Icons.chevron_right, size: 16, color: accent.withOpacity(0.6)),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -424,5 +424,8 @@
   "quran_stats_khatm_progress": "تقدم الختم",
   "quran_stats_pages": "صفحة",
   "quran_stats_days": "يوم",
-  "quran_stats_juz": "جزء"
+  "quran_stats_juz": "جزء",
+
+  "events_title": "المناسبات الإسلامية",
+  "events_no_events": "لا توجد مناسبات قادمة"
 }

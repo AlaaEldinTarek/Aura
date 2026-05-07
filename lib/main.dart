@@ -42,6 +42,7 @@ import 'features/daily_content/daily_content_screen.dart';
 import 'features/quran/quran_screen.dart';
 import 'features/azkar/azkar_screen.dart';
 import 'features/quran/quran_stats_screen.dart';
+import 'features/islamic_events/islamic_events_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -459,6 +460,11 @@ class AuraAppMaterial extends ConsumerWidget {
       case '/quran_stats':
         return MaterialPageRoute(
           builder: (_) => const QuranStatsScreen(),
+          settings: settings,
+        );
+      case '/islamic_events':
+        return MaterialPageRoute(
+          builder: (_) => const IslamicEventsScreen(),
           settings: settings,
         );
       default:

@@ -47,15 +47,15 @@
 **Description**: Key Islamic dates auto-calculated from Hijri calendar. Countdown card on home screen for the next upcoming event. Full events list screen.
 
 ### Steps
-- [ ] 1. Create `IslamicEvent` model: nameEn, nameAr, hijriMonth, hijriDay, description
-- [ ] 2. Define events list: Ramadan (1 Muharram start? no — 1 Ramadan), Eid al-Fitr (1 Shawwal), Eid al-Adha (10 Dhul Hijjah), Laylat al-Qadr (27 Ramadan), Ashura (10 Muharram), Mawlid (12 Rabi al-Awwal), first 10 days Dhul Hijjah, Islamic New Year (1 Muharram)
-- [ ] 3. Add `IslamicEventsService`: converts Hijri event dates to Gregorian using existing `HijriDate` util, finds next upcoming event
-- [ ] 4. Add `islamicEventsProvider` — list of upcoming events sorted by date
-- [ ] 5. Create `IslamicEventsScreen`: full list with countdown days, event description, Hijri date
-- [ ] 6. Add countdown card to Home screen (between Daily Content and Next Prayer, only shows when event is within 30 days)
-- [ ] 7. Add route `/islamic_events`
-- [ ] 8. Add translation keys to en.json + ar.json
-- [ ] 9. Build, test, install APK
+- [x] 1. Create `IslamicEvent` model: nameEn, nameAr, hijriMonth, hijriDay, description
+- [x] 2. Define events list: Ramadan, Eid al-Fitr, Eid al-Adha, Laylat al-Qadr, Ashura, Mawlid, first 10 days Dhul Hijjah, Islamic New Year
+- [x] 3. Add `IslamicEventsService`: forward-scan HijriDate utility to find next Gregorian occurrence
+- [x] 4. Add `islamicEventsProvider` (Provider) — list sorted by days until
+- [x] 5. Create `IslamicEventsScreen`: full list with countdown badges, Hijri date, description
+- [x] 6. Add countdown card to Home screen (between Daily Content and Next Prayer, only shows when event is within 30 days)
+- [x] 7. Add route `/islamic_events`
+- [x] 8. Add translation keys to en.json + ar.json
+- [x] 9. Build, test, install APK ✅
 
 ---
 
@@ -105,6 +105,6 @@
 |---|---------|--------|---------|
 | 1 | Morning & Evening Azkar Checklist | ✅ Done | session-3 |
 | 2 | Qada Prayer Tracker | ⬜ Not started | — |
-| 3 | Islamic Events Countdown | ⬜ Not started | — |
+| 3 | Islamic Events Countdown | ✅ Done | session-4 |
 | 4 | Sadaqa / Charity Goal Tracker | ⬜ Not started | — |
 | 5 | Quran Reading Stats Screen | ✅ Done | session-4 |

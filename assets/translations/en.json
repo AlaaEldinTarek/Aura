@@ -424,5 +424,8 @@
   "quran_stats_khatm_progress": "Khatm Progress",
   "quran_stats_pages": "pages",
   "quran_stats_days": "days",
-  "quran_stats_juz": "juz"
+  "quran_stats_juz": "juz",
+
+  "events_title": "Islamic Events",
+  "events_no_events": "No upcoming events found"
 }
