@@ -185,7 +185,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                                     ),
                                   ),
                                   Text(
-                                    '$earnedInCategory/${achievements.length}',
+                                    isArabic
+                                        ? '${NumberFormatter.withArabicNumerals('$earnedInCategory')}/${NumberFormatter.withArabicNumerals('${achievements.length}')}'
+                                        : '$earnedInCategory/${achievements.length}',
                                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                                     ),

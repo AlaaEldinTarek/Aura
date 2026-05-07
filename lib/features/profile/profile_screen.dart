@@ -159,6 +159,7 @@ class ProfileScreen extends ConsumerWidget {
     bool isArabic,
   ) {
     final themeModeAsync = ref.watch(themeModeProvider);
+    final appMode = ref.watch(appModeProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -238,7 +239,7 @@ class ProfileScreen extends ConsumerWidget {
               icon: Icons.emoji_events,
               title: isArabic ? 'الإنجازات' : 'Achievements',
             ),
-            _AchievementsBadgeGrid(isDark: isDark, isArabic: isArabic),
+            _AchievementsBadgeGrid(isDark: isDark, isArabic: isArabic, appMode: appMode),
             const SizedBox(height: AppConstants.paddingLarge),
 
             // App Settings Section
@@ -1004,7 +1005,8 @@ class _AppModeTiles extends ConsumerWidget {
 class _AchievementsBadgeGrid extends StatefulWidget {
   final bool isDark;
   final bool isArabic;
-  const _AchievementsBadgeGrid({required this.isDark, required this.isArabic});
+  final AppMode appMode;
+  const _AchievementsBadgeGrid({required this.isDark, required this.isArabic, required this.appMode});
 
   @override
   State<_AchievementsBadgeGrid> createState() => _AchievementsBadgeGridState();
@@ -1058,7 +1060,11 @@ class _AchievementsBadgeGridState extends State<_AchievementsBadgeGrid> {
     final isDark = widget.isDark;
     final isArabic = widget.isArabic;
     final primary = AppConstants.getPrimary(isDark);
-    final all = AchievementDefinitions.all;
+    final all = AchievementDefinitions.all.where((a) {
+      if (widget.appMode == AppMode.tasksOnly) return a.category == AchievementCategory.tasks;
+      if (widget.appMode == AppMode.prayerOnly) return a.category != AchievementCategory.tasks;
+      return true;
+    }).toList();
 
     return FutureBuilder<List<Achievement>>(
       future: _future,
@@ -1117,7 +1123,7 @@ class _AchievementsBadgeGridState extends State<_AchievementsBadgeGrid> {
                                 Text(
                                   _isExpanded
                                       ? (isArabic ? 'عرض أقل' : 'Show less')
-                                      : (isArabic ? 'عرض الكل (${all.length - maxCollapsed}+)' : 'Show all (+${all.length - maxCollapsed})'),
+                                      : (isArabic ? 'عرض الكل (${NumberFormatter.withArabicNumerals('${all.length - maxCollapsed}')}+)' : 'Show all (+${all.length - maxCollapsed})'),
                                   style: TextStyle(fontSize: 12, color: primary, fontWeight: FontWeight.w600),
                                 ),
                               ],

@@ -921,7 +921,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                         ),
                         Text(
                           todayTotal > 0
-                              ? (isArabic ? '$todayDone من $todayTotal' : '$todayDone of $todayTotal')
+                              ? (isArabic ? '${NumberFormatter.withArabicNumerals('$todayDone')} من ${NumberFormatter.withArabicNumerals('$todayTotal')}' : '$todayDone of $todayTotal')
                               : (isArabic ? 'لا مهام' : 'No tasks'),
                           style: TextStyle(
                             fontSize: 12,

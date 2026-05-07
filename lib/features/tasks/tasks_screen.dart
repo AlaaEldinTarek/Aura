@@ -15,6 +15,7 @@ import '../../core/services/notification_service.dart';
 import '../../core/services/shared_preferences_service.dart';
 import '../../core/widgets/tutorial_overlay.dart';
 import '../../core/utils/haptic_feedback.dart' as app_haptic;
+import '../../core/utils/number_formatter.dart';
 
 class TasksScreen extends ConsumerStatefulWidget {
   const TasksScreen({super.key});
@@ -397,8 +398,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                   final h = todayEstimate ~/ 60;
                   final m = todayEstimate % 60;
                   final label = h > 0
-                      ? (isArabic ? '~$h س ${m > 0 ? '$m د' : ''} لليوم' : '~${h}h ${m > 0 ? '${m}m ' : ''}today')
-                      : (isArabic ? '~$m د لليوم' : '~${m}m today');
+                      ? (isArabic ? '~${NumberFormatter.withArabicNumerals('$h')} س ${m > 0 ? '${NumberFormatter.withArabicNumerals('$m')} د' : ''} لليوم' : '~${h}h ${m > 0 ? '${m}m ' : ''}today')
+                      : (isArabic ? '~${NumberFormatter.withArabicNumerals('$m')} د لليوم' : '~${m}m today');
                   return Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
                     child: Row(
@@ -1833,7 +1834,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
         child: Row(
           children: [
             Text(
-              isArabic ? '$count محدد' : '$count selected',
+              isArabic ? '${NumberFormatter.withArabicNumerals('$count')} محدد' : '$count selected',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -1892,7 +1893,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       ScaffoldMessenger.of(context).clearSnackBars();
       final snackCtrl1 = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
-          isArabic ? 'تم إتمام $completed مهام' : '$completed tasks completed',
+          isArabic ? 'تم إتمام ${NumberFormatter.withArabicNumerals('$completed')} مهام' : '$completed tasks completed',
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.green,
@@ -1932,7 +1933,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       ScaffoldMessenger.of(context).clearSnackBars();
       final snackCtrl2 = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
-          isArabic ? 'تم حذف $deleted مهام' : '$deleted tasks deleted',
+          isArabic ? 'تم حذف ${NumberFormatter.withArabicNumerals('$deleted')} مهام' : '$deleted tasks deleted',
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.green,
@@ -1950,7 +1951,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       builder: (ctx) => AlertDialog(
         title: Text(isArabic ? 'مسح المهام المكتملة' : 'Clear Completed'),
         content: Text(isArabic
-            ? 'هل تريد حذف ${tasks.length} مهام مكتملة؟'
+            ? 'هل تريد حذف ${NumberFormatter.withArabicNumerals('${tasks.length}')} مهام مكتملة؟'
             : 'Delete ${tasks.length} completed tasks?'),
         actions: [
           TextButton(
@@ -1989,7 +1990,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       ScaffoldMessenger.of(context).clearSnackBars();
       final snackCtrl3 = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
-          isArabic ? 'تم حذف $deleted مهام' : '$deleted tasks cleared',
+          isArabic ? 'تم حذف ${NumberFormatter.withArabicNumerals('$deleted')} مهام' : '$deleted tasks cleared',
           style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.green,
@@ -2634,7 +2635,7 @@ class _TaskSettingsSheet extends ConsumerWidget {
                       ),
                     ),
                     child: Text(
-                      isArabic ? '$mins دقيقة' : '$mins min',
+                      isArabic ? '${NumberFormatter.withArabicNumerals('$mins')} دقيقة' : '$mins min',
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: selected ? FontWeight.bold : FontWeight.normal,

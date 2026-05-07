@@ -1109,7 +1109,7 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
           children: durations.map((duration) {
             return ListTile(
               title: Text(
-                isArabic ? '$duration دقيقة' : '$duration minutes',
+                isArabic ? '${NumberFormatter.withArabicNumerals('$duration')} دقيقة' : '$duration minutes',
               ),
               trailing: _silentModeDuration == duration
                   ? Icon(Icons.check, color: AppConstants.getPrimary(isDark))

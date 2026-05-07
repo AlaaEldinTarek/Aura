@@ -8,6 +8,7 @@ import '../../core/providers/task_provider.dart';
 import '../../core/providers/prayer_times_provider.dart';
 import '../../core/providers/preferences_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../core/utils/number_formatter.dart';
 
 /// Task Form Screen - Add or Edit a task
 class TaskFormScreen extends ConsumerStatefulWidget {
@@ -915,7 +916,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     final prayerDisplay = isArabic ? warningPrayerNameAr! : warningPrayerName;
     final message = isDuringPrayer
         ? (isArabic ? '⚠️ هذا الوقت يتزامن مع صلاة $prayerDisplay' : '⚠️ This time overlaps with $prayerDisplay prayer')
-        : (isArabic ? '⚠️ هذا الوقت قريب من صلاة $prayerDisplay ($minutesDiff دقيقة)' : '⚠️ This time is $minutesDiff min from $prayerDisplay prayer');
+        : (isArabic ? '⚠️ هذا الوقت قريب من صلاة $prayerDisplay (${NumberFormatter.withArabicNumerals('$minutesDiff')} دقيقة)' : '⚠️ This time is $minutesDiff min from $prayerDisplay prayer');
 
     return Container(
       margin: const EdgeInsets.only(top: 8),
@@ -948,11 +949,11 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
 
     String _formatMins(int mins) {
       if (mins == 0) return isArabic ? 'بدون' : 'None';
-      if (mins < 60) return isArabic ? '$mins د' : '${mins}m';
+      if (mins < 60) return isArabic ? '${NumberFormatter.withArabicNumerals('$mins')} د' : '${mins}m';
       final h = mins ~/ 60;
       final m = mins % 60;
-      if (m == 0) return isArabic ? '$h س' : '${h}h';
-      return isArabic ? '$h س $m د' : '${h}h ${m}m';
+      if (m == 0) return isArabic ? '${NumberFormatter.withArabicNumerals('$h')} س' : '${h}h';
+      return isArabic ? '${NumberFormatter.withArabicNumerals('$h')} س ${NumberFormatter.withArabicNumerals('$m')} د' : '${h}h ${m}m';
     }
 
     return Container(

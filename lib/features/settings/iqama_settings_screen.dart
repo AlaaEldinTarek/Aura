@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/haptic_feedback.dart';
+import '../../core/utils/number_formatter.dart';
 
 class IqamaSettingsScreen extends ConsumerStatefulWidget {
   const IqamaSettingsScreen({super.key});
@@ -184,7 +185,7 @@ class _IqamaSettingsScreenState extends ConsumerState<IqamaSettingsScreen> {
               ),
         ),
         subtitle: Text(
-          isArabic ? '$minutes دقيقة بعد الأذان' : '$minutes minutes after adhan',
+          isArabic ? '${NumberFormatter.withArabicNumerals('$minutes')} دقيقة بعد الأذان' : '$minutes minutes after adhan',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: AppConstants.getPrimary(isDark),
               ),
