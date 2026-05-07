@@ -7,6 +7,8 @@ import '../providers/preferences_provider.dart';
 
 /// Custom bottom navigation bar for the app
 class AuraBottomNavBar extends ConsumerWidget {
+  static final navBarKey = GlobalKey();
+
   final int currentIndex;
   final ValueChanged<int> onTap;
 
@@ -34,6 +36,7 @@ class AuraBottomNavBar extends ConsumerWidget {
     final showTasks = appMode != AppMode.prayerOnly;
 
     return Container(
+      key: navBarKey,
       decoration: BoxDecoration(
         color: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
         boxShadow: [

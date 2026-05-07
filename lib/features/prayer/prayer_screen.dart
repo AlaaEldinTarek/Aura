@@ -15,6 +15,7 @@ import '../../core/widgets/prayer_status_dialog.dart';
 import '../../core/widgets/circular_countdown.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/offline_banner.dart';
+import '../../core/widgets/info_tip_icon.dart';
 import '../../core/utils/hijri_date.dart';
 import '../../core/utils/number_formatter.dart';
 import '../../core/utils/date_formatter.dart';
@@ -31,6 +32,8 @@ import '../../core/utils/haptic_feedback.dart' as haptic;
 import '../../core/providers/preferences_provider.dart';
 import '../../core/utils/prayer_time_rules.dart';
 import '../../core/providers/daily_prayer_status_provider.dart';
+import '../../core/widgets/tutorial_overlay.dart';
+import '../../core/services/shared_preferences_service.dart';
 
 /// Prayer Screen - Displays prayer times for the day
 class PrayerScreen extends ConsumerStatefulWidget {
@@ -59,6 +62,10 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
   String _calculationMethod = 'MuslimWorldLeague';
   String _asrMadhab = 'Shafi';
 
+  // GlobalKeys for tutorial
+  final _prayerCardsKey = GlobalKey();
+  final _toolkitKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -66,6 +73,38 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     Future.microtask(() => _loadPrayerTimes());
     // Load calculation settings
     _loadCalculationSettings();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final prefs = SharedPreferencesService.instance;
+      if (!prefs.isTutorialPrayerSeen()) {
+        await Future.delayed(const Duration(milliseconds: 900));
+        if (mounted) _launchTutorial();
+      }
+    });
+  }
+
+  void _launchTutorial() {
+    if (!mounted) return;
+    final steps = <TutorialStep>[
+      if (_prayerCardsKey.currentContext != null)
+        TutorialStep(
+          targetKey: _prayerCardsKey,
+          titleKey: 'tutorial_prayer_cards_title',
+          bodyKey: 'tutorial_prayer_cards_body',
+        ),
+      if (_toolkitKey.currentContext != null)
+        TutorialStep(
+          targetKey: _toolkitKey,
+          titleKey: 'tutorial_muslim_toolkit_title',
+          bodyKey: 'tutorial_muslim_toolkit_body',
+        ),
+    ];
+    if (steps.isEmpty) return;
+    showTutorial(
+      context: context,
+      steps: steps,
+      onDone: () => SharedPreferencesService.instance.setTutorialPrayerSeen(),
+    );
   }
 
   @override
@@ -457,9 +496,12 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
             ],
 
             // Prayers List Header
-            _buildPrayersListHeader(context, isArabic)
-                .animate()
-                .fadeIn(delay: 200.ms, duration: 400.ms),
+            SizedBox(
+              key: _prayerCardsKey,
+              child: _buildPrayersListHeader(context, isArabic)
+                  .animate()
+                  .fadeIn(delay: 200.ms, duration: 400.ms),
+            ),
 
             const SizedBox(height: AppConstants.paddingSmall),
 
@@ -468,9 +510,12 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
 
             // Muslim Toolkit
             const SizedBox(height: AppConstants.paddingLarge),
-            _buildMuslimToolkit(context, isDark, isArabic)
-                .animate()
-                .fadeIn(delay: 600.ms, duration: 400.ms),
+            SizedBox(
+              key: _toolkitKey,
+              child: _buildMuslimToolkit(context, isDark, isArabic)
+                  .animate()
+                  .fadeIn(delay: 600.ms, duration: 400.ms),
+            ),
 
             // Bottom padding for nav bar
             const SizedBox(height: 80),
@@ -673,6 +718,10 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                 fontWeight: FontWeight.bold,
               ),
         ),
+        const InfoTipIcon(
+          titleKey: 'info_tip_prayer_cards_title',
+          bodyKey: 'info_tip_prayer_cards_body',
+        ),
       ],
     );
   }
@@ -739,11 +788,19 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            isArabic ? 'أدوات المسلم' : 'Muslim Toolkit',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+          Row(
+            children: [
+              Text(
+                isArabic ? 'أدوات المسلم' : 'Muslim Toolkit',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+              ),
+              const InfoTipIcon(
+                titleKey: 'info_tip_muslim_toolkit_title',
+                bodyKey: 'info_tip_muslim_toolkit_body',
+              ),
+            ],
           ),
           const SizedBox(height: AppConstants.paddingMedium),
           Row(

@@ -88,4 +88,18 @@ class AppConstants {
 
   // Task tag display prefix
   static const String tagPrefix = '#';
+
+  // Info tip banner keys
+  static const String keyBannerHomeSeen = 'banner_home_seen';
+  static const String keyBannerPrayerSeen = 'banner_prayer_seen';
+  static const String keyBannerQuranSeen = 'banner_quran_seen';
+  static const String keyBannerTasksSeen = 'banner_tasks_seen';
+  static const String keyTutorialCompleted = 'tutorial_completed';
+  static const String keyTutorialPrayerSeen = 'tutorial_prayer_seen';
+  static const String keyTutorialQuranSeen = 'tutorial_quran_seen';
+  static const String keyTutorialTasksSeen = 'tutorial_tasks_seen';
+  static const String keyTutorialJuzSeen = 'tutorial_juz_seen';
+  static const String keyTutorialBookmarksSeen = 'tutorial_bookmarks_seen';
+  static const String keyTutorialWirdSeen = 'tutorial_wird_seen';
+  static const String keyTutorialReaderSeen = 'tutorial_reader_seen';
 }

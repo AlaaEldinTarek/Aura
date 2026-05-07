@@ -12,6 +12,10 @@ import '../../core/providers/prayer_times_provider.dart';
 import '../../core/providers/daily_prayer_status_provider.dart';
 import '../../core/providers/task_provider.dart';
 import '../../core/widgets/offline_banner.dart';
+import '../../core/widgets/info_tip_icon.dart';
+import '../../core/widgets/tutorial_overlay.dart';
+import '../../core/widgets/bottom_nav_bar.dart';
+import '../../core/services/shared_preferences_service.dart';
 import '../../core/widgets/greeting_widget.dart';
 import '../../core/widgets/permission_dialog.dart';
 import '../../core/widgets/task_card.dart';
@@ -39,6 +43,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   // ValueNotifier for countdown - only rebuilds the countdown widget, not entire screen
   final ValueNotifier<Duration> _countdownNotifier = ValueNotifier(Duration.zero);
 
+  // GlobalKeys for tutorial overlay targeting
+  final _greetingKey = GlobalKey();
+  final _dailyContentKey = GlobalKey();
+  final _nextPrayerKey = GlobalKey();
+  final _prayerProgressKey = GlobalKey();
+  final _taskProgressKey = GlobalKey();
+  final _todayTasksKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -46,6 +58,74 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     // Load prayer statuses via shared provider (cached, won't hit Firestore if fresh)
     Future.microtask(() => ref.read(dailyPrayerStatusProvider.notifier).load());
     _startCountdownTimer();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final prefs = SharedPreferencesService.instance;
+      if (!prefs.isTutorialCompleted()) {
+        await Future.delayed(const Duration(milliseconds: 800));
+        if (mounted) _launchTutorial();
+      }
+    });
+  }
+
+  void _launchTutorial() {
+    if (!mounted) return;
+    final appMode = ref.read(appModeProvider);
+    final showPrayer = appMode != AppMode.tasksOnly;
+    final showTasks = appMode != AppMode.prayerOnly;
+
+    final steps = <TutorialStep>[
+      if (_greetingKey.currentContext != null)
+        TutorialStep(
+          targetKey: _greetingKey,
+          titleKey: 'tutorial_welcome_title',
+          bodyKey: 'tutorial_welcome_body',
+        ),
+      if (showPrayer && _dailyContentKey.currentContext != null)
+        TutorialStep(
+          targetKey: _dailyContentKey,
+          titleKey: 'tutorial_daily_content_title',
+          bodyKey: 'tutorial_daily_content_body',
+        ),
+      if (showPrayer && _nextPrayerKey.currentContext != null)
+        TutorialStep(
+          targetKey: _nextPrayerKey,
+          titleKey: 'tutorial_next_prayer_title',
+          bodyKey: 'tutorial_next_prayer_body',
+        ),
+      if (showPrayer && _prayerProgressKey.currentContext != null)
+        TutorialStep(
+          targetKey: _prayerProgressKey,
+          titleKey: 'tutorial_prayer_progress_title',
+          bodyKey: 'tutorial_prayer_progress_body',
+        ),
+      if (showTasks && _taskProgressKey.currentContext != null)
+        TutorialStep(
+          targetKey: _taskProgressKey,
+          titleKey: 'tutorial_task_progress_title',
+          bodyKey: 'tutorial_task_progress_body',
+        ),
+      if (showTasks && _todayTasksKey.currentContext != null)
+        TutorialStep(
+          targetKey: _todayTasksKey,
+          titleKey: 'tutorial_today_tasks_title',
+          bodyKey: 'tutorial_today_tasks_body',
+        ),
+      if (AuraBottomNavBar.navBarKey.currentContext != null)
+        TutorialStep(
+          targetKey: AuraBottomNavBar.navBarKey,
+          titleKey: 'tutorial_nav_title',
+          bodyKey: 'tutorial_nav_body',
+        ),
+    ];
+
+    if (steps.isEmpty) return;
+
+    showTutorial(
+      context: context,
+      steps: steps,
+      onDone: () => SharedPreferencesService.instance.setTutorialCompleted(true),
+    );
   }
 
   void _startCountdownTimer() {
@@ -150,6 +230,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     }).length;
     final totalPrayers = trackablePrayers.length;
 
+    ref.listen(showTutorialProvider, (_, show) {
+      if (show) {
+        ref.read(showTutorialProvider.notifier).state = false;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _launchTutorial());
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Aura | هالة'),
@@ -167,16 +254,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     // Greeting Section
-                    GreetingWidget(
-                      userName: isGuest ? null : userName,
-                      onTap: () => Navigator.of(context).pushNamed('/prayer'),
-                    ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
+                    SizedBox(
+                      key: _greetingKey,
+                      child: GreetingWidget(
+                        userName: isGuest ? null : userName,
+                        onTap: () => Navigator.of(context).pushNamed('/prayer'),
+                      ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
+                    ),
 
                     // Daily Ayah / Hadith card — hidden in Tasks Only mode
                     if (showPrayer) ...[
                       const SizedBox(height: AppConstants.paddingLarge),
-                      _buildDailyContentCard(context, isDark, isArabic)
-                          .animate().fadeIn(delay: 50.ms, duration: 400.ms).slideY(begin: 0.08),
+                      SizedBox(
+                        key: _dailyContentKey,
+                        child: _buildDailyContentCard(context, isDark, isArabic)
+                            .animate().fadeIn(delay: 50.ms, duration: 400.ms).slideY(begin: 0.08),
+                      ),
                     ],
 
                     // Jumu'ah Banner (Fridays only)
@@ -190,29 +283,41 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
                     // Next Prayer Mini Card
                     if (showPrayer)
-                      _buildNextPrayerCard(context, nextPrayer, isDark, isArabic, completedCount, totalPrayers)
-                          .animate().fadeIn(delay: 100.ms, duration: 400.ms).slideY(begin: 0.1),
+                      SizedBox(
+                        key: _nextPrayerKey,
+                        child: _buildNextPrayerCard(context, nextPrayer, isDark, isArabic, completedCount, totalPrayers)
+                            .animate().fadeIn(delay: 100.ms, duration: 400.ms).slideY(begin: 0.1),
+                      ),
 
                     if (showPrayer) const SizedBox(height: AppConstants.paddingMedium),
 
                     // Prayer Progress Bar
                     if (showPrayer)
-                      _buildPrayerProgress(context, isDark, isArabic, completedCount, totalPrayers, prayerStatuses)
-                          .animate().fadeIn(delay: 200.ms, duration: 400.ms).slideY(begin: 0.1),
+                      SizedBox(
+                        key: _prayerProgressKey,
+                        child: _buildPrayerProgress(context, isDark, isArabic, completedCount, totalPrayers, prayerStatuses)
+                            .animate().fadeIn(delay: 200.ms, duration: 400.ms).slideY(begin: 0.1),
+                      ),
 
                     if (showPrayer) const SizedBox(height: AppConstants.paddingLarge),
 
                     // Task Progress Ring
                     if (showTasks)
-                      _buildTaskProgress(context, isDark, isArabic)
-                          .animate().fadeIn(delay: 250.ms, duration: 400.ms).slideY(begin: 0.1),
+                      SizedBox(
+                        key: _taskProgressKey,
+                        child: _buildTaskProgress(context, isDark, isArabic)
+                            .animate().fadeIn(delay: 250.ms, duration: 400.ms).slideY(begin: 0.1),
+                      ),
 
                     if (showTasks) const SizedBox(height: AppConstants.paddingLarge),
 
                     // Today's Tasks Preview
                     if (showTasks)
-                      _buildTodayTasksPreview(context, isDark, isArabic)
-                          .animate().fadeIn(delay: 350.ms, duration: 400.ms).slideY(begin: 0.1),
+                      SizedBox(
+                        key: _todayTasksKey,
+                        child: _buildTodayTasksPreview(context, isDark, isArabic)
+                            .animate().fadeIn(delay: 350.ms, duration: 400.ms).slideY(begin: 0.1),
+                      ),
 
                     const SizedBox(height: AppConstants.paddingLarge),
 
@@ -285,6 +390,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     color: primary,
                     letterSpacing: 0.3,
                   ),
+                ),
+                InfoTipIcon(
+                  titleKey: 'info_tip_daily_content_title',
+                  bodyKey: 'info_tip_daily_content_body',
+                  key: Key('tip_$typeLabel'),
                 ),
                 const Spacer(),
                 Container(
@@ -619,11 +729,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                isArabic ? 'تقدم الصلوات اليوم' : "Today's Prayer Progress",
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    isArabic ? 'تقدم الصلوات اليوم' : "Today's Prayer Progress",
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const InfoTipIcon(
+                    titleKey: 'info_tip_prayer_progress_title',
+                    bodyKey: 'info_tip_prayer_progress_body',
+                  ),
+                ],
               ),
               Text(
                 isArabic
@@ -638,7 +757,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             ],
           ),
           const SizedBox(height: AppConstants.paddingSmall),
-
           // Progress bar
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
@@ -788,9 +906,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          isArabic ? 'تقدم المهام' : 'Task Progress',
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              isArabic ? 'تقدم المهام' : 'Task Progress',
+                              style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                            const InfoTipIcon(
+                              titleKey: 'info_tip_task_progress_title',
+                              bodyKey: 'info_tip_task_progress_body',
+                            ),
+                          ],
                         ),
                         Text(
                           todayTotal > 0
@@ -891,11 +1018,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                isArabic ? 'مهام اليوم' : "Today's Tasks",
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    isArabic ? 'مهام اليوم' : "Today's Tasks",
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const InfoTipIcon(
+                    titleKey: 'info_tip_today_tasks_title',
+                    bodyKey: 'info_tip_today_tasks_body',
+                  ),
+                ],
               ),
               GestureDetector(
                 onTap: () {

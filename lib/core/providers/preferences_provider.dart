@@ -466,6 +466,9 @@ class TaskNotificationsEnabledNotifier extends StateNotifier<AsyncValue<bool>> {
 /// Tab navigation provider — allows child screens to request tab switches
 final tabNavigationProvider = StateProvider<int>((ref) => -1);
 
+/// Tutorial trigger provider — set to true from Profile to restart the tutorial
+final showTutorialProvider = StateProvider<bool>((ref) => false);
+
 // ─── Jumu'ah Reminder Provider ────────────────────────────────────────────────
 
 const _jumuahReminderKey = 'jumua_reminder_enabled';

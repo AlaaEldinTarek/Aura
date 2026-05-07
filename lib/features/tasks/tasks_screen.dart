@@ -12,6 +12,8 @@ import '../../core/widgets/task_card.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/services/task_service.dart';
 import '../../core/services/notification_service.dart';
+import '../../core/services/shared_preferences_service.dart';
+import '../../core/widgets/tutorial_overlay.dart';
 import '../../core/utils/haptic_feedback.dart' as app_haptic;
 
 class TasksScreen extends ConsumerStatefulWidget {
@@ -43,6 +45,10 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
   Timer? _midnightTimer;
   DateTime _lastActiveDate = DateTime.now();
 
+  // GlobalKeys for tutorial
+  final _taskListKey = GlobalKey();
+  final _fabKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
@@ -51,6 +57,38 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
     _loadCategoryFilter();
     _checkFocusTaskCompleted();
     _scheduleMidnightRefresh();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final prefs = SharedPreferencesService.instance;
+      if (!prefs.isTutorialTasksSeen()) {
+        await Future.delayed(const Duration(milliseconds: 900));
+        if (mounted) _launchTutorial();
+      }
+    });
+  }
+
+  void _launchTutorial() {
+    if (!mounted) return;
+    final steps = <TutorialStep>[
+      if (_taskListKey.currentContext != null)
+        TutorialStep(
+          targetKey: _taskListKey,
+          titleKey: 'tutorial_tasks_list_title',
+          bodyKey: 'tutorial_tasks_list_body',
+        ),
+      if (_fabKey.currentContext != null)
+        TutorialStep(
+          targetKey: _fabKey,
+          titleKey: 'tutorial_tasks_add_title',
+          bodyKey: 'tutorial_tasks_add_body',
+        ),
+    ];
+    if (steps.isEmpty) return;
+    showTutorial(
+      context: context,
+      steps: steps,
+      onDone: () => SharedPreferencesService.instance.setTutorialTasksSeen(),
+    );
   }
 
   @override
@@ -311,6 +349,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
           : GestureDetector(
         onLongPress: () => _navigateToTaskForm(context),
         child: FloatingActionButton.extended(
+          key: _fabKey,
           onPressed: () => _showQuickAdd(context, isArabic, isDark),
           icon: const Icon(Icons.add),
           label: Text(isArabic ? 'إضافة سريعة' : 'Quick Add'),
@@ -336,7 +375,10 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
             // Stats Row
             SliverToBoxAdapter(
               child: statsAsync.when(
-                data: (stats) => _buildStatsRow(stats, isDark, isArabic),
+                data: (stats) => SizedBox(
+                  key: _taskListKey,
+                  child: _buildStatsRow(stats, isDark, isArabic),
+                ),
                 loading: () => const SizedBox(
                     height: 80,
                     child: Center(child: CircularProgressIndicator())),

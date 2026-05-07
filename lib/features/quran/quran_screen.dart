@@ -7,6 +7,9 @@ import 'package:aura_app/core/services/quran_service.dart';
 import 'package:aura_app/core/providers/quran_provider.dart';
 import 'package:aura_app/core/utils/number_formatter.dart';
 import '../../core/widgets/shimmer_loading.dart';
+import '../../core/widgets/tutorial_overlay.dart';
+import '../../core/widgets/bottom_nav_bar.dart';
+import '../../core/services/shared_preferences_service.dart';
 import 'quran_reader_screen.dart';
 import 'quran_search_screen.dart';
 import 'wird_tab.dart';
@@ -22,14 +25,89 @@ class _QuranScreenState extends ConsumerState<QuranScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
+  final _tabBarKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _tabController.addListener(_onTabChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final prefs = SharedPreferencesService.instance;
+      if (!prefs.isTutorialQuranSeen()) {
+        await Future.delayed(const Duration(milliseconds: 900));
+        if (mounted) _launchSurahsTutorial();
+      }
+    });
+  }
+
+  void _onTabChanged() {
+    if (_tabController.indexIsChanging) return;
+    final idx = _tabController.index;
+    final prefs = SharedPreferencesService.instance;
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (!mounted) return;
+      if (idx == 1 && !prefs.isTutorialJuzSeen()) _launchTabTutorial(
+        titleKey: 'tutorial_juz_title',
+        bodyKey: 'tutorial_juz_body',
+        onDone: () => prefs.setTutorialJuzSeen(),
+      );
+      if (idx == 2 && !prefs.isTutorialBookmarksSeen()) _launchTabTutorial(
+        titleKey: 'tutorial_bookmarks_title',
+        bodyKey: 'tutorial_bookmarks_body',
+        onDone: () => prefs.setTutorialBookmarksSeen(),
+      );
+      if (idx == 3 && !prefs.isTutorialWirdSeen()) _launchTabTutorial(
+        titleKey: 'tutorial_wird_title',
+        bodyKey: 'tutorial_wird_body',
+        onDone: () => prefs.setTutorialWirdSeen(),
+      );
+    });
+  }
+
+  void _launchTabTutorial({
+    required String titleKey,
+    required String bodyKey,
+    required VoidCallback onDone,
+  }) {
+    if (!mounted || _tabBarKey.currentContext == null) return;
+    showTutorial(
+      context: context,
+      steps: [
+        TutorialStep(targetKey: _tabBarKey, titleKey: titleKey, bodyKey: bodyKey),
+      ],
+      onDone: onDone,
+    );
+  }
+
+  void _launchSurahsTutorial() {
+    if (!mounted) return;
+    final steps = <TutorialStep>[
+      if (_tabBarKey.currentContext != null)
+        TutorialStep(
+          targetKey: _tabBarKey,
+          titleKey: 'tutorial_quran_tabs_title',
+          bodyKey: 'tutorial_quran_tabs_body',
+        ),
+      if (AuraBottomNavBar.navBarKey.currentContext != null)
+        TutorialStep(
+          targetKey: AuraBottomNavBar.navBarKey,
+          titleKey: 'tutorial_nav_title',
+          bodyKey: 'tutorial_nav_body',
+        ),
+    ];
+    if (steps.isEmpty) return;
+    showTutorial(
+      context: context,
+      steps: steps,
+      onDone: () => SharedPreferencesService.instance.setTutorialQuranSeen(),
+    );
   }
 
   @override
   void dispose() {
+    _tabController.removeListener(_onTabChanged);
     _tabController.dispose();
     super.dispose();
   }
@@ -53,14 +131,20 @@ class _QuranScreenState extends ConsumerState<QuranScreen>
             },
           ),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: [
-            Tab(text: 'surahs'.tr()),
-            Tab(text: 'juz'.tr()),
-            Tab(text: 'bookmarks'.tr()),
-            Tab(text: 'wird'.tr()),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(kTextTabBarHeight),
+          child: SizedBox(
+            key: _tabBarKey,
+            child: TabBar(
+              controller: _tabController,
+              tabs: [
+                Tab(text: 'surahs'.tr()),
+                Tab(text: 'juz'.tr()),
+                Tab(text: 'bookmarks'.tr()),
+                Tab(text: 'wird'.tr()),
+              ],
+            ),
+          ),
         ),
       ),
       body: TabBarView(

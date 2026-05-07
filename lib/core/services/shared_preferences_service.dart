@@ -93,6 +93,79 @@ class SharedPreferencesService {
     return await _prefsInstance.setBool(AppConstants.keyFirstLaunch, value);
   }
 
+  // Info tip banners
+  bool hasSeenBanner(String screenKey) {
+    return _prefsInstance.getBool(screenKey) ?? false;
+  }
+
+  Future<bool> markBannerSeen(String screenKey) {
+    return _prefsInstance.setBool(screenKey, true);
+  }
+
+  bool isTutorialCompleted() {
+    return _prefsInstance.getBool(AppConstants.keyTutorialCompleted) ?? false;
+  }
+
+  Future<bool> setTutorialCompleted(bool value) {
+    return _prefsInstance.setBool(AppConstants.keyTutorialCompleted, value);
+  }
+
+  bool isTutorialPrayerSeen() {
+    return _prefsInstance.getBool(AppConstants.keyTutorialPrayerSeen) ?? false;
+  }
+
+  Future<bool> setTutorialPrayerSeen([bool value = true]) {
+    return _prefsInstance.setBool(AppConstants.keyTutorialPrayerSeen, value);
+  }
+
+  bool isTutorialQuranSeen() {
+    return _prefsInstance.getBool(AppConstants.keyTutorialQuranSeen) ?? false;
+  }
+
+  Future<bool> setTutorialQuranSeen([bool value = true]) {
+    return _prefsInstance.setBool(AppConstants.keyTutorialQuranSeen, value);
+  }
+
+  bool isTutorialTasksSeen() {
+    return _prefsInstance.getBool(AppConstants.keyTutorialTasksSeen) ?? false;
+  }
+
+  Future<bool> setTutorialTasksSeen([bool value = true]) {
+    return _prefsInstance.setBool(AppConstants.keyTutorialTasksSeen, value);
+  }
+
+  bool isTutorialJuzSeen() {
+    return _prefsInstance.getBool(AppConstants.keyTutorialJuzSeen) ?? false;
+  }
+
+  Future<bool> setTutorialJuzSeen([bool value = true]) {
+    return _prefsInstance.setBool(AppConstants.keyTutorialJuzSeen, value);
+  }
+
+  bool isTutorialBookmarksSeen() {
+    return _prefsInstance.getBool(AppConstants.keyTutorialBookmarksSeen) ?? false;
+  }
+
+  Future<bool> setTutorialBookmarksSeen([bool value = true]) {
+    return _prefsInstance.setBool(AppConstants.keyTutorialBookmarksSeen, value);
+  }
+
+  bool isTutorialWirdSeen() {
+    return _prefsInstance.getBool(AppConstants.keyTutorialWirdSeen) ?? false;
+  }
+
+  Future<bool> setTutorialWirdSeen([bool value = true]) {
+    return _prefsInstance.setBool(AppConstants.keyTutorialWirdSeen, value);
+  }
+
+  bool isTutorialReaderSeen() {
+    return _prefsInstance.getBool(AppConstants.keyTutorialReaderSeen) ?? false;
+  }
+
+  Future<bool> setTutorialReaderSeen([bool value = true]) {
+    return _prefsInstance.setBool(AppConstants.keyTutorialReaderSeen, value);
+  }
+
   // Guest Mode
   Future<bool> isGuest() async {
     return _prefsInstance.getBool(AppConstants.keyIsGuest) ?? false;

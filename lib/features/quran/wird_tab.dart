@@ -7,6 +7,7 @@ import 'package:aura_app/core/models/quran_models.dart';
 import 'package:aura_app/core/providers/wird_provider.dart';
 import 'package:aura_app/core/providers/quran_provider.dart';
 import 'package:aura_app/core/utils/number_formatter.dart';
+import 'package:aura_app/core/widgets/info_tip_icon.dart';
 import 'quran_reader_screen.dart';
 
 class WirdTab extends ConsumerWidget {
@@ -201,7 +202,17 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            Text('wird_khatm_progress'.tr(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('wird_khatm_progress'.tr(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              const SizedBox(width: 4),
+              const InfoTipIcon(
+                titleKey: 'tutorial_wird_juz_progress_title',
+                bodyKey: 'tutorial_wird_juz_progress_body',
+              ),
+            ],
+          ),
             const SizedBox(height: 24),
             SizedBox(
               width: 140,
@@ -259,7 +270,12 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
 
   Widget _buildJuzActions(BuildContext context, WirdState state, Color primary) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
+        const InfoTipIcon(
+          titleKey: 'tutorial_wird_juz_actions_title',
+          bodyKey: 'tutorial_wird_juz_actions_body',
+        ),
         Row(
           children: [
             Expanded(
@@ -400,7 +416,16 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('wird_juz_grid'.tr(), style: const TextStyle(fontWeight: FontWeight.w600)),
+            Row(
+              children: [
+                Text('wird_juz_grid'.tr(), style: const TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(width: 4),
+                const InfoTipIcon(
+                  titleKey: 'tutorial_wird_juz_grid_title',
+                  bodyKey: 'tutorial_wird_juz_grid_body',
+                ),
+              ],
+            ),
             const SizedBox(height: 12),
             GridView.builder(
               shrinkWrap: true,
@@ -503,6 +528,10 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
               ],
             ),
           ),
+          const InfoTipIcon(
+            titleKey: 'tutorial_wird_streak_title',
+            bodyKey: 'tutorial_wird_streak_body',
+          ),
         ],
       ),
     );
@@ -520,7 +549,17 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
         padding: const EdgeInsets.all(24),
         child: Column(
           children: [
-            Text('wird_today_progress'.tr(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('wird_today_progress'.tr(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+              const SizedBox(width: 4),
+              const InfoTipIcon(
+                titleKey: 'tutorial_wird_progress_title',
+                bodyKey: 'tutorial_wird_progress_body',
+              ),
+            ],
+          ),
             const SizedBox(height: 24),
             SizedBox(
               width: 140,
@@ -597,6 +636,11 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                     .replaceAll('%s', NumberFormatter.withArabicNumeralsByLanguage(startPage.toString(), widget.lang))
                     .replaceAll('%e', NumberFormatter.withArabicNumeralsByLanguage(endPage.toString(), widget.lang)),
                 style: TextStyle(fontSize: 14, color: primary),
+              ),
+              const SizedBox(width: 4),
+              InfoTipIcon(
+                titleKey: 'tutorial_wird_actions_title',
+                bodyKey: 'tutorial_wird_actions_body',
               ),
             ],
           ),
@@ -783,6 +827,11 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                 Icon(Icons.tune, color: primary, size: 20),
                 const SizedBox(width: 12),
                 Text('wird_tracking_mode'.tr(), style: const TextStyle(fontWeight: FontWeight.w500)),
+                const SizedBox(width: 4),
+                const InfoTipIcon(
+                  titleKey: 'tutorial_wird_settings_title',
+                  bodyKey: 'tutorial_wird_settings_body',
+                ),
                 const Spacer(),
                 SegmentedButton<WirdUnit>(
                   segments: [

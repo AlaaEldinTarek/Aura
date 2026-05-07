@@ -11,6 +11,8 @@ import 'package:aura_app/core/providers/quran_provider.dart';
 import 'package:aura_app/core/services/quran_service.dart';
 import 'package:aura_app/core/services/quran_svg_service.dart';
 import 'package:aura_app/core/utils/number_formatter.dart';
+import 'package:aura_app/core/widgets/tutorial_overlay.dart';
+import 'package:aura_app/core/services/shared_preferences_service.dart';
 
 class QuranReaderScreen extends ConsumerStatefulWidget {
   final int suraNo;
@@ -35,6 +37,9 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
   int _currentPage = 1;
   bool _showUI = true;
 
+  final _topBarKey = GlobalKey();
+  final _bottomBarKey = GlobalKey();
+
   static const _juzStartPages = [
     1, 22, 42, 62, 82, 102, 122, 142, 162, 182,
     202, 222, 242, 262, 282, 302, 322, 342, 362, 382,
@@ -49,6 +54,39 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
     _saveProgress(_currentPage);
     QuranSvgService.preload(_currentPage - 1);
     QuranSvgService.preload(_currentPage + 1);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final prefs = SharedPreferencesService.instance;
+      if (!prefs.isTutorialReaderSeen()) {
+        await Future.delayed(const Duration(milliseconds: 1000));
+        if (mounted) _launchTutorial();
+      }
+    });
+  }
+
+  void _launchTutorial() {
+    if (!mounted) return;
+    if (!_showUI) setState(() => _showUI = true);
+    final steps = <TutorialStep>[
+      if (_topBarKey.currentContext != null)
+        TutorialStep(
+          targetKey: _topBarKey,
+          titleKey: 'tutorial_reader_topbar_title',
+          bodyKey: 'tutorial_reader_topbar_body',
+        ),
+      if (_bottomBarKey.currentContext != null)
+        TutorialStep(
+          targetKey: _bottomBarKey,
+          titleKey: 'tutorial_reader_bottombar_title',
+          bodyKey: 'tutorial_reader_bottombar_body',
+        ),
+    ];
+    if (steps.isEmpty) return;
+    showTutorial(
+      context: context,
+      steps: steps,
+      onDone: () => SharedPreferencesService.instance.setTutorialReaderSeen(),
+    );
   }
 
   @override
@@ -275,6 +313,7 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
 
             if (_showUI)
               Positioned(
+                key: _topBarKey,
                 top: 0, left: 0, right: 0,
                 child: _TopBar(
                   surahName: isArabic
@@ -291,6 +330,7 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
 
             if (_showUI)
               Positioned(
+                key: _bottomBarKey,
                 bottom: 0, left: 0, right: 0,
                 child: _BottomBar(
                   currentPage: _currentPage,

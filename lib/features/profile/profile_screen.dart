@@ -17,6 +17,7 @@ import '../../core/providers/task_provider.dart';
 import '../../core/widgets/setting_tile.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/services/notification_service.dart';
+import '../../core/services/shared_preferences_service.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -247,6 +248,26 @@ class ProfileScreen extends ConsumerWidget {
             ),
             SettingsCard(
               children: [
+                // App Tour
+                SettingTile(
+                  icon: Icons.tour_outlined,
+                  title: isArabic ? 'جولة التطبيق' : 'App Tour',
+                  subtitle: isArabic ? 'أعد مشاهدة دليل التطبيق' : 'Replay the interactive walkthrough',
+                  trailing: Icon(Icons.chevron_right, size: 20, color: isDark ? Colors.white60 : Colors.black54),
+                  onTap: () async {
+                    final prefs = SharedPreferencesService.instance;
+                    await prefs.setTutorialCompleted(false);
+                    await prefs.setTutorialPrayerSeen(false);
+                    await prefs.setTutorialQuranSeen(false);
+                    await prefs.setTutorialTasksSeen(false);
+                    await prefs.setTutorialJuzSeen(false);
+                    await prefs.setTutorialBookmarksSeen(false);
+                    await prefs.setTutorialWirdSeen(false);
+                    await prefs.setTutorialReaderSeen(false);
+                    ref.read(tabNavigationProvider.notifier).state = 0;
+                    ref.read(showTutorialProvider.notifier).state = true;
+                  },
+                ),
                 // Language Setting
                 SettingTile(
                   icon: Icons.language_outlined,
