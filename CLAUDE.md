@@ -12,12 +12,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Silent mode automation during prayer times (configurable duration, default 20 min)
 - Three home screen widgets (CombinedPrayerWidget, TasksWidget, DailyContentWidget) with light/dark/LTR/RTL variants
 - Qibla compass, Digital Dhikr/Tasbeeh counter (6 presets + custom), prayer tracking (on-time/late/missed/excused)
-- Achievements system, daily Islamic content (Hadith, Ayah, Dua) from Firestore
+- Achievements system (filtered by app mode), daily Islamic content (Hadith, Ayah, Dua) from Firestore
 - Task management: priorities, categories, due dates, subtasks, pin-to-top, recurring tasks, Firestore sync
-- Multi-language (English/Arabic) with full RTL; Firebase auth (Email/Password, Google, guest mode, offline queue)
+- Multi-language (English/Arabic) with full RTL and Arabic-Eastern numerals throughout; Firebase auth (Email/Password, Google, guest mode, offline queue)
 - Hijri date display; Jumu'ah reminder 30 min before Zuhr; Foreground service for background prayer alerts
 - Bookmarks: delete icon per item with confirmation dialog + undo Snackbar (NOT long-press delete)
 - Wird (daily Quran reading commitment): two tracking modes (pages or juz), custom goal, streak tracking, bookmark color auto-sync, multiple configurable daily reminders, 4 achievements
+- Interactive tutorial system: per-screen spotlight overlays with pulsing ring animation, first-visit auto-launch, Profile replay button
+- InfoTipIcon: persistent ℹ️ tap-for-help icons on Home and Prayer screen section headers
+- Quran reader: wakelock keeps screen on while reading; back button shows exit confirmation dialog
 
 ---
 
@@ -61,7 +64,8 @@ lib/
 │   │                             # quran_svg (CDN download + local cache for SVG pages), wird, firebase_options
 │   ├── theme/app_theme.dart      # Light/dark/AMOLED Material 3
 │   ├── utils/                    # date_formatter, number_formatter, time_formatter, hijri_date, haptic_feedback, prayer_time_rules
-│   └── widgets/                  # bottom_nav_bar, prayer_time_card, prayer_card, prayer_status_dialog, task_card, shimmer_loading, etc.
+│   └── widgets/                  # bottom_nav_bar, prayer_time_card, prayer_card, prayer_status_dialog, task_card, shimmer_loading,
+   │                             # info_tip_icon (ℹ️ tap → AlertDialog), tutorial_overlay (showTutorial() + TutorialStep + _OverlayPainter)
 └── features/
     ├── splash/ auth/ onboarding/ main/ home/ prayer/ profile/ settings/
     ├── qibla/ tasks/ achievements/ dhikl/ daily_content/
@@ -164,8 +168,8 @@ This was the root cause of Arabic text not showing in full-screen azan and silen
 - Collections: `users`, `tasks`, `prayer_records`
 
 ### Localization
-- All UI strings: `.tr()` from `easy_localization`; keys in both `en.json` and `ar.json` (keep in sync, ~265 keys each)
-- Arabic numerals: `NumberFormatter.withArabicNumeralsByLanguage()`; RTL: `context.locale.languageCode == 'ar'`
+- All UI strings: `.tr()` from `easy_localization`; keys in both `en.json` and `ar.json` (keep in sync, ~280 keys each)
+- **Arabic numerals rule**: EVERY number shown in Arabic UI must go through `NumberFormatter.withArabicNumerals('$n')` or `withArabicNumeralsByLanguage()`. Never interpolate raw integers directly into Arabic strings. `TimeFormatter` already applies this internally.
 - AM/PM → ص/م; Arabic font: Cairo; English: Roboto
 - **`getPrayerDisplayName(name, {required bool isArabic})`** in `lib/core/utils/prayer_time_rules.dart` — use this everywhere a prayer name is displayed. Handles Arabic translation, Dhuhr/Zuhr both-forms, and returns "Jumu'ah"/"الجمعة" on Fridays for Zuhr automatically.
 - Platform channels: always `try-catch`; log with emoji prefixes (`🕌`, `📱`, `🔔`, `✅`, `🔄`)
@@ -226,7 +230,12 @@ This was the root cause of Arabic text not showing in full-screen azan and silen
 - **Iqama time in prefs**: `PrayerAlarmReceiver` writes `adhan_iqama_time` (absolute ms timestamp) to `aura_prayer_times` when a prayer alarm fires. `AdhanFullScreenActivity` reads this to drive the post-adhan countdown. Value is 0 if iqama is not configured for that prayer.
 - **Makkah/Umm al-Qura Dhuhr offset**: `adhan` library's `umm_al_qura` method has zero Dhuhr adjustment by default. `PrayerTimesService.getPrayerTimes()` applies `params.adjustments.dhuhr = 3` when `calculationMethod == CalculationMethod.makkah` to match the official Umm al-Qura calendar (+3 min). Do not remove this offset.
 - **Achievements screen collapsible sections**: Each `AchievementCategory` section has a tappable header row (name + earned/total count + rotating chevron). Collapsed state stored in `Set<AchievementCategory> _collapsedCategories` on `_AchievementsScreenState`. Grid animates with `AnimatedSize`.
-- **Profile achievements grid**: `_AchievementsBadgeGrid` shows 2 rows collapsed by default. Uses `LayoutBuilder` to calculate `perRow` dynamically, then `all.take(perRow * 2)`. "Show all / Show less" toggle with `AnimatedSize`. Footer bar always navigates to `/achievements`.
+- **Achievement mode filtering**: Both `AchievementsScreen` and `_AchievementsBadgeGrid` (profile) filter by `appModeProvider`. `tasksOnly` → only `AchievementCategory.tasks`; `prayerOnly` → all except `tasks`; `both` → all. Always compute `visibleCategories` as a `Set` and reuse it for earned count, per-category filter, and totals.
+- **Profile achievements grid**: `_AchievementsBadgeGrid` accepts `appMode` parameter, filters `AchievementDefinitions.all` by mode. Shows 2 rows collapsed by default. Uses `LayoutBuilder` to calculate `perRow` dynamically, then `all.take(perRow * 2)`. "Show all / Show less" toggle with `AnimatedSize`. Footer bar always navigates to `/achievements`.
+- **Tutorial system** (`lib/core/widgets/tutorial_overlay.dart`): `showTutorial(context, steps, onDone)` inserts an `OverlayEntry`. `TutorialStep` holds a `GlobalKey` (target), `titleKey`, `bodyKey`. `TutorialOverlay` uses `TickerProviderStateMixin` for two controllers: fade (300 ms, per-step) and pulse (1400 ms repeating). `_OverlayPainter` draws: ① dark overlay with `BlendMode.clear` cutout, ② solid border, ③ expanding+fading pulsing ring. Cutout radius is 20 (larger than card's 16 to avoid corner gaps). Per-screen tutorial keys live in `SharedPreferencesService` (`isTutorialXSeen()` / `setTutorialXSeen()`). Tutorial launches via `addPostFrameCallback` after 900 ms delay. **Do not add a tab-level Wird tutorial in `_onTabChanged`** — Wird content tutorial launches from `_WirdContentViewState.initState` instead.
+- **InfoTipIcon** (`lib/core/widgets/info_tip_icon.dart`): tap → `AlertDialog` with translated title/body. Used on Home screen (4 icons) and Prayer screen (2 icons) section headers. Icon is `Icons.info_outline`, size 18, color = `primary.withOpacity(0.6)`.
+- **Quran reader wakelock**: `WakelockPlus.enable()` in `initState`, `WakelockPlus.disable()` in `dispose` — keeps screen on while reading, no button needed.
+- **Quran reader back button**: `PopScope(canPop: false, onPopInvokedWithResult: ...)` wraps the `Scaffold`. Shows `AlertDialog` ("Keep Reading" / "Close"). Progress is always auto-saved so the dialog message says "Your progress is saved."
 - **Prayer tracking sync (home ↔ prayer screen)**: Both screens share `dailyPrayerStatusProvider`. In `PrayerScreen._loadCompletedPrayers()`, the `_explicitlyMarked` set must include ALL prayers with records — including `PrayerStatus.missed`. Do not filter out `missed` from `_explicitlyMarked`, or cards on the Prayer Times page won't show the "Missed" badge when the user marks a prayer as missed from the home screen. `PrayerCard._buildCompletedIndicator` treats both `PrayerStatus.excused` and `PrayerStatus.missed` as the red "Missed" badge.
 
 ---
@@ -243,7 +252,7 @@ Defined in `lib/core/theme/app_theme.dart`. Material 3, two fonts: Roboto (EN) +
 
 ## Key Dependencies
 
-`flutter_riverpod` 2.4.9, Firebase suite (core/auth/firestore/storage/analytics + google_sign_in), `adhan` 2.0.0+1, `geolocator` 10.1.0, `flutter_local_notifications` 17.0.0, `audioplayers` 6.0.0, `easy_localization` 3.0.3, `flutter_svg` 2.0.0, `dio` 5.0.0, `table_calendar`, `flutter_animate`, `lottie`, `shared_preferences`, `timezone`, `permission_handler`
+`flutter_riverpod` 2.4.9, Firebase suite (core/auth/firestore/storage/analytics + google_sign_in), `adhan` 2.0.0+1, `geolocator` 10.1.0, `flutter_local_notifications` 17.0.0, `audioplayers` 6.0.0, `easy_localization` 3.0.3, `flutter_svg` 2.0.0, `dio` 5.0.0, `table_calendar`, `flutter_animate`, `lottie`, `shared_preferences`, `timezone`, `permission_handler`, `wakelock_plus`
 
 ---
 
