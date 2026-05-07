@@ -3,6 +3,32 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/wird.dart';
 import '../services/wird_service.dart';
 
+final quranStatsProvider = FutureProvider.autoDispose<QuranStatsData>((ref) async {
+  final wirdState = ref.watch(wirdStateProvider).valueOrNull ?? const WirdState();
+  final results = await Future.wait([
+    WirdService.instance.getWeeklyPageData(),
+    WirdService.instance.getWeeklyJuzData(),
+    WirdService.instance.getBestStreak(),
+  ]);
+  final weeklyPages = results[0] as List<int>;
+  final weeklyJuz = results[1] as List<int>;
+  final bestStreak = results[2] as int;
+  final totalPages = wirdState.totalPagesRead;
+  final totalDays = wirdState.totalDaysCompleted;
+  return QuranStatsData(
+    weeklyPages: weeklyPages,
+    weeklyJuz: weeklyJuz,
+    totalPages: totalPages,
+    totalDays: totalDays,
+    currentStreak: wirdState.streakCount,
+    bestStreak: bestStreak,
+    averageDaily: totalDays > 0 ? totalPages / totalDays : 0.0,
+    khatmCount: totalPages ~/ 604,
+    allCompletedJuz: wirdState.allCompletedJuz,
+    wirdUnit: wirdState.settings.wirdUnit,
+  );
+});
+
 final wirdStateProvider =
     StateNotifierProvider<WirdNotifier, AsyncValue<WirdState>>((ref) {
   return WirdNotifier();

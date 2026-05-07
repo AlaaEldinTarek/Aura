@@ -583,6 +583,14 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
             titleKey: 'tutorial_wird_streak_title',
             bodyKey: 'tutorial_wird_streak_body',
           ),
+          const SizedBox(width: 4),
+          IconButton(
+            icon: Icon(Icons.bar_chart_rounded, color: primary, size: 22),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
+            tooltip: widget.lang == 'ar' ? 'إحصاءات القرآن' : 'Quran Stats',
+            onPressed: () => Navigator.pushNamed(context, '/quran_stats'),
+          ),
         ],
       ),
     );

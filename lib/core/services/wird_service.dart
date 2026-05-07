@@ -481,6 +481,56 @@ class WirdService {
     }
   }
 
+  // ── Stats ────────────────────────────────────────────────────────────────
+
+  /// Pages read for each of the last 7 days (index 0 = 6 days ago, 6 = today).
+  Future<List<int>> getWeeklyPageData() async {
+    final history = await _loadHistory();
+    final map = <String, WirdProgress>{for (final p in history) p.dateKey: p};
+    final now = DateTime.now();
+    return List.generate(7, (i) {
+      final day = now.subtract(Duration(days: 6 - i));
+      final key = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+      return map[key]?.pagesRead ?? 0;
+    });
+  }
+
+  /// Juz completed for each of the last 7 days (index 0 = 6 days ago, 6 = today).
+  Future<List<int>> getWeeklyJuzData() async {
+    final history = await _loadHistory();
+    final map = <String, WirdProgress>{for (final p in history) p.dateKey: p};
+    final now = DateTime.now();
+    return List.generate(7, (i) {
+      final day = now.subtract(Duration(days: 6 - i));
+      final key = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+      return map[key]?.juzRead ?? 0;
+    });
+  }
+
+  /// Best consecutive streak within the stored 90-day history.
+  Future<int> getBestStreak() async {
+    final history = await _loadHistory();
+    if (history.isEmpty) return 0;
+    final completed = <String>{
+      for (final p in history)
+        if (p.isCompleted) p.dateKey,
+    };
+    int best = 0;
+    int current = 0;
+    final now = DateTime.now();
+    for (int i = 89; i >= 0; i--) {
+      final day = now.subtract(Duration(days: i));
+      final key = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
+      if (completed.contains(key)) {
+        current++;
+        if (current > best) best = current;
+      } else {
+        current = 0;
+      }
+    }
+    return best;
+  }
+
   // ── Helpers ──────────────────────────────────────────────────────────────
 
   String _todayKey() {

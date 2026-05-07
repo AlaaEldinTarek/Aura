@@ -138,6 +138,32 @@ class WirdProgress {
       );
 }
 
+class QuranStatsData {
+  final List<int> weeklyPages;
+  final List<int> weeklyJuz;
+  final int totalPages;
+  final int totalDays;
+  final int currentStreak;
+  final int bestStreak;
+  final double averageDaily;
+  final int khatmCount;
+  final List<int> allCompletedJuz;
+  final WirdUnit wirdUnit;
+
+  const QuranStatsData({
+    required this.weeklyPages,
+    required this.weeklyJuz,
+    required this.totalPages,
+    required this.totalDays,
+    required this.currentStreak,
+    required this.bestStreak,
+    required this.averageDaily,
+    required this.khatmCount,
+    required this.allCompletedJuz,
+    required this.wirdUnit,
+  });
+}
+
 class WirdState {
   final WirdSettings settings;
   final WirdProgress? todayProgress;

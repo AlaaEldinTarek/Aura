@@ -410,5 +410,19 @@
   "azkar_well_done": "ما شاء الله! 🎉",
   "azkar_streak": "يوم متتالي",
   "azkar_of": "من",
-  "azkar_completed": "مكتمل"
+  "azkar_completed": "مكتمل",
+
+  "quran_stats_title": "إحصاءات القرآن",
+  "quran_stats_header_pages": "مجموع الصفحات",
+  "quran_stats_header_khatm": "ختمة",
+  "quran_stats_weekly_chart": "آخر ٧ أيام",
+  "quran_stats_no_data": "لا توجد بيانات قراءة بعد",
+  "quran_stats_current_streak": "السلسلة الحالية",
+  "quran_stats_best_streak": "أفضل سلسلة",
+  "quran_stats_avg_daily": "المتوسط اليومي",
+  "quran_stats_days_active": "الأيام النشطة",
+  "quran_stats_khatm_progress": "تقدم الختم",
+  "quran_stats_pages": "صفحة",
+  "quran_stats_days": "يوم",
+  "quran_stats_juz": "جزء"
 }

@@ -410,5 +410,19 @@
   "azkar_well_done": "Well done! 🎉",
   "azkar_streak": "day streak",
   "azkar_of": "of",
-  "azkar_completed": "completed"
+  "azkar_completed": "completed",
+
+  "quran_stats_title": "Quran Stats",
+  "quran_stats_header_pages": "Total Pages",
+  "quran_stats_header_khatm": "Khatm",
+  "quran_stats_weekly_chart": "Last 7 Days",
+  "quran_stats_no_data": "No reading data yet",
+  "quran_stats_current_streak": "Current Streak",
+  "quran_stats_best_streak": "Best Streak",
+  "quran_stats_avg_daily": "Avg. Daily",
+  "quran_stats_days_active": "Days Active",
+  "quran_stats_khatm_progress": "Khatm Progress",
+  "quran_stats_pages": "pages",
+  "quran_stats_days": "days",
+  "quran_stats_juz": "juz"
 }

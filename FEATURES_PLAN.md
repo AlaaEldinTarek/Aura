@@ -84,18 +84,18 @@
 **Description**: Full analytics screen extending the Wird system. Charts for pages per week, daily average, streak history, khatm count, total pages since install.
 
 ### Steps
-- [ ] 1. Extend `WirdService` to compute weekly page data from `wird_progress_history` (already stored, 90 days)
-- [ ] 2. Create `QuranStatsData` model: weeklyPages (List<int> 7 days), monthlyPages, totalPages, totalDays, currentStreak, bestStreak, khatmCount, averageDaily
-- [ ] 3. Create `quranStatsProvider` — derives stats from `wirdStateProvider` data
-- [ ] 4. Create `QuranStatsScreen`:
+- [x] 1. Extend `WirdService` to compute weekly page data from `wird_progress_history` (already stored, 90 days)
+- [x] 2. Create `QuranStatsData` model: weeklyPages (List<int> 7 days), weeklyJuz, totalPages, totalDays, currentStreak, bestStreak, khatmCount, averageDaily
+- [x] 3. Create `quranStatsProvider` — derives stats from `wirdStateProvider` data
+- [x] 4. Create `QuranStatsScreen`:
   - Header: total pages + khatm count badges
   - Bar chart: last 7 days pages (simple custom painter, no library needed)
   - Stats grid: current streak, best streak, average daily, total days active
   - Khatm progress circle (already exists in Wird tab — reuse)
-- [ ] 5. Add entry point: button in Wird tab header or from Profile screen
-- [ ] 6. Add route `/quran_stats`
-- [ ] 7. Add translation keys to en.json + ar.json
-- [ ] 8. Build, test, install APK
+- [x] 5. Add entry point: bar chart icon button in Wird tab streak card header
+- [x] 6. Add route `/quran_stats`
+- [x] 7. Add translation keys to en.json + ar.json
+- [x] 8. Build, test, install APK ✅
 
 ---
 
@@ -107,4 +107,4 @@
 | 2 | Qada Prayer Tracker | ⬜ Not started | — |
 | 3 | Islamic Events Countdown | ⬜ Not started | — |
 | 4 | Sadaqa / Charity Goal Tracker | ⬜ Not started | — |
-| 5 | Quran Reading Stats Screen | ⬜ Not started | — |
+| 5 | Quran Reading Stats Screen | ✅ Done | session-4 |
