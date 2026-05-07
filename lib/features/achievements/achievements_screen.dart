@@ -53,7 +53,18 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     final earnedIds = _earnedAchievements.map((a) => a.id).toSet();
-    final earnedCount = _earnedAchievements.length;
+    final appMode = ref.watch(appModeProvider);
+    final visibleCategories = AchievementCategory.values.where((c) {
+      if (appMode == AppMode.tasksOnly) return c == AchievementCategory.tasks;
+      if (appMode == AppMode.prayerOnly) return c != AchievementCategory.tasks;
+      return true;
+    }).toSet();
+    final visibleTotal = AchievementDefinitions.all
+        .where((a) => visibleCategories.contains(a.category))
+        .length;
+    final earnedCount = _earnedAchievements
+        .where((a) => visibleCategories.contains(a.category))
+        .length;
 
     return Scaffold(
       appBar: AppBar(
@@ -99,8 +110,8 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                                 const SizedBox(height: 4),
                                 Text(
                                   isArabic
-                                      ? '${NumberFormatter.withArabicNumerals('$earnedCount')} من ${NumberFormatter.withArabicNumerals('$_totalAchievements')} مكتمل'
-                                      : '$earnedCount of $_totalAchievements unlocked',
+                                      ? '${NumberFormatter.withArabicNumerals('$earnedCount')} من ${NumberFormatter.withArabicNumerals('$visibleTotal')} مكتمل'
+                                      : '$earnedCount of $visibleTotal unlocked',
                                   style: TextStyle(
                                     fontSize: 14,
                                     color: Colors.white.withOpacity(0.8),
@@ -110,7 +121,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                             ),
                           ),
                           Text(
-                            '${NumberFormatter.withArabicNumeralsByLanguage('$earnedCount', isArabic ? 'ar' : 'en')}/${NumberFormatter.withArabicNumeralsByLanguage('$_totalAchievements', isArabic ? 'ar' : 'en')}',
+                            '${NumberFormatter.withArabicNumeralsByLanguage('$earnedCount', isArabic ? 'ar' : 'en')}/${NumberFormatter.withArabicNumeralsByLanguage('$visibleTotal', isArabic ? 'ar' : 'en')}',
                             style: const TextStyle(
                               fontSize: 32,
                               fontWeight: FontWeight.bold,
@@ -124,19 +135,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
 
                   // Group by category — filter based on app mode
                   ...AchievementCategory.values.map((category) {
-                    final appMode = ref.watch(appModeProvider);
-                    final showPrayer = appMode != AppMode.tasksOnly;
-                    final showTasks = appMode != AppMode.prayerOnly;
-
-                    // Hide prayer categories in Tasks Only mode
-                    if (!showPrayer && (category == AchievementCategory.streaks ||
-                        category == AchievementCategory.consistency ||
-                        category == AchievementCategory.dhikr ||
-                        category == AchievementCategory.special)) {
-                      return const SliverToBoxAdapter(child: SizedBox.shrink());
-                    }
-                    // Hide task category in Prayer Only mode
-                    if (!showTasks && category == AchievementCategory.tasks) {
+                    if (!visibleCategories.contains(category)) {
                       return const SliverToBoxAdapter(child: SizedBox.shrink());
                     }
 
