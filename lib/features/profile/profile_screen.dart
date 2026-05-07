@@ -1152,7 +1152,7 @@ class _AchievementsBadgeGridState extends State<_AchievementsBadgeGrid> {
                     children: [
                       Text(
                         isArabic
-                            ? '${earned.length} من ${all.length} مكتمل'
+                            ? '${NumberFormatter.withArabicNumerals('${earned.length}')} من ${NumberFormatter.withArabicNumerals('${all.length}')} مكتمل'
                             : '${earned.length} of ${all.length} unlocked',
                         style: TextStyle(fontSize: 12, color: primary, fontWeight: FontWeight.w600),
                       ),

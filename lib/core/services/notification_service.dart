@@ -13,6 +13,7 @@ import '../providers/daily_prayer_status_provider.dart';
 import 'prayer_tracking_service.dart';
 import 'task_service.dart';
 import 'package:flutter/services.dart';
+import '../utils/number_formatter.dart';
 import '../utils/prayer_time_rules.dart';
 import '../providers/prayer_times_provider.dart';
 
@@ -313,7 +314,7 @@ class NotificationService {
 
     final isArabic = await _getLanguagePreference() == 'ar';
     final title = isArabic ? prayer.nameAr : prayer.name;
-    final body = isArabic ? 'الصلاة بعد $reminderMinutes دقائق' : 'Prayer in $reminderMinutes minutes';
+    final body = isArabic ? 'الصلاة بعد ${NumberFormatter.withArabicNumerals('$reminderMinutes')} دقائق' : 'Prayer in $reminderMinutes minutes';
 
     // Create "Remind Me Again" and "Mark as Prayed" action buttons
     final remindAgainLabel = isArabic ? 'ذكرني مرة أخرى' : 'Remind Me Again';
@@ -707,7 +708,7 @@ class NotificationService {
       final reminderBefore = dueDate.subtract(Duration(minutes: reminderMinutes));
       reminderTime = reminderBefore.isAfter(now) ? reminderBefore : dueDate;
       body = isArabic
-          ? (reminderBefore.isAfter(now) ? 'موعد المهمة بعد $reminderMinutes دقيقة' : 'حان موعد المهمة الآن')
+          ? (reminderBefore.isAfter(now) ? 'موعد المهمة بعد ${NumberFormatter.withArabicNumerals('$reminderMinutes')} دقيقة' : 'حان موعد المهمة الآن')
           : (reminderBefore.isAfter(now) ? 'Task due in $reminderMinutes minutes' : 'Task is due now');
     } else {
       // No specific time — remind at 9:00 AM on the due date
@@ -805,10 +806,10 @@ class NotificationService {
       title = isArabic ? 'ملخص مهام اليوم' : "Today's Tasks";
       final parts = <String>[];
       if (todayCount > 0) {
-        parts.add(isArabic ? '$todayCount مهام لليوم' : '$todayCount task${todayCount > 1 ? "s" : ""} today');
+        parts.add(isArabic ? '${NumberFormatter.withArabicNumerals('$todayCount')} مهام لليوم' : '$todayCount task${todayCount > 1 ? "s" : ""} today');
       }
       if (overdueCount > 0) {
-        parts.add(isArabic ? '$overdueCount متأخرة' : '$overdueCount overdue');
+        parts.add(isArabic ? '${NumberFormatter.withArabicNumerals('$overdueCount')} متأخرة' : '$overdueCount overdue');
       }
       body = parts.join(isArabic ? '، ' : ', ');
     }

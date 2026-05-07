@@ -1310,7 +1310,7 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
                 : 'Auto Silent Mode'),
             subtitle: Text(
               isArabic
-                  ? 'تشغيل الوضع الصامت تلقائياً عند الأذان لمدة $_silentModeDuration دقيقة'
+                  ? 'تشغيل الوضع الصامت تلقائياً عند الأذان لمدة ${NumberFormatter.withArabicNumerals('$_silentModeDuration')} دقيقة'
                   : 'Enable silent mode at Adhan for $_silentModeDuration minutes',
             ),
             value: _silentModeEnabled,
@@ -1332,7 +1332,7 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
                   : 'Silent Mode Duration'),
               subtitle: Text(
                 isArabic
-                    ? '$_silentModeDuration دقيقة'
+                    ? '${NumberFormatter.withArabicNumerals('$_silentModeDuration')} دقيقة'
                     : '$_silentModeDuration minutes',
               ),
               trailing:

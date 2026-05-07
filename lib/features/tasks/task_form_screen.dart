@@ -1060,7 +1060,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
             subtitle: Text(
               _focusModeEnabled
                   ? (isArabic
-                      ? '${_focusDurationMinutes} دقيقة'
+                      ? '${NumberFormatter.withArabicNumerals('$_focusDurationMinutes')} دقيقة'
                       : '$_focusDurationMinutes min')
                   : (isArabic
                       ? 'قفل الشاشة وكتم الإشعارات'
@@ -1220,7 +1220,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
         ),
         content: Text(
           isArabic
-              ? 'سيتم قفل هاتفك وكتم جميع الإشعارات لمدة $_focusDurationMinutes دقيقة. يمكنك الخروج بالضغط على زر رفع الصوت 3 مرات بسرعة.'
+              ? 'سيتم قفل هاتفك وكتم جميع الإشعارات لمدة ${NumberFormatter.withArabicNumerals('$_focusDurationMinutes')} دقيقة. يمكنك الخروج بالضغط على زر رفع الصوت ٣ مرات بسرعة.'
               : 'This will lock your phone and silence all notifications for $_focusDurationMinutes minutes. You can exit by pressing volume up 3 times quickly.',
         ),
         actions: [

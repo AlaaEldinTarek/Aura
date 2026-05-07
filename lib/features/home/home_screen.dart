@@ -675,7 +675,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                           const SizedBox(width: 4),
                           Text(
                             isArabic
-                                ? '$completedCount من $totalPrayers'
+                                ? '${NumberFormatter.withArabicNumerals('$completedCount')} من ${NumberFormatter.withArabicNumerals('$totalPrayers')}'
                                 : '$completedCount/$totalPrayers',
                             style: TextStyle(
                               color: isDark ? Colors.white70 : Colors.black54,
@@ -1076,7 +1076,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     const SizedBox(height: 4),
                     Text(
                       isArabic
-                          ? '$done من ${stats.dueToday} مكتملة'
+                          ? '${NumberFormatter.withArabicNumerals('$done')} من ${NumberFormatter.withArabicNumerals('${stats.dueToday}')} مكتملة'
                           : '$done of ${stats.dueToday} completed',
                       style: TextStyle(
                         fontSize: 11,

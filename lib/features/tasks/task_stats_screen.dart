@@ -178,7 +178,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
             title: isArabic ? 'نسبة الإتمام' : 'Rate',
             value: '${stats.completionRate}%',
             subtitle: isArabic
-                ? '${stats.completed} من ${stats.total}'
+                ? '${NumberFormatter.withArabicNumerals('${stats.completed}')} من ${NumberFormatter.withArabicNumerals('${stats.total}')}'
                 : '${stats.completed} of ${stats.total}',
             isDark: isDark,
           ),
