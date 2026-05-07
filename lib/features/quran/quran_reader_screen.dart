@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:aura_app/core/constants/app_constants.dart';
 import 'package:aura_app/core/models/quran_models.dart';
 import 'package:aura_app/core/providers/quran_provider.dart';
@@ -51,6 +52,7 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
     super.initState();
     _currentPage = widget.initialPage ?? _getStartPage();
     _pageController = PageController(initialPage: _currentPage - 1);
+    WakelockPlus.enable();
     _saveProgress(_currentPage);
     QuranSvgService.preload(_currentPage - 1);
     QuranSvgService.preload(_currentPage + 1);
@@ -91,6 +93,7 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
 
   @override
   void dispose() {
+    WakelockPlus.disable();
     _pageController.dispose();
     super.dispose();
   }
