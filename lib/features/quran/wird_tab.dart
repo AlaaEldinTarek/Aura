@@ -8,6 +8,8 @@ import 'package:aura_app/core/providers/wird_provider.dart';
 import 'package:aura_app/core/providers/quran_provider.dart';
 import 'package:aura_app/core/utils/number_formatter.dart';
 import 'package:aura_app/core/widgets/info_tip_icon.dart';
+import 'package:aura_app/core/widgets/tutorial_overlay.dart';
+import 'package:aura_app/core/services/shared_preferences_service.dart';
 import 'quran_reader_screen.dart';
 
 class WirdTab extends ConsumerWidget {
@@ -42,6 +44,55 @@ class _WirdContentView extends ConsumerStatefulWidget {
 class _WirdContentViewState extends ConsumerState<_WirdContentView> {
   bool _showUndo = true;
   bool _syncInProgress = false;
+
+  final _streakKey = GlobalKey();
+  final _progressKey = GlobalKey();
+  final _actionsKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      final prefs = SharedPreferencesService.instance;
+      if (!prefs.isTutorialWirdSeen()) {
+        await Future.delayed(const Duration(milliseconds: 900));
+        if (mounted) _launchWirdTutorial();
+      }
+    });
+  }
+
+  void _launchWirdTutorial() {
+    if (!mounted) return;
+    final state = ref.read(wirdStateProvider).valueOrNull ?? widget.initialState;
+    final isJuzMode = state.settings.wirdUnit == WirdUnit.juz;
+    final steps = <TutorialStep>[
+      if (_streakKey.currentContext != null)
+        TutorialStep(
+          targetKey: _streakKey,
+          titleKey: 'tutorial_wird_streak_title',
+          bodyKey: 'tutorial_wird_streak_body',
+        ),
+      if (_progressKey.currentContext != null)
+        TutorialStep(
+          targetKey: _progressKey,
+          titleKey: isJuzMode ? 'tutorial_wird_juz_progress_title' : 'tutorial_wird_progress_title',
+          bodyKey: isJuzMode ? 'tutorial_wird_juz_progress_body' : 'tutorial_wird_progress_body',
+        ),
+      if (_actionsKey.currentContext != null)
+        TutorialStep(
+          targetKey: _actionsKey,
+          titleKey: isJuzMode ? 'tutorial_wird_juz_actions_title' : 'tutorial_wird_actions_title',
+          bodyKey: isJuzMode ? 'tutorial_wird_juz_actions_body' : 'tutorial_wird_actions_body',
+        ),
+    ];
+    if (steps.isEmpty) return;
+    showTutorial(
+      context: context,
+      steps: steps,
+      onDone: () => SharedPreferencesService.instance.setTutorialWirdSeen(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -111,26 +162,26 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        _buildStreakCard(state, primary, isDark),
+        SizedBox(key: _streakKey, child: _buildStreakCard(state, primary, isDark)),
         const SizedBox(height: 16),
 
         if (isJuzMode) ...[
-          _buildJuzProgressCard(state, primary, isDark, allCompletedJuz, juzReadToday, dailyJuzGoal, isCompleted),
+          SizedBox(key: _progressKey, child: _buildJuzProgressCard(state, primary, isDark, allCompletedJuz, juzReadToday, dailyJuzGoal, isCompleted)),
           const SizedBox(height: 16),
           if (isCompleted)
             _buildCompletedBanner(primary, isDark)
           else ...[
-            _buildJuzActions(context, state, primary),
+            SizedBox(key: _actionsKey, child: _buildJuzActions(context, state, primary)),
             const SizedBox(height: 16),
           ],
           _buildJuzGrid(context, allCompletedJuz, primary, isDark),
         ] else ...[
-          _buildProgressCard(context, state, primary, isDark, pagesRead, goal, isCompleted, progressRatio),
+          SizedBox(key: _progressKey, child: _buildProgressCard(context, state, primary, isDark, pagesRead, goal, isCompleted, progressRatio)),
           const SizedBox(height: 16),
           if (isCompleted)
             _buildCompletedBanner(primary, isDark)
           else ...[
-            _buildActionButtons(context, state, primary, progress),
+            SizedBox(key: _actionsKey, child: _buildActionButtons(context, state, primary, progress)),
             const SizedBox(height: 16),
           ],
         ],

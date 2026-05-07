@@ -109,7 +109,7 @@ class _TutorialOverlayState extends State<TutorialOverlay>
                   targetRect: targetRect,
                   overlayColor: Colors.black.withOpacity(0.75),
                   borderColor: primary,
-                  radius: 12,
+                  radius: 20,
                   pulse: _pulseAnim.value,
                 ),
                 size: screenSize,

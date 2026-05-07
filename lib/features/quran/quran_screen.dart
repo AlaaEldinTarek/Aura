@@ -58,11 +58,6 @@ class _QuranScreenState extends ConsumerState<QuranScreen>
         bodyKey: 'tutorial_bookmarks_body',
         onDone: () => prefs.setTutorialBookmarksSeen(),
       );
-      if (idx == 3 && !prefs.isTutorialWirdSeen()) _launchTabTutorial(
-        titleKey: 'tutorial_wird_title',
-        bodyKey: 'tutorial_wird_body',
-        onDone: () => prefs.setTutorialWirdSeen(),
-      );
     });
   }
 
