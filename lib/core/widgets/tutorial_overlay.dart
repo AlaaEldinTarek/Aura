@@ -33,33 +33,45 @@ class TutorialOverlay extends StatefulWidget {
 }
 
 class _TutorialOverlayState extends State<TutorialOverlay>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+    with TickerProviderStateMixin {
+  late AnimationController _fadeController;
   late Animation<double> _fadeAnim;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnim;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+
+    _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _fadeAnim = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
-    _controller.forward();
+    _fadeAnim = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
+    _fadeController.forward();
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..repeat();
+    _pulseAnim = CurvedAnimation(parent: _pulseController, curve: Curves.easeOut);
   }
 
   @override
   void didUpdateWidget(TutorialOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.currentIndex != widget.currentIndex) {
-      _controller.reset();
-      _controller.forward();
+      _fadeController.reset();
+      _fadeController.forward();
+      _pulseController.reset();
+      _pulseController.repeat();
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _fadeController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -69,22 +81,17 @@ class _TutorialOverlayState extends State<TutorialOverlay>
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final step = widget.steps[widget.currentIndex];
     final isLast = widget.currentIndex == widget.steps.length - 1;
-
-    // Get target widget position
-    final box = step.targetKey.currentContext?.findRenderObject() as RenderBox?;
-    final overlay = Overlay.of(context);
     final screenSize = MediaQuery.of(context).size;
 
+    final box = step.targetKey.currentContext?.findRenderObject() as RenderBox?;
     Rect targetRect = Rect.zero;
     if (box != null) {
       targetRect = box.localToGlobal(Offset.zero) & box.size;
     }
 
-    // Tooltip position: below or above the target
     final tooltipTop = targetRect.bottom + 12;
     final tooltipFitsBelow = tooltipTop + 200 < screenSize.height;
     final tooltipTop2 = tooltipFitsBelow ? tooltipTop : targetRect.top - 200;
-    final pointerFromTop = !tooltipFitsBelow;
 
     final primary = AppConstants.getPrimary(isDark);
 
@@ -92,30 +99,23 @@ class _TutorialOverlayState extends State<TutorialOverlay>
       opacity: _fadeAnim,
       child: Stack(
         children: [
-          // Dark overlay with cutout
+          // Dark overlay + cutout + pulsing border (all in one animated painter)
           GestureDetector(
             onTap: widget.onSkip,
-            child: CustomPaint(
-              painter: _OverlayPainter(
-                targetRect: targetRect,
-                overlayColor: Colors.black.withOpacity(0.75),
-                radius: 12,
+            child: AnimatedBuilder(
+              animation: _pulseAnim,
+              builder: (_, __) => CustomPaint(
+                painter: _OverlayPainter(
+                  targetRect: targetRect,
+                  overlayColor: Colors.black.withOpacity(0.75),
+                  borderColor: primary,
+                  radius: 12,
+                  pulse: _pulseAnim.value,
+                ),
+                size: screenSize,
               ),
-              size: screenSize,
             ),
           ),
-
-          // Highlight border around target
-          if (targetRect != Rect.zero)
-            Positioned.fromRect(
-              rect: targetRect.inflate(4),
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: primary, width: 2.5),
-                ),
-              ),
-            ),
 
           // Tooltip bubble
           Positioned(
@@ -139,7 +139,6 @@ class _TutorialOverlayState extends State<TutorialOverlay>
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Step counter
                   Text(
                     '${'tutorial_step'.tr()} ${widget.currentIndex + 1} ${'tutorial_of'.tr()} ${widget.steps.length}',
                     style: TextStyle(
@@ -149,8 +148,6 @@ class _TutorialOverlayState extends State<TutorialOverlay>
                     ),
                   ),
                   const SizedBox(height: 8),
-
-                  // Title
                   Text(
                     step.titleKey.tr(),
                     style: TextStyle(
@@ -160,8 +157,6 @@ class _TutorialOverlayState extends State<TutorialOverlay>
                     ),
                   ),
                   const SizedBox(height: 8),
-
-                  // Body
                   Text(
                     step.bodyKey.tr(),
                     style: TextStyle(
@@ -171,8 +166,6 @@ class _TutorialOverlayState extends State<TutorialOverlay>
                     ),
                   ),
                   const SizedBox(height: 20),
-
-                  // Buttons
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -210,40 +203,65 @@ class _TutorialOverlayState extends State<TutorialOverlay>
   }
 }
 
-/// Paints a dark overlay with a rounded-rect cutout
+/// Paints: dark overlay with cutout + solid border + pulsing expanding ring
 class _OverlayPainter extends CustomPainter {
   final Rect targetRect;
   final Color overlayColor;
+  final Color borderColor;
   final double radius;
+  final double pulse; // 0.0 → 1.0, repeating
 
   _OverlayPainter({
     required this.targetRect,
     required this.overlayColor,
+    required this.borderColor,
     required this.radius,
+    required this.pulse,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    // saveLayer is required for BlendMode.clear to punch through correctly
+    // ── 1. Dark overlay with clear cutout ────────────────────────────────────
     canvas.saveLayer(Rect.fromLTWH(0, 0, size.width, size.height), Paint());
-
-    final paint = Paint()..color = overlayColor;
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
-
-    final cutout = Paint()..blendMode = BlendMode.clear;
-    final rrect = RRect.fromRectAndRadius(
-      targetRect.inflate(4),
-      Radius.circular(radius),
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height),
+        Paint()..color = overlayColor);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(targetRect.inflate(4), Radius.circular(radius)),
+      Paint()..blendMode = BlendMode.clear,
     );
-    canvas.drawRRect(rrect, cutout);
-
     canvas.restore();
+
+    if (targetRect == Rect.zero) return;
+
+    // ── 2. Solid border ───────────────────────────────────────────────────────
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(targetRect.inflate(4), Radius.circular(radius)),
+      Paint()
+        ..color = borderColor
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5,
+    );
+
+    // ── 3. Pulsing expanding ring ─────────────────────────────────────────────
+    final expand = pulse * 22.0;
+    final opacity = (1.0 - pulse) * 0.65;
+    if (pulse > 0.01) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          targetRect.inflate(4 + expand),
+          Radius.circular(radius + expand),
+        ),
+        Paint()
+          ..color = borderColor.withOpacity(opacity)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = (3.5 * (1 - pulse)).clamp(0.5, 3.5),
+      );
+    }
   }
 
   @override
-  bool shouldRepaint(covariant _OverlayPainter oldDelegate) {
-    return oldDelegate.targetRect != targetRect;
-  }
+  bool shouldRepaint(covariant _OverlayPainter old) =>
+      old.targetRect != targetRect || old.pulse != pulse;
 }
 
 /// Shows the tutorial as a full-screen overlay
@@ -270,17 +288,15 @@ void showTutorial({
   }
 
   entry = OverlayEntry(
-    builder: (_) {
-      return Material(
-        color: Colors.transparent,
-        child: TutorialOverlay(
-          steps: steps,
-          currentIndex: currentStep,
-          onNext: nextStep,
-          onSkip: removeEntry,
-        ),
-      );
-    },
+    builder: (_) => Material(
+      color: Colors.transparent,
+      child: TutorialOverlay(
+        steps: steps,
+        currentIndex: currentStep,
+        onNext: nextStep,
+        onSkip: removeEntry,
+      ),
+    ),
   );
 
   Overlay.of(context).insert(entry);
