@@ -10,16 +10,16 @@
 **Description**: Daily checklist of prophetic morning/evening remembrances (أذكار الصباح والمساء). Progress ring per session. Resets at Fajr (morning) and Maghrib (evening). Tied into achievements.
 
 ### Steps
-- [ ] 1. Add `Zikr` model: id, textAr, textEn, count (repetitions required), category (morning/evening)
-- [ ] 2. Add azkar data list (~20 morning, ~20 evening) as a Dart constant
-- [ ] 3. Add SharedPreferences keys for daily azkar progress (`azkar_morning_YYYY-MM-DD`, `azkar_evening_YYYY-MM-DD`)
-- [ ] 4. Add `azkarProvider` (StateNotifier) — tracks completed items, resets on new day
-- [ ] 5. Create `AzkarScreen` with two tabs (Morning / Evening), progress ring at top, list of items
-- [ ] 6. Each item: Arabic text, translation, repeat count badge, tap to mark done (haptic feedback)
-- [ ] 7. Add azkar completion achievements (e.g., first time, 7-day streak)
-- [ ] 8. Add route `/azkar` and bottom nav or quick action entry point
-- [ ] 9. Add translation keys to en.json + ar.json
-- [ ] 10. Build, test, install APK
+- [x] 1. Add `Zikr` model: id, textAr, textEn, count (repetitions required), category (morning/evening)
+- [x] 2. Add azkar data list (12 morning, 12 evening) as a Dart constant in `lib/core/models/azkar.dart`
+- [x] 3. Add SharedPreferences persistence for daily azkar progress (date-keyed JSON in `azkar_provider.dart`)
+- [x] 4. Add `azkarProvider` (StateNotifier) — tracks completed items, streak, resets on new day
+- [x] 5. Create `AzkarScreen` with two tabs (Morning / Evening), progress ring at top, list of items
+- [x] 6. Each item: Arabic text (Cairo font), translation, repeat count badge, animated checkbox, haptic feedback
+- [x] 7. Add 3 azkar achievements (`azkar_first`, `azkar_full_day`, `azkar_streak_7`) to `achievement.dart`
+- [x] 8. Add route `/azkar` in `main.dart`; Azkar button added to Muslim Toolkit in prayer_screen
+- [x] 9. Add translation keys to en.json + ar.json
+- [x] 10. Build, test, install APK ✅
 
 ---
 
@@ -103,7 +103,7 @@
 
 | # | Feature | Status | Session |
 |---|---------|--------|---------|
-| 1 | Morning & Evening Azkar Checklist | ⬜ Not started | — |
+| 1 | Morning & Evening Azkar Checklist | ✅ Done | session-3 |
 | 2 | Qada Prayer Tracker | ⬜ Not started | — |
 | 3 | Islamic Events Countdown | ⬜ Not started | — |
 | 4 | Sadaqa / Charity Goal Tracker | ⬜ Not started | — |

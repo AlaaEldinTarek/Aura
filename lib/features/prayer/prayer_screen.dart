@@ -772,7 +772,8 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     final primary = AppConstants.getPrimary(isDark);
     final actions = [
       _ToolkitAction(icon: Icons.explore, label: isArabic ? 'القبلة' : 'Qibla', route: '/qibla', color: primary),
-      _ToolkitAction(icon: Icons.pan_tool, label: isArabic ? 'أذكار' : 'Azkar', route: '/dhikr', color: primary),
+      _ToolkitAction(icon: Icons.menu_book_outlined, label: isArabic ? 'الأذكار' : 'Azkar', route: '/azkar', color: primary),
+      _ToolkitAction(icon: Icons.pan_tool, label: isArabic ? 'تسبيح' : 'Tasbeeh', route: '/dhikr', color: primary),
       _ToolkitAction(icon: Icons.bar_chart, label: isArabic ? 'التقرير' : 'Report', route: '/prayer_report', color: primary),
     ];
 

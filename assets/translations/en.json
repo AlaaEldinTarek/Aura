@@ -400,5 +400,15 @@
   "tutorial_reader_topbar_title": "Page Controls",
   "tutorial_reader_topbar_body": "Tap the bookmark icon to save this page. Tap any Ayah on the page to see its text and bookmark it with a color. Tap anywhere else to hide these bars.",
   "tutorial_reader_bottombar_title": "Navigate Pages",
-  "tutorial_reader_bottombar_body": "Use the arrows to go to the previous or next page. Tap the page number to jump directly to any page in the Mushaf."
+  "tutorial_reader_bottombar_body": "Use the arrows to go to the previous or next page. Tap the page number to jump directly to any page in the Mushaf.",
+
+  "azkar": "Azkar",
+  "azkar_morning": "Morning Azkar",
+  "azkar_evening": "Evening Azkar",
+  "azkar_progress": "Today's Progress",
+  "azkar_completed_all": "All azkar completed",
+  "azkar_well_done": "Well done! 🎉",
+  "azkar_streak": "day streak",
+  "azkar_of": "of",
+  "azkar_completed": "completed"
 }

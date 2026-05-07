@@ -400,5 +400,15 @@
   "tutorial_reader_topbar_title": "أدوات الصفحة",
   "tutorial_reader_topbar_body": "اضغط على الإشارة المرجعية لحفظ هذه الصفحة. اضغط على أي آية لعرض نصها وحفظها بلون مخصص. اضغط في أي مكان آخر لإخفاء الأشرطة.",
   "tutorial_reader_bottombar_title": "التنقل بين الصفحات",
-  "tutorial_reader_bottombar_body": "استخدم الأسهم للانتقال للصفحة السابقة أو التالية. اضغط على رقم الصفحة للقفز مباشرة لأي صفحة في المصحف."
+  "tutorial_reader_bottombar_body": "استخدم الأسهم للانتقال للصفحة السابقة أو التالية. اضغط على رقم الصفحة للقفز مباشرة لأي صفحة في المصحف.",
+
+  "azkar": "الأذكار",
+  "azkar_morning": "أذكار الصباح",
+  "azkar_evening": "أذكار المساء",
+  "azkar_progress": "تقدمك اليوم",
+  "azkar_completed_all": "أكملت جميع الأذكار",
+  "azkar_well_done": "ما شاء الله! 🎉",
+  "azkar_streak": "يوم متتالي",
+  "azkar_of": "من",
+  "azkar_completed": "مكتمل"
 }

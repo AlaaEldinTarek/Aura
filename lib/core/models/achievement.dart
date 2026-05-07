@@ -241,6 +241,36 @@ class AchievementDefinitions {
       category: AchievementCategory.dhikr,
       threshold: 200,
     ),
+    Achievement(
+      id: 'azkar_first',
+      nameEn: 'Mindful Morning',
+      nameAr: 'صباح الذكر',
+      descriptionEn: 'Complete morning or evening azkar for the first time',
+      descriptionAr: 'أكمل أذكار الصباح أو المساء لأول مرة',
+      iconEmoji: '🌅',
+      category: AchievementCategory.dhikr,
+      threshold: 1,
+    ),
+    Achievement(
+      id: 'azkar_full_day',
+      nameEn: 'Full Day Azkar',
+      nameAr: 'أذكار يوم كامل',
+      descriptionEn: 'Complete both morning and evening azkar in one day',
+      descriptionAr: 'أكمل أذكار الصباح والمساء في يوم واحد',
+      iconEmoji: '🌙',
+      category: AchievementCategory.dhikr,
+      threshold: 1,
+    ),
+    Achievement(
+      id: 'azkar_streak_7',
+      nameEn: 'Azkar Devotee',
+      nameAr: 'مداوم على الأذكار',
+      descriptionEn: 'Complete azkar 7 days in a row',
+      descriptionAr: 'واظب على الأذكار 7 أيام متتالية',
+      iconEmoji: '✨',
+      category: AchievementCategory.dhikr,
+      threshold: 7,
+    ),
 
     // Tasks
     Achievement(
