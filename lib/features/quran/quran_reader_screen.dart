@@ -258,8 +258,32 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
     final bookmarks = ref.watch(quranBookmarksProvider).valueOrNull ?? [];
     final isBookmarked = bookmarks.any((b) => b.id == 'page_$_currentPage');
 
-    return Scaffold(
-      body: SafeArea(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        final nav = Navigator.of(context);
+        final shouldExit = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: Text(isArabic ? 'إغلاق القارئ؟' : 'Close Reader?'),
+            content: Text(isArabic ? 'تقدمك محفوظ.' : 'Your progress is saved.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: Text(isArabic ? 'تابع القراءة' : 'Keep Reading'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                child: Text(isArabic ? 'إغلاق' : 'Close'),
+              ),
+            ],
+          ),
+        );
+        if (shouldExit == true) nav.pop();
+      },
+      child: Scaffold(
+        body: SafeArea(
         child: Stack(
           children: [
             PageView.builder(
@@ -352,6 +376,7 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
               ),
           ],
         ),
+      ),
       ),
     );
   }

@@ -63,7 +63,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
 
     return Scaffold(
       backgroundColor:
-          isDark ? AppConstants.darkBackground : const Color(0xFFF5F7FA),
+          isDark ? AppConstants.darkBackground : AppConstants.lightBackground,
       appBar: AppBar(
         title: Text(
           isArabic ? 'إحصائيات المهام' : 'Task Statistics',
