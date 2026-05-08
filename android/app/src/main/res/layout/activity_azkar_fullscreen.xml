@@ -20,31 +20,32 @@
         android:textAllCaps="false"
         android:elevation="4dp" />
 
-    <!-- Header: emoji + title -->
+    <!-- Header: emoji + title + prayer name -->
     <LinearLayout
         android:id="@+id/azkarHeader"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@+id/btnAzkarDismiss"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="2dp"
         android:orientation="vertical"
-        android:gravity="center">
+        android:gravity="center"
+        android:paddingBottom="6dp">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="🤲"
-            android:textSize="48sp"
+            android:textSize="34sp"
             android:gravity="center" />
 
         <TextView
             android:id="@+id/azkarTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="4dp"
             android:text="أذكار بعد الصلاة"
             android:textColor="#F5B301"
-            android:textSize="20sp"
+            android:textSize="18sp"
             android:textStyle="bold"
             android:gravity="center" />
 
@@ -52,168 +53,44 @@
             android:id="@+id/azkarPrayerName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="2dp"
             android:text=""
             android:textColor="#80FFFFFF"
-            android:textSize="14sp"
+            android:textSize="13sp"
             android:gravity="center" />
 
     </LinearLayout>
 
-    <!-- Center: 3 azkar items -->
-    <LinearLayout
-        android:id="@+id/azkarList"
+    <!-- Progress counter -->
+    <TextView
+        android:id="@+id/azkarProgressText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_centerVertical="true"
-        android:layout_marginStart="24dp"
-        android:layout_marginEnd="24dp"
-        android:orientation="vertical">
+        android:layout_below="@+id/azkarHeader"
+        android:layout_marginStart="20dp"
+        android:layout_marginEnd="20dp"
+        android:text="0 / 0"
+        android:textColor="#80FFFFFF"
+        android:textSize="12sp"
+        android:gravity="end" />
 
-        <!-- Item 1: SubhanAllah -->
+    <!-- Scrollable azkar list -->
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/azkarScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_below="@+id/azkarProgressText"
+        android:layout_marginTop="6dp">
+
         <LinearLayout
-            android:id="@+id/azkarItem1"
-            android:layout_width="match_parent"
-            android:layout_height="70dp"
-            android:layout_marginBottom="12dp"
-            android:padding="16dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:clickable="true"
-            android:focusable="true">
-
-            <TextView
-                android:id="@+id/azkarText1"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="سبحان الله"
-                android:textColor="#FFFFFF"
-                android:textSize="22sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/azkarCount1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0 / 33"
-                android:textColor="#F5B301"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/azkarCheck1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="✓"
-                android:textColor="#00C853"
-                android:textSize="22sp"
-                android:textStyle="bold"
-                android:visibility="gone" />
-
-        </LinearLayout>
-
-        <!-- Item 2: Alhamdulillah -->
-        <LinearLayout
-            android:id="@+id/azkarItem2"
-            android:layout_width="match_parent"
-            android:layout_height="70dp"
-            android:layout_marginBottom="12dp"
-            android:padding="16dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:clickable="true"
-            android:focusable="true">
-
-            <TextView
-                android:id="@+id/azkarText2"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="الحمد لله"
-                android:textColor="#FFFFFF"
-                android:textSize="22sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/azkarCount2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0 / 33"
-                android:textColor="#F5B301"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/azkarCheck2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="✓"
-                android:textColor="#00C853"
-                android:textSize="22sp"
-                android:textStyle="bold"
-                android:visibility="gone" />
-
-        </LinearLayout>
-
-        <!-- Item 3: Allahu Akbar -->
-        <LinearLayout
-            android:id="@+id/azkarItem3"
-            android:layout_width="match_parent"
-            android:layout_height="70dp"
-            android:layout_marginBottom="20dp"
-            android:padding="16dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:clickable="true"
-            android:focusable="true">
-
-            <TextView
-                android:id="@+id/azkarText3"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="الله أكبر"
-                android:textColor="#FFFFFF"
-                android:textSize="22sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/azkarCount3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0 / 34"
-                android:textColor="#F5B301"
-                android:textSize="18sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/azkarCheck3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="✓"
-                android:textColor="#00C853"
-                android:textSize="22sp"
-                android:textStyle="bold"
-                android:visibility="gone" />
-
-        </LinearLayout>
-
-        <!-- Completion banner -->
-        <TextView
-            android:id="@+id/azkarComplete"
+            android:id="@+id/azkarContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="بارك الله فيك ✨"
-            android:textColor="#00C853"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            android:gravity="center"
-            android:visibility="gone" />
+            android:orientation="vertical"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingBottom="32dp" />
 
-    </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
 </RelativeLayout>
