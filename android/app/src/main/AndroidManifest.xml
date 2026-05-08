@@ -79,6 +79,20 @@
             android:hardwareAccelerated="true">
         </activity>
 
+        <!-- Azkar Full-Screen Activity - Shows post-prayer azkar over lock screen -->
+        <activity
+            android:name=".AzkarFullScreenActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.AppCompat.NoActionBar"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true">
+        </activity>
+
         <!-- Focus Mode Activity - Full screen lock for task focus -->
         <activity
             android:name=".FocusModeActivity"
@@ -169,6 +183,16 @@
             android:name=".JumuahReminderReceiver"
             android:enabled="true"
             android:exported="false"/>
+
+        <!-- Azkar Alarm Receiver - Fires 10 min after iqama to show post-prayer azkar -->
+        <receiver
+            android:name=".AzkarAlarmReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.aura.hala.AZKAR_ALARM"/>
+            </intent-filter>
+        </receiver>
 
         <!-- Daily Prayer Summary Receiver - Fires at configurable time to remind about untracked prayers -->
         <receiver

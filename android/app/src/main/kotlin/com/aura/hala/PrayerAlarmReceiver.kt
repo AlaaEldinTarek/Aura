@@ -519,6 +519,11 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
                 .putLong("adhan_iqama_time", iqamaTimeMs)
                 .apply()
             Log.d(TAG, "✅ [ADHAN_MODE] Activated for $prayerName | iqama=${iqamaTimeMs} | end=${currentTime + 20*60*1000L}")
+
+            // Schedule azkar reminder 10 min after iqama (or 15 min from now if no iqama)
+            val azkarTrigger = if (iqamaTimeMs > 0) iqamaTimeMs + 10 * 60 * 1000L
+                               else currentTime + 15 * 60 * 1000L
+            AzkarAlarmReceiver.schedule(context, prayerName, prayerNameAr, azkarTrigger)
         }
 
         // Update next prayer for widget and app
