@@ -99,6 +99,23 @@
 
 ---
 
+---
+
+## Feature 6: Post-Prayer Azkar Full-Screen
+
+**Description**: Full-screen activity that fires 10 minutes after iqama finishes (or 15 min after adhan if no iqama is set). Shows the complete post-prayer remembrances from Hisn al-Muslim (chapter 25) as a scrollable counter list. Adapts per prayer — Fajr/Maghrib get extra azkar.
+
+### Steps
+- [x] 1. Create `activity_azkar_fullscreen.xml` — dark gradient background, header, NestedScrollView for dynamic content
+- [x] 2. Create `AzkarAlarmReceiver.kt` — schedules alarm (IDs 9001–9006, request codes 3001–3006), posts heads-up notification + launches activity
+- [x] 3. Create `AzkarFullScreenActivity.kt` — builds azkar list dynamically, gold counter badge flips to ✓ on done, "بارك الله فيك" banner on full completion
+- [x] 4. Modify `PrayerAlarmReceiver.kt` — calls `AzkarAlarmReceiver.schedule()` after writing `adhan_iqama_time` (skipped for Sunrise)
+- [x] 5. Register `AzkarFullScreenActivity` + `AzkarAlarmReceiver` in `AndroidManifest.xml`
+- [x] 6. Expand azkar to full Hisn al-Muslim list: Istighfar ×3, Salam dua, 2 Tawhid formulas, Tasbeeh ×33 each, completing La ilaha illallah, Ayat al-Kursi, 3 Quls (×3 after Fajr/Maghrib), La ilaha illallah yuhyi ×10 (Fajr/Maghrib), beneficial knowledge dua (Fajr only)
+- [x] 7. Build, test, install APK ✅
+
+---
+
 ## Overall Progress
 
 | # | Feature | Status | Session |
@@ -108,3 +125,4 @@
 | 3 | Islamic Events Countdown | ✅ Done | session-4 |
 | 4 | Sadaqa / Charity Goal Tracker | ⬜ Not started | — |
 | 5 | Quran Reading Stats Screen | ✅ Done | session-4 |
+| 6 | Post-Prayer Azkar Full-Screen | ✅ Done | session-5 |
