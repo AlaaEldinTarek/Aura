@@ -597,7 +597,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         ),
         child: Row(
           children: [
-            Text(item.event.emoji, style: const TextStyle(fontSize: 30)),
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: accent.withOpacity(0.18),
+                borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+              ),
+              child: Center(child: Text(item.event.emoji, style: const TextStyle(fontSize: 26))),
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

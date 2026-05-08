@@ -100,8 +100,16 @@ class _EventCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Emoji
-                Text(item.event.emoji, style: const TextStyle(fontSize: 30)),
+                // Emoji with themed background
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: badgeColor.withOpacity(0.14),
+                    borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+                  ),
+                  child: Center(child: Text(item.event.emoji, style: const TextStyle(fontSize: 26))),
+                ),
                 const SizedBox(width: 12),
                 // Name + Hijri date
                 Expanded(

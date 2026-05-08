@@ -113,6 +113,17 @@
 - [x] 5. Register `AzkarFullScreenActivity` + `AzkarAlarmReceiver` in `AndroidManifest.xml`
 - [x] 6. Expand azkar to full Hisn al-Muslim list: Istighfar ×3, Salam dua, 2 Tawhid formulas, Tasbeeh ×33 each, completing La ilaha illallah, Ayat al-Kursi, 3 Quls (×3 after Fajr/Maghrib), La ilaha illallah yuhyi ×10 (Fajr/Maghrib), beneficial knowledge dua (Fajr only)
 - [x] 7. Build, test, install APK ✅
+- [x] 8. RTL support: `window.decorView.layoutDirection = RTL` for Arabic; cards pinned LTR internally
+- [x] 9. Check button (✓ اكتمل) added to all counter items so users can count on hand then tap once
+- [x] 10. Themed emoji background added to event cards on Islamic Events screen + home screen card
+
+---
+
+## Bug Fixes & UX Improvements (session-5)
+
+- **Islamic Events icon backgrounds**: emoji in event list cards and home countdown card now sit in a rounded themed container matching badge color
+- **Notification action buttons silent**: Done / Late / Missed / Remind Later no longer launch the app; status writes to SharedPreferences and syncs on next app open via `_syncNativePrayerStatuses()`
+- **Remind Later (both reminder + post-check)**: replaced MainActivity picker with a silent 15-minute re-alarm via `scheduleDelayedReminder()` / `schedulePostPrayerCheck()`
 
 ---
 
