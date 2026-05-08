@@ -846,19 +846,12 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
                 notifyFlutterPrayerStatus(context, prayerName, "missed")
             }
             ACTION_REMINDER_LATER -> {
-                try {
-                    val intent = Intent(context, MainActivity::class.java).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                        putExtra("open_reminder_picker", true)
-                        putExtra("reminder_prayer_name", prayerName)
-                        putExtra("reminder_prayer_name_ar", prayerNameAr)
-                        putExtra("reminder_prayer_time", prayerTime)
-                    }
-                    context.startActivity(intent)
-                    Log.d(TAG, "🔕 [REMINDER] Opening reminder picker for $prayerName")
-                } catch (e: Exception) {
-                    Log.e(TAG, "❌ [REMINDER] Failed to open picker: ${e.message}")
-                }
+                // Re-remind in 15 minutes without opening the app
+                scheduleDelayedReminder(
+                    context, prayerName, prayerNameAr, prayerTime,
+                    getReminderNotificationId(prayerName), 15
+                )
+                Log.d(TAG, "🔕 [REMINDER] Re-scheduled for $prayerName in 15 min (no app launch)")
             }
         }
     }
@@ -1011,35 +1004,22 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             }
             ACTION_POST_LATER -> {
                 NotificationManagerCompat.from(context).cancel(notificationId)
-                try {
-                    val intent = Intent(context, MainActivity::class.java).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                        putExtra("open_post_prayer_picker", true)
-                        putExtra(EXTRA_PRAYER_NAME, prayerName)
-                        putExtra(EXTRA_PRAYER_NAME_AR, prayerNameAr)
-                        putExtra(EXTRA_PRAYER_TIME, prayerTime)
-                    }
-                    context.startActivity(intent)
-                    Log.d(TAG, "🔕 [POST_CHECK] Opening picker for $prayerName")
-                } catch (e: Exception) {
-                    Log.e(TAG, "❌ [POST_CHECK] Failed to open picker: ${e.message}")
-                }
+                // Re-check in 15 minutes without opening the app
+                val remindAt = System.currentTimeMillis() + 15 * 60 * 1000L
+                schedulePostPrayerCheck(
+                    context, prayerName, prayerNameAr,
+                    remindAt - 30 * 60 * 1000L,
+                    getNotificationId(prayerName)
+                )
+                Log.d(TAG, "🔕 [POST_CHECK] Re-scheduled for $prayerName in 15 min (no app launch)")
             }
         }
     }
 
     private fun notifyFlutterPrayerStatus(context: Context, prayerName: String, status: String) {
-        try {
-            val intent = Intent(context, MainActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                putExtra("update_prayer_status", true)
-                putExtra("prayer_name", prayerName)
-                putExtra("prayer_status", status)
-            }
-            context.startActivity(intent)
-            Log.d(TAG, "📡 [PRAYER_STATUS] Notified Flutter: $prayerName → $status")
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ [PRAYER_STATUS] Failed to notify Flutter: ${e.message}")
-        }
+        // Status is already written to SharedPreferences (aura_prayer_times key prayer_status_{name}_{date}).
+        // _syncNativePrayerStatuses() in MainWrapperScreen picks it up on next app resume — no need to
+        // launch MainActivity from here, which would interrupt the user while the app is in the background.
+        Log.d(TAG, "📡 [PRAYER_STATUS] Saved to prefs: $prayerName → $status (syncs on next app open)")
     }
 }
