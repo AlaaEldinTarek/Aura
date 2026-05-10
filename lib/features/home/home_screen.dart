@@ -325,7 +325,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           if (showPrayer) Builder(builder: (ctx) {
             final events = ref.watch(islamicEventsProvider);
             if (events.isEmpty || events.first.daysUntil > 30) return const SizedBox.shrink();
-            return Column(children: [
+            return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               SizedBox(height: gapL),
               _buildIslamicEventCard(context, events.first, isDark, isArabic),
             ]);

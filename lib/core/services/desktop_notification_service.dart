@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:local_notifier/local_notifier.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'desktop_adhan_service.dart';
 
 /// Windows/macOS/Linux notification service using local_notifier.
 /// Handles prayer-time and pre-prayer toasts that appear in the system
@@ -66,15 +67,35 @@ class DesktopNotificationService {
     }
   }
 
-  /// Show prayer-time notification (fires exactly at adhan time).
+  /// Show prayer-time notification with a Stop Adhan action button.
   Future<void> showPrayerTimeNotification(
       String prayerName, String prayerNameAr) async {
+    if (!isDesktop || !_initialized) return;
     final prefs = await SharedPreferences.getInstance();
     final isArabic = (prefs.getString('language') ?? 'en') == 'ar';
     final title = isArabic ? prayerNameAr : prayerName;
     final body =
         isArabic ? 'حان موعد صلاة $title' : 'It\'s time for $title prayer';
-    await show(title: title, body: body, identifier: 'prayer_$prayerName');
+    try {
+      final notification = LocalNotification(
+        identifier: 'prayer_$prayerName',
+        title: title,
+        body: body,
+        actions: [
+          LocalNotificationAction(
+            text: isArabic ? 'إيقاف الأذان' : 'Stop Adhan',
+          ),
+        ],
+      );
+      notification.onClickAction = (actionIndex) {
+        DesktopAdhanService.instance.stop();
+        debugPrint('DesktopNotificationService: Stop Adhan clicked');
+      };
+      await notification.show();
+      debugPrint('DesktopNotificationService: Showed prayer notification "$title" with Stop button');
+    } catch (e) {
+      debugPrint('DesktopNotificationService: Error showing prayer notification - $e');
+    }
   }
 
   /// Show pre-prayer reminder notification (X minutes before adhan).

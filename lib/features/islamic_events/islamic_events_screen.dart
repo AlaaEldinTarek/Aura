@@ -98,12 +98,12 @@ class _EventCard extends StatelessWidget {
           children: [
             Builder(builder: (ctx) {
               final ts = MediaQuery.textScalerOf(ctx);
-              final chipSz = ts.scale(48.0).clamp(48.0, 72.0);
-              final emojiFz = ts.scale(26.0).clamp(20.0, 38.0);
+              final chipSz = ts.scale(48.0);
+              final emojiFz = (chipSz * 0.50).clamp(16.0, 40.0);
               return Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Emoji chip — square, scales with text but capped so emoji always fits
+                // Col 1: emoji chip
                 Container(
                   width: chipSz,
                   height: chipSz,
@@ -119,7 +119,7 @@ class _EventCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                // Name + Hijri date
+                // Col 2: 2-line text
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -140,8 +140,8 @@ class _EventCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 8),
-                // Countdown badge
+                const SizedBox(width: 12),
+                // Col 3: countdown badge chip
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
