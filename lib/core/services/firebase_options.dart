@@ -24,6 +24,11 @@ class DefaultFirebaseOptions {
       case TargetPlatform.iOS:
         return ios;
 
+      case TargetPlatform.windows:
+      case TargetPlatform.macOS:
+      case TargetPlatform.linux:
+        return windows;
+
       default:
         throw UnsupportedError(
           'DefaultFirebaseOptions are not supported for this platform.',
@@ -46,6 +51,17 @@ class DefaultFirebaseOptions {
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'YOUR_IOS_API_KEY',
     appId: 'YOUR_IOS_APP_ID',
+    messagingSenderId: '101079644290',
+    projectId: 'com-aura-hala',
+    storageBucket: 'com-aura-hala.firebasestorage.app',
+  );
+
+  /// WINDOWS / DESKTOP CONFIGURATION
+  /// Uses the same Firebase project — register a Web app in Firebase Console
+  /// (Project settings → Add app → Web) and replace appId + apiKey below.
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyC_tzdYWMrxYIHVtEmZ0YxCxOX5rfb0_BA',
+    appId: '1:101079644290:web:aura_windows_desktop',
     messagingSenderId: '101079644290',
     projectId: 'com-aura-hala',
     storageBucket: 'com-aura-hala.firebasestorage.app',

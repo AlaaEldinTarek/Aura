@@ -1,8 +1,10 @@
+import 'dart:io' show Platform;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task.dart';
 import 'notification_service.dart';
+import 'desktop_notification_service.dart';
 import 'achievement_service.dart';
 
 /// Service for managing tasks with Firestore
@@ -192,13 +194,23 @@ class TaskService {
       if (task.dueDate != null) {
         final prefs = await SharedPreferences.getInstance();
         final language = prefs.getString('language') ?? 'en';
-        await NotificationService.instance.scheduleTaskReminder(
-          taskId: task.id,
-          title: task.title,
-          dueDate: task.dueDate!,
-          hasDueTime: task.hasDueTime,
-          language: language,
-        );
+        if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+          await DesktopNotificationService.instance.scheduleTaskReminder(
+            taskId: task.id,
+            title: task.title,
+            dueDate: task.dueDate!,
+            hasDueTime: task.hasDueTime,
+            language: language,
+          );
+        } else {
+          await NotificationService.instance.scheduleTaskReminder(
+            taskId: task.id,
+            title: task.title,
+            dueDate: task.dueDate!,
+            hasDueTime: task.hasDueTime,
+            language: language,
+          );
+        }
       }
 
       debugPrint('TaskService: Added task ${task.id}');
@@ -285,17 +297,31 @@ class TaskService {
 
       // Handle notification: cancel if completed, reschedule if due date changed
       if (updatedTask.isCompleted) {
-        await NotificationService.instance.cancelTaskNotification(taskId);
+        if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+          DesktopNotificationService.instance.cancelTaskReminder(taskId);
+        } else {
+          await NotificationService.instance.cancelTaskNotification(taskId);
+        }
       } else if (updatedTask.dueDate != null) {
         final prefs = await SharedPreferences.getInstance();
         final language = prefs.getString('language') ?? 'en';
-        await NotificationService.instance.scheduleTaskReminder(
-          taskId: taskId,
-          title: updatedTask.title,
-          dueDate: updatedTask.dueDate!,
-          hasDueTime: updatedTask.hasDueTime,
-          language: language,
-        );
+        if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+          await DesktopNotificationService.instance.scheduleTaskReminder(
+            taskId: taskId,
+            title: updatedTask.title,
+            dueDate: updatedTask.dueDate!,
+            hasDueTime: updatedTask.hasDueTime,
+            language: language,
+          );
+        } else {
+          await NotificationService.instance.scheduleTaskReminder(
+            taskId: taskId,
+            title: updatedTask.title,
+            dueDate: updatedTask.dueDate!,
+            hasDueTime: updatedTask.hasDueTime,
+            language: language,
+          );
+        }
       }
 
       debugPrint('TaskService: Updated task $taskId');
@@ -484,7 +510,11 @@ class TaskService {
       _taskCache.remove(taskId);
 
       // Cancel any scheduled reminder
-      await NotificationService.instance.cancelTaskNotification(taskId);
+      if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+        DesktopNotificationService.instance.cancelTaskReminder(taskId);
+      } else {
+        await NotificationService.instance.cancelTaskNotification(taskId);
+      }
 
       debugPrint('TaskService: Deleted task $taskId');
       _refreshDailySummary(userId);

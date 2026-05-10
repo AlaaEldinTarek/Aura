@@ -1,4 +1,7 @@
 import 'dart:async';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/gestures.dart' show PointerDeviceKind;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -819,13 +822,26 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       (TaskCategory.other, isArabic ? 'أخرى' : 'Other', Icons.more_horiz),
     ];
 
-    return SizedBox(
-      height: 38,
-      child: ListView.separated(
+    final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+    const chipHeight = 38.0;
+    const iconSize = 14.0;
+    const fontSize = 12.0;
+    const hPad = 12.0;
+    const vPad = 6.0;
+    const gap = 8.0;
+
+    final chips = SizedBox(
+      height: chipHeight,
+      child: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(dragDevices: {
+          PointerDeviceKind.touch,
+          PointerDeviceKind.mouse,
+        }),
+        child: ListView.separated(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
         itemCount: categories.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, __) => SizedBox(width: gap),
         itemBuilder: (context, index) {
           final (category, label, icon) = categories[index];
           final isSelected = _selectedCategory == category;
@@ -836,7 +852,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               _saveCategoryFilter(newCat);
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding: EdgeInsets.symmetric(horizontal: hPad, vertical: vPad),
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppConstants.getPrimary(isDark).withOpacity(0.12)
@@ -853,18 +869,18 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                 children: [
                   Icon(
                     icon,
-                    size: 14,
+                    size: iconSize,
                     color: isSelected
                         ? AppConstants.getPrimary(isDark)
                         : (isDark
                             ? Colors.grey.shade400
                             : Colors.grey.shade600),
                   ),
-                  const SizedBox(width: 4),
+                  SizedBox(width: isDesktop ? 6 : 4),
                   Text(
                     label,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: fontSize,
                       color: isSelected
                           ? AppConstants.getPrimary(isDark)
                           : (isDark
@@ -880,6 +896,13 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
           );
         },
       ),
+      ),
+    );
+
+    if (!isDesktop) return chips;
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+      child: chips,
     );
   }
 
@@ -1049,13 +1072,28 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
             ),
             if (_showCompleted) ...[
               const SizedBox(height: 8),
-              ...completedTasks.map((task) => _buildTaskCard(task)),
+              _buildTaskGrid(completedTasks),
             ],
             const SizedBox(height: 20),
           ],
         ],
       ),
     );
+  }
+
+  Widget _buildTaskGrid(List<Task> tasks) {
+    final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+    if (!isDesktop || tasks.length <= 1) {
+      return Column(children: tasks.map(_buildTaskCard).toList());
+    }
+    return LayoutBuilder(builder: (_, constraints) {
+      const spacing = 12.0;
+      final itemWidth = (constraints.maxWidth - spacing) / 2;
+      return Wrap(
+        spacing: spacing,
+        children: tasks.map((t) => SizedBox(width: itemWidth, child: _buildTaskCard(t))).toList(),
+      );
+    });
   }
 
   Widget _buildSections(List<Task> allTasks, bool isDark, bool isArabic) {
@@ -1186,7 +1224,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               isDark: isDark,
             ),
             const SizedBox(height: 8),
-            ...overdueTasks.map((task) => _buildTaskCard(task)),
+            _buildTaskGrid(overdueTasks),
             const SizedBox(height: 20),
           ],
 
@@ -1200,7 +1238,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               isDark: isDark,
             ),
             const SizedBox(height: 8),
-            ...todayTasks.map((task) => _buildTaskCard(task)),
+            _buildTaskGrid(todayTasks),
             const SizedBox(height: 20),
           ],
 
@@ -1214,7 +1252,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               isDark: isDark,
             ),
             const SizedBox(height: 8),
-            ...dueSoonTasks.map((task) => _buildTaskCard(task)),
+            _buildTaskGrid(dueSoonTasks),
             const SizedBox(height: 20),
           ],
 
@@ -1228,7 +1266,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               isDark: isDark,
             ),
             const SizedBox(height: 8),
-            ...tomorrowTasks.map((task) => _buildTaskCard(task)),
+            _buildTaskGrid(tomorrowTasks),
             const SizedBox(height: 20),
           ],
 
@@ -1242,7 +1280,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               isDark: isDark,
             ),
             const SizedBox(height: 8),
-            ...thisWeekTasks.map((task) => _buildTaskCard(task)),
+            _buildTaskGrid(thisWeekTasks),
             const SizedBox(height: 20),
           ],
 
@@ -1256,7 +1294,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               isDark: isDark,
             ),
             const SizedBox(height: 8),
-            ...nextWeekTasks.map((task) => _buildTaskCard(task)),
+            _buildTaskGrid(nextWeekTasks),
             const SizedBox(height: 20),
           ],
 
@@ -1270,7 +1308,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               isDark: isDark,
             ),
             const SizedBox(height: 8),
-            ...laterTasks.map((task) => _buildTaskCard(task)),
+            _buildTaskGrid(laterTasks),
             const SizedBox(height: 20),
           ],
 
@@ -1284,7 +1322,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               isDark: isDark,
             ),
             const SizedBox(height: 8),
-            ...otherTasks.map((task) => _buildTaskCard(task)),
+            _buildTaskGrid(otherTasks),
             const SizedBox(height: 20),
           ],
 
@@ -1319,7 +1357,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
             ),
             if (_showCompleted) ...[
               const SizedBox(height: 8),
-              ...completedTasks.map((task) => _buildTaskCard(task)),
+              _buildTaskGrid(completedTasks),
             ],
             const SizedBox(height: 20),
           ],

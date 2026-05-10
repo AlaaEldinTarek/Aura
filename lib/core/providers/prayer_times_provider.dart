@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -13,7 +14,14 @@ import '../services/prayer_alarm_service.dart';
 import '../services/background_service_manager.dart';
 import '../services/prayer_tracking_service.dart';
 import '../services/task_service.dart';
+import '../services/desktop_adhan_service.dart';
+import '../services/desktop_prayer_scheduler.dart';
+import '../services/desktop_tray_service.dart';
+import '../services/desktop_notification_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+bool get _isDesktop =>
+    !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
 
 /// Prayer times state
 class PrayerTimesState {
@@ -142,6 +150,10 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
       nextPrayer: nextPrayer,
       currentPrayer: currentPrayer,
     );
+
+    if (_isDesktop) {
+      DesktopTrayService.instance.updateNextPrayer(nextPrayer);
+    }
   }
 
   Future<void> _init() async {
@@ -213,6 +225,11 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
         location: locationData,
       );
 
+      // Update system tray next-prayer label (desktop only, fire-and-forget)
+      if (_isDesktop) {
+        DesktopTrayService.instance.updateNextPrayer(nextPrayer);
+      }
+
       // ---- SIDE EFFECTS in background (fire-and-forget) ----
       // Only run once per day to avoid wasting resources every minute
       final todayKey = '${date.year}-${date.month}-${date.day}';
@@ -249,10 +266,14 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
             final tasks = await TaskService.instance.getTasksOnce(userId: userId, limit: 500);
             final today = tasks.where((t) => t.isDueToday && !t.isCompleted).length;
             final overdue = tasks.where((t) => t.isOverdue && !t.isCompleted).length;
-            await NotificationService.instance.scheduleDailyTaskDigest(
-              todayCount: today,
-              overdueCount: overdue,
-            );
+            if (_isDesktop) {
+              await DesktopNotificationService.instance.scheduleDailyTaskDigest(today, overdue);
+            } else {
+              await NotificationService.instance.scheduleDailyTaskDigest(
+                todayCount: today,
+                overdueCount: overdue,
+              );
+            }
           }
         } catch (e) {
           debugPrint('PrayerTimesNotifier: Error scheduling task digest - $e');
@@ -263,6 +284,17 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
           await PrayerAlarmService.instance.scheduleDailyPrayerAlarms(updatedPrayerTimes);
         } catch (e) {
           debugPrint('PrayerTimesNotifier: Error scheduling adhan alarms - $e');
+        }
+
+        // Desktop: schedule timer-based adhan + notifications
+        if (_isDesktop) {
+          try {
+            await DesktopAdhanService.instance.initialize();
+            await DesktopPrayerScheduler.instance.schedulePrayerTimers(updatedPrayerTimes);
+            debugPrint('✅ [DESKTOP] Prayer timers scheduled');
+          } catch (e) {
+            debugPrint('⚠️ [DESKTOP] Error scheduling prayer timers: $e');
+          }
         }
 
         // Save to widget service for home screen widgets

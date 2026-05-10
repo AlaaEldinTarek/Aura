@@ -12,6 +12,7 @@ class CircularCountdownTimer extends StatefulWidget {
   final Color? primaryColor;
   final Color? backgroundColor;
   final VoidCallback? onComplete;
+  final double size;
 
   const CircularCountdownTimer({
     super.key,
@@ -21,6 +22,7 @@ class CircularCountdownTimer extends StatefulWidget {
     this.primaryColor,
     this.backgroundColor,
     this.onComplete,
+    this.size = 180,
   });
 
   @override
@@ -107,9 +109,10 @@ class _CircularCountdownTimerState extends State<CircularCountdownTimer>
     final minutes = _remaining.inMinutes % 60;
     final seconds = _remaining.inSeconds % 60;
 
+    final sz = widget.size;
     return Container(
-      width: 180,
-      height: 180,
+      width: sz,
+      height: sz,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: backgroundColor,
@@ -129,53 +132,60 @@ class _CircularCountdownTimerState extends State<CircularCountdownTimer>
             animation: _progressAnimation,
             builder: (context, child) {
               return CustomPaint(
-                size: const Size(180, 180),
+                size: Size(sz, sz),
                 painter: _CountdownPainter(
                   progress: _progressAnimation.value,
                   primaryColor: primaryColor,
-                  trackColor:
-                      isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+                  trackColor: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
                   remaining: _remaining,
+                  circleSize: sz,
                 ),
               );
             },
           ),
 
-          // Center Content
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Prayer Name (large)
-              if (widget.prayerName != null) ...[
-                Text(
-                  widget.prayerName!,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: primaryColor,
-                        fontWeight: FontWeight.bold,
-                      ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-              ],
+          // Center Content — FittedBox auto-shrinks text to fit the fixed circle
+          SizedBox(
+            width: sz * 0.68,
+            height: sz * 0.68,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Prayer Name (large)
+                  if (widget.prayerName != null) ...[
+                    Text(
+                      widget.prayerName!,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            color: primaryColor,
+                            fontWeight: FontWeight.bold,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 8),
+                  ],
 
-              // Main Countdown Display
-              _buildTimeDisplay(context, hours, minutes, seconds, isArabic, isDark),
+                  // Main Countdown Display
+                  _buildTimeDisplay(context, hours, minutes, seconds, isArabic, isDark),
 
-              // Prayer Time (small)
-              if (widget.prayerTime != null) ...[
-                const SizedBox(height: 4),
-                Text(
-                  widget.prayerTime!,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: primaryColor.withOpacity(0.7),
-                        fontWeight: FontWeight.w500,
-                      ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ],
+                  // Prayer Time (small)
+                  if (widget.prayerTime != null) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      widget.prayerTime!,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: primaryColor.withOpacity(0.7),
+                            fontWeight: FontWeight.w500,
+                          ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -229,12 +239,14 @@ class _CountdownPainter extends CustomPainter {
   final Color primaryColor;
   final Color trackColor;
   final Duration remaining;
+  final double circleSize;
 
   _CountdownPainter({
     required this.progress,
     required this.primaryColor,
     required this.trackColor,
     required this.remaining,
+    this.circleSize = 180,
   });
 
   @override

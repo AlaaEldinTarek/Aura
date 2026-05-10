@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io' show Platform;
 import '../../core/widgets/bottom_nav_bar.dart';
 import '../../core/utils/haptic_feedback.dart' as app_haptic;
 import '../../core/constants/app_constants.dart';
@@ -13,6 +15,7 @@ import '../../core/providers/task_provider.dart';
 import '../../core/services/task_service.dart';
 import '../../core/services/achievement_service.dart';
 import '../../core/services/notification_service.dart';
+import '../../core/services/desktop_notification_service.dart';
 import '../../core/services/prayer_alarm_service.dart';
 import '../../core/services/prayer_tracking_service.dart';
 import '../../core/utils/prayer_time_rules.dart';
@@ -24,9 +27,36 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/services/shared_preferences_service.dart';
 import '../home/home_screen.dart';
 import '../prayer/prayer_screen.dart';
+import '../prayer/prayer_tracking_screen.dart';
+import '../prayer/prayer_report_screen.dart';
+import '../dhikl/dhikr_screen.dart';
+import '../dhikl/dhikr_stats_screen.dart';
+import '../achievements/achievements_screen.dart';
 import '../profile/profile_screen.dart';
 import '../tasks/tasks_screen.dart';
+import '../tasks/task_form_screen.dart';
+import '../tasks/task_stats_screen.dart';
+import '../settings/iqama_settings_screen.dart';
+import '../settings/adhan_downloads_screen.dart';
+import '../qibla/qibla_screen.dart';
+import '../daily_content/daily_content_screen.dart';
+import '../azkar/azkar_screen.dart';
 import '../quran/quran_screen.dart';
+import '../quran/quran_stats_screen.dart';
+import '../islamic_events/islamic_events_screen.dart';
+import '../../core/models/task.dart';
+
+/// Desktop-only: controls sidebar visibility (false = hidden, e.g. during Quran reading)
+final desktopSidebarVisibleProvider = StateProvider<bool>((ref) => true);
+
+/// Compute desktop text scale from window dimensions.
+/// Tuned so 900×1400 → 1.8×, scales smoothly for any window size.
+double _desktopTextScale(double windowWidth, double windowHeight) {
+  // Width drives ~70% of scale, height ~30% — matches vertical-scroll app layout
+  final sw = windowWidth / 500.0;   // 900px → 1.80
+  final sh = windowHeight / 1556.0; // 1400px → 0.90
+  return (sw * 0.7 + sh * 0.3).clamp(0.9, 3.0);
+}
 
 /// Main wrapper screen with TabController
 class MainWrapperScreen extends ConsumerStatefulWidget {
@@ -81,7 +111,12 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       if (!mounted) return;
       final isArabic = Localizations.localeOf(context).languageCode == 'ar';
       _showAchievementToast(achievement, isArabic);
-      NotificationService.instance.showAchievementNotification(achievement, isArabic);
+      if (DesktopNotificationService.isDesktop) {
+        DesktopNotificationService.instance.showAchievementNotification(
+          achievement.nameEn, achievement.nameAr, achievement.iconEmoji, isArabic);
+      } else {
+        NotificationService.instance.showAchievementNotification(achievement, isArabic);
+      }
     });
 
     // Listen for tab navigation requests from child screens
@@ -99,8 +134,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       Future.delayed(const Duration(seconds: 3), _checkUntrackedPrayers);
     });
 
-    // Listen for app shortcut navigation from native side
-    _navigationChannel.setMethodCallHandler((call) async {
+    // Listen for app shortcut navigation from native side (Android only)
+    if (!kIsWeb && Platform.isAndroid) _navigationChannel.setMethodCallHandler((call) async {
       if (call.method == 'navigateToRoute') {
         final route = call.arguments['route'] as String?;
         if (route != null && mounted) {
@@ -750,6 +785,9 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     return false; // Prevent default back behavior
   }
 
+  static bool get _isDesktop =>
+      !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+
   @override
   Widget build(BuildContext context) {
     // Watch language so wrapper rebuilds when locale changes
@@ -758,36 +796,443 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     // Keep task widget synced
     ref.watch(taskWidgetSyncProvider);
 
-    return PopScope(
-      canPop: false, // We handle the back button manually
-      onPopInvoked: (didPop) async {
-        if (!didPop) {
-          await _onWillPop();
-        }
+    final pageView = PageView(
+      controller: _pageController,
+      // Disable swipe on desktop — navigation is via sidebar
+      physics: _isDesktop ? const NeverScrollableScrollPhysics() : null,
+      onPageChanged: (index) {
+        if (_isDesktop) return;
+        app_haptic.HapticFeedback.light();
+        setState(() {
+          _currentIndex = index;
+          _tabController.animateTo(index);
+        });
+        _updateCurrentRoute();
       },
-      child: Scaffold(
-        body: PageView(
-          controller: _pageController,
-          onPageChanged: (index) {
-            debugPrint('📖 PageView swiped to index: $index');
-            app_haptic.HapticFeedback.light();
-            setState(() {
-              _currentIndex = index;
-              _tabController.animateTo(index);
-            });
-            _updateCurrentRoute();
-          },
-          children: const [
-            HomeScreen(),
-            PrayerScreen(),
-            QuranScreen(),
-            TasksScreen(),
-            ProfileScreen(),
+      children: const [
+        HomeScreen(),
+        PrayerScreen(),
+        QuranScreen(),
+        TasksScreen(),
+        ProfileScreen(),
+      ],
+    );
+
+    return PopScope(
+      canPop: false,
+      onPopInvoked: (didPop) async {
+        if (!didPop) await _onWillPop();
+      },
+      child: _isDesktop
+          ? _DesktopShell(
+              currentIndex: _currentIndex,
+              onTap: _handleTabTap,
+              child: pageView,
+            )
+          : Scaffold(
+              body: pageView,
+              bottomNavigationBar: AuraBottomNavBar(
+                currentIndex: _currentIndex,
+                onTap: _handleTabTap,
+              ),
+            ),
+    );
+  }
+}
+
+/// Full desktop shell: sidebar + content area with nested Navigator
+class _DesktopShell extends ConsumerStatefulWidget {
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+  final Widget child;
+
+  const _DesktopShell({
+    required this.currentIndex,
+    required this.onTap,
+    required this.child,
+  });
+
+  @override
+  ConsumerState<_DesktopShell> createState() => _DesktopShellState();
+}
+
+class _DesktopShellState extends ConsumerState<_DesktopShell> {
+  bool _sidebarCollapsed = false;
+  final GlobalKey<NavigatorState> _contentNavKey = GlobalKey<NavigatorState>();
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final canvasBg = isDark ? const Color(0xFF0D0E11) : const Color(0xFFEDE4D0);
+    final sidebarVisible = ref.watch(desktopSidebarVisibleProvider);
+
+    return Scaffold(
+      backgroundColor: canvasBg,
+      body: Row(
+        children: [
+          if (sidebarVisible) ...[
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeInOut,
+              width: _sidebarCollapsed ? 72.0 : 260.0,
+              clipBehavior: Clip.hardEdge,
+              decoration: const BoxDecoration(),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isCollapsed = constraints.maxWidth < 166;
+                  return _DesktopSidebar(
+                    currentIndex: widget.currentIndex,
+                    onTap: widget.onTap,
+                    collapsed: isCollapsed,
+                    onToggle: () => setState(() => _sidebarCollapsed = !_sidebarCollapsed),
+                  );
+                },
+              ),
+            ),
+            Container(width: 1, color: isDark ? Colors.white10 : Colors.black12),
           ],
+          Expanded(
+            child: LayoutBuilder(
+              builder: (ctx, constraints) {
+                final mq = MediaQuery.of(ctx);
+                final scale = _desktopTextScale(mq.size.width, mq.size.height);
+                final iconSize = (24.0 * scale).clamp(18.0, 52.0);
+                final chipPadH = (8.0 * scale).clamp(6.0, 20.0);
+                final chipPadV = (4.0 * scale).clamp(2.0, 12.0);
+                // VisualDensity scales Material component padding — capped to avoid
+                // excessive expansion at very large window sizes.
+                final density = ((scale - 1.0) * 2.0).clamp(-4.0, 2.0);
+                final baseTheme = Theme.of(ctx);
+                return Theme(
+                  data: baseTheme.copyWith(
+                    visualDensity: VisualDensity(
+                      horizontal: density,
+                      vertical: density,
+                    ),
+                    iconTheme: baseTheme.iconTheme.copyWith(size: iconSize),
+                    chipTheme: baseTheme.chipTheme.copyWith(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: chipPadH, vertical: chipPadV),
+                    ),
+                    listTileTheme: baseTheme.listTileTheme.copyWith(
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: (16.0 * scale).clamp(0, 24.0),
+                        vertical: 0,
+                      ),
+                      minVerticalPadding: (8.0 * scale).clamp(0, 12.0),
+                    ),
+                    cardTheme: baseTheme.cardTheme.copyWith(
+                      margin: EdgeInsets.all((4.0 * scale).clamp(0, 6.0)),
+                    ),
+                  ),
+                  child: MediaQuery(
+                    data: mq.copyWith(textScaler: TextScaler.linear(scale)),
+                    child: Navigator(
+                      key: _contentNavKey,
+                      onGenerateRoute: _generateDesktopRoute,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Route<dynamic> _generateDesktopRoute(RouteSettings settings) {
+    Widget page;
+    switch (settings.name) {
+      case '/prayer':
+        page = const PrayerScreen();
+        break;
+      case '/prayer_tracking':
+        page = const PrayerTrackingScreen();
+        break;
+      case '/prayer_report':
+        page = const PrayerReportScreen();
+        break;
+      case '/dhikr':
+        page = const DhikrScreen();
+        break;
+      case '/dhikr_stats':
+        page = const DhikrStatsScreen();
+        break;
+      case '/achievements':
+        page = const AchievementsScreen();
+        break;
+      case '/task_form':
+        page = TaskFormScreen(task: settings.arguments as Task?);
+        break;
+      case '/task_stats':
+        page = const TaskStatsScreen();
+        break;
+      case '/iqama_settings':
+        page = const IqamaSettingsScreen();
+        break;
+      case '/adhan_downloads':
+        page = const AdhanDownloadsScreen();
+        break;
+      case '/qibla':
+        page = const QiblaScreen();
+        break;
+      case '/daily_content':
+        page = const DailyContentScreen();
+        break;
+      case '/azkar':
+        page = const AzkarScreen();
+        break;
+      case '/quran':
+        page = const QuranScreen();
+        break;
+      case '/quran_stats':
+        page = const QuranStatsScreen();
+        break;
+      case '/islamic_events':
+        page = const IslamicEventsScreen();
+        break;
+      default:
+        page = widget.child; // PageView (main tabs)
+    }
+
+    return MaterialPageRoute(
+      builder: (_) => page,
+      settings: settings,
+    );
+  }
+}
+
+/// Desktop sidebar navigation — supports expanded (220 px) and collapsed (72 px) modes
+class _DesktopSidebar extends ConsumerWidget {
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+  final bool collapsed;
+  final VoidCallback onToggle;
+
+  const _DesktopSidebar({
+    required this.currentIndex,
+    required this.onTap,
+    required this.collapsed,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = AppConstants.getPrimary(isDark);
+    final appMode = ref.watch(appModeProvider);
+
+    final showPrayer = appMode != AppMode.tasksOnly;
+    final showQuran = appMode == AppMode.both || appMode == AppMode.prayerOnly;
+    final showTasks = appMode != AppMode.prayerOnly;
+
+    final overdueCount = ref.watch(allTasksProvider).whenOrNull(
+          data: (tasks) => tasks.where((t) => !t.isCompleted && t.isOverdue).length,
+        ) ?? 0;
+
+    final bgColor = isDark ? AppConstants.darkSurface : AppConstants.lightSurface;
+
+    return Container(
+      width: double.infinity,
+      color: bgColor,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header ────────────────────────────────────────────────────────
+          SizedBox(
+            height: 72,
+            child: collapsed
+                // Collapsed: just the expand button, centered
+                ? Center(
+                    child: Tooltip(
+                      message: 'Expand sidebar',
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(10),
+                        onTap: onToggle,
+                        child: Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: Icon(Icons.menu, size: 26, color: primary),
+                        ),
+                      ),
+                    ),
+                  )
+                // Expanded: logo + name + toggle in a row
+                : Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    child: Row(
+                      children: [
+                        Image.asset(
+                          'assets/images/logo.png',
+                          width: 32,
+                          height: 32,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(8)),
+                            child: const Icon(Icons.mosque, color: Colors.white, size: 18),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Aura | هالة',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: primary,
+                              letterSpacing: 0.2,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Tooltip(
+                          message: 'Collapse sidebar',
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(8),
+                            onTap: onToggle,
+                            child: Padding(
+                              padding: const EdgeInsets.all(6),
+                              child: Icon(Icons.menu_open, size: 22, color: isDark ? Colors.white54 : Colors.black45),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+          Container(height: 1, color: isDark ? Colors.white10 : Colors.black12),
+          const SizedBox(height: 10),
+
+          // ── Nav items ─────────────────────────────────────────────────────
+          _sidebarItem(context, isDark, primary, Icons.home_outlined, Icons.home, 'home'.tr(), 0),
+          if (showPrayer)
+            _sidebarItem(context, isDark, primary, Icons.mosque_outlined, Icons.mosque, 'prayer_times_title'.tr(), 1),
+          if (showQuran)
+            _sidebarItem(context, isDark, primary, Icons.menu_book_outlined, Icons.menu_book, 'quran'.tr(), 2),
+          if (showTasks)
+            _sidebarItem(context, isDark, primary, Icons.task_alt_outlined, Icons.task_alt, 'task_management'.tr(), 3,
+                badge: overdueCount),
+          _sidebarItem(context, isDark, primary, Icons.person_outline, Icons.person, 'profile'.tr(), 4),
+
+          const Spacer(),
+          Container(height: 1, color: isDark ? Colors.white10 : Colors.black12),
+          const SizedBox(height: 12),
+        ],
+      ),
+    );
+  }
+
+  Widget _sidebarItem(
+    BuildContext context,
+    bool isDark,
+    Color primary,
+    IconData iconOutlined,
+    IconData iconFilled,
+    String label,
+    int index, {
+    int badge = 0,
+  }) {
+    final isSelected = currentIndex == index;
+    final textColor = isSelected ? primary : (isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary);
+    final itemBg = isSelected ? primary.withOpacity(0.13) : Colors.transparent;
+    final icon = isSelected ? iconFilled : iconOutlined;
+
+    if (collapsed) {
+      // Icon-only mode: centered, tooltip shows label
+      return Tooltip(
+        message: label,
+        preferBelow: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+          child: Material(
+            color: itemBg,
+            borderRadius: BorderRadius.circular(10),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(10),
+              onTap: () => onTap(index),
+              child: SizedBox(
+                height: 48,
+                child: Center(
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Icon(icon, size: 28, color: isSelected ? primary : textColor),
+                      if (badge > 0)
+                        Positioned(
+                          right: -6,
+                          top: -4,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                            decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(8)),
+                            child: Text('$badge', style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
         ),
-        bottomNavigationBar: AuraBottomNavBar(
-          currentIndex: _currentIndex,
-          onTap: _handleTabTap,
+      );
+    }
+
+    // Expanded mode: icon + label + active indicator
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+      child: Material(
+        color: itemBg,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: () => onTap(index),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            child: Row(
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(icon, size: 28, color: isSelected ? primary : textColor),
+                    if (badge > 0)
+                      Positioned(
+                        right: -6,
+                        top: -4,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                          decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(8)),
+                          child: Text('$badge', style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                      color: textColor,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (isSelected)
+                  Container(
+                    width: 3,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: primary,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+              ],
+            ),
+          ),
         ),
       ),
     );

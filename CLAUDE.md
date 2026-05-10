@@ -210,6 +210,95 @@ This was the root cause of Arabic text not showing in full-screen azan and silen
 - **"Add from Bookmarks" dialog flow**: `_BookmarkPagesSheet` lists colors with existing bookmarks. Tapping a color shows an `AlertDialog` ("Add New" / "Choose One"). "Add New" calls `onUseAll` (marks all pages of that color). "Choose One" opens `_BookmarkListSheet` (DraggableScrollableSheet with individual bookmark items). Dismissing both sheets: `Navigator.of(context)..pop()..pop()`.
 - **Achievements**: `wird_first` (1 day), `wird_streak_7`, `wird_streak_30`, `wird_khatma` (604 total pages) in `AchievementCategory.quran`
 
+### Windows Desktop Adaptive Scaling System
+
+The Windows app uses a custom adaptive scaling system so the UI looks good at any window size (from ~500×800 to maximized 1920×1080+).
+
+**Scale calculation** (`lib/features/main/main_wrapper_screen.dart`, `_DesktopShellState`):
+```dart
+double _desktopTextScale(double w, double h) =>
+    (w / 500 * 0.7 + h / 1556 * 0.3).clamp(0.9, 3.0);
+```
+This `scale` factor drives everything below.
+
+**How it's applied** — inside a `LayoutBuilder`, the desktop shell wraps content in:
+```dart
+Theme(
+  data: baseTheme.copyWith(
+    visualDensity: VisualDensity(horizontal: density, vertical: density), // density = ((scale-1)*2.0).clamp(-4,2)
+    iconTheme: baseTheme.iconTheme.copyWith(size: iconSize),              // iconSize = scale * 24
+    chipTheme: baseTheme.chipTheme.copyWith(padding: EdgeInsets.symmetric(horizontal: chipPadH, vertical: chipPadV)),
+    listTileTheme: baseTheme.listTileTheme.copyWith(contentPadding: ..., minVerticalPadding: ...),
+    cardTheme: baseTheme.cardTheme.copyWith(margin: ...),
+  ),
+  child: MediaQuery(
+    data: mq.copyWith(textScaler: TextScaler.linear(scale)),
+    child: Navigator(...),
+  ),
+)
+```
+
+**The universal scaling rule — use `ts.scale(n)` for every fixed pixel value:**
+```dart
+final ts = MediaQuery.textScalerOf(context);
+final sz = ts.scale(48.0);   // scales with window size automatically
+```
+- Text scales automatically because `TextScaler.linear(scale)` is in `MediaQuery`
+- Icons scale via `iconTheme.size` — no explicit `size:` needed on most `Icon()` widgets
+- Material component padding scales via `VisualDensity`
+- Any hard-coded `width/height/padding/fontSize` that should scale must use `ts.scale()`
+- **No artificial upper clamps** unless required for layout integrity (e.g. gaps that would become absurdly large)
+
+**`Builder` pattern** — use inside `const` widget trees to access `textScaler`:
+```dart
+Builder(builder: (ctx) {
+  final ts = MediaQuery.textScalerOf(ctx);
+  return Container(width: ts.scale(48), ...);
+})
+```
+
+**`FittedBox` for fixed-size containers** — when a container must stay fixed (e.g. prayer circle), wrap content in `FittedBox(fit: BoxFit.scaleDown)` so it auto-shrinks instead of overflowing:
+```dart
+SizedBox(
+  width: sz * 0.68, height: sz * 0.68,
+  child: FittedBox(fit: BoxFit.scaleDown, child: Column(...)),
+)
+```
+
+**Emoji chips** (`lib/features/islamic_events/islamic_events_screen.dart`):
+- Chip is a square container; both `width`/`height` and emoji `fontSize` scale together with a cap so the emoji always fits inside:
+```dart
+final chipSz = ts.scale(48.0).clamp(48.0, 72.0);
+final emojiFz = ts.scale(26.0).clamp(20.0, 38.0);
+```
+- Do NOT use `IntrinsicHeight` + `crossAxisAlignment: CrossAxisAlignment.stretch` for emoji chips — the chip becomes huge and the emoji overflows.
+
+**TabBar height** — must scale or tabs become too thin at large sizes:
+```dart
+PreferredSize(
+  preferredSize: Size.fromHeight(
+    MediaQuery.textScalerOf(context).scale(kTextTabBarHeight).clamp(kTextTabBarHeight, 80.0),
+  ),
+  ...
+)
+```
+
+**Spacing gaps on Home screen** — scale but clamp to prevent excessive whitespace at max size:
+```dart
+final gapL = ts.scale(AppConstants.paddingLarge).clamp(0.0, 28.0);
+final gapM = ts.scale(AppConstants.paddingMedium).clamp(0.0, 18.0);
+```
+
+**Islamic Events screen** — always single-column `ListView` (no desktop 2-column layout). Cards scale via `ts.scale()` on padding and chip sizes.
+
+**MSIX versioning** — every Windows build that replaces an installed package needs a strictly higher `msix_version` in `pubspec.yaml` (format `major.minor.patch.build`). Increment the last segment for each reinstall during development. Current series: `1.0.2.x`.
+
+**Build command:**
+```powershell
+dart run msix:create          # builds windows + wraps into MSIX
+Add-AppxPackage -Path "build\windows\x64\runner\Release\aura_app.msix" -ForceApplicationShutdown
+```
+
 ---
 
 ## Native Code Gotchas

@@ -1,9 +1,14 @@
+import 'dart:io' show Platform;
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:geocoding/geocoding.dart';
 import 'geocoding_service.dart';
+
+bool get _isDesktop =>
+    !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
 
 /// Service for getting user's location for prayer time calculations
 class LocationService {
@@ -93,6 +98,28 @@ class LocationService {
     debugPrint('LocationService: Manual location cleared');
   }
 
+  /// Get location from IP address (desktop fallback)
+  Future<LocationData?> _getIpLocation() async {
+    try {
+      debugPrint('LocationService: Trying IP-based geolocation...');
+      final dio = Dio(BaseOptions(connectTimeout: const Duration(seconds: 5)));
+      final response = await dio.get('http://ip-api.com/json/');
+      if (response.statusCode == 200 && response.data is Map) {
+        final data = response.data as Map;
+        if (data['status'] == 'success') {
+          final lat = (data['lat'] as num).toDouble();
+          final lon = (data['lon'] as num).toDouble();
+          final city = data['city'] as String? ?? 'Unknown City';
+          debugPrint('LocationService: IP location: $city ($lat, $lon)');
+          return LocationData(latitude: lat, longitude: lon, cityName: city);
+        }
+      }
+    } catch (e) {
+      debugPrint('LocationService: IP geolocation failed: $e');
+    }
+    return null;
+  }
+
   /// Get best location (GPS or manual)
   Future<LocationData> getBestLocation() async {
     // First try manual location
@@ -100,6 +127,13 @@ class LocationService {
     if (manualLocation != null) {
       debugPrint('LocationService: Using manual location: ${manualLocation.cityName}');
       return manualLocation;
+    }
+
+    // On desktop, use IP geolocation instead of GPS
+    if (_isDesktop) {
+      final ipLocation = await _getIpLocation();
+      if (ipLocation != null) return ipLocation;
+      throw Exception('Could not determine location. Please set a manual location in Settings.');
     }
 
     // Fall back to GPS

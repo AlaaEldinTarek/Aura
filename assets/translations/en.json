@@ -427,5 +427,20 @@
   "quran_stats_juz": "juz",
 
   "events_title": "Islamic Events",
-  "events_no_events": "No upcoming events found"
+  "events_no_events": "No upcoming events found",
+
+  "location_dialog_title": "Set Location",
+  "location_auto_detect": "Auto-detect (IP)",
+  "location_detecting": "Detecting...",
+  "location_or": "or",
+  "location_search_hint": "Search city name...",
+  "location_manual_entry": "Enter coordinates manually",
+  "location_lat": "Latitude",
+  "location_lon": "Longitude",
+  "location_city_label": "City name (label)",
+  "location_save": "Save Location",
+  "location_detect_failed": "Could not detect location. Check your connection.",
+  "location_invalid_coords": "Invalid coordinates. Latitude: -90 to 90, Longitude: -180 to 180.",
+  "location_no_selection": "Please search for a city or enter coordinates.",
+  "location_change": "Change Location"
 }

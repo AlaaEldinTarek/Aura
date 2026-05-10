@@ -1,3 +1,4 @@
+import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -72,6 +73,11 @@ class NotificationService {
 
   /// Initialize the notification service
   Future<void> initialize() async {
+    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+      tz_data.initializeTimeZones(); // Still needed for timezone calculations
+      debugPrint('NotificationService: Skipping flutter_local_notifications init on desktop');
+      return;
+    }
     tz_data.initializeTimeZones();
 
     final AndroidInitializationSettings initializationSettingsAndroid =
@@ -695,6 +701,7 @@ class NotificationService {
     bool hasDueTime = false,
     String language = 'en',
   }) async {
+    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) return;
     final isArabic = language == 'ar';
     final now = DateTime.now();
 
@@ -792,6 +799,7 @@ class NotificationService {
     int hour = 8,
     int minute = 0,
   }) async {
+    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) return;
     final isArabic = language == 'ar';
 
     // Cancel existing summary
@@ -916,8 +924,9 @@ class NotificationService {
       fullScreenIntent: true,
     );
 
-    const NotificationDetails platformChannelSpecifics =
-        NotificationDetails(android: androidPlatformChannelSpecifics);
+    final NotificationDetails platformChannelSpecifics = NotificationDetails(
+      android: androidPlatformChannelSpecifics,
+    );
 
     final notificationId = _getNotificationId(prayerName);
 
@@ -962,6 +971,7 @@ class NotificationService {
     required int todayCount,
     required int overdueCount,
   }) async {
+    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) return;
     const notificationId = 4001;
     try {
       final isArabic = await _getLanguagePreference() == 'ar';
@@ -1021,6 +1031,7 @@ class NotificationService {
     required List<String> reminderTimes,
     required int dailyPageGoal,
   }) async {
+    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) return;
     // Cancel all existing wird notifications
     await cancelWirdReminders();
 
@@ -1301,6 +1312,7 @@ class NotificationService {
   /// Schedule weekly Friday Jumu'ah reminder via native AlarmManager (survives reboots).
   /// Fires 30 min before the stored Zuhr prayer time.
   Future<void> scheduleJumuahReminder() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return;
     try {
       // Cancel any old Flutter-scheduled Jumu'ah notification (legacy cleanup)
       await _notifications.cancel(_jumuahNotificationId);
@@ -1312,6 +1324,7 @@ class NotificationService {
   }
 
   Future<void> cancelJumuahReminder() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return;
     try {
       await _notifications.cancel(_jumuahNotificationId);
       await _prayerAlarmsChannel.invokeMethod('cancelJumuahReminder');
@@ -1334,6 +1347,7 @@ class NotificationService {
     required int durationMinutes,
     String language = 'en',
   }) async {
+    if (defaultTargetPlatform != TargetPlatform.android) return;
     try {
       await _focusChannel.invokeMethod('scheduleFocusAlarm', {
         'taskId': taskId,
@@ -1351,6 +1365,7 @@ class NotificationService {
 
   /// Cancel a focus mode alarm
   Future<void> cancelFocusMode(String taskId) async {
+    if (defaultTargetPlatform != TargetPlatform.android) return;
     try {
       await _focusChannel.invokeMethod('cancelFocusAlarm', {
         'taskId': taskId,
@@ -1365,6 +1380,7 @@ class NotificationService {
 
   /// Check if overlay permission is granted
   Future<bool> canDrawOverlays() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return false;
     try {
       return await _focusChannel.invokeMethod('canDrawOverlays') ?? false;
     } on PlatformException {
@@ -1374,6 +1390,7 @@ class NotificationService {
 
   /// Request overlay permission (opens system settings)
   Future<void> requestOverlayPermission() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return;
     try {
       await _focusChannel.invokeMethod('requestOverlayPermission');
     } on PlatformException catch (e) {
@@ -1383,6 +1400,7 @@ class NotificationService {
 
   /// Check if DND access is granted
   Future<bool> hasDndAccess() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return false;
     try {
       return await _focusChannel.invokeMethod('hasDndAccess') ?? false;
     } on PlatformException {
@@ -1392,6 +1410,7 @@ class NotificationService {
 
   /// Request DND access (opens system settings)
   Future<void> requestDndAccess() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return;
     try {
       await _focusChannel.invokeMethod('requestDndAccess');
     } on PlatformException catch (e) {
@@ -1407,6 +1426,7 @@ class NotificationService {
     required int durationMinutes,
     String language = 'en',
   }) async {
+    if (defaultTargetPlatform != TargetPlatform.android) return false;
     try {
       return await _focusChannel.invokeMethod('startFocusService', {
         'taskId': taskId,
@@ -1423,6 +1443,7 @@ class NotificationService {
 
   /// Stop focus mode foreground service
   Future<bool> stopFocusService() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return false;
     try {
       return await _focusChannel.invokeMethod('stopFocusService') ?? false;
     } on PlatformException catch (e) {
@@ -1433,6 +1454,7 @@ class NotificationService {
 
   /// Check if focus mode service is running
   Future<bool> isFocusServiceRunning() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return false;
     try {
       return await _focusChannel.invokeMethod('isFocusServiceRunning') ?? false;
     } on PlatformException {
@@ -1444,6 +1466,7 @@ class NotificationService {
   /// Returns the task ID if completed, null otherwise.
   /// Call this from the tasks screen on resume to sync completion state.
   Future<String?> checkFocusTaskCompleted() async {
+    if (defaultTargetPlatform != TargetPlatform.android) return null;
     try {
       // Read directly from native SharedPreferences via MethodChannel — bypasses Flutter cache
       final taskId = await _focusChannel.invokeMethod<String?>('getFocusCompletedTaskId');

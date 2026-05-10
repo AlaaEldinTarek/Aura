@@ -10,6 +10,60 @@ class GeocodingService {
   static final GeocodingService _instance = GeocodingService._();
   static GeocodingService get instance => _instance;
 
+  /// Search for a city by name using OpenStreetMap Nominatim.
+  /// Returns a list of [CityResult] with coordinates and display names.
+  Future<List<CityResult>> searchCity(String query, String languageCode) async {
+    if (query.trim().length < 2) return [];
+    try {
+      final acceptLanguage = languageCode == 'ar' ? 'ar-SA' : 'en-US';
+      final encoded = Uri.encodeQueryComponent(query);
+      final url = 'https://nominatim.openstreetmap.org/search'
+          '?format=json'
+          '&q=$encoded'
+          '&addressdetails=1'
+          '&limit=6'
+          '&featuretype=city';
+
+      final response = await Dio().get(
+        url,
+        options: Options(headers: {
+          'Accept': 'application/json',
+          'Accept-Language': acceptLanguage,
+          'User-Agent': 'Aura-Prayer-App',
+        }),
+      ).timeout(const Duration(seconds: 8));
+
+      if (response.statusCode == 200 && response.data is List) {
+        final results = <CityResult>[];
+        for (final item in response.data as List) {
+          final m = item as Map<String, dynamic>;
+          final lat = double.tryParse(m['lat']?.toString() ?? '');
+          final lon = double.tryParse(m['lon']?.toString() ?? '');
+          if (lat == null || lon == null) continue;
+          final address = m['address'] as Map<String, dynamic>? ?? {};
+          final city = address['city'] ??
+              address['town'] ??
+              address['village'] ??
+              address['municipality'] ??
+              m['name'] ??
+              '';
+          final country = address['country'] ?? '';
+          if (city.toString().isEmpty) continue;
+          results.add(CityResult(
+            cityName: city.toString(),
+            country: country.toString(),
+            latitude: lat,
+            longitude: lon,
+          ));
+        }
+        return results;
+      }
+    } catch (e) {
+      debugPrint('GeocodingService: Search error - $e');
+    }
+    return [];
+  }
+
   /// Get localized city name from coordinates using OpenStreetMap Nominatim
   /// [latitude] - Latitude
   /// [longitude] - Longitude
@@ -76,4 +130,21 @@ class GeocodingService {
       return null;
     }
   }
+}
+
+class CityResult {
+  final String cityName;
+  final String country;
+  final double latitude;
+  final double longitude;
+
+  const CityResult({
+    required this.cityName,
+    required this.country,
+    required this.latitude,
+    required this.longitude,
+  });
+
+  String get displayName =>
+      country.isNotEmpty ? '$cityName, $country' : cityName;
 }

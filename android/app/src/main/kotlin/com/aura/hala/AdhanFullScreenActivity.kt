@@ -90,14 +90,15 @@ class AdhanFullScreenActivity : AppCompatActivity() {
                 countdown.text = String.format("%d:%02d", minutes, seconds)
                 tickHandler.postDelayed(this, 500)
             } else if (iqamaTimeMs > 0) {
-                // Iqama time reached — show briefly then auto-close
+                // Iqama time reached — show briefly then launch azkar
                 label.text = if (isArabic) "حان وقت الإقامة" else "Stand for prayer"
                 countdown.text = if (isArabic) "🕌" else "🕌"
-                tickHandler.postDelayed({ stopAdhanAndFinish() }, 3000)
+                tickHandler.postDelayed({ launchAzkarAndFinish() }, 3000)
             } else {
-                // No iqama configured — just show a done state
+                // No iqama configured — show done state then launch azkar
                 label.visibility = View.GONE
                 countdown.text = if (isArabic) "حان وقت الصلاة" else "Time to pray"
+                tickHandler.postDelayed({ launchAzkarAndFinish() }, 3000)
             }
         }
     }
@@ -171,6 +172,20 @@ class AdhanFullScreenActivity : AppCompatActivity() {
             AdhanPlayer.stop()
             Log.d(TAG, "⏹️ [ADHAN] Stopped adhan audio")
         }
+        finish()
+    }
+
+    /**
+     * Stop adhan and launch post-prayer azkar full-screen
+     */
+    private fun launchAzkarAndFinish() {
+        stopPulseAnimation()
+        if (AdhanPlayer.isPlaying()) {
+            AdhanPlayer.stop()
+            Log.d(TAG, "⏹️ [ADHAN] Stopped adhan audio before azkar")
+        }
+        Log.d(TAG, "🤲 [ADHAN] Launching post-prayer azkar for $prayerName")
+        startActivity(AzkarFullScreenActivity.getIntent(this, prayerName, prayerNameAr))
         finish()
     }
 

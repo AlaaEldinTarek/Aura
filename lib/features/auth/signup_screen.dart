@@ -2,8 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/auth_provider.dart';
+
+bool get _isDesktopSignup =>
+    defaultTargetPlatform == TargetPlatform.windows ||
+    defaultTargetPlatform == TargetPlatform.macOS ||
+    defaultTargetPlatform == TargetPlatform.linux;
 
 class SignupScreen extends ConsumerStatefulWidget {
   const SignupScreen({super.key});
@@ -477,9 +483,10 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       ),
                     ).animate().fadeIn(delay: 600.ms, duration: 400.ms),
 
+                    if (!_isDesktopSignup) ...[
                     const SizedBox(height: AppConstants.paddingLarge),
 
-                    // Google Sign-In Button
+                    // Google Sign-In Button (mobile only)
                     SizedBox(
                       width: double.infinity,
                       height: 44,
@@ -498,6 +505,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                         ),
                       ),
                     ).animate().fadeIn(delay: 700.ms, duration: 400.ms),
+                    ],
 
                     const SizedBox(height: AppConstants.paddingMedium),
 

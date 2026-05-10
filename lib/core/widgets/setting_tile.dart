@@ -29,6 +29,15 @@ class SettingTile extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isRTL = Localizations.localeOf(context).languageCode == 'ar';
 
+    final ts = MediaQuery.textScalerOf(context);
+    final iconContSz = ts.scale(40.0);
+    final iconSz = ts.scale(20.0);
+    final emojiFontSz = ts.scale(22.0);
+    final tileH = ts.scale(AppConstants.paddingMedium);
+    final tileHPad = ts.scale(AppConstants.paddingMedium);
+    final iconGap = ts.scale(AppConstants.paddingMedium);
+    final chevronSz = ts.scale(20.0);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 1),
       decoration: BoxDecoration(
@@ -45,17 +54,14 @@ class SettingTile extends StatelessWidget {
         child: InkWell(
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppConstants.paddingMedium,
-              vertical: AppConstants.paddingMedium,
-            ),
+            padding: EdgeInsets.symmetric(horizontal: tileHPad, vertical: tileH),
             child: Row(
               children: [
                 // Icon
                 if (icon != null)
                   Container(
-                    width: 40,
-                    height: 40,
+                    width: iconContSz,
+                    height: iconContSz,
                     decoration: BoxDecoration(
                       color: (iconColor ?? AppConstants.getPrimary(isDark)).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -63,13 +69,13 @@ class SettingTile extends StatelessWidget {
                     child: Icon(
                       icon,
                       color: iconColor ?? AppConstants.getPrimary(isDark),
-                      size: 20,
+                      size: iconSz,
                     ),
                   )
                 else if (iconEmoji != null)
                   Container(
-                    width: 40,
-                    height: 40,
+                    width: iconContSz,
+                    height: iconContSz,
                     decoration: BoxDecoration(
                       color: AppConstants.getPrimary(isDark).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -77,11 +83,11 @@ class SettingTile extends StatelessWidget {
                     child: Center(
                       child: Text(
                         iconEmoji!,
-                        style: const TextStyle(fontSize: 22),
+                        style: TextStyle(fontSize: emojiFontSz),
                       ),
                     ),
                   ),
-                const SizedBox(width: AppConstants.paddingMedium),
+                SizedBox(width: iconGap),
 
                 // Title and Subtitle
                 Expanded(
@@ -114,7 +120,7 @@ class SettingTile extends StatelessWidget {
                 if (showChevron && onTap != null && trailing == null)
                   Icon(
                     isRTL ? Icons.chevron_left : Icons.chevron_right,
-                    size: 20,
+                    size: chevronSz,
                     color: isDark ? Colors.white38 : Colors.black38,
                   ),
               ],

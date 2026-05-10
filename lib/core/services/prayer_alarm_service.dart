@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'dart:io' show Platform;
 import '../models/prayer_time.dart';
 import '../models/prayer_record.dart';
 import 'background_service_manager.dart';
@@ -15,15 +16,16 @@ class PrayerAlarmService {
   static PrayerAlarmService get instance => _instance;
 
   static const String _channelName = 'com.aura.hala/prayer_alarms';
-  late final MethodChannel _channel;
+  final MethodChannel _channel = const MethodChannel(_channelName);
 
   bool _isInitialized = false;
+
+  static bool get _isAndroid => !kIsWeb && Platform.isAndroid;
 
   /// Initialize the prayer alarm service
   Future<void> initialize() async {
     if (_isInitialized) return;
-
-    _channel = const MethodChannel(_channelName);
+    if (!_isAndroid) { _isInitialized = true; return; }
 
     // Set up method call handler for native callbacks
     _channel.setMethodCallHandler(_handleMethodCall);

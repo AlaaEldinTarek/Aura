@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io' show Platform;
 
 /// Service for controlling silent mode automation
 /// This service communicates with native Android code via MethodChannel
@@ -10,17 +12,18 @@ class SilentModeService {
   static SilentModeService get instance => _instance;
 
   static const String _channelName = 'com.aura.hala/silent_mode';
-  late final MethodChannel _channel;
+  final MethodChannel _channel = const MethodChannel(_channelName);
 
   bool _isInitialized = false;
   bool _isEnabled = true;
   int _durationMinutes = 20;
 
+  static bool get _isAndroid => !kIsWeb && Platform.isAndroid;
+
   /// Initialize the silent mode service
   Future<void> initialize() async {
     if (_isInitialized) return;
-
-    _channel = const MethodChannel(_channelName);
+    if (!_isAndroid) { _isInitialized = true; return; }
 
     // Set up method call handler for native callbacks
     _channel.setMethodCallHandler(_handleMethodCall);
@@ -41,11 +44,8 @@ class SilentModeService {
   }
 
   /// Get shared preferences helper
-  Future<dynamic> _getSharedPreferences() async {
-    // Use the shared_preferences package
-    final prefs = await (const MethodChannel('flutter/plugins/shared_preferences'))
-        .invokeMethod('getAll');
-    return prefs;
+  Future<SharedPreferences> _getSharedPreferences() async {
+    return await SharedPreferences.getInstance();
   }
 
   /// Enable or disable silent mode automation

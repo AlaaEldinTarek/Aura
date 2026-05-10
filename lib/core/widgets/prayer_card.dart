@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../constants/app_constants.dart';
 import '../models/prayer_time.dart';
@@ -192,9 +194,12 @@ class PrayerCard extends StatelessWidget {
   Widget _buildPrayerIcon(
       BuildContext context, bool isCurrent, bool isNext, Color iconColor) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+    final containerSize = isDesktop ? 72.0 : 52.0;
+    final imageSize = isDesktop ? 44.0 : 30.0;
     return Container(
-      width: 52,
-      height: 52,
+      width: containerSize,
+      height: containerSize,
       decoration: BoxDecoration(
         gradient: isCurrent
             ? LinearGradient(
@@ -210,24 +215,24 @@ class PrayerCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
       ),
       child: Center(
-        child: _buildPrayerIconChild(iconColor, isCurrent),
+        child: _buildPrayerIconChild(iconColor, isCurrent, imageSize: imageSize),
       ),
     );
   }
 
-  Widget _buildPrayerIconChild(Color iconColor, bool isCurrent) {
+  Widget _buildPrayerIconChild(Color iconColor, bool isCurrent, {double imageSize = 30}) {
     final assetPath = _getPrayerIconAsset();
     if (assetPath != null) {
       return Image.asset(
         assetPath,
-        width: 30,
-        height: 30,
+        width: imageSize,
+        height: imageSize,
         color: isCurrent ? Colors.white : null,
       );
     }
     return Text(
       _getPrayerEmoji(),
-      style: const TextStyle(fontSize: 28),
+      style: TextStyle(fontSize: imageSize - 2),
     );
   }
 

@@ -2,9 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/preferences_provider.dart';
+
+bool get _isDesktop =>
+    defaultTargetPlatform == TargetPlatform.windows ||
+    defaultTargetPlatform == TargetPlatform.macOS ||
+    defaultTargetPlatform == TargetPlatform.linux;
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -526,6 +532,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Widget _buildSocialLoginSection(
       BuildContext context, bool isRTL, bool isDark) {
+    if (_isDesktop) return const SizedBox.shrink();
     return Column(
       children: [
         // Divider

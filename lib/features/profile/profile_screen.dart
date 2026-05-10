@@ -384,9 +384,13 @@ class ProfileScreen extends ConsumerWidget {
       child: Row(
         children: [
           // Avatar
-          Container(
-            width: 80,
-            height: 80,
+          Builder(builder: (ctx) {
+            final ats = MediaQuery.textScalerOf(ctx);
+            final avatarSz = ats.scale(80.0);
+            final avatarFontSz = ats.scale(32.0);
+            return Container(
+            width: avatarSz,
+            height: avatarSz,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -410,14 +414,14 @@ class ProfileScreen extends ConsumerWidget {
                   ? ClipOval(
                       child: Image.network(
                         user.photoURL!,
-                        width: 80,
-                        height: 80,
+                        width: avatarSz,
+                        height: avatarSz,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return Text(
                             (user.displayName ?? '?')[0].toUpperCase(),
-                            style: const TextStyle(
-                              fontSize: 32,
+                            style: TextStyle(
+                              fontSize: avatarFontSz,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
@@ -427,14 +431,15 @@ class ProfileScreen extends ConsumerWidget {
                     )
                   : Text(
                       (user.displayName ?? '?')[0].toUpperCase(),
-                      style: const TextStyle(
-                        fontSize: 32,
+                      style: TextStyle(
+                        fontSize: avatarFontSz,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
             ),
-          ),
+          );
+          }),
           const SizedBox(width: AppConstants.paddingLarge),
 
           // Name and Email

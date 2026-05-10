@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../constants/app_constants.dart';
@@ -89,9 +91,15 @@ class _TutorialOverlayState extends State<TutorialOverlay>
       targetRect = box.localToGlobal(Offset.zero) & box.size;
     }
 
-    final tooltipTop = targetRect.bottom + 12;
-    final tooltipFitsBelow = tooltipTop + 200 < screenSize.height;
-    final tooltipTop2 = tooltipFitsBelow ? tooltipTop : targetRect.top - 200;
+    final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+    final tooltipMaxWidth = isDesktop ? 560.0 : double.infinity;
+    final tooltipHeight = isDesktop ? 260.0 : 220.0;
+
+    final tooltipTop = targetRect.bottom + 16;
+    final tooltipFitsBelow = tooltipTop + tooltipHeight < screenSize.height;
+    final tooltipTop2 = tooltipFitsBelow
+        ? tooltipTop
+        : (targetRect.top - tooltipHeight - 16).clamp(16.0, screenSize.height - tooltipHeight);
 
     final primary = AppConstants.getPrimary(isDark);
 
@@ -117,12 +125,17 @@ class _TutorialOverlayState extends State<TutorialOverlay>
             ),
           ),
 
-          // Tooltip bubble
+          // Tooltip bubble — centered with max width on desktop
           Positioned(
-            left: 16,
-            right: 16,
-            top: tooltipTop2.clamp(16.0, screenSize.height - 220),
-            child: Container(
+            left: 0,
+            right: 0,
+            top: tooltipTop2,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: tooltipMaxWidth),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: isDesktop ? 0 : 16),
+                  child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
@@ -194,6 +207,9 @@ class _TutorialOverlayState extends State<TutorialOverlay>
                     ],
                   ),
                 ],
+              ),
+            ),
+                ),
               ),
             ),
           ),

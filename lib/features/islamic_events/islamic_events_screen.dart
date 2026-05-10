@@ -1,4 +1,6 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../core/constants/app_constants.dart';
@@ -16,25 +18,22 @@ class IslamicEventsScreen extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final primary = AppConstants.getPrimary(isDark);
+    final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+
+    Widget buildCard(IslamicEventWithDate e) => _EventCard(
+      item: e, isDark: isDark, isArabic: isArabic, primary: primary,
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text('events_title'.tr())),
       body: events.isEmpty
           ? Center(child: Text('events_no_events'.tr()))
           : ListView.separated(
-              padding: const EdgeInsets.all(AppConstants.paddingMedium),
-              itemCount: events.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                final e = events[index];
-                return _EventCard(
-                  item: e,
-                  isDark: isDark,
-                  isArabic: isArabic,
-                  primary: primary,
-                );
-              },
-            ),
+                  padding: const EdgeInsets.all(AppConstants.paddingMedium),
+                  itemCount: events.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  itemBuilder: (context, index) => buildCard(events[index]),
+                ),
     );
   }
 }
@@ -97,18 +96,27 @@ class _EventCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            Builder(builder: (ctx) {
+              final ts = MediaQuery.textScalerOf(ctx);
+              final chipSz = ts.scale(48.0).clamp(48.0, 72.0);
+              final emojiFz = ts.scale(26.0).clamp(20.0, 38.0);
+              return Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Emoji with themed background
+                // Emoji chip — square, scales with text but capped so emoji always fits
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: chipSz,
+                  height: chipSz,
+                  alignment: Alignment.center,
                   decoration: BoxDecoration(
                     color: badgeColor.withOpacity(0.14),
                     borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
                   ),
-                  child: Center(child: Text(item.event.emoji, style: const TextStyle(fontSize: 26))),
+                  child: Text(
+                    item.event.emoji,
+                    style: TextStyle(fontSize: emojiFz, height: 1.0),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
                 const SizedBox(width: 12),
                 // Name + Hijri date
@@ -151,7 +159,8 @@ class _EventCard extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
+            );
+            }),
             const SizedBox(height: 10),
             // Description
             Text(

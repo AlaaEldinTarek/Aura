@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vibration/vibration.dart';
+import 'dart:io' show Platform;
 
 /// Service for playing Adhan (Islamic call to prayer) audio
 /// Uses native Android MediaPlayer through platform channel for reliable background playback
@@ -12,17 +13,18 @@ class AdhanPlayerService {
   static AdhanPlayerService get instance => _instance;
 
   static const String _channelName = 'com.aura.hala/adhan';
-  late final MethodChannel _channel;
+  final MethodChannel _channel = const MethodChannel(_channelName);
 
   bool _isInitialized = false;
   bool _isEnabled = true;
   bool _vibrationEnabled = true;
 
+  static bool get _isAndroid => !kIsWeb && Platform.isAndroid;
+
   /// Initialize the adhan player service
   Future<void> initialize() async {
     if (_isInitialized) return;
-
-    _channel = const MethodChannel(_channelName);
+    if (!_isAndroid) { _isInitialized = true; return; }
 
     // Set up method call handler for native callbacks
     _channel.setMethodCallHandler(_handleMethodCall);
@@ -62,8 +64,8 @@ class AdhanPlayerService {
     try {
       debugPrint('AdhanPlayerService: Requesting adhan for $prayerName');
 
-      // Vibrate if Adhan vibration is enabled
-      if (_vibrationEnabled && (await Vibration.hasVibrator() ?? false)) {
+      // Vibrate if Adhan vibration is enabled (Android only)
+      if (_isAndroid && _vibrationEnabled && (await Vibration.hasVibrator() ?? false)) {
         await Vibration.vibrate(duration: 500, amplitude: 255);
         debugPrint('AdhanPlayerService: Vibrated for adhan');
       }

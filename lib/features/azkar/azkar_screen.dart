@@ -1,4 +1,6 @@
+import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/models/azkar.dart';
@@ -95,6 +97,23 @@ class _AzkarTabView extends ConsumerWidget {
     final isComplete = category == AzkarCategory.morning
         ? state.isMorningComplete
         : state.isEveningComplete;
+    final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+
+    Widget buildCard(ZikrItem item) {
+      final isDone = state.isItemDone(item.id, category);
+      return _ZikrCard(
+        item: item,
+        isDone: isDone,
+        isDark: isDark,
+        isArabic: isArabic,
+        primary: primary,
+        isGridItem: isDesktop,
+        onTap: () {
+          app_haptic.HapticFeedback.light();
+          ref.read(azkarProvider.notifier).toggleItem(item.id, category);
+        },
+      );
+    }
 
     return CustomScrollView(
       slivers: [
@@ -111,27 +130,32 @@ class _AzkarTabView extends ConsumerWidget {
           ),
         ),
 
-        // Zikr list
-        SliverList(
-          delegate: SliverChildBuilderDelegate(
-            (context, index) {
-              final item = items[index];
-              final isDone = state.isItemDone(item.id, category);
-              return _ZikrCard(
-                item: item,
-                isDone: isDone,
-                isDark: isDark,
-                isArabic: isArabic,
-                primary: primary,
-                onTap: () {
-                  app_haptic.HapticFeedback.light();
-                  ref.read(azkarProvider.notifier).toggleItem(item.id, category);
-                },
-              );
-            },
-            childCount: items.length,
+        // Zikr list — 2-column grid on desktop, single column on mobile
+        if (isDesktop)
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
+            sliver: SliverToBoxAdapter(
+              child: LayoutBuilder(builder: (_, constraints) {
+                const spacing = 12.0;
+                final itemWidth = (constraints.maxWidth - spacing) / 2;
+                return Wrap(
+                  spacing: spacing,
+                  runSpacing: 10,
+                  children: items.map((item) => SizedBox(
+                    width: itemWidth,
+                    child: buildCard(item),
+                  )).toList(),
+                );
+              }),
+            ),
+          )
+        else
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) => buildCard(items[index]),
+              childCount: items.length,
+            ),
           ),
-        ),
 
         const SliverToBoxAdapter(child: SizedBox(height: 32)),
       ],
@@ -289,6 +313,7 @@ class _ZikrCard extends StatelessWidget {
   final bool isArabic;
   final Color primary;
   final VoidCallback onTap;
+  final bool isGridItem;
 
   const _ZikrCard({
     required this.item,
@@ -297,14 +322,15 @@ class _ZikrCard extends StatelessWidget {
     required this.isArabic,
     required this.primary,
     required this.onTap,
+    this.isGridItem = false,
   });
 
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
-      margin: const EdgeInsets.symmetric(
-        horizontal: AppConstants.paddingMedium,
+      margin: EdgeInsets.symmetric(
+        horizontal: isGridItem ? 0 : AppConstants.paddingMedium,
         vertical: 5,
       ),
       decoration: BoxDecoration(

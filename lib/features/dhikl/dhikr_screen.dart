@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -509,7 +511,10 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    return Scaffold(
+    final isDesktop =
+        !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+
+    final scaffold = Scaffold(
       appBar: AppBar(
         title: Text(isArabic ? 'المسبحة' : 'Tasbeeh'),
         actions: [
@@ -665,6 +670,22 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
           ],
         ),
       ),
+    );
+
+    if (!isDesktop) return scaffold;
+
+    // On desktop, Space bar increments the counter
+    return Focus(
+      autofocus: true,
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.space) {
+          _incrementCounter();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: scaffold,
     );
   }
 

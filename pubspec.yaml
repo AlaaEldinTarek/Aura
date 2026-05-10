@@ -61,12 +61,16 @@ dependencies:
   audioplayers: ^6.0.0
   fl_chart: ^1.2.0
   dynamic_color: ^1.8.1
+  window_manager: ^0.3.9
+  local_notifier: ^0.1.6
+  tray_manager: ^0.2.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.1
   flutter_launcher_icons: ^0.14.1
+  msix: ^3.16.0
 
 flutter:
   uses-material-design: true
@@ -77,6 +81,7 @@ flutter:
     - assets/translations/
     - assets/audio/
     - assets/data/
+    - assets/tray_icon.ico
 
   fonts:
     - family: Roboto
@@ -100,3 +105,18 @@ flutter_launcher_icons:
   image_path: "assets/images/logo_padded.png"
   adaptive_icon_background: "#FFF8EB"
   adaptive_icon_foreground: "assets/images/logo_padded.png"
+
+# MSIX Installer Configuration (Windows)
+msix_config:
+  display_name: Aura | هالة
+  publisher_display_name: Alaa Eldin Tarek
+  identity_name: com.aura.hala
+  msix_version: 1.0.2.5
+  logo_path: assets\images\logo_padded.png
+  store: false
+  publisher: CN=Alaa Eldin Tarek
+  languages: en-us, ar-sa
+  capabilities: internetClient, privateNetworkClientServer, location
+  install_certificate: false
+  certificate_path: aura_signing.pfx
+  certificate_password: AuraApp2024

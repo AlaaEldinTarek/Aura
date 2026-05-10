@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -250,116 +252,172 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           ConnectivityWrapper(
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(AppConstants.paddingLarge),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 800),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Greeting Section
-                    SizedBox(
-                      key: _greetingKey,
-                      child: GreetingWidget(
-                        userName: isGuest ? null : userName,
-                        onTap: () => Navigator.of(context).pushNamed('/prayer'),
-                      ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
-                    ),
-
-                    // Daily Ayah / Hadith card — hidden in Tasks Only mode
-                    if (showPrayer) ...[
-                      const SizedBox(height: AppConstants.paddingLarge),
-                      SizedBox(
-                        key: _dailyContentKey,
-                        child: _buildDailyContentCard(context, isDark, isArabic)
-                            .animate().fadeIn(delay: 50.ms, duration: 400.ms).slideY(begin: 0.08),
-                      ),
-                    ],
-
-                    // Jumu'ah Banner (Fridays only)
-                    if (showPrayer && DateTime.now().weekday == DateTime.friday) ...[
-                      const SizedBox(height: AppConstants.paddingLarge),
-                      _buildJumuahBanner(context, isDark, isArabic)
-                          .animate().fadeIn(delay: 80.ms, duration: 500.ms).slideY(begin: 0.08),
-                    ],
-
-                    // Islamic Events Countdown (when next event is within 30 days)
-                    if (showPrayer) Builder(builder: (ctx) {
-                      final events = ref.watch(islamicEventsProvider);
-                      if (events.isEmpty || events.first.daysUntil > 30) {
-                        return const SizedBox.shrink();
-                      }
-                      return Column(children: [
-                        const SizedBox(height: AppConstants.paddingLarge),
-                        _buildIslamicEventCard(context, events.first, isDark, isArabic)
-                            .animate().fadeIn(delay: 90.ms, duration: 400.ms).slideY(begin: 0.08),
-                      ]);
-                    }),
-
-                    const SizedBox(height: AppConstants.paddingLarge),
-
-                    // Next Prayer Mini Card
-                    if (showPrayer)
-                      SizedBox(
-                        key: _nextPrayerKey,
-                        child: _buildNextPrayerCard(context, nextPrayer, isDark, isArabic, completedCount, totalPrayers)
-                            .animate().fadeIn(delay: 100.ms, duration: 400.ms).slideY(begin: 0.1),
-                      ),
-
-                    if (showPrayer) const SizedBox(height: AppConstants.paddingMedium),
-
-                    // Prayer Progress Bar
-                    if (showPrayer)
-                      SizedBox(
-                        key: _prayerProgressKey,
-                        child: _buildPrayerProgress(context, isDark, isArabic, completedCount, totalPrayers, prayerStatuses)
-                            .animate().fadeIn(delay: 200.ms, duration: 400.ms).slideY(begin: 0.1),
-                      ),
-
-                    if (showPrayer) const SizedBox(height: AppConstants.paddingLarge),
-
-                    // Task Progress Ring
-                    if (showTasks)
-                      SizedBox(
-                        key: _taskProgressKey,
-                        child: _buildTaskProgress(context, isDark, isArabic)
-                            .animate().fadeIn(delay: 250.ms, duration: 400.ms).slideY(begin: 0.1),
-                      ),
-
-                    if (showTasks) const SizedBox(height: AppConstants.paddingLarge),
-
-                    // Today's Tasks Preview
-                    if (showTasks)
-                      SizedBox(
-                        key: _todayTasksKey,
-                        child: _buildTodayTasksPreview(context, isDark, isArabic)
-                            .animate().fadeIn(delay: 350.ms, duration: 400.ms).slideY(begin: 0.1),
-                      ),
-
-                    const SizedBox(height: AppConstants.paddingLarge),
-
-                    // Footer
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: AppConstants.paddingSmall),
-                        child: Text(
-                          'version'.tr() + ' 1.0.2',
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: isDark ? Colors.white38 : Colors.black38,
-                          ),
-                        ),
-                      ),
-                    ),
-
-                    // Bottom padding for nav bar
-                    const SizedBox(height: 80),
-                  ],
-                ),
+              padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppConstants.paddingLarge).clamp(0, 28.0)),
+              child: _buildHomeBody(
+                context, isDark, isArabic, showPrayer, showTasks,
+                nextPrayer, completedCount, totalPrayers, prayerStatuses,
+                userName: isGuest ? '' : userName,
+                isGuest: isGuest,
               ),
             ),
           ),
           // Permission dialog handler (shows dialogs after home loads)
           const PermissionDialogHandler(),
         ],
+      ),
+    );
+  }
+
+  bool get _isDesktop =>
+      !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+
+  Widget _buildHomeBody(
+    BuildContext context,
+    bool isDark,
+    bool isArabic,
+    bool showPrayer,
+    bool showTasks,
+    PrayerTime? nextPrayer,
+    int completedCount,
+    int totalPrayers,
+    Map<String, PrayerStatus> prayerStatuses, {
+    required String userName,
+    required bool isGuest,
+  }) {
+    final footer = Center(
+      child: Padding(
+        padding: const EdgeInsets.only(top: AppConstants.paddingLarge, bottom: AppConstants.paddingSmall),
+        child: Text(
+          '${'version'.tr()} 1.0.2',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: isDark ? Colors.white38 : Colors.black38,
+          ),
+        ),
+      ),
+    );
+
+    // ── Desktop: single-column layout ──────────────────────────────────────
+    if (_isDesktop) {
+      final ts = MediaQuery.textScalerOf(context);
+      final gapL = ts.scale(AppConstants.paddingLarge).clamp(0.0, 28.0);
+      final gapM = ts.scale(AppConstants.paddingMedium).clamp(0.0, 18.0);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SizedBox(
+            key: _greetingKey,
+            child: GreetingWidget(
+              userName: isGuest ? null : userName,
+              onTap: () => Navigator.of(context).pushNamed('/prayer'),
+            ).animate().fadeIn(duration: 400.ms),
+          ),
+          if (showPrayer) ...[
+            SizedBox(height: gapL),
+            SizedBox(
+              key: _dailyContentKey,
+              child: _buildDailyContentCard(context, isDark, isArabic),
+            ),
+          ],
+          if (showPrayer && DateTime.now().weekday == DateTime.friday) ...[
+            SizedBox(height: gapL),
+            _buildJumuahBanner(context, isDark, isArabic),
+          ],
+          if (showPrayer) Builder(builder: (ctx) {
+            final events = ref.watch(islamicEventsProvider);
+            if (events.isEmpty || events.first.daysUntil > 30) return const SizedBox.shrink();
+            return Column(children: [
+              SizedBox(height: gapL),
+              _buildIslamicEventCard(context, events.first, isDark, isArabic),
+            ]);
+          }),
+          if (showPrayer) ...[
+            SizedBox(height: gapL),
+            SizedBox(key: _nextPrayerKey,
+              child: _buildNextPrayerCard(context, nextPrayer, isDark, isArabic, completedCount, totalPrayers)),
+            SizedBox(height: gapM),
+            SizedBox(key: _prayerProgressKey,
+              child: _buildPrayerProgress(context, isDark, isArabic, completedCount, totalPrayers, prayerStatuses)),
+          ],
+          if (showTasks) ...[
+            SizedBox(height: gapL),
+            SizedBox(key: _taskProgressKey,
+              child: _buildTaskProgress(context, isDark, isArabic)),
+            SizedBox(height: gapL),
+            SizedBox(key: _todayTasksKey,
+              child: _buildTodayTasksPreview(context, isDark, isArabic)),
+          ],
+          footer,
+        ],
+      );
+    }
+
+    // ── Mobile: original single-column layout (maxWidth 800 preserved) ────────
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 800),
+      child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          key: _greetingKey,
+          child: GreetingWidget(
+            userName: null,
+            onTap: () => Navigator.of(context).pushNamed('/prayer'),
+          ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
+        ),
+        if (showPrayer) ...[
+          const SizedBox(height: AppConstants.paddingLarge),
+          SizedBox(
+            key: _dailyContentKey,
+            child: _buildDailyContentCard(context, isDark, isArabic)
+                .animate().fadeIn(delay: 50.ms, duration: 400.ms).slideY(begin: 0.08),
+          ),
+        ],
+        if (showPrayer && DateTime.now().weekday == DateTime.friday) ...[
+          const SizedBox(height: AppConstants.paddingLarge),
+          _buildJumuahBanner(context, isDark, isArabic)
+              .animate().fadeIn(delay: 80.ms, duration: 500.ms).slideY(begin: 0.08),
+        ],
+        if (showPrayer) Builder(builder: (ctx) {
+          final events = ref.watch(islamicEventsProvider);
+          if (events.isEmpty || events.first.daysUntil > 30) return const SizedBox.shrink();
+          return Column(children: [
+            const SizedBox(height: AppConstants.paddingLarge),
+            _buildIslamicEventCard(context, events.first, isDark, isArabic)
+                .animate().fadeIn(delay: 90.ms, duration: 400.ms).slideY(begin: 0.08),
+          ]);
+        }),
+        const SizedBox(height: AppConstants.paddingLarge),
+        if (showPrayer) ...[
+          SizedBox(
+            key: _nextPrayerKey,
+            child: _buildNextPrayerCard(context, nextPrayer, isDark, isArabic, completedCount, totalPrayers)
+                .animate().fadeIn(delay: 100.ms, duration: 400.ms).slideY(begin: 0.1),
+          ),
+          const SizedBox(height: AppConstants.paddingMedium),
+          SizedBox(
+            key: _prayerProgressKey,
+            child: _buildPrayerProgress(context, isDark, isArabic, completedCount, totalPrayers, prayerStatuses)
+                .animate().fadeIn(delay: 200.ms, duration: 400.ms).slideY(begin: 0.1),
+          ),
+          const SizedBox(height: AppConstants.paddingLarge),
+        ],
+        if (showTasks) ...[
+          SizedBox(
+            key: _taskProgressKey,
+            child: _buildTaskProgress(context, isDark, isArabic)
+                .animate().fadeIn(delay: 250.ms, duration: 400.ms).slideY(begin: 0.1),
+          ),
+          const SizedBox(height: AppConstants.paddingLarge),
+          SizedBox(
+            key: _todayTasksKey,
+            child: _buildTodayTasksPreview(context, isDark, isArabic)
+                .animate().fadeIn(delay: 350.ms, duration: 400.ms).slideY(begin: 0.1),
+          ),
+          const SizedBox(height: AppConstants.paddingLarge),
+        ],
+        footer,
+        const SizedBox(height: 80),
+      ],
       ),
     );
   }
@@ -578,11 +636,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final h = HijriDate.toHijri(item.date);
     final hijriLabel = isArabic ? HijriDate.formatAr(h) : HijriDate.formatEn(h);
 
+    final _tsPad = MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium);
     return GestureDetector(
       onTap: () => Navigator.of(context).pushNamed('/islamic_events'),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(AppConstants.paddingMedium),
+        padding: EdgeInsets.all(_tsPad),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [accent.withOpacity(0.15), accent.withOpacity(0.04)],
@@ -595,18 +654,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             BoxShadow(color: accent.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 3)),
           ],
         ),
-        child: Row(
+        child: Builder(builder: (ctx2) {
+          final ets = MediaQuery.textScalerOf(ctx2);
+          final eContSz = ets.scale(48.0).clamp(0.0, 72.0);
+          return Row(
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: eContSz,
+              height: eContSz,
               decoration: BoxDecoration(
                 color: accent.withOpacity(0.18),
                 borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
               ),
-              child: Center(child: Text(item.event.emoji, style: const TextStyle(fontSize: 26))),
+              child: Center(child: Text(item.event.emoji, style: TextStyle(fontSize: ets.scale(26.0).clamp(0, 40.0)))),
             ),
-            const SizedBox(width: 12),
+            SizedBox(width: ets.scale(12.0).clamp(0, 16.0)),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -655,7 +717,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               ],
             ),
           ],
-        ),
+        );
+        }),
       ),
     );
   }
@@ -669,6 +732,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     int totalPrayers,
   ) {
     final hasData = nextPrayer != null;
+    final _pad = MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium);
 
     return Material(
       color: Colors.transparent,
@@ -676,7 +740,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         onTap: () => Navigator.of(context).pushNamed('/prayer'),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         child: Container(
-          padding: const EdgeInsets.all(AppConstants.paddingMedium),
+          padding: EdgeInsets.all(_pad),
           decoration: BoxDecoration(
             color: isDark
                 ? AppConstants.getPrimary(isDark).withOpacity(0.12)
@@ -842,7 +906,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final trackablePrayers = kPrayerNames;
 
     return Container(
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+      padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium)),
       decoration: BoxDecoration(
         color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
@@ -905,8 +969,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             children: List.generate(trackablePrayers.length, (i) {
               final status = prayerStatuses[trackablePrayers[i]];
               final isTracked = status != null;
+              final ts = MediaQuery.textScalerOf(context);
+              final circleSize = ts.scale(34.0);
+              final iconSize = ts.scale(20.0);
+              final imgSize = ts.scale(18.0);
 
-              // Match prayer_status_dialog.dart icon/color style
               Color color;
               IconData icon;
               if (status == PrayerStatus.onTime) {
@@ -931,8 +998,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                 child: Column(
                   children: [
                     Container(
-                      width: 34,
-                      height: 34,
+                      width: circleSize,
+                      height: circleSize,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: isTracked
@@ -945,8 +1012,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       ),
                       child: Center(
                         child: isTracked
-                            ? Icon(icon, color: color, size: 20)
-                            : Image.asset(prayerIconAssets[i], width: 18, height: 18),
+                            ? Icon(icon, color: color, size: iconSize)
+                            : Image.asset(prayerIconAssets[i], width: imgSize, height: imgSize),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -988,7 +1055,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             final percentage = (progress * 100).round();
 
         return Container(
-          padding: const EdgeInsets.all(AppConstants.paddingMedium),
+          padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium)),
           decoration: BoxDecoration(
             color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
             borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
@@ -997,33 +1064,37 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           child: Row(
             children: [
               // Progress ring
-              SizedBox(
-                width: 64,
-                height: 64,
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    CircularProgressIndicator(
-                      value: progress,
-                      strokeWidth: 5,
-                      backgroundColor: isDark ? Colors.white12 : Colors.black12,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        progress >= 1.0 ? Colors.green : AppConstants.getPrimary(isDark),
-                      ),
-                    ),
-                    Center(
-                      child: Text(
-                        '$percentage%',
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black87,
+              Builder(builder: (ctx) {
+                final ts = MediaQuery.textScalerOf(ctx);
+                final ringSize = ts.scale(64.0);
+                return SizedBox(
+                  width: ringSize,
+                  height: ringSize,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      CircularProgressIndicator(
+                        value: progress,
+                        strokeWidth: 5,
+                        backgroundColor: isDark ? Colors.white12 : Colors.black12,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          progress >= 1.0 ? Colors.green : AppConstants.getPrimary(isDark),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
+                      Center(
+                        child: Text(
+                          '$percentage%',
+                          style: TextStyle(
+                            fontSize: ts.scale(15.0),
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white : Colors.black87,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
               const SizedBox(width: AppConstants.paddingMedium),
               // Stats
               Expanded(
@@ -1110,19 +1181,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   }
 
   Widget _buildMiniStat(IconData icon, String value, String label, Color color) {
-    return Column(
-      children: [
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 13, color: color),
-            const SizedBox(width: 3),
-            Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: color)),
-          ],
-        ),
-        Text(label, style: TextStyle(fontSize: 10, color: color.withOpacity(0.7))),
-      ],
-    );
+    return Builder(builder: (ctx) {
+      final ts = MediaQuery.textScalerOf(ctx);
+      final iconSz = ts.scale(13.0);
+      final textSz = ts.scale(13.0);
+      final labelSz = ts.scale(10.0);
+      return Column(
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: iconSz, color: color),
+              SizedBox(width: ts.scale(3.0)),
+              Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: textSz, color: color)),
+            ],
+          ),
+          Text(label, style: TextStyle(fontSize: labelSz, color: color.withOpacity(0.7))),
+        ],
+      );
+    });
   }
 
   Widget _buildTodayTasksPreview(BuildContext context, bool isDark, bool isArabic) {
@@ -1130,7 +1207,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final statsAsync = ref.watch(taskStatisticsProvider);
 
     return Container(
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+      padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium)),
       decoration: BoxDecoration(
         color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
@@ -1427,7 +1504,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         : '$percentage';
 
     return Container(
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+      padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium)),
       decoration: BoxDecoration(
         color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
@@ -1512,7 +1589,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         final records = snapshot.data!.take(3).toList();
 
         return Container(
-          padding: const EdgeInsets.all(AppConstants.paddingMedium),
+          padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium)),
           decoration: BoxDecoration(
             color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
             borderRadius: BorderRadius.circular(AppConstants.radiusLarge),

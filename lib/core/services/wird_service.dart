@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/wird.dart';
 import 'notification_service.dart';
+import 'desktop_notification_service.dart';
 
 class WirdService {
   WirdService._();
@@ -402,14 +404,26 @@ class WirdService {
       await cancelAllReminders();
       return;
     }
-    await NotificationService.instance.scheduleWirdReminders(
-      reminderTimes: settings.reminderTimes,
-      dailyPageGoal: settings.dailyPageGoal,
-    );
+    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+      await DesktopNotificationService.instance.scheduleWirdReminders(
+        reminderTimes: settings.reminderTimes,
+        dailyGoal: settings.dailyPageGoal,
+        isJuzMode: settings.wirdUnit == WirdUnit.juz,
+      );
+    } else {
+      await NotificationService.instance.scheduleWirdReminders(
+        reminderTimes: settings.reminderTimes,
+        dailyPageGoal: settings.dailyPageGoal,
+      );
+    }
   }
 
   Future<void> cancelAllReminders() async {
-    await NotificationService.instance.cancelWirdReminders();
+    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+      DesktopNotificationService.instance.cancelWirdReminders();
+    } else {
+      await NotificationService.instance.cancelWirdReminders();
+    }
   }
 
   // ── Firestore Sync ───────────────────────────────────────────────────────

@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -25,6 +27,7 @@ import '../../core/services/location_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/prayer_alarm_service.dart';
 import '../../core/services/prayer_tracking_service.dart';
+import '../../core/widgets/desktop_location_dialog.dart';
 import '../settings/prayer_calculation_settings_dialog.dart';
 import '../settings/adhan_calculation_method.dart';
 import '../settings/asr_madhab_selection.dart';
@@ -531,31 +534,50 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     bool isDark,
     bool isArabic,
   ) {
-    // Get localized city name
     final cityName = location.cityName ?? 'Unknown';
     final localizedCityName =
         getLocalizedCityName(cityName, isArabic ? 'ar' : 'en');
+    final isDesktop =
+        !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+    final primary = AppConstants.getPrimary(isDark);
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 0),
-      padding: const EdgeInsets.all(AppConstants.paddingSmall),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.location_on,
-            color: AppConstants.getPrimary(isDark),
-            size: 20,
-          ),
+    final row = Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.location_on, color: primary, size: 20),
+        const SizedBox(width: 6),
+        Text(
+          localizedCityName,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: isDark ? Colors.white70 : Colors.black87,
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+        if (isDesktop) ...[
           const SizedBox(width: 6),
-          Text(
-            localizedCityName,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: isDark ? Colors.white70 : Colors.black87,
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
+          Icon(Icons.edit_location_alt_outlined, color: primary, size: 17),
         ],
+      ],
+    );
+
+    if (!isDesktop) {
+      return Container(
+        margin: const EdgeInsets.symmetric(horizontal: 0),
+        padding: const EdgeInsets.all(AppConstants.paddingSmall),
+        child: row,
+      );
+    }
+
+    return InkWell(
+      onTap: () => showDesktopLocationDialog(context, ref),
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 0),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppConstants.paddingSmall,
+            vertical: AppConstants.paddingSmall - 2),
+        child: row,
       ),
     );
   }
@@ -580,8 +602,12 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     // Format Gregorian date
     final gregorianDateStr = _formatDate(date, isArabic ? 'ar' : 'en');
 
+    final _dts = MediaQuery.textScalerOf(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.symmetric(
+        horizontal: _dts.scale(16).clamp(0, 22.0),
+        vertical: _dts.scale(8).clamp(0, 12.0),
+      ),
       decoration: BoxDecoration(
         color: AppConstants.getPrimary(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -600,10 +626,10 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
             child: Row(
               mainAxisAlignment: MainAxisAlignment.start,
               children: [
-                const Icon(
+                Icon(
                   Icons.nights_stay,
                   color: Colors.white70,
-                  size: 14,
+                  size: _dts.scale(14).clamp(0, 20.0),
                 ),
                 const SizedBox(width: 6),
                 Flexible(
@@ -691,6 +717,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
           targetTime: nextPrayer.time,
           prayerName: isArabic ? nextPrayer.nameAr : nextPrayer.name,
           prayerTime: DateFormatter.formatTime(nextPrayer.time, languageCode: isArabic ? 'ar' : 'en'),
+          size: (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) ? 280 : 180,
           onComplete: () {
             // Refresh when prayer time is reached - wrap in microtask to avoid modifying during build
             Future.microtask(() async {
@@ -806,9 +833,10 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
           const SizedBox(height: AppConstants.paddingMedium),
           Row(
             children: actions.map((action) {
+              final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
               return Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  padding: EdgeInsets.symmetric(horizontal: isDesktop ? 10 : 4),
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
@@ -819,7 +847,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                       },
                       borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: EdgeInsets.symmetric(vertical: isDesktop ? 20 : 14),
                         decoration: BoxDecoration(
                           color: action.color.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -827,7 +855,8 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                         ),
                         child: Column(
                           children: [
-                            Icon(action.icon, color: action.color, size: 24),
+                            Icon(action.icon, color: action.color,
+                                size: (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) ? 40 : 24),
                             const SizedBox(height: 6),
                             Text(
                               action.label,

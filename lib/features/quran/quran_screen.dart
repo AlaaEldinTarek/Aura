@@ -127,8 +127,11 @@ class _QuranScreenState extends ConsumerState<QuranScreen>
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(kTextTabBarHeight),
+          preferredSize: Size.fromHeight(
+            MediaQuery.textScalerOf(context).scale(kTextTabBarHeight).clamp(kTextTabBarHeight, 80.0),
+          ),
           child: SizedBox(
+            height: MediaQuery.textScalerOf(context).scale(kTextTabBarHeight).clamp(kTextTabBarHeight, 80.0),
             key: _tabBarKey,
             child: TabBar(
               controller: _tabController,
@@ -263,23 +266,32 @@ class _SurahTile extends StatelessWidget {
       ),
       title: Text(
         lang == 'ar' ? meta.nameAr : meta.nameEn,
+        overflow: TextOverflow.ellipsis,
         style: const TextStyle(fontWeight: FontWeight.w600),
       ),
       subtitle: Text(
         '${meta.revelationType == RevelationType.makki ? 'makki'.tr() : 'madani'.tr()} • ${NumberFormatter.withArabicNumeralsByLanguage(meta.ayahCount.toString(), lang)} ${'ayah_count'.tr()}',
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontSize: 12,
           color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
         ),
       ),
-      trailing: Text(
-        meta.nameAr,
-        style: TextStyle(
-          fontFamily: 'UthmanicHafs',
-          fontSize: 18,
-          color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
-        ),
-      ),
+      // Decorative Uthmanic name on the trailing side; cap width+fontSize to prevent overflow
+      trailing: Builder(builder: (ctx) {
+        final ts = MediaQuery.textScalerOf(ctx);
+        return Text(
+          meta.nameAr,
+          textAlign: TextAlign.end,
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+          style: TextStyle(
+            fontFamily: 'UthmanicHafs',
+            fontSize: ts.scale(16.0),
+            color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
+          ),
+        );
+      }),
       onTap: () {
         Navigator.push(
           context,

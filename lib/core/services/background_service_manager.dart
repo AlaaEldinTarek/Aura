@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io' show Platform;
 
 /// Service for managing foreground service to keep app alive in background
 /// This is critical for prayer time alerts and adhan playback
@@ -14,9 +15,12 @@ class BackgroundServiceManager {
   bool _isServiceRunning = false;
   bool _isInitialized = false;
 
+  static bool get _isAndroid => !kIsWeb && Platform.isAndroid;
+
   /// Initialize the background service manager
   Future<void> initialize() async {
     if (_isInitialized) return;
+    if (!_isAndroid) { _isInitialized = true; return; }
 
     final prefs = await SharedPreferences.getInstance();
     _isServiceRunning = prefs.getBool('foreground_service_enabled') ?? false;

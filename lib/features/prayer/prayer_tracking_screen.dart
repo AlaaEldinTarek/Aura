@@ -7,6 +7,7 @@ import '../../core/models/prayer_record.dart';
 import '../../core/models/prayer_time.dart';
 import '../../core/services/prayer_tracking_service.dart';
 import '../../core/providers/prayer_times_provider.dart';
+import '../../core/providers/daily_prayer_status_provider.dart';
 import '../../core/utils/haptic_feedback.dart' as haptic;
 import '../../core/widgets/prayer_status_dialog.dart';
 import '../../core/utils/prayer_time_rules.dart';
@@ -551,6 +552,11 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
           }
         });
 
+        // Refresh prayer cards on prayer screen and home screen
+        if (normalizedDate == today) {
+          ref.invalidate(dailyPrayerStatusProvider);
+        }
+
         if (mounted) {
           final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -627,6 +633,11 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
             );
           }
         });
+
+        // Refresh prayer cards on prayer screen and home screen
+        if (normalizedDate == today) {
+          ref.invalidate(dailyPrayerStatusProvider);
+        }
 
         if (mounted) {
           final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(

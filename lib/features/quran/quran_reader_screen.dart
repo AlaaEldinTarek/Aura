@@ -1,5 +1,8 @@
 import 'dart:io';
 import 'dart:math' show min, max, pi;
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/gestures.dart' show kMiddleMouseButton, PointerScrollEvent;
+import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'dart:ui' as ui show TextDirection;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +15,7 @@ import 'package:aura_app/core/providers/quran_provider.dart';
 import 'package:aura_app/core/services/quran_service.dart';
 import 'package:aura_app/core/services/quran_svg_service.dart';
 import 'package:aura_app/core/utils/number_formatter.dart';
+import 'package:aura_app/features/main/main_wrapper_screen.dart' show desktopSidebarVisibleProvider;
 import 'package:aura_app/core/widgets/tutorial_overlay.dart';
 import 'package:aura_app/core/services/shared_preferences_service.dart';
 
@@ -33,10 +37,22 @@ class QuranReaderScreen extends ConsumerStatefulWidget {
   ConsumerState<QuranReaderScreen> createState() => _QuranReaderScreenState();
 }
 
+class _MushafScrollController extends ChangeNotifier {
+  double _dy = 0;
+  double get dy => _dy;
+  void scrollBy(double dy) { _dy = dy; notifyListeners(); }
+}
+
 class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
   late PageController _pageController;
+  final _mushafScroll = _MushafScrollController();
   int _currentPage = 1;
   bool _showUI = true;
+  double _zoomScale = 1.0;
+  Offset? _pointerDown; // for desktop horizontal drag-to-navigate
+
+  bool get _isDesktop =>
+      !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
 
   final _topBarKey = GlobalKey();
   final _bottomBarKey = GlobalKey();
@@ -53,6 +69,11 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
     _currentPage = widget.initialPage ?? _getStartPage();
     _pageController = PageController(initialPage: _currentPage - 1);
     WakelockPlus.enable();
+    if (_isDesktop) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) ref.read(desktopSidebarVisibleProvider.notifier).state = false;
+      });
+    }
     _saveProgress(_currentPage);
     QuranSvgService.preload(_currentPage - 1);
     QuranSvgService.preload(_currentPage + 1);
@@ -94,7 +115,11 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
   @override
   void dispose() {
     WakelockPlus.disable();
+    if (_isDesktop) {
+      try { ref.read(desktopSidebarVisibleProvider.notifier).state = true; } catch (_) {}
+    }
     _pageController.dispose();
+    _mushafScroll.dispose();
     super.dispose();
   }
 
@@ -133,7 +158,7 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
     QuranSvgService.preload(page + 1);
   }
 
-  void _togglePageBookmark() {
+void _togglePageBookmark() {
     final meta = _surahForPage(_currentPage);
     if (meta == null) return;
     final id = 'page_$_currentPage';
@@ -261,7 +286,7 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
     final bookmarks = ref.watch(quranBookmarksProvider).valueOrNull ?? [];
     final isBookmarked = bookmarks.any((b) => b.id == 'page_$_currentPage');
 
-    return PopScope(
+    final popScope = PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
@@ -283,11 +308,39 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
             ],
           ),
         );
-        if (shouldExit == true) nav.pop();
+        if (shouldExit == true) {
+          if (_isDesktop) ref.read(desktopSidebarVisibleProvider.notifier).state = true;
+          nav.pop();
+        }
       },
       child: Scaffold(
-        body: SafeArea(
-        child: Stack(
+        body: Listener(
+          // Desktop: horizontal drag to navigate pages (works even when bottom bar is hidden)
+          onPointerDown: _isDesktop ? (e) => _pointerDown = e.position : null,
+          onPointerUp: _isDesktop
+              ? (e) {
+                  if (_pointerDown == null) return;
+                  final dx = e.position.dx - _pointerDown!.dx;
+                  final dy = (e.position.dy - _pointerDown!.dy).abs();
+                  _pointerDown = null;
+                  // Only navigate when horizontal drag is dominant and long enough
+                  if (dx.abs() < 80 || dx.abs() < dy * 1.5) return;
+                  if (dx < 0 && _currentPage < 604) {
+                    _pageController.nextPage(
+                      duration: const Duration(milliseconds: 350),
+                      curve: Curves.easeInOut,
+                    );
+                  } else if (dx > 0 && _currentPage > 1) {
+                    _pageController.previousPage(
+                      duration: const Duration(milliseconds: 350),
+                      curve: Curves.easeInOut,
+                    );
+                  }
+                }
+              : null,
+          onPointerCancel: _isDesktop ? (_) => _pointerDown = null : null,
+          child: SafeArea(
+          child: Stack(
           children: [
             PageView.builder(
               controller: _pageController,
@@ -333,6 +386,9 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
                     page: index + 1,
                     onAyahTap: _handleAyahTap,
                     onEmptyTap: () => setState(() => _showUI = !_showUI),
+                    initialScale: _zoomScale,
+                    scrollController: (index + 1 == _currentPage) ? _mushafScroll : null,
+                    onScaleChanged: (s) => _zoomScale = s,
                   ),
                 );
               },
@@ -351,7 +407,12 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
                   isBookmarked: isBookmarked,
                   primary: primary,
                   onBookmarkToggle: _togglePageBookmark,
-                  onClose: () => Navigator.pop(context),
+                  onClose: () {
+                    if (_isDesktop) {
+                      ref.read(desktopSidebarVisibleProvider.notifier).state = true;
+                    }
+                    Navigator.pop(context);
+                  },
                 ),
               ),
 
@@ -381,6 +442,43 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
         ),
       ),
       ),
+    ),
+    );
+
+    if (!_isDesktop) return popScope;
+    return Focus(
+      autofocus: true,
+      onKeyEvent: (node, event) {
+        if (event is! KeyDownEvent) return KeyEventResult.ignored;
+        if (event.logicalKey == LogicalKeyboardKey.arrowRight && _currentPage < 604) {
+          _pageController.nextPage(
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeInOut,
+          );
+          return KeyEventResult.handled;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.arrowLeft && _currentPage > 1) {
+          _pageController.previousPage(
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeInOut,
+          );
+          return KeyEventResult.handled;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
+          _mushafScroll.scrollBy(-80);
+          return KeyEventResult.handled;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
+          _mushafScroll.scrollBy(80);
+          return KeyEventResult.handled;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.escape) {
+          Navigator.of(context).maybePop();
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+      child: popScope,
     );
   }
 }
@@ -391,12 +489,18 @@ class _MushafPage extends ConsumerStatefulWidget {
   final int page;
   final Future<void> Function(Ayah) onAyahTap;
   final VoidCallback onEmptyTap;
+  final double initialScale;
+  final _MushafScrollController? scrollController;
+  final ValueChanged<double>? onScaleChanged;
 
   const _MushafPage({
     super.key,
     required this.page,
     required this.onAyahTap,
     required this.onEmptyTap,
+    this.initialScale = 1.0,
+    this.scrollController,
+    this.onScaleChanged,
   });
 
   @override
@@ -405,6 +509,13 @@ class _MushafPage extends ConsumerStatefulWidget {
 
 class _MushafPageState extends ConsumerState<_MushafPage> {
   late Future<(String, List<Ayah>)> _pageFuture;
+
+  // Desktop zoom
+  late TransformationController _transformController;
+  double? _lastWidth;
+  double _computedMaxScale = 2.0;
+
+  bool get _isDesktop => !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
 
   // Pages 1–2 use a square viewBox; all other pages use a portrait viewBox.
   static const _vbSquare = Size(235, 235);
@@ -420,12 +531,6 @@ class _MushafPageState extends ConsumerState<_MushafPage> {
   double get _contentTop => widget.page <= 2 ? _topSquare : _topPortrait;
   double get _contentBottom => widget.page <= 2 ? _bottomSquare : _bottomPortrait;
 
-  @override
-  void initState() {
-    super.initState();
-    _pageFuture = _load();
-  }
-
   Future<(String, List<Ayah>)> _load() async {
     final results = await Future.wait<dynamic>([
       QuranSvgService.getPage(widget.page),
@@ -435,7 +540,64 @@ class _MushafPageState extends ConsumerState<_MushafPage> {
     return (svgString, results[1] as List<Ayah>);
   }
 
+  @override
+  void initState() {
+    super.initState();
+    _pageFuture = _load();
+    _transformController = TransformationController(
+      Matrix4.identity()..scale(widget.initialScale),
+    );
+    widget.scrollController?.addListener(_onScrollCommand);
+  }
+
+  @override
+  void didUpdateWidget(_MushafPage old) {
+    super.didUpdateWidget(old);
+    if (old.scrollController != widget.scrollController) {
+      old.scrollController?.removeListener(_onScrollCommand);
+      widget.scrollController?.addListener(_onScrollCommand);
+    }
+  }
+
+  void _onScrollCommand() {
+    final dy = widget.scrollController?.dy ?? 0;
+    final scale = _transformController.value.getMaxScaleOnAxis();
+    if (scale <= 1.05) return;
+    final t = _transformController.value.getTranslation();
+    _transformController.value = Matrix4.identity()
+      ..translate(t.x, t.y + dy)
+      ..scale(scale);
+  }
+
   void _retry() => setState(() => _pageFuture = _load());
+
+  @override
+  void dispose() {
+    widget.scrollController?.removeListener(_onScrollCommand);
+    _transformController.dispose();
+    super.dispose();
+  }
+
+  void _handleScrollZoom(PointerScrollEvent event) {
+    final delta = event.scrollDelta.dy;
+    if (delta == 0) return;
+    final scaleFactor = delta > 0 ? 0.92 : 1.08;
+    final current = _transformController.value;
+    final currentScale = current.getMaxScaleOnAxis();
+    final newScale = (currentScale * scaleFactor).clamp(0.5, _computedMaxScale);
+    if (newScale == currentScale) return;
+
+    // Keep pointer's y-position fixed while always centering horizontally
+    final fp = event.localPosition;
+    final currentTy = current.getTranslation().y;
+    final newTy = fp.dy + (currentTy - fp.dy) * (newScale / currentScale);
+    final newTx = (_lastWidth ?? 0.0) * (1 - newScale) / 2;
+
+    _transformController.value = Matrix4.identity()
+      ..translate(newTx, newTy)
+      ..scale(newScale);
+    widget.onScaleChanged?.call(newScale);
+  }
 
   // Converts a tap position in widget space to SVG coordinate space.
   Offset _toSvg(Offset tap, Size container) {
@@ -531,7 +693,7 @@ class _MushafPageState extends ConsumerState<_MushafPage> {
             );
           }
 
-          return LayoutBuilder(
+          final pageContent = LayoutBuilder(
             builder: (context, constraints) {
               return GestureDetector(
                 behavior: HitTestBehavior.opaque,
@@ -554,6 +716,64 @@ class _MushafPageState extends ConsumerState<_MushafPage> {
               );
             },
           );
+
+          // Desktop: scroll wheel zoom, auto-center on sidebar resize, zoom persists across pages
+          if (_isDesktop) {
+            return Listener(
+              onPointerSignal: (event) {
+                if (event is PointerScrollEvent) _handleScrollZoom(event);
+              },
+              child: LayoutBuilder(
+                builder: (ctx, cons) {
+                  final viewW = cons.maxWidth;
+                  final viewH = cons.maxHeight;
+                  final vb = _viewBox;
+
+                  // Rendered SVG width after BoxFit.contain (content area is viewW-20 due to padding)
+                  final fitScale = min((viewW - 20) / vb.width, viewH / vb.height);
+                  final renderedSvgW = vb.width * fitScale;
+                  // Max zoom: SVG content fills exactly the content width (viewW-20)
+                  _computedMaxScale = ((viewW - 20) / renderedSvgW).clamp(1.0, 8.0);
+
+                  final isFirstBuild = _lastWidth == null;
+                  final widthChanged = !isFirstBuild && _lastWidth != viewW;
+                  _lastWidth = viewW;
+
+                  // On first build or sidebar resize: re-center horizontally, preserve vertical
+                  if (isFirstBuild || widthChanged) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      if (!mounted) return;
+                      final scale = _transformController.value
+                          .getMaxScaleOnAxis()
+                          .clamp(0.5, _computedMaxScale);
+                      final ty = isFirstBuild
+                          ? 0.0
+                          : _transformController.value.getTranslation().y;
+                      final tx = viewW * (1 - scale) / 2;
+                      _transformController.value = Matrix4.identity()
+                        ..translate(tx, ty)
+                        ..scale(scale);
+                    });
+                  }
+
+                  return InteractiveViewer(
+                    transformationController: _transformController,
+                    minScale: 0.5,
+                    maxScale: _computedMaxScale,
+                    panEnabled: true,
+                    panAxis: PanAxis.vertical,
+                    scaleEnabled: false,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: pageContent,
+                    ),
+                  );
+                },
+              ),
+            );
+          }
+
+          return pageContent;
         },
       ),
     );

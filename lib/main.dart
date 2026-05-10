@@ -1,8 +1,12 @@
+import 'dart:io' show Platform;
+import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:dynamic_color/dynamic_color.dart';
+import 'package:window_manager/window_manager.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
 import 'core/services/shared_preferences_service.dart';
@@ -31,6 +35,8 @@ import 'features/dhikl/dhikr_stats_screen.dart';
 import 'features/dhikl/dhikr_screen.dart';
 import 'features/achievements/achievements_screen.dart';
 import 'core/services/offline_queue_service.dart';
+import 'core/services/desktop_notification_service.dart';
+import 'core/services/desktop_tray_service.dart';
 import 'features/tasks/task_form_screen.dart';
 import 'features/tasks/task_stats_screen.dart';
 import 'core/models/task.dart';
@@ -46,6 +52,24 @@ import 'features/islamic_events/islamic_events_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Desktop window setup
+  if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+    await windowManager.ensureInitialized();
+
+    await windowManager.waitUntilReadyToShow(
+      const WindowOptions(
+        size: Size(900, 1400),
+        center: true,
+        title: 'Aura | هالة',
+        backgroundColor: Colors.transparent,
+      ),
+      () async {
+        await windowManager.show();
+        await windowManager.focus();
+      },
+    );
+  }
 
   // Initialize Firebase with error handling
   try {
@@ -144,6 +168,22 @@ void main() async {
         await OfflineQueueService.instance.initialize();
       } catch (e) {
         debugPrint('❌ OfflineQueueService initialization failed: $e');
+      }
+    }(),
+    () async {
+      try {
+        await DesktopNotificationService.instance.initialize();
+        debugPrint('✅ DesktopNotificationService initialized');
+      } catch (e) {
+        debugPrint('❌ DesktopNotificationService initialization failed: $e');
+      }
+    }(),
+    () async {
+      try {
+        await DesktopTrayService.instance.initialize();
+        debugPrint('✅ DesktopTrayService initialized');
+      } catch (e) {
+        debugPrint('❌ DesktopTrayService initialization failed: $e');
       }
     }(),
     () async {
