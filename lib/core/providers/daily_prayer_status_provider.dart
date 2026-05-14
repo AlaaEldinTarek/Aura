@@ -37,7 +37,9 @@ class DailyPrayerStatusNotifier extends StateNotifier<DailyPrayerStatus> {
       : super(DailyPrayerStatus(loadedAt: DateTime.fromMillisecondsSinceEpoch(0)));
 
   Future<void> load({bool forceRefresh = false}) async {
-    if (!forceRefresh && !state.isStale) return;
+    // Always retry if statuses are empty (handles first-load timing race with Firebase)
+    final isEmpty = state.statuses.isEmpty;
+    if (!forceRefresh && !isEmpty && !state.isStale) return;
 
     try {
       await _trackingService.initialize();
@@ -63,10 +65,10 @@ class DailyPrayerStatusNotifier extends StateNotifier<DailyPrayerStatus> {
     state = state.copyWith(updated);
   }
 
-  /// Remove a prayer status (after user unmarks)
+  /// Remove a prayer status (after user unmarks — removes key so it shows as untracked)
   void removePrayer(String prayerName) {
     final updated = Map<String, PrayerStatus>.from(state.statuses);
-    updated[prayerName] = PrayerStatus.missed;
+    updated.remove(prayerName);
     state = state.copyWith(updated);
   }
 }

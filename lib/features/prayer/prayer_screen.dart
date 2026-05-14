@@ -399,6 +399,19 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
+    // Keep prayer cards in sync whenever the shared provider changes (e.g. home screen or notification marks a prayer)
+    ref.listen<DailyPrayerStatus>(dailyPrayerStatusProvider, (_, next) {
+      if (!mounted) return;
+      setState(() {
+        _prayerStatuses.clear();
+        _explicitlyMarked.clear();
+        for (final entry in next.statuses.entries) {
+          _prayerStatuses[entry.key] = entry.value;
+          _explicitlyMarked.add(entry.key);
+        }
+      });
+    });
+
     // Create local state for passing to _buildContent
     final localState = PrayerTimesState(
       prayerTimes: _prayerTimes,

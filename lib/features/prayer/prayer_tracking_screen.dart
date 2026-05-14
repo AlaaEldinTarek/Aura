@@ -69,6 +69,18 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
+    // Keep today's calendar data in sync when the shared provider changes
+    ref.listen<DailyPrayerStatus>(dailyPrayerStatusProvider, (_, next) {
+      if (!mounted) return;
+      final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+      setState(() {
+        final todayPrayers = <String, PrayerStatus>{
+          for (final p in kPrayerNames) p: next.statuses[p] ?? PrayerStatus.missed,
+        };
+        _monthlyData[today] = DailyPrayerSummary(date: today, prayers: todayPrayers);
+      });
+    });
+
     return Scaffold(
       appBar: AppBar(
         title: Text(isArabic ? 'تتبع الصلوات' : 'Prayer Tracking'),
@@ -554,7 +566,8 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
 
         // Refresh prayer cards on prayer screen and home screen
         if (normalizedDate == today) {
-          ref.invalidate(dailyPrayerStatusProvider);
+          _trackingService.clearCache();
+          ref.read(dailyPrayerStatusProvider.notifier).load(forceRefresh: true);
         }
 
         if (mounted) {
@@ -636,7 +649,8 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
 
         // Refresh prayer cards on prayer screen and home screen
         if (normalizedDate == today) {
-          ref.invalidate(dailyPrayerStatusProvider);
+          _trackingService.clearCache();
+          ref.read(dailyPrayerStatusProvider.notifier).load(forceRefresh: true);
         }
 
         if (mounted) {
