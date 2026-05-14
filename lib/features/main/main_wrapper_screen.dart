@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:window_manager/window_manager.dart';
 import 'dart:io' show Platform;
 import '../../core/widgets/bottom_nav_bar.dart';
 import '../../core/utils/haptic_feedback.dart' as app_haptic;
@@ -16,6 +17,8 @@ import '../../core/services/task_service.dart';
 import '../../core/services/achievement_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/desktop_notification_service.dart';
+import '../../core/services/desktop_prayer_scheduler.dart';
+import '../../core/services/desktop_adhan_service.dart';
 import '../../core/services/prayer_alarm_service.dart';
 import '../../core/services/prayer_tracking_service.dart';
 import '../../core/utils/prayer_time_rules.dart';
@@ -73,6 +76,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
   late TabController _tabController;
   late int _currentIndex;
   StreamSubscription<Achievement>? _achievementSub;
+  StreamSubscription<DesktopPrayerEvent>? _desktopPrayerToastSub;
 
   // PageController for smooth page transitions
   final PageController _pageController = PageController();
@@ -92,6 +96,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       _checkUntrackedPrayers();
       ref.invalidate(prayerTimesProvider);
       ref.invalidate(tasksProvider(const TaskFilterParams()));
+      ref.read(dailyPrayerStatusProvider.notifier).load(forceRefresh: true);
       _handleWidgetIntent();
       _syncNativePrayerStatuses();
     }
@@ -105,6 +110,15 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     _tabController = TabController(length: 5, vsync: this);
     _tabController.index = _currentIndex;
     _updateCurrentRoute();
+
+    // Desktop: show in-app overlay toast at prayer time
+    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+      _desktopPrayerToastSub =
+          DesktopPrayerScheduler.instance.prayerTimeStream.listen((event) {
+        if (!mounted) return;
+        _showDesktopPrayerToast(event);
+      });
+    }
 
     // Listen for newly earned achievements and show a toast
     _achievementSub = AchievementService.instance.newAchievements.listen((achievement) {
@@ -168,6 +182,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
   @override
   void dispose() {
     _achievementSub?.cancel();
+    _desktopPrayerToastSub?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _tabController.dispose();
     _pageController.dispose();
@@ -185,6 +200,37 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       ),
     );
     overlay.insert(entry);
+  }
+
+  void _showDesktopPrayerToast(DesktopPrayerEvent event) async {
+    // Restore window if minimized so the toast is visible
+    try {
+      await windowManager.show();
+      await windowManager.focus();
+    } catch (_) {}
+
+    if (!mounted) return;
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final overlay = Overlay.of(context);
+    late OverlayEntry entry;
+    entry = OverlayEntry(
+      builder: (_) => _DesktopPrayerToast(
+        prayerName: isArabic ? event.nameAr : event.name,
+        isArabic: isArabic,
+        onDismiss: () {
+          try { entry.remove(); } catch (_) {}
+        },
+        onStopAdhan: () {
+          DesktopAdhanService.instance.stop();
+          try { entry.remove(); } catch (_) {}
+        },
+      ),
+    );
+    overlay.insert(entry);
+    // Auto-dismiss after 15 seconds
+    Future.delayed(const Duration(seconds: 15), () {
+      try { entry.remove(); } catch (_) {}
+    });
   }
 
   Future<void> _handleWidgetIntent() async {
@@ -1238,6 +1284,157 @@ class _DesktopSidebar extends ConsumerWidget {
     );
   }
 }
+
+// ─── Desktop prayer-time toast overlay ───────────────────────────────────────
+
+class _DesktopPrayerToast extends StatefulWidget {
+  final String prayerName;
+  final bool isArabic;
+  final VoidCallback onDismiss;
+  final VoidCallback onStopAdhan;
+
+  const _DesktopPrayerToast({
+    required this.prayerName,
+    required this.isArabic,
+    required this.onDismiss,
+    required this.onStopAdhan,
+  });
+
+  @override
+  State<_DesktopPrayerToast> createState() => _DesktopPrayerToastState();
+}
+
+class _DesktopPrayerToastState extends State<_DesktopPrayerToast>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  late Animation<Offset> _slide;
+  late Animation<double> _fade;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 350));
+    _slide = Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    _fade = Tween<double>(begin: 0, end: 1)
+        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    _ctrl.forward();
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _dismiss() async {
+    await _ctrl.reverse();
+    widget.onDismiss();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = isDark ? const Color(0xFFF5B301) : const Color(0xFFB5821B);
+
+    return Positioned(
+      bottom: 28,
+      right: 28,
+      child: SlideTransition(
+        position: _slide,
+        child: FadeTransition(
+          opacity: _fade,
+          child: Material(
+            elevation: 12,
+            borderRadius: BorderRadius.circular(12),
+            color: isDark ? const Color(0xFF1A1B1E) : Colors.white,
+            child: Container(
+              width: 300,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: primary.withOpacity(0.4), width: 1.5),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Text('🕌', style: const TextStyle(fontSize: 22)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          widget.isArabic
+                              ? 'حان وقت الصلاة'
+                              : 'Prayer Time',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                            color: primary,
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: _dismiss,
+                        child: Icon(Icons.close,
+                            size: 18,
+                            color: isDark ? Colors.white54 : Colors.black45),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    widget.isArabic
+                        ? 'حان موعد صلاة ${widget.prayerName}'
+                        : "It's time for ${widget.prayerName} prayer",
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isDark ? Colors.white70 : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: _dismiss,
+                        style: TextButton.styleFrom(
+                          foregroundColor:
+                              isDark ? Colors.white54 : Colors.black45,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                        ),
+                        child: Text(widget.isArabic ? 'إغلاق' : 'Dismiss'),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton.icon(
+                        onPressed: widget.onStopAdhan,
+                        icon: const Icon(Icons.stop_circle_outlined, size: 16),
+                        label: Text(
+                            widget.isArabic ? 'إيقاف الأذان' : 'Stop Adhan'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primary,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          textStyle: const TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 class _AchievementToast extends StatefulWidget {
   final Achievement achievement;

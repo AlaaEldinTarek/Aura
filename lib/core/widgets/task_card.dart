@@ -46,9 +46,9 @@ class TaskCard extends StatelessWidget {
     } else {
       switch (task.priority) {
         case TaskPriority.high:
-          leftAccent = Colors.orange;
+          leftAccent = Colors.red;
         case TaskPriority.medium:
-          leftAccent = Colors.amber;
+          leftAccent = Colors.orange;
         case TaskPriority.low:
           leftAccent = Colors.green;
       }

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 import '../models/prayer_time.dart';
+import 'desktop_adhan_service.dart';
 
 /// System-tray icon + minimize-to-tray for Windows/macOS/Linux.
 /// Shows next prayer in the tray menu and intercepts the window close
@@ -13,6 +14,7 @@ class DesktopTrayService with TrayListener, WindowListener {
 
   bool _initialized = false;
   String? _nextLabel;
+  bool _adhanPlaying = false;
 
   static bool get isDesktop =>
       !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
@@ -60,6 +62,13 @@ class DesktopTrayService with TrayListener, WindowListener {
     return '$h:$m ${t.hour >= 12 ? "PM" : "AM"}';
   }
 
+  /// Call when adhan starts/stops to show or hide the Stop Adhan menu item.
+  Future<void> setAdhanPlaying(bool playing) async {
+    if (_adhanPlaying == playing) return;
+    _adhanPlaying = playing;
+    await _rebuildMenu();
+  }
+
   Future<void> _rebuildMenu() async {
     await trayManager.setContextMenu(Menu(items: [
       MenuItem(
@@ -68,6 +77,10 @@ class DesktopTrayService with TrayListener, WindowListener {
         disabled: true,
       ),
       MenuItem.separator(),
+      if (_adhanPlaying)
+        MenuItem(key: 'stop_adhan', label: '🔇 Stop Adhan'),
+      if (_adhanPlaying)
+        MenuItem.separator(),
       MenuItem(key: 'open', label: 'Open Aura'),
       MenuItem.separator(),
       MenuItem(key: 'quit', label: 'Quit'),
@@ -91,6 +104,10 @@ class DesktopTrayService with TrayListener, WindowListener {
   @override
   void onTrayMenuItemClick(MenuItem menuItem) {
     switch (menuItem.key) {
+      case 'stop_adhan':
+        DesktopAdhanService.instance.stop();
+        setAdhanPlaying(false);
+        break;
       case 'open':
         _showWindow();
         break;

@@ -5,6 +5,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/prayer_time.dart';
 import 'desktop_adhan_service.dart';
 import 'desktop_notification_service.dart';
+import 'desktop_tray_service.dart';
+
+/// Payload emitted on [DesktopPrayerScheduler.prayerTimeStream] when a prayer time fires.
+class DesktopPrayerEvent {
+  final String name;
+  final String nameAr;
+  const DesktopPrayerEvent(this.name, this.nameAr);
+}
 
 /// Timer-based prayer scheduler for desktop (replaces native AlarmManager).
 /// Schedules adhan playback, pre-prayer reminders, and post-prayer checks.
@@ -14,6 +22,14 @@ class DesktopPrayerScheduler {
   static final DesktopPrayerScheduler instance = DesktopPrayerScheduler._();
 
   final List<Timer> _timers = [];
+
+  final StreamController<DesktopPrayerEvent> _prayerTimeController =
+      StreamController<DesktopPrayerEvent>.broadcast();
+
+  /// Fires when a prayer time is reached — subscribe in MainWrapperScreen
+  /// to show the in-app overlay toast.
+  Stream<DesktopPrayerEvent> get prayerTimeStream =>
+      _prayerTimeController.stream;
 
   static bool get isDesktop =>
       !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
@@ -59,15 +75,19 @@ class DesktopPrayerScheduler {
       }));
     }
 
-    // Prayer time — play adhan + show notification
+    // Prayer time — play adhan + show in-app overlay toast + system notification
     final prayerDelay = prayer.time.difference(now);
     _timers.add(Timer(prayerDelay, () async {
       debugPrint('🕌 [DESKTOP] Prayer time: ${prayer.name}');
+      // Emit so MainWrapperScreen can show the in-app overlay toast
+      _prayerTimeController.add(DesktopPrayerEvent(prayer.name, prayer.nameAr));
+      await DesktopTrayService.instance.setAdhanPlaying(true);
       await Future.wait([
         DesktopAdhanService.instance.playAdhan(prayer.name),
         DesktopNotificationService.instance
             .showPrayerTimeNotification(prayer.name, prayer.nameAr),
       ]);
+      await DesktopTrayService.instance.setAdhanPlaying(false);
     }));
 
     // Post-prayer check (30 min after adhan, or 1 h if no iqama)

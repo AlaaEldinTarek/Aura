@@ -121,8 +121,8 @@ class PrayerTrackingService {
 
       final records = snapshot.docs.map((doc) => PrayerRecord.fromFirestore(doc)).toList();
 
-      // Cache the results
-      _dailyCache[dayKey] = records;
+      // Only cache non-empty results — empty may be a timing issue on first load
+      if (records.isNotEmpty) _dailyCache[dayKey] = records;
 
       return records;
     } catch (e) {

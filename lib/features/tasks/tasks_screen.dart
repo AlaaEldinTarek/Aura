@@ -755,7 +755,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
   }) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         decoration: BoxDecoration(
           color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
           borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -769,12 +769,12 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
         ),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 22),
-            const SizedBox(height: 6),
+            Icon(icon, color: color, size: 18),
+            const SizedBox(height: 3),
             Text(
               value,
               style: TextStyle(
-                fontSize: 20,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: isDark ? Colors.white : Colors.black87,
               ),
@@ -782,7 +782,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
             Text(
               label,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10,
                 color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
               ),
             ),
@@ -1747,8 +1747,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               // Change Priority
               ListTile(
                 leading: Icon(Icons.flag_outlined, size: 22,
-                    color: task.priority == TaskPriority.high ? Colors.orange
-                        : task.priority == TaskPriority.medium ? Colors.amber
+                    color: task.priority == TaskPriority.high ? Colors.red
+                        : task.priority == TaskPriority.medium ? Colors.orange
                         : Colors.green),
                 title: Text(isArabic ? 'تغيير الأولوية' : 'Change Priority'),
                 trailing: _buildPriorityLabel(task.priority, isArabic),
@@ -1802,8 +1802,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       TaskPriority.low: isArabic ? 'منخفضة' : 'Low',
     };
     final colors = {
-      TaskPriority.high: Colors.orange,
-      TaskPriority.medium: Colors.amber,
+      TaskPriority.high: Colors.red,
+      TaskPriority.medium: Colors.orange,
       TaskPriority.low: Colors.green,
     };
     return Container(
@@ -2076,8 +2076,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                 ),
               ),
               ...[
-                (TaskPriority.high, isArabic ? 'عالية' : 'High', Colors.orange, Icons.flag),
-                (TaskPriority.medium, isArabic ? 'متوسطة' : 'Medium', Colors.amber, Icons.flag),
+                (TaskPriority.high, isArabic ? 'عالية' : 'High', Colors.red, Icons.flag),
+                (TaskPriority.medium, isArabic ? 'متوسطة' : 'Medium', Colors.orange, Icons.flag),
                 (TaskPriority.low, isArabic ? 'منخفضة' : 'Low', Colors.green, Icons.flag),
               ].map((entry) {
                 final (p, label, color, icon) = entry;
@@ -2794,8 +2794,8 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
             Row(
               children: [
                 ...[
-                  (TaskPriority.high, isArabic ? 'عالية' : 'High', Colors.orange),
-                  (TaskPriority.medium, isArabic ? 'متوسطة' : 'Med', Colors.amber),
+                  (TaskPriority.high, isArabic ? 'عالية' : 'High', Colors.red),
+                  (TaskPriority.medium, isArabic ? 'متوسطة' : 'Med', Colors.orange),
                   (TaskPriority.low, isArabic ? 'منخفضة' : 'Low', Colors.green),
                 ].map((entry) {
                   final (p, label, color) = entry;

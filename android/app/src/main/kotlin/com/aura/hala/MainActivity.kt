@@ -477,7 +477,8 @@ class MainActivity : FlutterActivity() {
                     val prefs = getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
                     val statuses = mutableMapOf<String, String>()
                     for ((key, value) in prefs.all) {
-                        if (key.startsWith("prayer_status_") && value is String) {
+                        // Skip keys already synced to Firestore ("synced" marker)
+                        if (key.startsWith("prayer_status_") && value is String && value != "synced") {
                             statuses[key] = value
                         }
                     }
@@ -488,8 +489,10 @@ class MainActivity : FlutterActivity() {
                     val key = call.argument<String>("key")
                     if (key != null) {
                         val prefs = getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
-                        prefs.edit().remove(key).apply()
-                        Log.d("PrayerChannel", "🗑️ Cleared native prayer status: $key")
+                        // Mark as "synced" instead of removing so DailySummaryReceiver
+                        // still sees the prayer as tracked (it only checks key existence).
+                        prefs.edit().putString(key, "synced").apply()
+                        Log.d("PrayerChannel", "✅ Marked native prayer status synced: $key")
                     }
                     result.success(true)
                 }

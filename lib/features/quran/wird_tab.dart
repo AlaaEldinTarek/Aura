@@ -48,6 +48,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
   final _streakKey = GlobalKey();
   final _progressKey = GlobalKey();
   final _actionsKey = GlobalKey();
+  final _juzScrollController = ScrollController();
 
   @override
   void initState() {
@@ -92,6 +93,12 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
       steps: steps,
       onDone: () => SharedPreferencesService.instance.setTutorialWirdSeen(),
     );
+  }
+
+  @override
+  void dispose() {
+    _juzScrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -160,35 +167,35 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
     final dailyJuzGoal = state.settings.dailyJuzGoal;
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       children: [
         SizedBox(key: _streakKey, child: _buildStreakCard(state, primary, isDark)),
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
 
         if (isJuzMode) ...[
           SizedBox(key: _progressKey, child: _buildJuzProgressCard(state, primary, isDark, allCompletedJuz, juzReadToday, dailyJuzGoal, isCompleted)),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           if (isCompleted)
             _buildCompletedBanner(primary, isDark)
           else ...[
             SizedBox(key: _actionsKey, child: _buildJuzActions(context, state, primary)),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
           ],
           _buildJuzGrid(context, allCompletedJuz, primary, isDark),
         ] else ...[
           SizedBox(key: _progressKey, child: _buildProgressCard(context, state, primary, isDark, pagesRead, goal, isCompleted, progressRatio)),
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           if (isCompleted)
             _buildCompletedBanner(primary, isDark)
           else ...[
             SizedBox(key: _actionsKey, child: _buildActionButtons(context, state, primary, progress)),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
           ],
         ],
 
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
         _buildStatsRow(state, primary, isDark, isJuzMode, allCompletedJuz),
-        const SizedBox(height: 16),
+        const SizedBox(height: 10),
         _buildSettingsSection(context, state, primary, isDark),
       ],
     );
@@ -250,30 +257,19 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
           children: [
-            Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('wird_khatm_progress'.tr(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-              const SizedBox(width: 4),
-              const InfoTipIcon(
-                titleKey: 'tutorial_wird_juz_progress_title',
-                bodyKey: 'tutorial_wird_juz_progress_body',
-              ),
-            ],
-          ),
-            const SizedBox(height: 24),
+            // Circle — on start side (left for LTR, right for RTL)
             SizedBox(
-              width: 140,
-              height: 140,
+              width: 88,
+              height: 88,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
                   CircularProgressIndicator(
                     value: done == total ? 1.0 : ratio.clamp(0.0, 1.0),
-                    strokeWidth: 10,
+                    strokeWidth: 8,
                     backgroundColor: secondaryColor.withValues(alpha: 0.2),
                     valueColor: AlwaysStoppedAnimation<Color>(done == total ? Colors.green : primary),
                   ),
@@ -283,11 +279,11 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                       children: [
                         Text(
                           '${NumberFormatter.withArabicNumeralsByLanguage(done.toString(), widget.lang)}/30',
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                         ),
                         Text(
                           'wird_unit_juz'.tr(),
-                          style: TextStyle(fontSize: 12, color: secondaryColor),
+                          style: TextStyle(fontSize: 10, color: secondaryColor),
                         ),
                       ],
                     ),
@@ -295,22 +291,52 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                 ],
               ),
             ),
-            const SizedBox(height: 8),
-            if (done == total)
-              Text('wird_khatm_done'.tr(), style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold))
-            else
-              Text(
-                '${NumberFormatter.withArabicNumeralsByLanguage(remaining.toString(), widget.lang)} ${'wird_juz_remaining'.tr()} · ~${NumberFormatter.withArabicNumeralsByLanguage(daysEst.toString(), widget.lang)} ${'wird_days_to_finish'.tr()}',
-                style: TextStyle(fontSize: 13, color: secondaryColor),
-                textAlign: TextAlign.center,
+            const SizedBox(width: 16),
+            // Text — on end side
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          'wird_khatm_progress'.tr(),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const InfoTipIcon(
+                        titleKey: 'tutorial_wird_juz_progress_title',
+                        bodyKey: 'tutorial_wird_juz_progress_body',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  if (done == total)
+                    Text('wird_khatm_done'.tr(), style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13))
+                  else
+                    Text(
+                      '${NumberFormatter.withArabicNumeralsByLanguage(remaining.toString(), widget.lang)} ${'wird_juz_remaining'.tr()}',
+                      style: TextStyle(fontSize: 12, color: secondaryColor),
+                    ),
+                  if (daysEst > 0) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '~${NumberFormatter.withArabicNumeralsByLanguage(daysEst.toString(), widget.lang)} ${'wird_days_to_finish'.tr()}',
+                      style: TextStyle(fontSize: 12, color: secondaryColor),
+                    ),
+                  ],
+                  if (juzToday > 0) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '${NumberFormatter.withArabicNumeralsByLanguage(juzToday.toString(), widget.lang)}/${NumberFormatter.withArabicNumeralsByLanguage(dailyGoal.toString(), widget.lang)} ${'wird_juz_today'.tr()}',
+                      style: TextStyle(fontSize: 12, color: primary, fontWeight: FontWeight.w500),
+                    ),
+                  ],
+                ],
               ),
-            if (juzToday > 0) ...[
-              const SizedBox(height: 4),
-              Text(
-                '${NumberFormatter.withArabicNumeralsByLanguage(juzToday.toString(), widget.lang)}/${'${NumberFormatter.withArabicNumeralsByLanguage(dailyGoal.toString(), widget.lang)}'} ${'wird_juz_today'.tr()}',
-                style: TextStyle(fontSize: 12, color: primary, fontWeight: FontWeight.w500),
-              ),
-            ],
+            ),
           ],
         ),
       ),
@@ -320,34 +346,34 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
   // ── Juz Actions Row ───────────────────────────────────────────────────────
 
   Widget _buildJuzActions(BuildContext context, WirdState state, Color primary) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+    return Row(
       children: [
-        const InfoTipIcon(
-          titleKey: 'tutorial_wird_juz_actions_title',
-          bodyKey: 'tutorial_wird_juz_actions_body',
-        ),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  ref.read(wirdStateProvider.notifier).markComplete();
-                  setState(() => _showUndo = true);
-                },
-                icon: const Icon(Icons.check),
-                label: Text('wird_mark_complete'.tr()),
-              ),
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: () {
+              ref.read(wirdStateProvider.notifier).markComplete();
+              setState(() => _showUndo = true);
+            },
+            icon: const Icon(Icons.check, size: 18),
+            label: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(child: Text('wird_mark_complete'.tr(), overflow: TextOverflow.ellipsis)),
+                const SizedBox(width: 4),
+                const InfoTipIcon(
+                  titleKey: 'tutorial_wird_juz_actions_title',
+                  bodyKey: 'tutorial_wird_juz_actions_body',
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
+        const SizedBox(width: 8),
+        Expanded(
           child: OutlinedButton.icon(
             onPressed: () => _showBookmarkPagesSheetJuz(context, state),
-            icon: const Icon(Icons.bookmark_outline),
-            label: Text('wird_add_from_bookmarks'.tr()),
+            icon: const Icon(Icons.bookmark_outline, size: 18),
+            label: Text('wird_add_from_bookmarks'.tr(), overflow: TextOverflow.ellipsis),
           ),
         ),
       ],
@@ -463,7 +489,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -477,52 +503,87 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            GridView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 5,
-                childAspectRatio: 0.85,
-                mainAxisSpacing: 6,
-                crossAxisSpacing: 6,
-              ),
-              itemCount: 30,
-              itemBuilder: (context, index) {
-                final juzNo = index + 1;
-                final done = allCompleted.contains(juzNo);
-                return GestureDetector(
-                  onTap: () => ref.read(wirdStateProvider.notifier).toggleJuzCompleted(juzNo),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    decoration: BoxDecoration(
-                      color: done ? primary.withValues(alpha: 0.2) : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.04)),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: done ? primary : Colors.transparent,
-                        width: 1.5,
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        if (done)
-                          Icon(Icons.check_circle, color: primary, size: 18)
-                        else
-                          Text(
-                            NumberFormatter.withArabicNumeralsByLanguage(juzNo.toString(), widget.lang),
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                IconButton(
+                  onPressed: () {
+                    _juzScrollController.animateTo(
+                      (_juzScrollController.offset - 220).clamp(0, _juzScrollController.position.maxScrollExtent),
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  },
+                  icon: Icon(Icons.chevron_left, color: primary),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                  iconSize: 28,
+                ),
+                Expanded(
+                  child: SizedBox(
+                    height: 52,
+                    child: ListView.separated(
+                      controller: _juzScrollController,
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: 30,
+                      separatorBuilder: (_, __) => const SizedBox(width: 6),
+                      itemBuilder: (context, index) {
+                        final juzNo = index + 1;
+                        final done = allCompleted.contains(juzNo);
+                        return GestureDetector(
+                          onTap: () => ref.read(wirdStateProvider.notifier).toggleJuzCompleted(juzNo),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            width: 44,
+                            height: 52,
+                            decoration: BoxDecoration(
+                              color: done
+                                  ? primary.withValues(alpha: 0.2)
+                                  : (isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.04)),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: done ? primary : Colors.transparent,
+                                width: 1.5,
+                              ),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                if (done)
+                                  Icon(Icons.check_circle, color: primary, size: 18)
+                                else
+                                  Text(
+                                    NumberFormatter.withArabicNumeralsByLanguage(juzNo.toString(), widget.lang),
+                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                  ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'wird_unit_juz'.tr(),
+                                  style: TextStyle(fontSize: 9, color: secondaryColor),
+                                ),
+                              ],
+                            ),
                           ),
-                        const SizedBox(height: 2),
-                        Text(
-                          'wird_unit_juz'.tr(),
-                          style: TextStyle(fontSize: 9, color: secondaryColor),
-                        ),
-                      ],
+                        );
+                      },
                     ),
                   ),
-                );
-              },
+                ),
+                IconButton(
+                  onPressed: () {
+                    _juzScrollController.animateTo(
+                      (_juzScrollController.offset + 220).clamp(0, _juzScrollController.position.maxScrollExtent),
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  },
+                  icon: Icon(Icons.chevron_right, color: primary),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                  iconSize: 28,
+                ),
+              ],
             ),
           ],
         ),
@@ -602,34 +663,26 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
     BuildContext context, WirdState state, Color primary, bool isDark,
     int pagesRead, int goal, bool isCompleted, double progressRatio,
   ) {
+    final secondaryColor = isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary;
+    final remaining = goal - pagesRead;
+
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
           children: [
-            Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text('wird_today_progress'.tr(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-              const SizedBox(width: 4),
-              const InfoTipIcon(
-                titleKey: 'tutorial_wird_progress_title',
-                bodyKey: 'tutorial_wird_progress_body',
-              ),
-            ],
-          ),
-            const SizedBox(height: 24),
+            // Circle — start side (left LTR, right RTL)
             SizedBox(
-              width: 140,
-              height: 140,
+              width: 88,
+              height: 88,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
                   CircularProgressIndicator(
                     value: isCompleted ? 1.0 : progressRatio.clamp(0.0, 1.0),
-                    strokeWidth: 10,
-                    backgroundColor: (isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary).withValues(alpha: 0.2),
+                    strokeWidth: 8,
+                    backgroundColor: secondaryColor.withValues(alpha: 0.2),
                     valueColor: AlwaysStoppedAnimation<Color>(isCompleted ? Colors.green : primary),
                   ),
                   Center(
@@ -638,16 +691,12 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                       children: [
                         Text(
                           '${NumberFormatter.withArabicNumeralsByLanguage(pagesRead.toString(), widget.lang)}'
-                          ' ${'wird_of'.tr()} '
-                          '${NumberFormatter.withArabicNumeralsByLanguage(goal.toString(), widget.lang)}',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          '/${NumberFormatter.withArabicNumeralsByLanguage(goal.toString(), widget.lang)}',
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                         ),
                         Text(
                           'page'.tr(),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
-                          ),
+                          style: TextStyle(fontSize: 10, color: secondaryColor),
                         ),
                       ],
                     ),
@@ -655,16 +704,38 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                 ],
               ),
             ),
-            if (!isCompleted && pagesRead < goal) ...[
-              const SizedBox(height: 8),
-              Text(
-                '${NumberFormatter.withArabicNumeralsByLanguage((goal - pagesRead).toString(), widget.lang)} ${'wird_pages_remaining'.tr()}',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
-                ),
+            const SizedBox(width: 16),
+            // Text — end side
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          'wird_today_progress'.tr(),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const InfoTipIcon(
+                        titleKey: 'tutorial_wird_progress_title',
+                        bodyKey: 'tutorial_wird_progress_body',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  if (isCompleted)
+                    Text('wird_completed_today'.tr(), style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13))
+                  else if (remaining > 0)
+                    Text(
+                      '${NumberFormatter.withArabicNumeralsByLanguage(remaining.toString(), widget.lang)} ${'wird_pages_remaining'.tr()}',
+                      style: TextStyle(fontSize: 12, color: secondaryColor),
+                    ),
+                ],
               ),
-            ],
+            ),
           ],
         ),
       ),

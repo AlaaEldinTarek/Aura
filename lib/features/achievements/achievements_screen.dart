@@ -214,8 +214,8 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                                 : Padding(
                                     padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
                                     child: Wrap(
-                                      spacing: 10,
-                                      runSpacing: 10,
+                                      spacing: 8,
+                                      runSpacing: 8,
                                       children: achievements.map((achievement) {
                                         final isEarned = earnedIds.contains(achievement.id);
                                         return _AchievementBadge(
@@ -258,8 +258,8 @@ class _AchievementBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: (MediaQuery.of(context).size.width - AppConstants.paddingMedium * 2 - 10) / 2,
-      padding: const EdgeInsets.all(12),
+      width: (MediaQuery.of(context).size.width - AppConstants.paddingMedium * 2 - 8 * 2) / 3,
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         color: isEarned
             ? AppConstants.getPrimary(isDark).withOpacity(0.1)
@@ -276,15 +276,15 @@ class _AchievementBadge extends StatelessWidget {
           Text(
             achievement.iconEmoji,
             style: TextStyle(
-              fontSize: 32,
+              fontSize: 24,
               color: isEarned ? null : (isDark ? Colors.white12 : Colors.black12),
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           Text(
             achievement.name(isArabic),
             style: TextStyle(
-              fontSize: 13,
+              fontSize: 11,
               fontWeight: FontWeight.bold,
               color: isEarned
                   ? (isDark ? Colors.white : Colors.black87)
@@ -298,7 +298,7 @@ class _AchievementBadge extends StatelessWidget {
           Text(
             achievement.description(isArabic),
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 9,
               color: isEarned
                   ? (isDark ? Colors.white60 : Colors.black54)
                   : (isDark ? Colors.white12 : Colors.black12),
@@ -308,8 +308,8 @@ class _AchievementBadge extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
           if (isEarned) ...[
-            const SizedBox(height: 4),
-            Icon(Icons.check_circle, color: AppConstants.getPrimary(isDark), size: 16),
+            const SizedBox(height: 3),
+            Icon(Icons.check_circle, color: AppConstants.getPrimary(isDark), size: 14),
           ],
         ],
       ),

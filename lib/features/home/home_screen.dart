@@ -220,7 +220,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     // select() ensures rebuild only when the specific field changes, not the entire provider state
     final nextPrayer = ref.watch(prayerTimesProvider.select((s) => s.nextPrayer));
-    final userName = ref.watch(currentUserProvider.select((u) => u?.displayName)) ?? 'User';
+    final _firebaseUser = ref.watch(currentUserProvider);
+    final userName = _firebaseUser?.displayName?.isNotEmpty == true
+        ? _firebaseUser!.displayName!
+        : (_firebaseUser?.email?.split('@').first ?? '');
     final isGuest = ref.watch(guestModeProvider.select((async) => async.value ?? false));
     final appMode = ref.watch(appModeProvider.select((m) => m));
     final showPrayer = appMode != AppMode.tasksOnly;
@@ -252,7 +255,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           ConnectivityWrapper(
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppConstants.paddingLarge).clamp(0, 28.0)),
+              padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium).clamp(0, 16.0)),
               child: _buildHomeBody(
                 context, isDark, isArabic, showPrayer, showTasks,
                 nextPrayer, completedCount, totalPrayers, prayerStatuses,
@@ -307,7 +310,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           SizedBox(
             key: _greetingKey,
             child: GreetingWidget(
-              userName: isGuest ? null : userName,
+              userName: isGuest ? null : (userName.isNotEmpty ? userName : null),
               onTap: () => Navigator.of(context).pushNamed('/prayer'),
             ).animate().fadeIn(duration: 400.ms),
           ),
@@ -360,12 +363,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         SizedBox(
           key: _greetingKey,
           child: GreetingWidget(
-            userName: null,
+            userName: isGuest ? null : (userName.isNotEmpty ? userName : null),
             onTap: () => Navigator.of(context).pushNamed('/prayer'),
           ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
         ),
         if (showPrayer) ...[
-          const SizedBox(height: AppConstants.paddingLarge),
+          const SizedBox(height: 12),
           SizedBox(
             key: _dailyContentKey,
             child: _buildDailyContentCard(context, isDark, isArabic)
@@ -373,7 +376,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           ),
         ],
         if (showPrayer && DateTime.now().weekday == DateTime.friday) ...[
-          const SizedBox(height: AppConstants.paddingLarge),
+          const SizedBox(height: 12),
           _buildJumuahBanner(context, isDark, isArabic)
               .animate().fadeIn(delay: 80.ms, duration: 500.ms).slideY(begin: 0.08),
         ],
@@ -381,25 +384,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           final events = ref.watch(islamicEventsProvider);
           if (events.isEmpty || events.first.daysUntil > 30) return const SizedBox.shrink();
           return Column(children: [
-            const SizedBox(height: AppConstants.paddingLarge),
+            const SizedBox(height: 12),
             _buildIslamicEventCard(context, events.first, isDark, isArabic)
                 .animate().fadeIn(delay: 90.ms, duration: 400.ms).slideY(begin: 0.08),
           ]);
         }),
-        const SizedBox(height: AppConstants.paddingLarge),
+        const SizedBox(height: 12),
         if (showPrayer) ...[
           SizedBox(
             key: _nextPrayerKey,
             child: _buildNextPrayerCard(context, nextPrayer, isDark, isArabic, completedCount, totalPrayers)
                 .animate().fadeIn(delay: 100.ms, duration: 400.ms).slideY(begin: 0.1),
           ),
-          const SizedBox(height: AppConstants.paddingMedium),
+          const SizedBox(height: 8),
           SizedBox(
             key: _prayerProgressKey,
             child: _buildPrayerProgress(context, isDark, isArabic, completedCount, totalPrayers, prayerStatuses)
                 .animate().fadeIn(delay: 200.ms, duration: 400.ms).slideY(begin: 0.1),
           ),
-          const SizedBox(height: AppConstants.paddingLarge),
+          const SizedBox(height: 12),
         ],
         if (showTasks) ...[
           SizedBox(
@@ -407,13 +410,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             child: _buildTaskProgress(context, isDark, isArabic)
                 .animate().fadeIn(delay: 250.ms, duration: 400.ms).slideY(begin: 0.1),
           ),
-          const SizedBox(height: AppConstants.paddingLarge),
+          const SizedBox(height: 12),
           SizedBox(
             key: _todayTasksKey,
             child: _buildTodayTasksPreview(context, isDark, isArabic)
                 .animate().fadeIn(delay: 350.ms, duration: 400.ms).slideY(begin: 0.1),
           ),
-          const SizedBox(height: AppConstants.paddingLarge),
+          const SizedBox(height: 12),
         ],
         footer,
         const SizedBox(height: 80),

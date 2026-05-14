@@ -587,8 +587,8 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
       ..sort((a, b) => b.priority.level.compareTo(a.priority.level));
 
     final priorityInfo = {
-      TaskPriority.high: (Icons.flag, isArabic ? 'عالية' : 'High', Colors.orange),
-      TaskPriority.medium: (Icons.flag, isArabic ? 'متوسطة' : 'Medium', Colors.amber),
+      TaskPriority.high: (Icons.flag, isArabic ? 'عالية' : 'High', Colors.red),
+      TaskPriority.medium: (Icons.flag, isArabic ? 'متوسطة' : 'Medium', Colors.orange),
       TaskPriority.low: (Icons.flag, isArabic ? 'منخفضة' : 'Low', Colors.green),
     };
 
