@@ -61,3 +61,16 @@ app.*.map.json
 # Claude
 .claude/
 Aura_v1.0.2.apk
+
+# Build outputs
+Aura*.apk
+Aura*.aab
+Aura*.msix
+.metadata
+
+# Android signing — never commit these
+android/key.properties
+android/*.jks
+android/*.keystore
+*.pfx
+aura_cert.cer
