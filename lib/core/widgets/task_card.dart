@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../models/task.dart';
 import '../constants/app_constants.dart';
+import '../theme/app_typography.dart';
+import '../theme/app_spacing.dart';
 
 /// Task card with top-row actions, bottom action bar, and swipe gestures
 class TaskCard extends StatelessWidget {
@@ -97,9 +99,9 @@ class TaskCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
-                  AppConstants.paddingMedium,
-                  AppConstants.paddingMedium,
-                  AppConstants.paddingMedium,
+                  AppSpacing.base,
+                  AppSpacing.base,
+                  AppSpacing.base,
                   6,
                 ),
                 child: Column(
@@ -115,19 +117,12 @@ class TaskCard extends StatelessWidget {
                               Flexible(
                                 child: Text(
                                   task.title,
-                                  style: TextStyle(
-                                    fontSize: 16,
+                                  style: AppTypography.bodyL.copyWith(
                                     fontWeight: FontWeight.w600,
                                     color: task.isCompleted
-                                        ? (isDark
-                                            ? Colors.grey.shade600
-                                            : Colors.grey.shade400)
-                                        : (isDark
-                                            ? Colors.white
-                                            : Colors.black87),
-                                    decoration: task.isCompleted
-                                        ? TextDecoration.lineThrough
-                                        : null,
+                                        ? (isDark ? Colors.grey.shade600 : Colors.grey.shade400)
+                                        : (isDark ? Colors.white : Colors.black87),
+                                    decoration: task.isCompleted ? TextDecoration.lineThrough : null,
                                   ),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
@@ -168,11 +163,8 @@ class TaskCard extends StatelessWidget {
                         padding: const EdgeInsets.only(top: 4),
                         child: Text(
                           task.description!,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: isDark
-                                ? Colors.grey.shade400
-                                : Colors.grey.shade600,
+                          style: AppTypography.bodyS.copyWith(
+                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -243,8 +235,7 @@ class TaskCard extends StatelessWidget {
                             ),
                             child: Text(
                               '${AppConstants.tagPrefix}$tag',
-                              style: TextStyle(
-                                fontSize: 10,
+                              style: AppTypography.caption.copyWith(
                                 color: AppConstants.getPrimary(isDark),
                                 fontWeight: FontWeight.w500,
                               ),
@@ -407,16 +398,14 @@ class TaskCard extends StatelessWidget {
             Icon(icon, color: Colors.white, size: 22),
             const SizedBox(width: 8),
             Text(label,
-                style: const TextStyle(
+                style: AppTypography.bodyS.copyWith(
                     color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13)),
+                    fontWeight: FontWeight.bold)),
           ] else ...[
             Text(label,
-                style: const TextStyle(
+                style: AppTypography.bodyS.copyWith(
                     color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 13)),
+                    fontWeight: FontWeight.bold)),
             const SizedBox(width: 8),
             Icon(icon, color: Colors.white, size: 22),
           ],
@@ -458,8 +447,7 @@ class _ActionButton extends StatelessWidget {
             Icon(icon, size: 14, color: color),
             const SizedBox(width: 4),
             Text(label,
-                style: TextStyle(
-                    fontSize: 11,
+                style: AppTypography.labelS.copyWith(
                     fontWeight: FontWeight.w600,
                     height: 1.1,
                     color: color),
@@ -495,8 +483,7 @@ class _PriorityBadge extends StatelessWidget {
           color: color.withOpacity(0.15),
           borderRadius: BorderRadius.circular(4)),
       child: Text(labels[priority]!,
-          style: TextStyle(
-              fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+          style: AppTypography.labelS.copyWith(fontWeight: FontWeight.w600, color: color)),
     );
   }
 }
@@ -523,8 +510,7 @@ class _CategoryBadge extends StatelessWidget {
           color: AppConstants.getPrimary(isDark).withOpacity(0.15),
           borderRadius: BorderRadius.circular(4)),
       child: Text(labels[category] ?? category.value,
-          style: TextStyle(
-              fontSize: 11,
+          style: AppTypography.labelS.copyWith(
               fontWeight: FontWeight.w600,
               color: AppConstants.getPrimary(isDark))),
     );
@@ -554,8 +540,7 @@ class _RecurrenceBadge extends StatelessWidget {
           const Icon(Icons.repeat, size: 11, color: Colors.purple),
           const SizedBox(width: 4),
           Text(labels[recurrenceType] ?? '',
-              style: const TextStyle(
-                  fontSize: 11,
+              style: AppTypography.labelS.copyWith(
                   fontWeight: FontWeight.w500,
                   color: Colors.purple)),
         ],
@@ -612,8 +597,7 @@ class _DueDateBadge extends StatelessWidget {
               size: 11, color: isOverdue ? Colors.red : Colors.grey),
           const SizedBox(width: 4),
           Text(label,
-              style: TextStyle(
-                  fontSize: 11,
+              style: AppTypography.labelS.copyWith(
                   fontWeight: FontWeight.w500,
                   color: isOverdue ? Colors.red : Colors.grey.shade600)),
         ],
@@ -644,8 +628,7 @@ class _SubtaskBadge extends StatelessWidget {
               color: completed == total ? Colors.green : Colors.blue),
           const SizedBox(width: 4),
           Text('$completed/$total',
-              style: TextStyle(
-                  fontSize: 11,
+              style: AppTypography.labelS.copyWith(
                   fontWeight: FontWeight.w500,
                   color: completed == total ? Colors.green : Colors.blue)),
         ],
@@ -677,8 +660,7 @@ class _EstimateBadge extends StatelessWidget {
           Icon(Icons.timer_outlined, size: 11, color: AppConstants.getPrimary(isDark)),
           const SizedBox(width: 3),
           Text(label,
-              style: TextStyle(
-                  fontSize: 11,
+              style: AppTypography.labelS.copyWith(
                   fontWeight: FontWeight.w500,
                   color: AppConstants.getPrimary(isDark))),
         ],

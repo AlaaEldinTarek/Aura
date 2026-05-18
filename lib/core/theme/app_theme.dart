@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:dynamic_color/dynamic_color.dart';
+import 'app_typography.dart';
 
 class AppTheme {
   // Font families
@@ -111,40 +112,19 @@ class AppTheme {
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     ),
-    textTheme: const TextTheme(
-      displayLarge: TextStyle(
-        fontSize: 32,
-        fontWeight: FontWeight.bold,
-        color: onBackgroundLight,
-      ),
-      displayMedium: TextStyle(
-        fontSize: 28,
-        fontWeight: FontWeight.bold,
-        color: onBackgroundLight,
-      ),
-      headlineLarge: TextStyle(
-        fontSize: 24,
-        fontWeight: FontWeight.w600,
-        color: onBackgroundLight,
-      ),
-      headlineMedium: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        color: onBackgroundLight,
-      ),
-      bodyLarge: TextStyle(
-        fontSize: 16,
-        color: onBackgroundLight,
-      ),
-      bodyMedium: TextStyle(
-        fontSize: 14,
-        color: onBackgroundLight,
-      ),
-      labelLarge: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: onBackgroundLight,
-      ),
+    textTheme: TextTheme(
+      displayLarge:   AppTypography.displayL.copyWith(color: onBackgroundLight),
+      displayMedium:  AppTypography.displayM.copyWith(color: onBackgroundLight),
+      headlineLarge:  AppTypography.headingL.copyWith(color: onBackgroundLight),
+      headlineMedium: AppTypography.headingM.copyWith(color: onBackgroundLight),
+      headlineSmall:  AppTypography.headingS.copyWith(color: onBackgroundLight),
+      bodyLarge:      AppTypography.bodyL.copyWith(color: onBackgroundLight),
+      bodyMedium:     AppTypography.bodyM.copyWith(color: onBackgroundLight),
+      bodySmall:      AppTypography.bodyS.copyWith(color: onBackgroundLight),
+      labelLarge:     AppTypography.label.copyWith(color: onBackgroundLight),
+      labelSmall:     AppTypography.labelS.copyWith(color: onBackgroundLight),
+      titleMedium:    AppTypography.headingS.copyWith(color: onBackgroundLight),
+      titleSmall:     AppTypography.label.copyWith(color: onBackgroundLight),
     ),
     // Make keyboard background transparent
     scaffoldBackgroundColor: backgroundLight,
@@ -222,40 +202,19 @@ class AppTheme {
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     ),
-    textTheme: const TextTheme(
-      displayLarge: TextStyle(
-        fontSize: 32,
-        fontWeight: FontWeight.bold,
-        color: onBackgroundDark,
-      ),
-      displayMedium: TextStyle(
-        fontSize: 28,
-        fontWeight: FontWeight.bold,
-        color: onBackgroundDark,
-      ),
-      headlineLarge: TextStyle(
-        fontSize: 24,
-        fontWeight: FontWeight.w600,
-        color: onBackgroundDark,
-      ),
-      headlineMedium: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        color: onBackgroundDark,
-      ),
-      bodyLarge: TextStyle(
-        fontSize: 16,
-        color: onBackgroundDark,
-      ),
-      bodyMedium: TextStyle(
-        fontSize: 14,
-        color: onBackgroundDark,
-      ),
-      labelLarge: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: onBackgroundDark,
-      ),
+    textTheme: TextTheme(
+      displayLarge:   AppTypography.displayL.copyWith(color: onBackgroundDark),
+      displayMedium:  AppTypography.displayM.copyWith(color: onBackgroundDark),
+      headlineLarge:  AppTypography.headingL.copyWith(color: onBackgroundDark),
+      headlineMedium: AppTypography.headingM.copyWith(color: onBackgroundDark),
+      headlineSmall:  AppTypography.headingS.copyWith(color: onBackgroundDark),
+      bodyLarge:      AppTypography.bodyL.copyWith(color: onBackgroundDark),
+      bodyMedium:     AppTypography.bodyM.copyWith(color: onBackgroundDark),
+      bodySmall:      AppTypography.bodyS.copyWith(color: onBackgroundDark),
+      labelLarge:     AppTypography.label.copyWith(color: onBackgroundDark),
+      labelSmall:     AppTypography.labelS.copyWith(color: onBackgroundDark),
+      titleMedium:    AppTypography.headingS.copyWith(color: onBackgroundDark),
+      titleSmall:     AppTypography.label.copyWith(color: onBackgroundDark),
     ),
     // Make keyboard background transparent
     scaffoldBackgroundColor: backgroundDark,
@@ -327,40 +286,19 @@ class AppTheme {
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     ),
-    textTheme: const TextTheme(
-      displayLarge: TextStyle(
-        fontSize: 32,
-        fontWeight: FontWeight.bold,
-        color: onBackgroundAmoled,
-      ),
-      displayMedium: TextStyle(
-        fontSize: 28,
-        fontWeight: FontWeight.bold,
-        color: onBackgroundAmoled,
-      ),
-      headlineLarge: TextStyle(
-        fontSize: 24,
-        fontWeight: FontWeight.w600,
-        color: onBackgroundAmoled,
-      ),
-      headlineMedium: TextStyle(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        color: onBackgroundAmoled,
-      ),
-      bodyLarge: TextStyle(
-        fontSize: 16,
-        color: onBackgroundAmoled,
-      ),
-      bodyMedium: TextStyle(
-        fontSize: 14,
-        color: onBackgroundAmoled,
-      ),
-      labelLarge: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        color: onBackgroundAmoled,
-      ),
+    textTheme: TextTheme(
+      displayLarge:   AppTypography.displayL.copyWith(color: onBackgroundAmoled),
+      displayMedium:  AppTypography.displayM.copyWith(color: onBackgroundAmoled),
+      headlineLarge:  AppTypography.headingL.copyWith(color: onBackgroundAmoled),
+      headlineMedium: AppTypography.headingM.copyWith(color: onBackgroundAmoled),
+      headlineSmall:  AppTypography.headingS.copyWith(color: onBackgroundAmoled),
+      bodyLarge:      AppTypography.bodyL.copyWith(color: onBackgroundAmoled),
+      bodyMedium:     AppTypography.bodyM.copyWith(color: onBackgroundAmoled),
+      bodySmall:      AppTypography.bodyS.copyWith(color: onBackgroundAmoled),
+      labelLarge:     AppTypography.label.copyWith(color: onBackgroundAmoled),
+      labelSmall:     AppTypography.labelS.copyWith(color: onBackgroundAmoled),
+      titleMedium:    AppTypography.headingS.copyWith(color: onBackgroundAmoled),
+      titleSmall:     AppTypography.label.copyWith(color: onBackgroundAmoled),
     ),
     scaffoldBackgroundColor: backgroundAmoled,
     extensions: const [],

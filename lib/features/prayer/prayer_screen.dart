@@ -7,6 +7,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/providers/prayer_times_provider.dart';
 import '../../core/providers/connectivity_provider.dart';
 import '../../core/providers/auth_provider.dart';
@@ -481,7 +483,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
       onRefresh: _refreshPrayerTimes,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(AppConstants.paddingMedium),
+        padding: const EdgeInsets.all(AppSpacing.base),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -491,7 +493,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
             if (state.location != null)
               _buildLocationHeader(context, state.location!, isDark, isArabic),
 
-            const SizedBox(height: AppConstants.paddingSmall),
+            const SizedBox(height: AppSpacing.sm),
 
             // Date Header Card with Hijri-style design
             _buildDateHeader(context, state.selectedDate, state.prayerTimes,
@@ -500,7 +502,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                 .fadeIn(duration: 400.ms)
                 .slideY(begin: 0.08, duration: 400.ms),
 
-            const SizedBox(height: AppConstants.paddingMedium),
+            const SizedBox(height: AppSpacing.base),
 
             // Next Prayer Countdown (Circular)
             if (state.nextPrayer != null) ...[
@@ -508,7 +510,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                       context, state.nextPrayer!, isDark, isArabic)
                   .animate()
                   .fadeIn(delay: 100.ms, duration: 400.ms),
-              const SizedBox(height: AppConstants.paddingLarge),
+              const SizedBox(height: AppSpacing.xl),
             ],
 
             // Prayers List Header
@@ -519,13 +521,13 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                   .fadeIn(delay: 200.ms, duration: 400.ms),
             ),
 
-            const SizedBox(height: AppConstants.paddingSmall),
+            const SizedBox(height: AppSpacing.sm),
 
             // Prayer Cards
             ..._buildPrayerCards(context, state, isDark, isArabic),
 
             // Muslim Toolkit
-            const SizedBox(height: AppConstants.paddingLarge),
+            const SizedBox(height: AppSpacing.xl),
             SizedBox(
               key: _toolkitKey,
               child: _buildMuslimToolkit(context, isDark, isArabic)
@@ -577,7 +579,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     if (!isDesktop) {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 0),
-        padding: const EdgeInsets.all(AppConstants.paddingSmall),
+        padding: const EdgeInsets.all(AppSpacing.sm),
         child: row,
       );
     }
@@ -588,8 +590,8 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 0),
         padding: const EdgeInsets.symmetric(
-            horizontal: AppConstants.paddingSmall,
-            vertical: AppConstants.paddingSmall - 2),
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.sm - 2),
         child: row,
       ),
     );
@@ -648,9 +650,8 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                 Flexible(
                   child: Text(
                     hijriDateStr,
-                    style: const TextStyle(
+                    style: AppTypography.bodyS.copyWith(
                       color: Colors.white,
-                      fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -672,9 +673,8 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                 ),
                 child: Text(
                   isArabic ? 'اليوم' : 'Today',
-                  style: const TextStyle(
+                  style: AppTypography.caption.copyWith(
                     color: Colors.white,
-                    fontSize: 12,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -688,9 +688,8 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                 Flexible(
                   child: Text(
                     gregorianDateStr,
-                    style: TextStyle(
+                    style: AppTypography.bodyS.copyWith(
                       color: Colors.white.withOpacity(0.9),
-                      fontSize: 13,
                       fontWeight: FontWeight.w500,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -725,7 +724,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                 color: AppConstants.getPrimary(isDark),
               ),
         ),
-        const SizedBox(height: AppConstants.paddingMedium),
+        const SizedBox(height: AppSpacing.base),
         CircularCountdownTimer(
           targetTime: nextPrayer.time,
           prayerName: isArabic ? nextPrayer.nameAr : nextPrayer.name,
@@ -785,7 +784,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
       final canMark = prayer.name != 'Sunrise';
 
       return Padding(
-        padding: const EdgeInsets.only(bottom: AppConstants.paddingSmall),
+        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
         child: PrayerCard(
           prayer: prayer,
           isNext: isNext,
@@ -818,7 +817,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     ];
 
     return Container(
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+      padding: const EdgeInsets.all(AppSpacing.base),
       decoration: BoxDecoration(
         color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
@@ -843,7 +842,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
               ),
             ],
           ),
-          const SizedBox(height: AppConstants.paddingMedium),
+          const SizedBox(height: AppSpacing.base),
           Row(
             children: actions.map((action) {
               final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
@@ -873,8 +872,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                             const SizedBox(height: 6),
                             Text(
                               action.label,
-                              style: TextStyle(
-                                fontSize: 11,
+                              style: AppTypography.labelS.copyWith(
                                 fontWeight: FontWeight.w600,
                                 color: action.color,
                               ),
@@ -896,7 +894,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
 
   Widget _buildLoadingState(BuildContext context, bool isDark) {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+      padding: const EdgeInsets.all(AppSpacing.base),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -906,38 +904,38 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
           // Location header
           const ShimmerLocationHeader(),
 
-          const SizedBox(height: AppConstants.paddingSmall),
+          const SizedBox(height: AppSpacing.sm),
 
           // Date header (mirrors the blue bar with Hijri/Gregorian)
           const ShimmerDateHeader(),
 
-          const SizedBox(height: AppConstants.paddingMedium),
+          const SizedBox(height: AppSpacing.base),
 
           // "Next Prayer" label
           const ShimmerSectionLabel(width: 100),
-          const SizedBox(height: AppConstants.paddingMedium),
+          const SizedBox(height: AppSpacing.base),
 
           // Circular countdown (mirrors the 180x180 circle)
           const Center(child: ShimmerCircularCountdown()),
 
-          const SizedBox(height: AppConstants.paddingLarge),
+          const SizedBox(height: AppSpacing.xl),
 
           // "Today's Prayer Times" section header
           const ShimmerSectionHeader(width: 180),
 
-          const SizedBox(height: AppConstants.paddingSmall),
+          const SizedBox(height: AppSpacing.sm),
 
           // 6 Prayer cards (mirrors PrayerCard layout)
           ...List.generate(
             6,
             (_) => const Padding(
-              padding: EdgeInsets.only(bottom: AppConstants.paddingSmall),
+              padding: EdgeInsets.only(bottom: AppSpacing.sm),
               child: ShimmerPrayerCard(),
             ),
           ),
 
           // Quick Actions section
-          const SizedBox(height: AppConstants.paddingLarge),
+          const SizedBox(height: AppSpacing.xl),
           const ShimmerQuickActions(),
 
           // Bottom padding for nav bar
@@ -950,7 +948,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
   Widget _buildErrorState(BuildContext context, String error, bool isArabic) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Container(
-      padding: const EdgeInsets.all(AppConstants.paddingXLarge),
+      padding: const EdgeInsets.all(AppSpacing.xxl),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -960,13 +958,13 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
             size: 64,
             color: AppConstants.error,
           ),
-          const SizedBox(height: AppConstants.paddingMedium),
+          const SizedBox(height: AppSpacing.base),
           Text(
             isArabic ? 'خطأ في جلب أوقات الصلاة' : 'Error Loading Prayer Times',
             style: Theme.of(context).textTheme.titleLarge,
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: AppConstants.paddingSmall),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             error,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -974,7 +972,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                 ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: AppConstants.paddingLarge),
+          const SizedBox(height: AppSpacing.xl),
           ElevatedButton.icon(
             onPressed: () => _loadPrayerTimes(),
             icon: const Icon(Icons.refresh),
@@ -1187,15 +1185,15 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
         elevation: 0,
       ),
       body: ListView(
-        padding: const EdgeInsets.symmetric(vertical: AppConstants.paddingMedium),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.base),
         children: [
           // ==================== NOTIFICATIONS SECTION ====================
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              AppConstants.paddingMedium,
-              AppConstants.paddingMedium,
-              AppConstants.paddingMedium,
-              AppConstants.paddingSmall,
+              AppSpacing.base,
+              AppSpacing.base,
+              AppSpacing.base,
+              AppSpacing.sm,
             ),
             child: Text(
               isArabic ? 'الإشعارات' : 'Notifications',
@@ -1291,15 +1289,15 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
               ],
             );
           }),
-          const SizedBox(height: AppConstants.paddingLarge),
+          const SizedBox(height: AppSpacing.xl),
 
           // ==================== PRAYER ALERTS SECTION ====================
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              AppConstants.paddingMedium,
-              AppConstants.paddingMedium,
-              AppConstants.paddingMedium,
-              AppConstants.paddingSmall,
+              AppSpacing.base,
+              AppSpacing.base,
+              AppSpacing.base,
+              AppSpacing.sm,
             ),
             child: Text(
               isArabic ? 'تنبيهات الصلاة' : 'Prayer Alerts',
@@ -1383,15 +1381,15 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
               onTap: () => _showDurationDialog(context),
             ),
 
-          const SizedBox(height: AppConstants.paddingLarge),
+          const SizedBox(height: AppSpacing.xl),
 
           // ==================== PRAYER EDITS SECTION ====================
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              AppConstants.paddingMedium,
-              AppConstants.paddingMedium,
-              AppConstants.paddingMedium,
-              AppConstants.paddingSmall,
+              AppSpacing.base,
+              AppSpacing.base,
+              AppSpacing.base,
+              AppSpacing.sm,
             ),
             child: Text(
               isArabic ? 'تعديلات الصلاة' : 'Prayer Edits',
@@ -1480,7 +1478,7 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
             },
           ),
 
-          const SizedBox(height: AppConstants.paddingMedium),
+          const SizedBox(height: AppSpacing.base),
           ],
         ),
       );

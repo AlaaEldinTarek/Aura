@@ -8,6 +8,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/providers/task_provider.dart';
 import '../../core/providers/preferences_provider.dart' show taskNotificationsEnabledProvider, taskReminderMinutesProvider;
 import '../../core/models/task.dart';
@@ -1349,7 +1350,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                     icon: const Icon(Icons.delete_sweep_outlined, size: 18),
                     label: Text(
                       isArabic ? 'مسح الكل' : 'Clear',
-                      style: const TextStyle(fontSize: 12),
+                      style: AppTypography.caption,
                     ),
                     style: TextButton.styleFrom(foregroundColor: Colors.red.shade400),
                   ),
@@ -1885,7 +1886,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               onPressed: () => _bulkComplete(isArabic),
               icon: const Icon(Icons.check_circle_outline, size: 18),
               label: Text(isArabic ? 'إتمام' : 'Complete',
-                  style: const TextStyle(fontSize: 13)),
+                  style: AppTypography.bodyS),
               style: TextButton.styleFrom(foregroundColor: Colors.green),
             ),
             const SizedBox(width: 8),
@@ -1894,7 +1895,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               onPressed: () => _bulkDelete(isArabic),
               icon: const Icon(Icons.delete_outline, size: 18),
               label: Text(isArabic ? 'حذف' : 'Delete',
-                  style: const TextStyle(fontSize: 13)),
+                  style: AppTypography.bodyS),
               style: TextButton.styleFrom(foregroundColor: Colors.red),
             ),
           ],
@@ -2849,7 +2850,7 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
                       const SizedBox(width: 3),
                       Text(
                         _dueDate != null ? '${_dueDate!.day}/${_dueDate!.month}' : (isArabic ? 'التاريخ' : 'Date'),
-                        style: TextStyle(fontSize: 11,
+                        style: AppTypography.labelS.copyWith(
                           color: _dueDate != null ? AppConstants.getPrimary(isDark) : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
                       ),
                     ]),
@@ -2880,7 +2881,7 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
                         const SizedBox(width: 3),
                         Text(
                           _dueTime != null ? _dueTime!.format(context) : (isArabic ? 'الوقت' : 'Time'),
-                          style: TextStyle(fontSize: 11,
+                          style: AppTypography.labelS.copyWith(
                             color: _dueTime != null ? AppConstants.getPrimary(isDark) : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
                         ),
                       ]),
@@ -3144,7 +3145,7 @@ class _InlineSubtaskCardState extends State<_InlineSubtaskCard> {
                             Expanded(
                               child: TextField(
                                 controller: _addController,
-                                style: const TextStyle(fontSize: 14),
+                                style: AppTypography.bodyM,
                                 decoration: InputDecoration(
                                   hintText: isArabic ? 'أضف مهمة فرعية...' : 'Add subtask...',
                                   border: InputBorder.none,

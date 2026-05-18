@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../constants/app_constants.dart';
 import '../providers/auth_provider.dart';
+import '../theme/app_typography.dart';
+import '../theme/app_spacing.dart';
 
 /// A beautiful greeting widget that shows personalized greeting
 /// based on time of day
@@ -35,7 +37,7 @@ class GreetingWidget extends ConsumerWidget {
       child: MediaQuery(
       data: mq.copyWith(textScaler: TextScaler.linear(cappedScale)),
       child: Container(
-        padding: const EdgeInsets.all(AppConstants.paddingLarge),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         decoration: BoxDecoration(
           color: bgColor,
           borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
@@ -62,7 +64,7 @@ class GreetingWidget extends ConsumerWidget {
                 child: _buildAvatar(ref),
               ),
             ),
-            const SizedBox(width: AppConstants.paddingMedium),
+            const SizedBox(width: AppSpacing.base),
 
             // Greeting Text
             Expanded(
@@ -71,20 +73,19 @@ class GreetingWidget extends ConsumerWidget {
                 children: [
                   Text(
                     isArabic ? greetingAr : greeting,
-                    style: TextStyle(
-                      fontSize: size.width > 600 ? 22 : 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                    style: (isArabic
+                            ? AppTypography.ar(AppTypography.headingM)
+                            : AppTypography.headingM)
+                        .copyWith(color: Colors.white),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: AppSpacing.xs),
                   if (displayName != null)
                     Text(
                       isArabic ? 'مرحباً، $displayName' : 'Welcome back, $displayName',
-                      style: TextStyle(
-                        fontSize: size.width > 600 ? 16 : 14,
-                        color: Colors.white.withOpacity(0.9),
-                      ),
+                      style: (isArabic
+                              ? AppTypography.ar(AppTypography.bodyM)
+                              : AppTypography.bodyM)
+                          .copyWith(color: Colors.white.withOpacity(0.9)),
                     ),
                 ],
               ),

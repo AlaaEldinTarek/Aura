@@ -7,6 +7,8 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/theme/app_typography.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/models/prayer_time.dart';
@@ -269,7 +271,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           ConnectivityWrapper(
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium).clamp(0, 16.0)),
+              padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppSpacing.base).clamp(0, 16.0)),
               child: _buildHomeBody(
                 context, isDark, isArabic, showPrayer, showTasks,
                 nextPrayer, completedCount, totalPrayers, prayerStatuses,
@@ -303,7 +305,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   }) {
     final footer = Center(
       child: Padding(
-        padding: const EdgeInsets.only(top: AppConstants.paddingLarge, bottom: AppConstants.paddingSmall),
+        padding: const EdgeInsets.only(top: AppSpacing.xl, bottom: AppSpacing.sm),
         child: Text(
           '${'version'.tr()} 1.0.2',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -452,7 +454,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       onTap: () => Navigator.of(context).pushNamed('/daily_content'),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(AppSpacing.base),
         decoration: BoxDecoration(
           color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
           borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
@@ -475,12 +477,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               children: [
                 Text(
                   typeLabel,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: primary,
-                    letterSpacing: 0.3,
-                  ),
+                  style: AppTypography.labelS.copyWith(color: primary),
                 ),
                 InfoTipIcon(
                   titleKey: 'info_tip_daily_content_title',
@@ -497,11 +494,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   ),
                   child: Text(
                     content.source,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: primary,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: AppTypography.caption.copyWith(color: primary, fontWeight: FontWeight.w500),
                   ),
                 ),
               ],
@@ -513,12 +506,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             // Arabic text — centered, RTL
             Text(
               content.arabic,
-              style: TextStyle(
-                fontSize: 16,
-                fontFamily: 'Cairo',
+              style: AppTypography.ar(AppTypography.bodyL).copyWith(
                 fontWeight: FontWeight.bold,
                 color: isDark ? Colors.white : const Color(0xFF2A2418),
-                height: 1.6,
               ),
               textAlign: TextAlign.center,
             ),
@@ -538,11 +528,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             // Translation
             Text(
               content.translation,
-              style: TextStyle(
-                fontSize: 12,
+              style: AppTypography.caption.copyWith(
                 fontStyle: FontStyle.italic,
                 color: isDark ? Colors.white60 : AppConstants.lightTextSecondary,
-                height: 1.5,
               ),
               textAlign: TextAlign.center,
             ),
@@ -558,7 +546,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   Widget _buildJumuahBanner(BuildContext context, bool isDark, bool isArabic) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.base),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
@@ -603,19 +591,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   children: [
                     Text(
                       isArabic ? 'جمعة مباركة' : "Jumu'ah Mubarak",
-                      style: TextStyle(
-                        fontSize: 16,
+                      style: (isArabic
+                              ? AppTypography.ar(AppTypography.bodyL)
+                              : AppTypography.bodyL)
+                          .copyWith(
                         fontWeight: FontWeight.bold,
                         color: isDark ? const Color(0xFFFFD966) : const Color(0xFF7A5700),
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: AppSpacing.xs),
                     Text(
                       isArabic
                           ? 'جعلها الله جمعة مباركة وتقبّل صلاتك'
                           : 'May Allah bless your Friday and accept your prayers',
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: (isArabic
+                              ? AppTypography.ar(AppTypography.caption)
+                              : AppTypography.caption)
+                          .copyWith(
                         color: isDark
                             ? const Color(0xFFFFD966).withOpacity(0.75)
                             : const Color(0xFF7A5700).withOpacity(0.8),
@@ -701,18 +693,18 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                 children: [
                   Text(
                     isArabic ? item.event.nameAr : item.event.nameEn,
-                    style: TextStyle(
-                      fontSize: 14,
+                    style: (isArabic
+                            ? AppTypography.ar(AppTypography.bodyM)
+                            : AppTypography.bodyM)
+                        .copyWith(
                       fontWeight: FontWeight.bold,
                       color: isDark ? Colors.white : Colors.black87,
-                      fontFamily: isArabic ? 'Cairo' : null,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
                     hijriLabel,
-                    style: TextStyle(
-                      fontSize: 11,
+                    style: AppTypography.caption.copyWith(
                       color: isDark ? Colors.white54 : Colors.black45,
                     ),
                   ),
@@ -731,11 +723,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   ),
                   child: Text(
                     countdown,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: accent,
-                    ),
+                    style: AppTypography.caption.copyWith(fontWeight: FontWeight.bold, color: accent),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -799,7 +787,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       ),
                     ),
                   ),
-                  const SizedBox(width: AppConstants.paddingMedium),
+                  const SizedBox(width: AppSpacing.base),
 
                   // Prayer info
                   Expanded(
@@ -808,9 +796,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       children: [
                         Text(
                           isArabic ? 'الصلاة القادمة' : 'Next Prayer',
-                          style: TextStyle(
+                          style: AppTypography.caption.copyWith(
                             color: isDark ? Colors.white54 : Colors.black54,
-                            fontSize: 12,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -840,18 +827,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                           children: [
                             Text(
                               _formatCountdown(remaining, isArabic),
-                              style: TextStyle(
+                              style: AppTypography.headingM.copyWith(
                                 color: AppConstants.getPrimary(isDark),
-                                fontSize: 22,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(height: 2),
+                            const SizedBox(height: AppSpacing.xs),
                             Text(
                               isArabic ? 'حتى الأذان' : 'Until Adhan',
-                              style: TextStyle(
+                              style: AppTypography.caption.copyWith(
                                 color: isDark ? Colors.white54 : Colors.black54,
-                                fontSize: 11,
                               ),
                             ),
                           ],
@@ -884,9 +869,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                                 ? NumberFormatter.withArabicNumeralsByLanguage(
                                     nextPrayer.time12h.replaceAll('AM', 'ص').replaceAll('PM', 'م'), 'ar')
                                 : nextPrayer.time12h,
-                            style: TextStyle(
+                            style: AppTypography.bodyS.copyWith(
                               color: isDark ? Colors.white70 : Colors.black54,
-                              fontSize: 13,
                             ),
                           ),
                         ],
@@ -894,14 +878,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       Row(
                         children: [
                           Icon(Icons.check_circle_outline, color: AppConstants.getPrimary(isDark).withOpacity(0.7), size: 14),
-                          const SizedBox(width: 4),
+                          const SizedBox(width: AppSpacing.xs),
                           Text(
                             isArabic
                                 ? '${NumberFormatter.withArabicNumerals('$completedCount')} من ${NumberFormatter.withArabicNumerals('$totalPrayers')}'
                                 : '$completedCount/$totalPrayers',
-                            style: TextStyle(
+                            style: AppTypography.bodyS.copyWith(
                               color: isDark ? Colors.white70 : Colors.black54,
-                              fontSize: 13,
                             ),
                           ),
                         ],
@@ -970,10 +953,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                 isArabic
                     ? NumberFormatter.withArabicNumeralsByLanguage('$completedCount/${kPrayerNames.length}', 'ar')
                     : '$completedCount/${kPrayerNames.length}',
-                style: TextStyle(
+                style: AppTypography.label.copyWith(
                   color: AppConstants.getPrimary(isDark),
                   fontWeight: FontWeight.bold,
-                  fontSize: 14,
                 ),
               ),
             ],
@@ -1057,11 +1039,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                           isArabic
                               ? ['الفجر', 'الظهر', 'العصر', 'المغرب', 'العشاء'][i]
                               : kPrayerNames[i],
-                          style: TextStyle(
+                          style: AppTypography.caption.copyWith(
                             fontSize: 9,
-                            color: isTracked
-                                ? color
-                                : (isDark ? Colors.white54 : Colors.black54),
+                            color: isTracked ? color : (isDark ? Colors.white54 : Colors.black54),
                             fontWeight: isTracked ? FontWeight.bold : FontWeight.normal,
                           ),
                         ),
@@ -1133,7 +1113,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   ),
                 );
               }),
-              const SizedBox(width: AppConstants.paddingMedium),
+              const SizedBox(width: AppSpacing.base),
               // Stats
               Expanded(
                 child: Column(
@@ -1159,8 +1139,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                           todayTotal > 0
                               ? (isArabic ? '${NumberFormatter.withArabicNumerals('$todayDone')} من ${NumberFormatter.withArabicNumerals('$todayTotal')}' : '$todayDone of $todayTotal')
                               : (isArabic ? 'لا مهام' : 'No tasks'),
-                          style: TextStyle(
-                            fontSize: 12,
+                          style: AppTypography.caption.copyWith(
                             fontWeight: FontWeight.w600,
                             color: progress >= 1.0 ? Colors.green : AppConstants.getPrimary(isDark),
                           ),
@@ -1282,8 +1261,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                 },
                 child: Text(
                   isArabic ? 'عرض الكل' : 'View All',
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: AppTypography.caption.copyWith(
                     color: AppConstants.getPrimary(isDark),
                     fontWeight: FontWeight.w600,
                   ),
@@ -1320,8 +1298,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       isArabic
                           ? '${NumberFormatter.withArabicNumerals('$done')} من ${NumberFormatter.withArabicNumerals('${stats.dueToday}')} مكتملة'
                           : '$done of ${stats.dueToday} completed',
-                      style: TextStyle(
-                        fontSize: 11,
+                      style: AppTypography.caption.copyWith(
                         color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                       ),
                     ),
@@ -1355,10 +1332,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       const SizedBox(width: 8),
                       Text(
                         isArabic ? 'أنجزت كل مهام اليوم!' : 'All done for today!',
-                        style: TextStyle(
-                          color:
-                              isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-                          fontSize: 13,
+                        style: AppTypography.bodyS.copyWith(
+                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                         ),
                       ),
                     ],
@@ -1378,8 +1353,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Text(
                           isArabic ? 'قريباً' : 'Upcoming',
-                          style: TextStyle(
-                            fontSize: 11,
+                          style: AppTypography.caption.copyWith(
                             fontWeight: FontWeight.w600,
                             color: Colors.orange.shade700,
                           ),
@@ -1586,7 +1560,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   ],
                 ),
               ),
-              const SizedBox(width: AppConstants.paddingMedium),
+              const SizedBox(width: AppSpacing.base),
               // Prayer dots
               Expanded(
                 child: Column(
@@ -1602,7 +1576,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                         children: [
                           Image.asset(_getPrayerIconAsset(name), width: 16, height: 16),
                           const SizedBox(width: 6),
-                          Text(displayName, style: TextStyle(fontSize: 12, color: isDark ? Colors.white70 : Colors.black54)),
+                          Text(displayName, style: AppTypography.caption.copyWith(color: isDark ? Colors.white70 : Colors.black54)),
                         ],
                       ),
                     );
@@ -1627,7 +1601,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         final records = snapshot.data!.take(3).toList();
 
         return Container(
-          padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium)),
+          padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppSpacing.base)),
           decoration: BoxDecoration(
             color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
             borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
@@ -1640,7 +1614,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                 isArabic ? 'النشاط الأخير' : 'Recent Activity',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: AppConstants.paddingSmall),
+              const SizedBox(height: AppSpacing.sm),
               ...records.map((record) {
                 final statusIcon = record.status == PrayerStatus.onTime
                     ? Icons.check_circle
@@ -1669,7 +1643,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       Expanded(
                         child: Text(
                           isArabic ? record.prayerName : record.prayerName,
-                          style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: isDark ? Colors.white : Colors.black87),
+                          style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.w500, color: isDark ? Colors.white : Colors.black87),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -1679,14 +1653,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       Flexible(
                         child: Text(
                           statusText,
-                          style: TextStyle(fontSize: 11, color: statusColor, fontWeight: FontWeight.w600),
+                          style: AppTypography.caption.copyWith(color: statusColor, fontWeight: FontWeight.w600),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const SizedBox(width: 6),
                       Text(
                         displayTime,
-                        style: TextStyle(fontSize: 11, color: isDark ? Colors.white38 : Colors.black38),
+                        style: AppTypography.caption.copyWith(color: isDark ? Colors.white38 : Colors.black38),
                       ),
                     ],
                   ),
