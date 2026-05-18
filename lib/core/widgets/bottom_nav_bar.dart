@@ -80,7 +80,7 @@ class AuraBottomNavBar extends ConsumerWidget {
                 _buildNavItem(
                   context: context,
                   icon: Icons.task_alt_outlined,
-                  label: 'task_management'.tr(),
+                  label: 'tasks_nav'.tr(),
                   isSelected: currentIndex == 3,
                   onTap: () => onTap(3),
                   badge: overdueCount,
@@ -125,7 +125,12 @@ class AuraBottomNavBar extends ConsumerWidget {
           borderRadius: BorderRadius.circular(12),
           child: Padding(
           padding: EdgeInsets.symmetric(vertical: isComingSoon ? 6 : 8),
-          child: Column(
+          child: Builder(builder: (ctx) {
+          final mq = MediaQuery.of(ctx);
+          final cappedScale = mq.textScaler.scale(1.0).clamp(0.9, 1.3);
+          return MediaQuery(
+            data: mq.copyWith(textScaler: TextScaler.linear(cappedScale)),
+            child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               // Icon with optional badge
@@ -202,6 +207,8 @@ class AuraBottomNavBar extends ConsumerWidget {
                 ),
             ],
           ),
+          );
+          }),
         ),
       ),
       ),

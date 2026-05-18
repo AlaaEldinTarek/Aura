@@ -172,6 +172,8 @@ class WirdState {
   final int totalPagesRead;
   final int totalDaysCompleted;
   final List<int> allCompletedJuz; // all juz (1-30) ever completed
+  final int khatmCount;
+  final List<String> khatmDates; // "YYYY-MM-DD" for each khatma
 
   const WirdState({
     this.settings = const WirdSettings(),
@@ -181,6 +183,8 @@ class WirdState {
     this.totalPagesRead = 0,
     this.totalDaysCompleted = 0,
     this.allCompletedJuz = const [],
+    this.khatmCount = 0,
+    this.khatmDates = const [],
   });
 
   WirdState copyWith({
@@ -191,6 +195,8 @@ class WirdState {
     int? totalPagesRead,
     int? totalDaysCompleted,
     List<int>? allCompletedJuz,
+    int? khatmCount,
+    List<String>? khatmDates,
   }) =>
       WirdState(
         settings: settings ?? this.settings,
@@ -200,5 +206,7 @@ class WirdState {
         totalPagesRead: totalPagesRead ?? this.totalPagesRead,
         totalDaysCompleted: totalDaysCompleted ?? this.totalDaysCompleted,
         allCompletedJuz: allCompletedJuz ?? this.allCompletedJuz,
+        khatmCount: khatmCount ?? this.khatmCount,
+        khatmDates: khatmDates ?? this.khatmDates,
       );
 }

@@ -14,6 +14,10 @@ class QuranSvgService {
   // Dedup: avoid downloading the same page twice concurrently.
   static final Map<int, Future<File>> _inflight = {};
 
+  // In-memory SVG string cache — holds last 30 pages to avoid repeated disk reads.
+  static final Map<int, String> _svgCache = {};
+  static const _maxCacheSize = 30;
+
   static String _name(int page) => '${page.toString().padLeft(3, '0')}.svg';
 
   static Future<Directory> _dir() async {
@@ -43,6 +47,18 @@ class QuranSvgService {
       if (await file.exists()) await file.delete();
       rethrow;
     }
+  }
+
+  /// Returns the SVG string for a page, using an in-memory cache to skip disk reads on revisits.
+  static Future<String> getSvgString(int page) async {
+    if (_svgCache.containsKey(page)) return _svgCache[page]!;
+    final file = await getPage(page);
+    final str = await file.readAsString();
+    if (_svgCache.length >= _maxCacheSize) {
+      _svgCache.remove(_svgCache.keys.first);
+    }
+    _svgCache[page] = str;
+    return str;
   }
 
   static void preload(int page) {

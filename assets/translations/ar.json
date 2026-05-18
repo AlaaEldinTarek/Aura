@@ -70,6 +70,7 @@
   "prayer_times_coming_soon": "قريباً",
 
   "task_management": "إدارة المهام",
+  "tasks_nav": "المهام",
   "task_management_desc": "نظم مهامك اليومية بكفاءة",
   "coming_soon": "قريباً",
   "Tasks_coming_soon": "إدارة المهام قريباً",
@@ -442,5 +443,21 @@
   "location_detect_failed": "تعذّر تحديد الموقع. تحقق من الاتصال.",
   "location_invalid_coords": "إحداثيات غير صالحة. خط العرض: -90 إلى 90، خط الطول: -180 إلى 180.",
   "location_no_selection": "ابحث عن مدينة أو أدخل الإحداثيات.",
-  "location_change": "تغيير الموقع"
+  "location_change": "تغيير الموقع",
+
+  "khatma_celebration_title": "مبروك!",
+  "khatma_celebration_subtitle": "لقد أتممت تلاوة القرآن الكريم",
+  "khatma_count_label": "الختمة #%d",
+  "khatma_date_completed": "أُتمَّت في %s",
+  "khatma_read_dua_btn": "اقرأ دعاء الختم",
+  "khatma_done_btn": "تم",
+  "khatma_dua_title": "دعاء الختم",
+  "khatma_dua_translation_label": "الترجمة",
+  "khatma_history_title": "سجل الختمات",
+  "khatma_history_empty": "لم تُتمَّ أي ختمة بعد",
+  "khatma_finished_title": "هل أتممت وردك؟",
+  "khatma_finished_body": "وصلت إلى آخر صفحة في القرآن الكريم. هل أنهيت وردك اليومي؟",
+  "khatma_finished_yes": "نعم، انتهيت!",
+  "khatma_finished_no": "لا بعد",
+  "khatma_finished_keep": "أكمل القراءة"
 }

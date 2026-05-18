@@ -27,8 +27,13 @@ class GreetingWidget extends ConsumerWidget {
 
     final displayName = userName?.isNotEmpty == true ? userName : null;
 
+    final mq = MediaQuery.of(context);
+    final cappedScale = mq.textScaler.scale(1.0).clamp(0.9, 1.5);
+
     return GestureDetector(
       onTap: onTap,
+      child: MediaQuery(
+      data: mq.copyWith(textScaler: TextScaler.linear(cappedScale)),
       child: Container(
         padding: const EdgeInsets.all(AppConstants.paddingLarge),
         decoration: BoxDecoration(
@@ -86,6 +91,7 @@ class GreetingWidget extends ConsumerWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

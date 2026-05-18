@@ -19,6 +19,8 @@ class WirdService {
   static const _totalDaysKey = 'wird_total_days_completed';
   static const _historyKey = 'wird_progress_history';
   static const _completedJuzKey = 'wird_completed_juz';
+  static const _khatmCountKey = 'wird_khatm_count';
+  static const _khatmDatesKey = 'wird_khatm_dates';
 
   Future<SharedPreferences> get _prefs => SharedPreferences.getInstance();
 
@@ -282,6 +284,39 @@ class WirdService {
     _pushToCloud().ignore();
   }
 
+  // ── Khatma ──────────────────────────────────────────────────────────────
+
+  Future<int> getKhatmCount() async {
+    final prefs = await _prefs;
+    return prefs.getInt(_khatmCountKey) ?? 0;
+  }
+
+  Future<List<String>> getKhatmDates() async {
+    final prefs = await _prefs;
+    final json = prefs.getString(_khatmDatesKey);
+    if (json == null) return [];
+    return (jsonDecode(json) as List<dynamic>).map((e) => e as String).toList();
+  }
+
+  /// Records a new khatma (increments count, saves date) and returns the new count.
+  Future<int> recordKhatma() async {
+    final prefs = await _prefs;
+    final newCount = (prefs.getInt(_khatmCountKey) ?? 0) + 1;
+    await prefs.setInt(_khatmCountKey, newCount);
+    final dates = await getKhatmDates();
+    dates.add(_todayKey());
+    await prefs.setString(_khatmDatesKey, jsonEncode(dates));
+    _pushToCloud().ignore();
+    return newCount;
+  }
+
+  /// Clears all completed juz so the user can start a new khatma cycle.
+  Future<void> resetAllJuz() async {
+    final prefs = await _prefs;
+    await prefs.setString(_completedJuzKey, jsonEncode([]));
+    _pushToCloud().ignore();
+  }
+
   // ── Bookmark Sync ───────────────────────────────────────────────────────
 
   /// Sync bookmark pages with Wird progress.
@@ -384,6 +419,8 @@ class WirdService {
     final todayProgress = await getTodayProgress();
     final streakCount = await getStreakCount();
     final allCompletedJuz = await getCompletedJuz();
+    final khatmCount = await getKhatmCount();
+    final khatmDates = await getKhatmDates();
     final prefs = await _prefs;
     return WirdState(
       settings: settings,
@@ -393,6 +430,8 @@ class WirdService {
       totalPagesRead: prefs.getInt(_totalPagesKey) ?? 0,
       totalDaysCompleted: prefs.getInt(_totalDaysKey) ?? 0,
       allCompletedJuz: allCompletedJuz,
+      khatmCount: khatmCount,
+      khatmDates: khatmDates,
     );
   }
 
@@ -438,6 +477,8 @@ class WirdService {
     try {
       final settings = await getSettings();
       final completedJuz = await getCompletedJuz();
+      final khatmCount = await getKhatmCount();
+      final khatmDates = await getKhatmDates();
       final prefs = await _prefs;
       final doc = FirebaseFirestore.instance.collection('users').doc(userId).collection('wird').doc('data');
       await doc.set({
@@ -447,6 +488,8 @@ class WirdService {
         'totalPagesRead': prefs.getInt(_totalPagesKey) ?? 0,
         'totalDaysCompleted': prefs.getInt(_totalDaysKey) ?? 0,
         'completedJuz': completedJuz,
+        'khatmCount': khatmCount,
+        'khatmDates': khatmDates,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     } catch (e) {
@@ -489,6 +532,13 @@ class WirdService {
       if (data['completedJuz'] != null) {
         final juzList = (data['completedJuz'] as List<dynamic>).map((e) => e as int).toList();
         await prefs.setString(_completedJuzKey, jsonEncode(juzList));
+      }
+      if (data['khatmCount'] != null) {
+        await prefs.setInt(_khatmCountKey, data['khatmCount'] as int);
+      }
+      if (data['khatmDates'] != null) {
+        final dateList = (data['khatmDates'] as List<dynamic>).map((e) => e as String).toList();
+        await prefs.setString(_khatmDatesKey, jsonEncode(dateList));
       }
     } catch (e) {
       debugPrint('❌ Wird sync from Firestore error: $e');

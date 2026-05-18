@@ -296,8 +296,27 @@ void showTutorial({
 
   void nextStep() {
     if (currentStep < steps.length - 1) {
-      currentStep++;
-      entry.markNeedsBuild();
+      final newStep = currentStep + 1;
+      final nextContext = steps[newStep].targetKey.currentContext;
+
+      Future<void> advance() async {
+        if (nextContext != null) {
+          try {
+            await Scrollable.ensureVisible(
+              nextContext,
+              duration: const Duration(milliseconds: 350),
+              curve: Curves.easeInOut,
+              alignment: 0.25, // show target in upper quarter so tooltip fits below
+            );
+          } catch (_) {
+            // target is not inside a scrollable (e.g. fixed nav bar) — skip scroll
+          }
+        }
+        currentStep = newStep;
+        entry.markNeedsBuild();
+      }
+
+      advance();
     } else {
       removeEntry();
     }

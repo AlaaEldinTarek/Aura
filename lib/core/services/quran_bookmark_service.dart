@@ -32,6 +32,16 @@ class QuranBookmarkService {
     await _saveBookmarks(bookmarks);
   }
 
+  /// Atomically removes one bookmark and inserts another in a single read-write.
+  static Future<void> replaceBookmark(String removeId, QuranBookmark add) async {
+    final bookmarks = await getBookmarks();
+    bookmarks.removeWhere((b) => b.id == removeId);
+    if (!bookmarks.any((b) => b.id == add.id)) {
+      bookmarks.insert(0, add);
+    }
+    await _saveBookmarks(bookmarks);
+  }
+
   static Future<bool> isBookmarked(String id) async {
     final bookmarks = await getBookmarks();
     return bookmarks.any((b) => b.id == id);

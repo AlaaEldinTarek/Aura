@@ -3,7 +3,9 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:local_notifier/local_notifier.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:window_manager/window_manager.dart';
 import 'desktop_adhan_service.dart';
+import 'desktop_tray_service.dart';
 
 /// Windows/macOS/Linux notification service using local_notifier.
 /// Handles pre-prayer reminders, post-prayer checks, achievement, and task toasts.
@@ -87,9 +89,18 @@ class DesktopNotificationService {
           ),
         ],
       );
-      notification.onClickAction = (actionIndex) {
+      notification.onClickAction = (actionIndex) async {
         DesktopAdhanService.instance.stop();
+        await DesktopTrayService.instance.setAdhanPlaying(false);
+        // WinRT foreground activation brings window to front; re-hide if it was in tray
+        if (DesktopTrayService.instance.isHidden) {
+          await windowManager.hide();
+        }
         debugPrint('DesktopNotificationService: Stop Adhan clicked');
+      };
+      // Clicking notification body opens the app (standard Windows behavior)
+      notification.onClick = () {
+        DesktopTrayService.instance.showWindow();
       };
       await notification.show();
       debugPrint(

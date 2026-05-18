@@ -11,6 +11,7 @@ import 'package:aura_app/core/widgets/info_tip_icon.dart';
 import 'package:aura_app/core/widgets/tutorial_overlay.dart';
 import 'package:aura_app/core/services/shared_preferences_service.dart';
 import 'quran_reader_screen.dart';
+import 'khatma_celebration_screen.dart';
 
 class WirdTab extends ConsumerWidget {
   final String lang;
@@ -44,6 +45,7 @@ class _WirdContentView extends ConsumerStatefulWidget {
 class _WirdContentViewState extends ConsumerState<_WirdContentView> {
   bool _showUndo = true;
   bool _syncInProgress = false;
+  bool _khatmaHandled = false;
 
   final _streakKey = GlobalKey();
   final _progressKey = GlobalKey();
@@ -92,6 +94,18 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
       context: context,
       steps: steps,
       onDone: () => SharedPreferencesService.instance.setTutorialWirdSeen(),
+    );
+  }
+
+  Future<void> _handleJuzKhatma() async {
+    if (!mounted) return;
+    final count = await ref.read(wirdStateProvider.notifier).resetJuzForKhatma();
+    if (!mounted) return;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => KhatmaCelebrationScreen(khatmCount: count, date: DateTime.now()),
+      ),
     );
   }
 
@@ -150,6 +164,21 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
         }
       }
     }
+
+    // Detect when all 30 juz are completed — trigger khatma celebration
+    ref.listen<AsyncValue<WirdState>>(wirdStateProvider, (previous, next) {
+      if (!isJuzMode) return;
+      final prevLen = previous?.valueOrNull?.allCompletedJuz.length ?? 0;
+      final nextLen = next.valueOrNull?.allCompletedJuz.length ?? 0;
+      if (prevLen < 30 && nextLen == 30 && !_khatmaHandled) {
+        _khatmaHandled = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _handleJuzKhatma();
+        });
+      }
+      // Reset flag when juz resets to 0 (after a new khatma cycle starts)
+      if (nextLen == 0) _khatmaHandled = false;
+    });
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = AppConstants.getPrimary(isDark);

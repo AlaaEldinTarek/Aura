@@ -70,6 +70,7 @@
   "prayer_times_coming_soon": "Coming Soon",
 
   "task_management": "Task Management",
+  "tasks_nav": "Tasks",
   "task_management_desc": "Organize your daily tasks efficiently",
   "coming_soon": "Coming Soon",
   "Tasks_coming_soon": "Task management is coming soon",
@@ -442,5 +443,21 @@
   "location_detect_failed": "Could not detect location. Check your connection.",
   "location_invalid_coords": "Invalid coordinates. Latitude: -90 to 90, Longitude: -180 to 180.",
   "location_no_selection": "Please search for a city or enter coordinates.",
-  "location_change": "Change Location"
+  "location_change": "Change Location",
+
+  "khatma_celebration_title": "Congratulations!",
+  "khatma_celebration_subtitle": "You have completed the Noble Quran",
+  "khatma_count_label": "Khatm #%d",
+  "khatma_date_completed": "Completed on %s",
+  "khatma_read_dua_btn": "Read Khatma Du'a",
+  "khatma_done_btn": "Done",
+  "khatma_dua_title": "Khatma Du'a",
+  "khatma_dua_translation_label": "Translation",
+  "khatma_history_title": "Khatm History",
+  "khatma_history_empty": "No khatms completed yet",
+  "khatma_finished_title": "Did You Finish?",
+  "khatma_finished_body": "You've reached the last page of the Quran. Did you complete your daily Wird?",
+  "khatma_finished_yes": "Yes, I'm Done!",
+  "khatma_finished_no": "Not Yet",
+  "khatma_finished_keep": "Keep Reading"
 }

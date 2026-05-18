@@ -63,14 +63,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     // Load prayer statuses via shared provider (cached, won't hit Firestore if fresh)
     Future.microtask(() => ref.read(dailyPrayerStatusProvider.notifier).load());
     _startCountdownTimer();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!mounted) return;
-      final prefs = SharedPreferencesService.instance;
-      if (!prefs.isTutorialCompleted()) {
-        await Future.delayed(const Duration(milliseconds: 800));
-        if (mounted) _launchTutorial();
-      }
-    });
+  }
+
+  void _onPermissionsDone() {
+    if (!mounted) return;
+    if (!SharedPreferencesService.instance.isTutorialCompleted()) {
+      _launchTutorialWhenActive();
+    }
+  }
+
+  void _launchTutorialWhenActive() {
+    if (!mounted) return;
+    // Only launch when home screen is the topmost route (permissions page fully gone)
+    if (ModalRoute.of(context)?.isCurrent == true) {
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+          _launchTutorial();
+        }
+      });
+    } else {
+      // Another route is still on top — retry every 300ms
+      Future.delayed(const Duration(milliseconds: 300), _launchTutorialWhenActive);
+    }
   }
 
   void _launchTutorial() {
@@ -265,7 +279,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             ),
           ),
           // Permission dialog handler (shows dialogs after home loads)
-          const PermissionDialogHandler(),
+          PermissionDialogHandler(onDone: _onPermissionsDone),
         ],
       ),
     );
@@ -575,35 +589,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               color: const Color(0xFFD4A017).withOpacity(0.2),
               borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
             ),
-            child: const Center(child: Text('🕌', style: TextStyle(fontSize: 26))),
+            child: const Center(child: FittedBox(fit: BoxFit.scaleDown, child: Text('🕌', style: TextStyle(fontSize: 26)))),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isArabic ? 'جمعة مباركة' : "Jumu'ah Mubarak",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? const Color(0xFFFFD966) : const Color(0xFF7A5700),
-                  ),
+            child: Builder(builder: (ctx) {
+              final mq = MediaQuery.of(ctx);
+              final cappedScale = mq.textScaler.scale(1.0).clamp(0.9, 1.5);
+              return MediaQuery(
+                data: mq.copyWith(textScaler: TextScaler.linear(cappedScale)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isArabic ? 'جمعة مباركة' : "Jumu'ah Mubarak",
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? const Color(0xFFFFD966) : const Color(0xFF7A5700),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      isArabic
+                          ? 'جعلها الله جمعة مباركة وتقبّل صلاتك'
+                          : 'May Allah bless your Friday and accept your prayers',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark
+                            ? const Color(0xFFFFD966).withOpacity(0.75)
+                            : const Color(0xFF7A5700).withOpacity(0.8),
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  isArabic
-                      ? 'جعلها الله جمعة مباركة وتقبّل صلاتك'
-                      : 'May Allah bless your Friday and accept your prayers',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark
-                        ? const Color(0xFFFFD966).withOpacity(0.75)
-                        : const Color(0xFF7A5700).withOpacity(0.8),
-                  ),
-                ),
-              ],
-            ),
+              );
+            }),
           ),
         ],
       ),
@@ -639,12 +662,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final h = HijriDate.toHijri(item.date);
     final hijriLabel = isArabic ? HijriDate.formatAr(h) : HijriDate.formatEn(h);
 
-    final _tsPad = MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium);
+    final tsPad = MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium);
     return GestureDetector(
       onTap: () => Navigator.of(context).pushNamed('/islamic_events'),
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.all(_tsPad),
+        padding: EdgeInsets.all(tsPad),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [accent.withOpacity(0.15), accent.withOpacity(0.04)],
@@ -735,7 +758,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     int totalPrayers,
   ) {
     final hasData = nextPrayer != null;
-    final _pad = MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium);
+    final pad = MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium);
 
     return Material(
       color: Colors.transparent,
@@ -743,7 +766,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         onTap: () => Navigator.of(context).pushNamed('/prayer'),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         child: Container(
-          padding: EdgeInsets.all(_pad),
+          padding: EdgeInsets.all(pad),
           decoration: BoxDecoration(
             color: isDark
                 ? AppConstants.getPrimary(isDark).withOpacity(0.12)
@@ -808,26 +831,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   ValueListenableBuilder<Duration>(
                     valueListenable: _countdownNotifier,
                     builder: (context, remaining, _) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            _formatCountdown(remaining, isArabic),
-                            style: TextStyle(
-                              color: AppConstants.getPrimary(isDark),
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
+                      final mq = MediaQuery.of(context);
+                      final cappedScale = mq.textScaler.scale(1.0).clamp(0.9, 1.5);
+                      return MediaQuery(
+                        data: mq.copyWith(textScaler: TextScaler.linear(cappedScale)),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              _formatCountdown(remaining, isArabic),
+                              style: TextStyle(
+                                color: AppConstants.getPrimary(isDark),
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            isArabic ? 'حتى الأذان' : 'Until Adhan',
-                            style: TextStyle(
-                              color: isDark ? Colors.white54 : Colors.black54,
-                              fontSize: 11,
+                            const SizedBox(height: 2),
+                            Text(
+                              isArabic ? 'حتى الأذان' : 'Until Adhan',
+                              style: TextStyle(
+                                color: isDark ? Colors.white54 : Colors.black54,
+                                fontSize: 11,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       );
                     },
                   ),
@@ -1020,18 +1048,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      isArabic
-                          ? ['الفجر', 'الظهر', 'العصر', 'المغرب', 'العشاء'][i]
-                          : kPrayerNames[i],
-                      style: TextStyle(
-                        fontSize: 9,
-                        color: isTracked
-                            ? color
-                            : (isDark ? Colors.white54 : Colors.black54),
-                        fontWeight: isTracked ? FontWeight.bold : FontWeight.normal,
-                      ),
-                    ),
+                    Builder(builder: (ctx) {
+                      final mq = MediaQuery.of(ctx);
+                      final cappedScale = mq.textScaler.scale(1.0).clamp(0.9, 1.3);
+                      return MediaQuery(
+                        data: mq.copyWith(textScaler: TextScaler.linear(cappedScale)),
+                        child: Text(
+                          isArabic
+                              ? ['الفجر', 'الظهر', 'العصر', 'المغرب', 'العشاء'][i]
+                              : kPrayerNames[i],
+                          style: TextStyle(
+                            fontSize: 9,
+                            color: isTracked
+                                ? color
+                                : (isDark ? Colors.white54 : Colors.black54),
+                            fontWeight: isTracked ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                      );
+                    }),
                   ],
                 ),
               );

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -9,7 +10,13 @@ import '../services/notification_service.dart';
 
 /// Checks all required permissions and shows a dialog for missing ones.
 class PermissionDialogHandler extends StatefulWidget {
-  const PermissionDialogHandler({super.key});
+  const PermissionDialogHandler({super.key, this.onDone});
+
+  /// Called after the permissions check (and any dialog) is complete.
+  final VoidCallback? onDone;
+
+  static final Completer<void> _completer = Completer<void>();
+  static Future<void> get permissionsDone => _completer.future;
 
   @override
   State<PermissionDialogHandler> createState() => _PermissionDialogHandlerState();
@@ -28,6 +35,16 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
 
   Future<void> _checkAllPermissions() async {
     if (_hasChecked) return;
+
+    // Desktop (Windows/macOS/Linux) has no Android permissions to check
+    if (!Platform.isAndroid && !Platform.isIOS) {
+      _hasChecked = true;
+      if (!PermissionDialogHandler._completer.isCompleted) {
+        PermissionDialogHandler._completer.complete();
+      }
+      widget.onDone?.call();
+      return;
+    }
 
     // Read app mode to filter relevant permissions
     final prefs = await SharedPreferences.getInstance();
@@ -135,15 +152,23 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
 
     if (missing.isEmpty || !mounted) {
       _hasChecked = true;
+      if (!PermissionDialogHandler._completer.isCompleted) {
+        PermissionDialogHandler._completer.complete();
+      }
+      widget.onDone?.call();
       return;
     }
 
     _hasChecked = true;
-    _showPermissionsPage(missing);
+    await _showPermissionsPage(missing);
+    if (!PermissionDialogHandler._completer.isCompleted) {
+      PermissionDialogHandler._completer.complete();
+    }
+    widget.onDone?.call();
   }
 
-  void _showPermissionsPage(List<_PermInfo> missing) {
-    Navigator.of(context).push(
+  Future<void> _showPermissionsPage(List<_PermInfo> missing) async {
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => _PermissionsPage(permissions: missing),
         fullscreenDialog: true,

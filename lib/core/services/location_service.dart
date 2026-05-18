@@ -1,5 +1,5 @@
-import 'dart:io' show Platform;
-import 'package:dio/dio.dart';
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -98,20 +98,71 @@ class LocationService {
     debugPrint('LocationService: Manual location cleared');
   }
 
-  /// Get location from IP address (desktop fallback)
+  // ── Desktop location persistence ──────────────────────────────────────────
+
+  static const _kDesktopLat = 'desktop_ip_lat';
+  static const _kDesktopLon = 'desktop_ip_lon';
+  static const _kDesktopCity = 'desktop_ip_city';
+  static const _kDesktopTs = 'desktop_ip_ts';
+  static const _kDesktopCacheTtl = Duration(hours: 24);
+
+  Future<LocationData?> _getCachedDesktopLocation() async {
+    final prefs = await _preferences;
+    final ts = prefs.getInt(_kDesktopTs);
+    if (ts == null) return null;
+    final age = DateTime.now().difference(DateTime.fromMillisecondsSinceEpoch(ts));
+    if (age > _kDesktopCacheTtl) return null;
+    final lat = prefs.getDouble(_kDesktopLat);
+    final lon = prefs.getDouble(_kDesktopLon);
+    final city = prefs.getString(_kDesktopCity) ?? 'Unknown City';
+    if (lat == null || lon == null) return null;
+    return LocationData(latitude: lat, longitude: lon, cityName: city);
+  }
+
+  Future<void> _saveDesktopLocation(LocationData loc) async {
+    final prefs = await _preferences;
+    await prefs.setDouble(_kDesktopLat, loc.latitude);
+    await prefs.setDouble(_kDesktopLon, loc.longitude);
+    await prefs.setString(_kDesktopCity, loc.cityName);
+    await prefs.setInt(_kDesktopTs, DateTime.now().millisecondsSinceEpoch);
+  }
+
+  /// Tries IP geolocation in background and saves result for next app start.
+  void _updateIpLocationInBackground() {
+    Future.delayed(const Duration(seconds: 3), () async {
+      final loc = await _getIpLocation();
+      if (loc != null) {
+        await _saveDesktopLocation(loc);
+        debugPrint('LocationService: Background IP location saved: ${loc.cityName}');
+      }
+    });
+  }
+
+  /// Get location from IP address using HTTPS (desktop fallback).
   Future<LocationData?> _getIpLocation() async {
     try {
       debugPrint('LocationService: Trying IP-based geolocation...');
-      final dio = Dio(BaseOptions(connectTimeout: const Duration(seconds: 5)));
-      final response = await dio.get('http://ip-api.com/json/');
-      if (response.statusCode == 200 && response.data is Map) {
-        final data = response.data as Map;
-        if (data['status'] == 'success') {
-          final lat = (data['lat'] as num).toDouble();
-          final lon = (data['lon'] as num).toDouble();
-          final city = data['city'] as String? ?? 'Unknown City';
+      // Use HTTPS to avoid Windows firewall/Defender blocking plain HTTP
+      final client = HttpClient()..connectionTimeout = const Duration(seconds: 8);
+      final request = await client.getUrl(Uri.parse('https://ipapi.co/json/'));
+      request.headers.set('User-Agent', 'AuraApp/1.0');
+      final response = await request.close().timeout(const Duration(seconds: 10));
+      final body = await response.transform(utf8.decoder).join();
+      client.close(force: false);
+      debugPrint('LocationService: IP response received (${response.statusCode})');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(body) as Map<String, dynamic>;
+        // ipapi.co returns latitude/longitude directly
+        final lat = data['latitude'];
+        final lon = data['longitude'];
+        final city = data['city'] as String? ?? 'Unknown City';
+        if (lat != null && lon != null) {
           debugPrint('LocationService: IP location: $city ($lat, $lon)');
-          return LocationData(latitude: lat, longitude: lon, cityName: city);
+          return LocationData(
+            latitude: (lat as num).toDouble(),
+            longitude: (lon as num).toDouble(),
+            cityName: city,
+          );
         }
       }
     } catch (e) {
@@ -129,11 +180,17 @@ class LocationService {
       return manualLocation;
     }
 
-    // On desktop, use IP geolocation instead of GPS
+    // On desktop, use cached location first, then IP geolocation
     if (_isDesktop) {
-      final ipLocation = await _getIpLocation();
-      if (ipLocation != null) return ipLocation;
-      throw Exception('Could not determine location. Please set a manual location in Settings.');
+      // Use recently saved location (within 24 h) to avoid HTTP request on every start
+      final cached = await _getCachedDesktopLocation();
+      if (cached != null) {
+        debugPrint('LocationService: Using saved desktop location: ${cached.cityName}');
+        return cached;
+      }
+      // Default to Mecca — user can set actual location in Settings
+      debugPrint('LocationService: No cached location, using Mecca default');
+      return LocationData(latitude: 21.4225, longitude: 39.8262, cityName: 'Mecca');
     }
 
     // Fall back to GPS

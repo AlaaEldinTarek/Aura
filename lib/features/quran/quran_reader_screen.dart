@@ -18,6 +18,9 @@ import 'package:aura_app/core/utils/number_formatter.dart';
 import 'package:aura_app/features/main/main_wrapper_screen.dart' show desktopSidebarVisibleProvider;
 import 'package:aura_app/core/widgets/tutorial_overlay.dart';
 import 'package:aura_app/core/services/shared_preferences_service.dart';
+import 'package:aura_app/core/models/wird.dart';
+import 'package:aura_app/core/providers/wird_provider.dart';
+import 'khatma_celebration_screen.dart';
 
 class QuranReaderScreen extends ConsumerStatefulWidget {
   final int suraNo;
@@ -75,8 +78,10 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
       });
     }
     _saveProgress(_currentPage);
-    QuranSvgService.preload(_currentPage - 1);
-    QuranSvgService.preload(_currentPage + 1);
+    for (int i = 1; i <= 3; i++) {
+      QuranSvgService.preload(_currentPage - i);
+      QuranSvgService.preload(_currentPage + i);
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!mounted) return;
       final prefs = SharedPreferencesService.instance;
@@ -154,8 +159,10 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
     final page = index + 1;
     setState(() => _currentPage = page);
     _saveProgress(page);
-    QuranSvgService.preload(page - 1);
-    QuranSvgService.preload(page + 1);
+    for (int i = 1; i <= 3; i++) {
+      QuranSvgService.preload(page - i);
+      QuranSvgService.preload(page + i);
+    }
   }
 
 void _togglePageBookmark() {
@@ -255,8 +262,7 @@ void _togglePageBookmark() {
                               final nav = Navigator.of(context);
                               nav.pop();
                               nav.pop();
-                              ref.read(quranBookmarksProvider.notifier).removeBookmark(oldBm.id);
-                              ref.read(quranBookmarksProvider.notifier).addBookmark(newBm);
+                              ref.read(quranBookmarksProvider.notifier).replaceBookmark(oldBm.id, newBm);
                             },
                           ),
                         );
@@ -286,11 +292,65 @@ void _togglePageBookmark() {
     final bookmarks = ref.watch(quranBookmarksProvider).valueOrNull ?? [];
     final isBookmarked = bookmarks.any((b) => b.id == 'page_$_currentPage');
 
+    final wirdState = ref.watch(wirdStateProvider).valueOrNull;
+    final isPageModeWird = wirdState?.settings.wirdUnit == WirdUnit.page;
+    final wirdAlreadyDone = wirdState?.todayProgress?.isCompleted == true;
+    final showWirdPrompt = _currentPage == 604 && isPageModeWird && !wirdAlreadyDone;
+
     final popScope = PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
         final nav = Navigator.of(context);
+
+        if (showWirdPrompt) {
+          // User at last page of Quran in page mode — ask if they finished their wird
+          final choice = await showDialog<String>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: Text('khatma_finished_title'.tr()),
+              content: Text('khatma_finished_body'.tr()),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx, 'keep'),
+                  child: Text('khatma_finished_keep'.tr()),
+                ),
+                OutlinedButton(
+                  onPressed: () => Navigator.pop(ctx, 'no'),
+                  child: Text('khatma_finished_no'.tr()),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(ctx, 'yes'),
+                  child: Text('khatma_finished_yes'.tr()),
+                ),
+              ],
+            ),
+          );
+          if (choice == 'keep' || choice == null) return;
+          if (choice == 'yes') {
+            final count = await ref.read(wirdStateProvider.notifier).recordPageKhatma();
+            await ref.read(wirdStateProvider.notifier).markComplete();
+            if (!mounted) return;
+            if (_isDesktop) {
+              try { ref.read(desktopSidebarVisibleProvider.notifier).state = true; } catch (_) {}
+            }
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => KhatmaCelebrationScreen(khatmCount: count, date: DateTime.now()),
+              ),
+            );
+            return;
+          }
+          // 'no' — just close reader without recording khatma
+          if (_isDesktop) {
+            try { ref.read(desktopSidebarVisibleProvider.notifier).state = true; } catch (_) {}
+          }
+          nav.pop();
+          return;
+        }
+
+        // Normal close dialog
         final shouldExit = await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
@@ -533,11 +593,10 @@ class _MushafPageState extends ConsumerState<_MushafPage> {
 
   Future<(String, List<Ayah>)> _load() async {
     final results = await Future.wait<dynamic>([
-      QuranSvgService.getPage(widget.page),
+      QuranSvgService.getSvgString(widget.page),
       QuranService.getAyahsByPage(widget.page),
     ]);
-    final svgString = await (results[0] as File).readAsString();
-    return (svgString, results[1] as List<Ayah>);
+    return (results[0] as String, results[1] as List<Ayah>);
   }
 
   @override

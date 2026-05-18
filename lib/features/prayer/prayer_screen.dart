@@ -642,7 +642,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                 Icon(
                   Icons.nights_stay,
                   color: Colors.white70,
-                  size: _dts.scale(14).clamp(0, 20.0),
+                  size: _dts.scale(14.0),
                 ),
                 const SizedBox(width: 6),
                 Flexible(
@@ -697,10 +697,10 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                   ),
                 ),
                 const SizedBox(width: 6),
-                const Icon(
+                Icon(
                   Icons.calendar_today,
                   color: Colors.white70,
-                  size: 14,
+                  size: _dts.scale(14.0),
                 ),
               ],
             ),

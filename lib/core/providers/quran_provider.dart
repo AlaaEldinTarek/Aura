@@ -43,6 +43,11 @@ class QuranBookmarksNotifier extends StateNotifier<AsyncValue<List<QuranBookmark
     await QuranBookmarkService.removeBookmark(id);
     await _loadBookmarks();
   }
+
+  Future<void> replaceBookmark(String removeId, QuranBookmark add) async {
+    await QuranBookmarkService.replaceBookmark(removeId, add);
+    await _loadBookmarks();
+  }
 }
 
 final quranReadingProgressProvider =

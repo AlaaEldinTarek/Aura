@@ -203,12 +203,6 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
   }
 
   void _showDesktopPrayerToast(DesktopPrayerEvent event) async {
-    // Restore window if minimized so the toast is visible
-    try {
-      await windowManager.show();
-      await windowManager.focus();
-    } catch (_) {}
-
     if (!mounted) return;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final overlay = Overlay.of(context);
@@ -1157,7 +1151,7 @@ class _DesktopSidebar extends ConsumerWidget {
           if (showQuran)
             _sidebarItem(context, isDark, primary, Icons.menu_book_outlined, Icons.menu_book, 'quran'.tr(), 2),
           if (showTasks)
-            _sidebarItem(context, isDark, primary, Icons.task_alt_outlined, Icons.task_alt, 'task_management'.tr(), 3,
+            _sidebarItem(context, isDark, primary, Icons.task_alt_outlined, Icons.task_alt, 'tasks_nav'.tr(), 3,
                 badge: overdueCount),
           _sidebarItem(context, isDark, primary, Icons.person_outline, Icons.person, 'profile'.tr(), 4),
 

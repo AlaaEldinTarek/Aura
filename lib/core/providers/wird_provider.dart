@@ -23,7 +23,7 @@ final quranStatsProvider = FutureProvider.autoDispose<QuranStatsData>((ref) asyn
     currentStreak: wirdState.streakCount,
     bestStreak: bestStreak,
     averageDaily: totalDays > 0 ? totalPages / totalDays : 0.0,
-    khatmCount: totalPages ~/ 604,
+    khatmCount: wirdState.khatmCount,
     allCompletedJuz: wirdState.allCompletedJuz,
     wirdUnit: wirdState.settings.wirdUnit,
   );
@@ -184,5 +184,24 @@ class WirdNotifier extends StateNotifier<AsyncValue<WirdState>> {
       state = AsyncValue.data(updatedState);
     }
     return added;
+  }
+
+  /// Records a khatma, resets the juz grid for a new cycle. Returns the new khatm count.
+  Future<int> resetJuzForKhatma() async {
+    final count = await WirdService.instance.recordKhatma();
+    await WirdService.instance.resetAllJuz();
+    final updatedState = await WirdService.instance.getFullState();
+    if (!mounted) return count;
+    state = AsyncValue.data(updatedState);
+    return count;
+  }
+
+  /// Records a khatma without resetting juz (used for page mode completion). Returns new khatm count.
+  Future<int> recordPageKhatma() async {
+    final count = await WirdService.instance.recordKhatma();
+    final updatedState = await WirdService.instance.getFullState();
+    if (!mounted) return count;
+    state = AsyncValue.data(updatedState);
+    return count;
   }
 }

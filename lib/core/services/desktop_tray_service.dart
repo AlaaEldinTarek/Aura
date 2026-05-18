@@ -15,6 +15,7 @@ class DesktopTrayService with TrayListener, WindowListener {
   bool _initialized = false;
   String? _nextLabel;
   bool _adhanPlaying = false;
+  bool _isHidden = false;
 
   static bool get isDesktop =>
       !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
@@ -109,7 +110,7 @@ class DesktopTrayService with TrayListener, WindowListener {
         setAdhanPlaying(false);
         break;
       case 'open':
-        _showWindow();
+        showWindow();
         break;
       case 'quit':
         _quit();
@@ -117,14 +118,24 @@ class DesktopTrayService with TrayListener, WindowListener {
     }
   }
 
+  /// True when the window is hidden to the system tray (user pressed X).
+  bool get isHidden => _isHidden;
+
   // ── WindowListener ────────────────────────────────────────────────────────
 
   @override
-  void onWindowClose() async => windowManager.hide();
+  void onWindowClose() async {
+    _isHidden = true;
+    windowManager.hide();
+  }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
+  /// Bring the window to front (called from tray click or notification body tap).
+  Future<void> showWindow() => _showWindow();
+
   Future<void> _showWindow() async {
+    _isHidden = false;
     if (!await windowManager.isVisible()) await windowManager.show();
     await windowManager.focus();
   }

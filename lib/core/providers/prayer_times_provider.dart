@@ -236,9 +236,8 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
       if (_lastSideEffectsDate == todayKey) return; // Guard before spawning async
       _lastSideEffectsDate = todayKey; // Set synchronously to prevent concurrent runs
       () async {
-
-        // Schedule post-prayer check alarms (30 min after adhan, native AlarmManager)
-        try {
+        // Schedule post-prayer check alarms (Android only)
+        if (!_isDesktop) try {
           const notificationIds = {
             'Fajr': 1001, 'Sunrise': 1002, 'Zuhr': 1003,
             'Asr': 1004, 'Maghrib': 1005, 'Isha': 1006,
@@ -259,16 +258,18 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
           debugPrint('PrayerTimesNotifier: Error scheduling post-prayer checks - $e');
         }
 
-        // Schedule daily 8 AM task digest notification
+        // Schedule daily task digest notification
         try {
-          final userId = getCurrentUserId();
-          if (userId.isNotEmpty) {
-            final tasks = await TaskService.instance.getTasksOnce(userId: userId, limit: 500);
-            final today = tasks.where((t) => t.isDueToday && !t.isCompleted).length;
-            final overdue = tasks.where((t) => t.isOverdue && !t.isCompleted).length;
-            if (_isDesktop) {
-              await DesktopNotificationService.instance.scheduleDailyTaskDigest(today, overdue);
-            } else {
+          if (_isDesktop) {
+            // Skip Firestore on desktop — network calls at startup crash the process
+            // (Windows Defender blocks new exe network access). Schedule with zero counts.
+            await DesktopNotificationService.instance.scheduleDailyTaskDigest(0, 0);
+          } else {
+            final userId = getCurrentUserId();
+            if (userId.isNotEmpty) {
+              final tasks = await TaskService.instance.getTasksOnce(userId: userId, limit: 500);
+              final today = tasks.where((t) => t.isDueToday && !t.isCompleted).length;
+              final overdue = tasks.where((t) => t.isOverdue && !t.isCompleted).length;
               await NotificationService.instance.scheduleDailyTaskDigest(
                 todayCount: today,
                 overdueCount: overdue,
@@ -279,8 +280,8 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
           debugPrint('PrayerTimesNotifier: Error scheduling task digest - $e');
         }
 
-        // Schedule native alarms for adhan playback at exact prayer times
-        try {
+        // Schedule native alarms for adhan playback (Android only)
+        if (!_isDesktop) try {
           await PrayerAlarmService.instance.scheduleDailyPrayerAlarms(updatedPrayerTimes);
         } catch (e) {
           debugPrint('PrayerTimesNotifier: Error scheduling adhan alarms - $e');

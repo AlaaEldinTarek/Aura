@@ -110,6 +110,7 @@ class _QuranScreenState extends ConsumerState<QuranScreen>
   @override
   Widget build(BuildContext context) {
     final lang = context.locale.languageCode;
+    final tabH = MediaQuery.textScalerOf(context).scale(kTextTabBarHeight).clamp(kTextTabBarHeight, 80.0);
 
     return ScaffoldMessenger(
       child: Scaffold(
@@ -127,19 +128,17 @@ class _QuranScreenState extends ConsumerState<QuranScreen>
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: Size.fromHeight(
-            MediaQuery.textScalerOf(context).scale(kTextTabBarHeight).clamp(kTextTabBarHeight, 80.0),
-          ),
+          preferredSize: Size.fromHeight(tabH),
           child: SizedBox(
-            height: MediaQuery.textScalerOf(context).scale(kTextTabBarHeight).clamp(kTextTabBarHeight, 80.0),
+            height: tabH,
             key: _tabBarKey,
             child: TabBar(
               controller: _tabController,
               tabs: [
-                Tab(text: 'surahs'.tr()),
-                Tab(text: 'juz'.tr()),
-                Tab(text: 'bookmarks'.tr()),
-                Tab(text: 'wird'.tr()),
+                Tab(text: 'surahs'.tr(), height: tabH),
+                Tab(text: 'juz'.tr(), height: tabH),
+                Tab(text: 'bookmarks'.tr(), height: tabH),
+                Tab(text: 'wird'.tr(), height: tabH),
               ],
             ),
           ),
@@ -287,7 +286,7 @@ class _SurahTile extends StatelessWidget {
           maxLines: 1,
           style: TextStyle(
             fontFamily: 'UthmanicHafs',
-            fontSize: ts.scale(16.0),
+            fontSize: ts.scale(14.0).clamp(14.0, 16.0),
             color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
           ),
         );

@@ -48,6 +48,7 @@ import 'features/daily_content/daily_content_screen.dart';
 import 'features/quran/quran_screen.dart';
 import 'features/azkar/azkar_screen.dart';
 import 'features/quran/quran_stats_screen.dart';
+import 'features/quran/khatma_dua_screen.dart';
 import 'features/islamic_events/islamic_events_screen.dart';
 
 void main() async {
@@ -505,6 +506,11 @@ class AuraAppMaterial extends ConsumerWidget {
       case '/islamic_events':
         return MaterialPageRoute(
           builder: (_) => const IslamicEventsScreen(),
+          settings: settings,
+        );
+      case '/khatma_dua':
+        return MaterialPageRoute(
+          builder: (_) => const KhatmaDuaScreen(),
           settings: settings,
         );
       default:
