@@ -28,8 +28,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 flutter run                          # debug
-flutter build apk --release          # release APK
-flutter build appbundle --release    # Play Store bundle
+flutter build apk --release --obfuscate --split-debug-info=build/debug-info        # release APK
+flutter build appbundle --release --obfuscate --split-debug-info=build/debug-info  # Play Store bundle
 flutter test                         # run all tests
 flutter analyze && dart format .     # lint + format
 adb logcat | grep -E "(PrayerAlarm|NotificationService|PrayerTimes|AdhanPlayer|SilentMode)"
