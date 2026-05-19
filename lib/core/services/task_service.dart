@@ -150,6 +150,18 @@ class TaskService {
     if (categoryFilter != null) query = query.where('category', isEqualTo: categoryFilter.value);
     if (completedFilter != null) query = query.where('isCompleted', isEqualTo: completedFilter);
 
+    // Firestore snapshots() crashes on Windows (plugin sends callbacks on non-platform thread).
+    // Use a one-shot get() wrapped as a stream on desktop instead.
+    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+      return Stream.fromFuture(query.get()).map((snapshot) {
+        final tasks = snapshot.docs.map((doc) => Task.fromFirestore(doc)).toList();
+        for (final task in tasks) {
+          _taskCache[task.id] = task;
+        }
+        return tasks;
+      });
+    }
+
     return query.snapshots().map((snapshot) {
       final tasks = snapshot.docs.map((doc) => Task.fromFirestore(doc)).toList();
       for (final task in tasks) {

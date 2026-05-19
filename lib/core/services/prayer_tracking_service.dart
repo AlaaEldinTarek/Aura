@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io' show Platform;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -129,8 +130,10 @@ class PrayerTrackingService {
       // Check achievements in background (don't block)
       AchievementService.instance.checkAndAward(userId: userId);
 
-      // Cancel the post-prayer check notification since user already logged it
-      NotificationService.instance.cancelPostPrayerCheck(prayerName);
+      // Cancel the post-prayer check notification (flutter_local_notifications not initialized on desktop)
+      if (kIsWeb || (!Platform.isWindows && !Platform.isMacOS && !Platform.isLinux)) {
+        NotificationService.instance.cancelPostPrayerCheck(prayerName);
+      }
 
       // Mark prayer as tracked in native SharedPreferences so the 30-min check sees it
       try {

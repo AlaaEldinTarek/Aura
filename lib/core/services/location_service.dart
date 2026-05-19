@@ -1,5 +1,5 @@
-import 'dart:convert';
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -142,17 +142,15 @@ class LocationService {
   Future<LocationData?> _getIpLocation() async {
     try {
       debugPrint('LocationService: Trying IP-based geolocation...');
-      // Use HTTPS to avoid Windows firewall/Defender blocking plain HTTP
-      final client = HttpClient()..connectionTimeout = const Duration(seconds: 8);
-      final request = await client.getUrl(Uri.parse('https://ipapi.co/json/'));
-      request.headers.set('User-Agent', 'AuraApp/1.0');
-      final response = await request.close().timeout(const Duration(seconds: 10));
-      final body = await response.transform(utf8.decoder).join();
-      client.close(force: false);
+      final dio = Dio(BaseOptions(
+        connectTimeout: const Duration(seconds: 8),
+        receiveTimeout: const Duration(seconds: 10),
+        headers: {'User-Agent': 'AuraApp/1.0'},
+      ));
+      final response = await dio.get<Map<String, dynamic>>('https://ipapi.co/json/');
       debugPrint('LocationService: IP response received (${response.statusCode})');
-      if (response.statusCode == 200) {
-        final data = jsonDecode(body) as Map<String, dynamic>;
-        // ipapi.co returns latitude/longitude directly
+      if (response.statusCode == 200 && response.data != null) {
+        final data = response.data!;
         final lat = data['latitude'];
         final lon = data['longitude'];
         final city = data['city'] as String? ?? 'Unknown City';
