@@ -55,7 +55,7 @@ class _StatsContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isJuz = stats.wirdUnit == WirdUnit.juz;
-    final secondary = isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary;
+    final secondary = AppConstants.textSecondary(isDark);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppConstants.paddingMedium),
@@ -228,7 +228,7 @@ class _BadgeCard extends StatelessWidget {
           Text(
             label,
             style: AppTypography.labelS.copyWith(
-              color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
+              color: AppConstants.textSecondary(isDark),
             ),
             textAlign: TextAlign.center,
           ),

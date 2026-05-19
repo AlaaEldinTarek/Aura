@@ -160,7 +160,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
                               child: Text(
                                 isArabic ? 'لا توجد جلسات بعد' : 'No sessions yet',
                                 style: AppTypography.bodyM.copyWith(
-                                  color: isDark ? Colors.white38 : Colors.black38,
+                                  color: AppConstants.textDisabled(isDark),
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -204,13 +204,13 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
                   session.dhikrText.isNotEmpty ? session.dhikrText : 'Custom',
                   style: AppTypography.label.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : Colors.black87,
+                    color: AppConstants.textPrimary(isDark),
                   ),
                 ),
                 Text(
                   _n(dateStr, isArabic: isArabic),
                   style: AppTypography.labelS.copyWith(
-                    color: isDark ? Colors.white38 : Colors.black38,
+                    color: AppConstants.textDisabled(isDark),
                   ),
                 ),
               ],
@@ -238,9 +238,9 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
     return Container(
       padding: const EdgeInsets.all(AppConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
-        border: Border.all(color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+        border: Border.all(color: AppConstants.border(isDark)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -248,7 +248,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
           Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
           if (subtitle.isNotEmpty) ...[
             const SizedBox(height: 2),
-            Text(subtitle, style: AppTypography.caption.copyWith(color: isDark ? Colors.white38 : Colors.black38)),
+            Text(subtitle, style: AppTypography.caption.copyWith(color: AppConstants.textDisabled(isDark))),
           ],
           const SizedBox(height: AppConstants.paddingMedium),
           child,
@@ -306,7 +306,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
                   if (value == 0) return const SizedBox.shrink();
                   return Text(
                     _n(value.round(), isArabic: isArabic),
-                    style: AppTypography.caption.copyWith(fontSize: 10, color: isDark ? Colors.white38 : Colors.black38),
+                    style: AppTypography.caption.copyWith(fontSize: 10, color: AppConstants.textDisabled(isDark)),
                   );
                 },
               ),
@@ -365,9 +365,9 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-        border: Border.all(color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+        border: Border.all(color: AppConstants.border(isDark)),
       ),
       child: Column(
         children: [
@@ -375,11 +375,11 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             value,
-            style: AppTypography.headingM.copyWith(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
+            style: AppTypography.headingM.copyWith(fontWeight: FontWeight.bold, color: AppConstants.textPrimary(isDark)),
           ),
           Text(
             label,
-            style: AppTypography.labelS.copyWith(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+            style: AppTypography.labelS.copyWith(color: AppConstants.textMuted(isDark)),
           ),
         ],
       ),

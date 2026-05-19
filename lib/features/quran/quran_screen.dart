@@ -274,7 +274,7 @@ class _SurahTile extends StatelessWidget {
         '${meta.revelationType == RevelationType.makki ? 'makki'.tr() : 'madani'.tr()} • ${NumberFormatter.withArabicNumeralsByLanguage(meta.ayahCount.toString(), lang)} ${'ayah_count'.tr()}',
         overflow: TextOverflow.ellipsis,
         style: AppTypography.caption.copyWith(
-          color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
+          color: AppConstants.textSecondary(isDark),
         ),
       ),
       // Decorative Uthmanic name on the trailing side; cap width+fontSize to prevent overflow
@@ -288,7 +288,7 @@ class _SurahTile extends StatelessWidget {
           style: TextStyle(
             fontFamily: 'UthmanicHafs',
             fontSize: ts.scale(14.0).clamp(14.0, 16.0),
-            color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
+            color: AppConstants.textSecondary(isDark),
           ),
         );
       }),
@@ -339,7 +339,7 @@ class _JuzTab extends ConsumerWidget {
             subtitle: Text(
               '${'page'.tr()} ${NumberFormatter.withArabicNumeralsByLanguage(juz.startPage.toString(), lang)} - ${NumberFormatter.withArabicNumeralsByLanguage(juz.endPage.toString(), lang)}',
               style: AppTypography.caption.copyWith(
-                color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
+                color: AppConstants.textSecondary(isDark),
               ),
             ),
             onTap: () {
@@ -421,7 +421,7 @@ class _BookmarksTab extends ConsumerWidget {
                 style: TextStyle(
                   fontFamily: 'UthmanicHafs',
                   fontSize: 14,
-                  color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
+                  color: AppConstants.textSecondary(isDark),
                 ),
               ),
               trailing: Row(
@@ -430,12 +430,12 @@ class _BookmarksTab extends ConsumerWidget {
                   Text(
                     '${NumberFormatter.withArabicNumeralsByLanguage(bm.suraNo.toString(), lang)}:${NumberFormatter.withArabicNumeralsByLanguage(bm.ayaNo.toString(), lang)}',
                     style: AppTypography.bodyS.copyWith(
-                      color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
+                      color: AppConstants.textSecondary(isDark),
                     ),
                   ),
                   const SizedBox(width: 4),
                   IconButton(
-                    icon: Icon(Icons.delete_outline, size: 20, color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary),
+                    icon: Icon(Icons.delete_outline, size: 20, color: AppConstants.textSecondary(isDark)),
                     onPressed: () {
                       showDialog(
                         context: context,

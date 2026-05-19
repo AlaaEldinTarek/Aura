@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/prayer_record.dart';
 import '../models/achievement.dart';
 import 'achievement_service.dart';
@@ -24,6 +26,37 @@ class PrayerTrackingService {
 
   bool _isInitialized = false;
 
+  // Guest local storage
+  static const String _localPrayerRecordsKey = 'guest_prayer_records';
+  final List<PrayerRecord> _localPrayerRecords = [];
+  bool _localPrayerRecordsLoaded = false;
+
+  bool _isGuest(String userId) => userId == 'guest_user';
+
+  Future<List<PrayerRecord>> _getLocalRecords() async {
+    if (!_localPrayerRecordsLoaded) {
+      final prefs = await SharedPreferences.getInstance();
+      final jsonStr = prefs.getString(_localPrayerRecordsKey);
+      if (jsonStr != null) {
+        final list = jsonDecode(jsonStr) as List;
+        _localPrayerRecords.clear();
+        _localPrayerRecords.addAll(
+          list.map((e) => PrayerRecord.fromJson(e as Map<String, dynamic>)),
+        );
+      }
+      _localPrayerRecordsLoaded = true;
+    }
+    return List.unmodifiable(_localPrayerRecords);
+  }
+
+  Future<void> _saveLocalRecords() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(
+      _localPrayerRecordsKey,
+      jsonEncode(_localPrayerRecords.map((r) => r.toJson()).toList()),
+    );
+  }
+
   Future<void> initialize() async {
     if (_isInitialized) return;
     _isInitialized = true;
@@ -40,6 +73,36 @@ class PrayerTrackingService {
     PrayerMethod method = PrayerMethod.congregation,
     String? notes,
   }) async {
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+
+    if (_isGuest(userId)) {
+      try {
+        await _getLocalRecords();
+        _localPrayerRecords.removeWhere(
+          (r) => r.prayerName == prayerName && r.date == normalizedDate,
+        );
+        final record = PrayerRecord(
+          id: '${prayerName}_${normalizedDate.millisecondsSinceEpoch}',
+          userId: userId,
+          prayerName: prayerName,
+          date: normalizedDate,
+          prayedAt: prayedAt,
+          status: status,
+          method: method,
+          notes: notes,
+        );
+        _localPrayerRecords.add(record);
+        await _saveLocalRecords();
+        _updateCache(record);
+        NotificationService.instance.cancelPostPrayerCheck(prayerName);
+        debugPrint('PrayerTrackingService: Recorded local $prayerName for $date');
+        return true;
+      } catch (e) {
+        debugPrint('PrayerTrackingService: Error recording local prayer - $e');
+        return false;
+      }
+    }
+
     try {
       final docRef = _firestore
           .collection('users')
@@ -51,7 +114,7 @@ class PrayerTrackingService {
         id: docRef.id,
         userId: userId,
         prayerName: prayerName,
-        date: DateTime(date.year, date.month, date.day),
+        date: normalizedDate,
         prayedAt: prayedAt,
         status: status,
         method: method,
@@ -100,7 +163,16 @@ class PrayerTrackingService {
     required String userId,
     required DateTime date,
   }) async {
+    final normalizedDate = DateTime(date.year, date.month, date.day);
     final dayKey = _getDayKey(userId, date);
+
+    if (_isGuest(userId)) {
+      if (_dailyCache.containsKey(dayKey)) return _dailyCache[dayKey]!;
+      final all = await _getLocalRecords();
+      final records = all.where((r) => r.date == normalizedDate).toList();
+      if (records.isNotEmpty) _dailyCache[dayKey] = records;
+      return records;
+    }
 
     // Check cache first
     if (_dailyCache.containsKey(dayKey)) {
@@ -108,7 +180,7 @@ class PrayerTrackingService {
     }
 
     try {
-      final startOfDay = DateTime(date.year, date.month, date.day);
+      final startOfDay = normalizedDate;
       final endOfDay = startOfDay.add(const Duration(days: 1));
 
       final snapshot = await _firestore
@@ -221,7 +293,7 @@ class PrayerTrackingService {
 
       final totalPrayers = completedOnTime + completedLate + missed;
       final completionRate = totalPrayers > 0
-          ? ((completedOnTime + completedLate) / totalPrayers) as double
+          ? (completedOnTime + completedLate) / totalPrayers
           : 0.0;
 
       // Calculate streaks
@@ -249,9 +321,30 @@ class PrayerTrackingService {
     required DateTime month,
   }) async {
     final Map<DateTime, DailyPrayerSummary> monthlyData = {};
-
     final startOfMonth = DateTime(month.year, month.month, 1);
     final endOfMonth = DateTime(month.year, month.month + 1, 1);
+
+    if (_isGuest(userId)) {
+      final all = await _getLocalRecords();
+      final monthRecords = all.where(
+        (r) => !r.date.isBefore(startOfMonth) && r.date.isBefore(endOfMonth),
+      ).toList();
+
+      final Map<String, List<PrayerRecord>> recordsByDate = {};
+      for (final record in monthRecords) {
+        recordsByDate.putIfAbsent(record.date.toIso8601String(), () => []).add(record);
+      }
+      for (final entry in recordsByDate.entries) {
+        final date = DateTime.parse(entry.key);
+        final Map<String, PrayerStatus> statuses = {};
+        for (final record in entry.value) {
+          statuses[record.prayerName] = record.status;
+        }
+        monthlyData[DateTime(date.year, date.month, date.day)] =
+            DailyPrayerSummary(date: date, prayers: statuses);
+      }
+      return monthlyData;
+    }
 
     try {
       final snapshot = await _firestore
@@ -300,6 +393,11 @@ class PrayerTrackingService {
   /// Calculate current streak of completed prayers
   /// Optimized: single Firestore query instead of one per day
   Future<int> calculateCurrentStreak({required String userId}) async {
+    if (_isGuest(userId)) {
+      final all = await _getLocalRecords();
+      return _streakFromRecords(all);
+    }
+
     try {
       final now = DateTime.now();
       final startDate = now.subtract(const Duration(days: 365));
@@ -313,46 +411,45 @@ class PrayerTrackingService {
           .where('date', isGreaterThanOrEqualTo: startOfDay.toIso8601String())
           .get(const GetOptions(source: Source.serverAndCache));
 
-      // Group records by day
-      final Map<String, Set<String>> prayersByDay = {};
-      for (final doc in snapshot.docs) {
-        final record = PrayerRecord.fromFirestore(doc);
-        final dayKey = '${record.date.year}-${record.date.month}-${record.date.day}';
-        prayersByDay.putIfAbsent(dayKey, () => {}).add(record.prayerName);
-      }
-
-      // Count consecutive complete days from today going backwards
-      int streak = 0;
-      DateTime checkDate = DateTime(now.year, now.month, now.day);
-
-      while (true) {
-        final dayKey = '${checkDate.year}-${checkDate.month}-${checkDate.day}';
-        final prayers = prayersByDay[dayKey];
-
-        // A day is complete if all 5 prayers are recorded
-        final isComplete = prayers != null && prayers.length >= 5;
-
-        if (isComplete) {
-          streak++;
-          checkDate = checkDate.subtract(const Duration(days: 1));
-        } else {
-          // Allow today to not be complete yet
-          final today = DateTime(now.year, now.month, now.day);
-          if (checkDate == today) {
-            checkDate = checkDate.subtract(const Duration(days: 1));
-            continue;
-          }
-          break;
-        }
-
-        if (streak > 365) break;
-      }
-
-      return streak;
+      final records = snapshot.docs.map(PrayerRecord.fromFirestore).toList();
+      return _streakFromRecords(records);
     } catch (e) {
       debugPrint('PrayerTrackingService: Error calculating current streak - $e');
       return 0;
     }
+  }
+
+  int _streakFromRecords(List<PrayerRecord> records) {
+    final now = DateTime.now();
+    final Map<String, Set<String>> prayersByDay = {};
+    for (final record in records) {
+      final dayKey = '${record.date.year}-${record.date.month}-${record.date.day}';
+      prayersByDay.putIfAbsent(dayKey, () => {}).add(record.prayerName);
+    }
+
+    int streak = 0;
+    DateTime checkDate = DateTime(now.year, now.month, now.day);
+
+    while (true) {
+      final dayKey = '${checkDate.year}-${checkDate.month}-${checkDate.day}';
+      final prayers = prayersByDay[dayKey];
+      final isComplete = prayers != null && prayers.length >= 5;
+
+      if (isComplete) {
+        streak++;
+        checkDate = checkDate.subtract(const Duration(days: 1));
+      } else {
+        final today = DateTime(now.year, now.month, now.day);
+        if (checkDate == today) {
+          checkDate = checkDate.subtract(const Duration(days: 1));
+          continue;
+        }
+        break;
+      }
+
+      if (streak > 365) break;
+    }
+    return streak;
   }
 
   /// Calculate best streak ever (counts consecutive complete days, not individual records)
@@ -438,6 +535,9 @@ class PrayerTrackingService {
   /// Clear cache
   void clearCache() {
     _dailyCache.clear();
+    // Force reload from disk on next guest read
+    _localPrayerRecordsLoaded = false;
+    _localPrayerRecords.clear();
   }
 
   /// Delete a prayer record (for undo functionality)
@@ -446,6 +546,27 @@ class PrayerTrackingService {
     required String prayerName,
     required DateTime date,
   }) async {
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+
+    if (_isGuest(userId)) {
+      try {
+        await _getLocalRecords();
+        final before = _localPrayerRecords.length;
+        _localPrayerRecords.removeWhere(
+          (r) => r.prayerName == prayerName && r.date == normalizedDate,
+        );
+        if (_localPrayerRecords.length < before) {
+          await _saveLocalRecords();
+          _removeFromCache(userId, date, prayerName);
+          return true;
+        }
+        return false;
+      } catch (e) {
+        debugPrint('PrayerTrackingService: Error deleting local prayer - $e');
+        return false;
+      }
+    }
+
     try {
       final normalizedDate = DateTime(date.year, date.month, date.day);
       final dateStr = normalizedDate.toIso8601String();

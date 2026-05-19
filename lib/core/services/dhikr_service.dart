@@ -18,6 +18,7 @@ class DhikrService {
     required int count,
     required int target,
   }) async {
+    if (userId == 'guest_user') return true;
     try {
       final now = DateTime.now();
       final docRef = _firestore
@@ -51,6 +52,7 @@ class DhikrService {
     required DateTime startDate,
     required DateTime endDate,
   }) async {
+    if (userId == 'guest_user') return [];
     try {
       final snapshot = await _firestore
           .collection('users')
@@ -70,6 +72,7 @@ class DhikrService {
 
   /// Get dhikr statistics
   Future<DhikrStatistics> getStatistics({required String userId}) async {
+    if (userId == 'guest_user') return DhikrStatistics.empty();
     try {
       final now = DateTime.now();
       final thirtyDaysAgo = now.subtract(const Duration(days: 30));
@@ -143,6 +146,7 @@ class DhikrService {
 
   /// Get recent sessions (last 10)
   Future<List<DhikrSession>> getRecentSessions({required String userId, int limit = 10}) async {
+    if (userId == 'guest_user') return [];
     try {
       final snapshot = await _firestore
           .collection('users')

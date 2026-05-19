@@ -64,14 +64,14 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
 
     return Scaffold(
       backgroundColor:
-          isDark ? AppConstants.darkBackground : AppConstants.lightBackground,
+          AppConstants.background(isDark),
       appBar: AppBar(
         title: Text(
           isArabic ? 'إحصائيات المهام' : 'Task Statistics',
           style: AppTypography.label.copyWith(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
-        foregroundColor: isDark ? Colors.white : Colors.black87,
+        backgroundColor: AppConstants.surface(isDark),
+        foregroundColor: AppConstants.textPrimary(isDark),
         elevation: 0,
         bottom: TabBar(
           controller: _tabController,
@@ -217,7 +217,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         boxShadow: [
           BoxShadow(
@@ -235,14 +235,14 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
             value,
             style: AppTypography.headingL.copyWith(
               fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black87,
+              color: AppConstants.textPrimary(isDark),
             ),
           ),
           const SizedBox(height: 2),
           Text(
             title,
             style: AppTypography.caption.copyWith(
-              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+              color: AppConstants.textMuted(isDark),
             ),
           ),
           const SizedBox(height: 4),
@@ -301,7 +301,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         boxShadow: [
           BoxShadow(
@@ -323,7 +323,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                 isArabic ? 'آخر 7 أيام' : 'Last 7 Days',
                 style: AppTypography.bodyL.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
+                  color: AppConstants.textPrimary(isDark),
                 ),
               ),
               const Spacer(),
@@ -418,7 +418,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
       height: 220,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
       ),
       child: const Center(child: CircularProgressIndicator()),
@@ -461,7 +461,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         boxShadow: [
           BoxShadow(
@@ -483,7 +483,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                 isArabic ? 'حسب الفئة' : 'By Category',
                 style: AppTypography.bodyL.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
+                  color: AppConstants.textPrimary(isDark),
                 ),
               ),
             ],
@@ -516,7 +516,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                       Text(
                         '${s.completed}/${s.total}',
                         style: AppTypography.caption.copyWith(
-                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          color: AppConstants.textMuted(isDark),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -587,7 +587,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         boxShadow: [
           BoxShadow(
@@ -609,7 +609,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                 isArabic ? 'حسب الأولوية' : 'By Priority',
                 style: AppTypography.bodyL.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : Colors.black87,
+                  color: AppConstants.textPrimary(isDark),
                 ),
               ),
             ],
@@ -659,7 +659,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                           label,
                           style: AppTypography.label.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white : Colors.black87,
+                            color: AppConstants.textPrimary(isDark),
                           ),
                         ),
                         const SizedBox(height: 2),
@@ -816,7 +816,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+                    color: AppConstants.card(isDark),
                     borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
                     boxShadow: [
                       BoxShadow(
@@ -838,7 +838,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                             isArabic ? 'إحصائيات زمنية' : 'Time Stats',
                             style: AppTypography.bodyL.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.black87,
+                              color: AppConstants.textPrimary(isDark),
                             ),
                           ),
                         ],
@@ -914,7 +914,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
         return Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+            color: AppConstants.card(isDark),
             borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
             boxShadow: [
               BoxShadow(
@@ -938,7 +938,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                         : item.value,
                     style: AppTypography.headingM.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black87,
+                      color: AppConstants.textPrimary(isDark),
                     ),
                   ),
                 ],
@@ -947,7 +947,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
               Text(
                 item.label,
                 style: AppTypography.labelS.copyWith(
-                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                  color: AppConstants.textMuted(isDark),
                 ),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
@@ -967,7 +967,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
   }) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+        Icon(icon, size: 18, color: AppConstants.textMuted(isDark)),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
@@ -981,7 +981,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
           value,
           style: AppTypography.label.copyWith(
             fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black87,
+            color: AppConstants.textPrimary(isDark),
           ),
         ),
       ],

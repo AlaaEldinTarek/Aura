@@ -134,6 +134,38 @@ class Task {
     );
   }
 
+  /// Convert Task to plain JSON (includes id — used for local/guest storage)
+  Map<String, dynamic> toJson() => {'id': id, ...toFirestore()};
+
+  /// Create Task from plain JSON map (used for local/guest storage)
+  factory Task.fromJson(Map<String, dynamic> data) {
+    return Task(
+      id: data['id'] as String? ?? '',
+      title: data['title'] as String? ?? '',
+      description: data['description'] as String?,
+      isCompleted: data['isCompleted'] as bool? ?? false,
+      priority: TaskPriority.fromString(data['priority'] as String? ?? 'medium'),
+      category: TaskCategory.fromString(data['category'] as String? ?? 'other'),
+      dueDate: data['dueDate'] != null ? DateTime.parse(data['dueDate'] as String) : null,
+      createdAt: data['createdAt'] != null ? DateTime.parse(data['createdAt'] as String) : DateTime.now(),
+      completedAt: data['completedAt'] != null ? DateTime.parse(data['completedAt'] as String) : null,
+      tags: data['tags'] != null ? List<String>.from(data['tags'] as List) : null,
+      hasDueTime: data['hasDueTime'] as bool? ?? false,
+      recurrenceType: RecurrenceType.fromString(data['recurrenceType'] as String? ?? 'none'),
+      recurrenceInterval: data['recurrenceInterval'] as int? ?? 1,
+      recurrenceEndDate: data['recurrenceEndDate'] != null ? DateTime.parse(data['recurrenceEndDate'] as String) : null,
+      parentTaskId: data['parentTaskId'] as String?,
+      subtasks: data['subtasks'] != null
+          ? (data['subtasks'] as List).map((e) => SubTask.fromMap(e as Map<String, dynamic>)).toList()
+          : [],
+      isPinned: data['isPinned'] as bool? ?? false,
+      focusMode: data['focusMode'] as bool? ?? false,
+      focusDurationMinutes: data['focusDurationMinutes'] as int? ?? 25,
+      estimatedMinutes: data['estimatedMinutes'] as int? ?? 0,
+      manualOrder: data['manualOrder'] as int? ?? 0,
+    );
+  }
+
   /// Convert Task to Firestore map
   Map<String, dynamic> toFirestore() {
     return {

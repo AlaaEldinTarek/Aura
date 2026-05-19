@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
@@ -7,8 +9,6 @@ import 'notification_service.dart';
 import 'desktop_notification_service.dart';
 import 'achievement_service.dart';
 
-/// Service for managing tasks with Firestore
-/// Optimized for performance with pagination and caching
 class TaskService {
   TaskService._();
 
@@ -17,23 +17,112 @@ class TaskService {
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Cache for performance
   final Map<String, Task> _taskCache = {};
-
-  // Pagination settings
   static const int _pageSize = 20;
   DocumentSnapshot? _lastDocument;
-
   bool _isInitialized = false;
 
-  /// Initialize the task service
+  // ── Local / guest storage ──────────────────────────────────────────────────
+  static const String _localTasksKey = 'guest_tasks';
+  final List<Task> _localTasks = [];
+  StreamController<List<Task>>? _localTasksController;
+  bool _localTasksLoaded = false;
+
+  bool _isGuest(String userId) => userId == 'guest_user';
+
+  String _generateLocalId() => _firestore.collection('_').doc().id;
+
+  Stream<List<Task>> _getLocalStream({
+    TaskPriority? priorityFilter,
+    TaskCategory? categoryFilter,
+    bool? completedFilter,
+    int limit = _pageSize,
+  }) {
+    if (_localTasksController == null || _localTasksController!.isClosed) {
+      _localTasksController = StreamController<List<Task>>.broadcast();
+    }
+    _initLocalTasks();
+    return _localTasksController!.stream.map((tasks) {
+      var filtered = tasks;
+      if (priorityFilter != null) filtered = filtered.where((t) => t.priority == priorityFilter).toList();
+      if (categoryFilter != null) filtered = filtered.where((t) => t.category == categoryFilter).toList();
+      if (completedFilter != null) filtered = filtered.where((t) => t.isCompleted == completedFilter).toList();
+      return filtered.take(limit).toList();
+    });
+  }
+
+  Future<void> _initLocalTasks() async {
+    if (_localTasksLoaded) {
+      _localTasksController?.add(List.from(_localTasks));
+      return;
+    }
+    _localTasksLoaded = true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final json = prefs.getString(_localTasksKey);
+      if (json != null) {
+        final list = jsonDecode(json) as List;
+        _localTasks.clear();
+        _localTasks.addAll(
+          list.map((e) => Task.fromJson(e as Map<String, dynamic>)),
+        );
+      }
+    } catch (e) {
+      debugPrint('TaskService: Error loading local tasks - $e');
+    }
+    _localTasksController?.add(List.from(_localTasks));
+  }
+
+  Future<void> _saveLocalTasks() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        _localTasksKey,
+        jsonEncode(_localTasks.map((t) => t.toJson()).toList()),
+      );
+      _localTasksController?.add(List.from(_localTasks));
+    } catch (e) {
+      debugPrint('TaskService: Error saving local tasks - $e');
+    }
+  }
+
+  Future<int> getLocalTaskCount() async {
+    await _initLocalTasks();
+    return _localTasks.length;
+  }
+
+  /// Migrate all local guest tasks to Firestore after sign-up.
+  Future<void> migrateGuestTasksToFirestore(String userId) async {
+    await _initLocalTasks();
+    if (_localTasks.isEmpty) return;
+    debugPrint('TaskService: Migrating ${_localTasks.length} guest tasks → Firestore');
+    try {
+      final batch = _firestore.batch();
+      for (final task in _localTasks) {
+        final docRef = _firestore.collection('users').doc(userId).collection('tasks').doc();
+        batch.set(docRef, task.copyWith(id: docRef.id).toFirestore());
+      }
+      await batch.commit();
+      _localTasks.clear();
+      _localTasksLoaded = false;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_localTasksKey);
+      debugPrint('TaskService: Migration complete');
+    } catch (e) {
+      debugPrint('TaskService: Migration failed - $e');
+    }
+  }
+
+  // ── Initialisation ─────────────────────────────────────────────────────────
+
   Future<void> initialize() async {
     if (_isInitialized) return;
     _isInitialized = true;
     debugPrint('TaskService: Initialized');
   }
 
-  /// Get tasks stream for real-time updates (paginated)
+  // ── Streams ────────────────────────────────────────────────────────────────
+
   Stream<List<Task>> getTasksStream({
     required String userId,
     TaskPriority? priorityFilter,
@@ -41,6 +130,15 @@ class TaskService {
     bool? completedFilter,
     int limit = _pageSize,
   }) {
+    if (_isGuest(userId)) {
+      return _getLocalStream(
+        priorityFilter: priorityFilter,
+        categoryFilter: categoryFilter,
+        completedFilter: completedFilter,
+        limit: limit,
+      );
+    }
+
     Query query = _firestore
         .collection('users')
         .doc(userId)
@@ -48,37 +146,24 @@ class TaskService {
         .orderBy('createdAt', descending: true)
         .limit(limit);
 
-    // Apply filters
-    if (priorityFilter != null) {
-      query = query.where('priority', isEqualTo: priorityFilter.value);
-    }
-    if (categoryFilter != null) {
-      query = query.where('category', isEqualTo: categoryFilter.value);
-    }
-    if (completedFilter != null) {
-      query = query.where('isCompleted', isEqualTo: completedFilter);
-    }
+    if (priorityFilter != null) query = query.where('priority', isEqualTo: priorityFilter.value);
+    if (categoryFilter != null) query = query.where('category', isEqualTo: categoryFilter.value);
+    if (completedFilter != null) query = query.where('isCompleted', isEqualTo: completedFilter);
 
     return query.snapshots().map((snapshot) {
-      final tasks = snapshot.docs
-          .map((doc) => Task.fromFirestore(doc))
-          .toList();
-
-      // Update cache
-      
-      for (var task in tasks) {
+      final tasks = snapshot.docs.map((doc) => Task.fromFirestore(doc)).toList();
+      for (final task in tasks) {
         _taskCache[task.id] = task;
       }
-
       return tasks;
     });
   }
 
-  /// Get tasks once (for initial load or refresh)
-  Future<List<Task>> getTasksOnce({
-    required String userId,
-    int limit = _pageSize,
-  }) async {
+  Future<List<Task>> getTasksOnce({required String userId, int limit = _pageSize}) async {
+    if (_isGuest(userId)) {
+      await _initLocalTasks();
+      return List.from(_localTasks.take(limit));
+    }
     try {
       final snapshot = await _firestore
           .collection('users')
@@ -88,18 +173,11 @@ class TaskService {
           .limit(limit)
           .get();
 
-      final tasks = snapshot.docs
-          .map((doc) => Task.fromFirestore(doc))
-          .toList();
-
-      // Update cache
-      
-      for (var task in tasks) {
+      final tasks = snapshot.docs.map((doc) => Task.fromFirestore(doc)).toList();
+      for (final task in tasks) {
         _taskCache[task.id] = task;
       }
-
       _lastDocument = snapshot.docs.isEmpty ? null : snapshot.docs.last;
-
       debugPrint('TaskService: Loaded ${tasks.length} tasks');
       return tasks;
     } catch (e) {
@@ -108,13 +186,9 @@ class TaskService {
     }
   }
 
-  /// Load more tasks (pagination)
-  Future<List<Task>> loadMoreTasks({
-    required String userId,
-    int limit = _pageSize,
-  }) async {
+  Future<List<Task>> loadMoreTasks({required String userId, int limit = _pageSize}) async {
+    if (_isGuest(userId)) return [];
     if (_lastDocument == null) return [];
-
     try {
       final snapshot = await _firestore
           .collection('users')
@@ -125,12 +199,8 @@ class TaskService {
           .limit(limit)
           .get();
 
-      final tasks = snapshot.docs
-          .map((doc) => Task.fromFirestore(doc))
-          .toList();
-
+      final tasks = snapshot.docs.map((doc) => Task.fromFirestore(doc)).toList();
       _lastDocument = snapshot.docs.isEmpty ? null : snapshot.docs.last;
-
       debugPrint('TaskService: Loaded ${tasks.length} more tasks');
       return tasks;
     } catch (e) {
@@ -139,7 +209,8 @@ class TaskService {
     }
   }
 
-  /// Add a new task
+  // ── Add ────────────────────────────────────────────────────────────────────
+
   Future<Task?> addTask({
     required String userId,
     required String title,
@@ -158,13 +229,37 @@ class TaskService {
     int focusDurationMinutes = 25,
     int estimatedMinutes = 0,
   }) async {
-    try {
-      final docRef = _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('tasks')
-          .doc();
+    if (_isGuest(userId)) {
+      await _initLocalTasks();
+      final task = Task(
+        id: _generateLocalId(),
+        title: title,
+        description: description,
+        priority: priority,
+        category: category,
+        dueDate: dueDate,
+        createdAt: DateTime.now(),
+        tags: tags,
+        hasDueTime: hasDueTime,
+        recurrenceType: recurrenceType,
+        recurrenceInterval: recurrenceInterval,
+        recurrenceEndDate: recurrenceEndDate,
+        parentTaskId: parentTaskId,
+        subtasks: subtasks,
+        focusMode: focusMode,
+        focusDurationMinutes: focusDurationMinutes,
+        estimatedMinutes: estimatedMinutes,
+      );
+      _localTasks.insert(0, task);
+      await _saveLocalTasks();
+      await _scheduleReminder(task);
+      debugPrint('TaskService: Added local task ${task.id}');
+      _refreshDailySummary(userId);
+      return task;
+    }
 
+    try {
+      final docRef = _firestore.collection('users').doc(userId).collection('tasks').doc();
       final task = Task(
         id: docRef.id,
         title: title,
@@ -184,35 +279,9 @@ class TaskService {
         focusDurationMinutes: focusDurationMinutes,
         estimatedMinutes: estimatedMinutes,
       );
-
       await docRef.set(task.toFirestore());
-
-      // Update cache
       _taskCache[task.id] = task;
-
-      // Schedule reminder notification if task has a due date
-      if (task.dueDate != null) {
-        final prefs = await SharedPreferences.getInstance();
-        final language = prefs.getString('language') ?? 'en';
-        if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
-          await DesktopNotificationService.instance.scheduleTaskReminder(
-            taskId: task.id,
-            title: task.title,
-            dueDate: task.dueDate!,
-            hasDueTime: task.hasDueTime,
-            language: language,
-          );
-        } else {
-          await NotificationService.instance.scheduleTaskReminder(
-            taskId: task.id,
-            title: task.title,
-            dueDate: task.dueDate!,
-            hasDueTime: task.hasDueTime,
-            language: language,
-          );
-        }
-      }
-
+      await _scheduleReminder(task);
       debugPrint('TaskService: Added task ${task.id}');
       _refreshDailySummary(userId);
       return task;
@@ -222,7 +291,8 @@ class TaskService {
     }
   }
 
-  /// Update an existing task
+  // ── Update ─────────────────────────────────────────────────────────────────
+
   Future<bool> updateTask({
     required String userId,
     required String taskId,
@@ -243,8 +313,43 @@ class TaskService {
     int? focusDurationMinutes,
     int? estimatedMinutes,
   }) async {
+    if (_isGuest(userId)) {
+      await _initLocalTasks();
+      final idx = _localTasks.indexWhere((t) => t.id == taskId);
+      if (idx == -1) return false;
+      final current = _localTasks[idx];
+      final updated = current.copyWith(
+        title: title,
+        description: description,
+        isCompleted: isCompleted,
+        priority: priority,
+        category: category,
+        dueDate: dueDate,
+        tags: tags,
+        hasDueTime: hasDueTime,
+        completedAt: isCompleted == true && !current.isCompleted ? DateTime.now() : null,
+        recurrenceType: recurrenceType,
+        recurrenceInterval: recurrenceInterval,
+        recurrenceEndDate: recurrenceEndDate,
+        subtasks: subtasks,
+        isPinned: isPinned,
+        focusMode: focusMode,
+        focusDurationMinutes: focusDurationMinutes,
+        estimatedMinutes: estimatedMinutes,
+      );
+      _localTasks[idx] = updated;
+      await _saveLocalTasks();
+      if (updated.isCompleted) {
+        _cancelReminder(taskId);
+      } else if (updated.dueDate != null) {
+        await _scheduleReminder(updated);
+      }
+      debugPrint('TaskService: Updated local task $taskId');
+      _refreshDailySummary(userId);
+      return true;
+    }
+
     try {
-      // Get current task from cache or Firestore
       Task? currentTask = _taskCache[taskId];
       if (currentTask == null) {
         final doc = await _firestore
@@ -253,16 +358,10 @@ class TaskService {
             .collection('tasks')
             .doc(taskId)
             .get();
-
-        if (!doc.exists) {
-          debugPrint('TaskService: Task not found');
-          return false;
-        }
-
+        if (!doc.exists) return false;
         currentTask = Task.fromFirestore(doc);
       }
 
-      // Create updated task
       final updatedTask = currentTask.copyWith(
         title: title,
         description: description,
@@ -272,9 +371,7 @@ class TaskService {
         dueDate: dueDate,
         tags: tags,
         hasDueTime: hasDueTime,
-        completedAt: isCompleted == true && !currentTask.isCompleted
-            ? DateTime.now()
-            : null,
+        completedAt: isCompleted == true && !currentTask.isCompleted ? DateTime.now() : null,
         recurrenceType: recurrenceType,
         recurrenceInterval: recurrenceInterval,
         recurrenceEndDate: recurrenceEndDate,
@@ -291,37 +388,12 @@ class TaskService {
           .collection('tasks')
           .doc(taskId)
           .update(updatedTask.toFirestore());
-
-      // Update cache
       _taskCache[taskId] = updatedTask;
 
-      // Handle notification: cancel if completed, reschedule if due date changed
       if (updatedTask.isCompleted) {
-        if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
-          DesktopNotificationService.instance.cancelTaskReminder(taskId);
-        } else {
-          await NotificationService.instance.cancelTaskNotification(taskId);
-        }
+        _cancelReminder(taskId);
       } else if (updatedTask.dueDate != null) {
-        final prefs = await SharedPreferences.getInstance();
-        final language = prefs.getString('language') ?? 'en';
-        if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
-          await DesktopNotificationService.instance.scheduleTaskReminder(
-            taskId: taskId,
-            title: updatedTask.title,
-            dueDate: updatedTask.dueDate!,
-            hasDueTime: updatedTask.hasDueTime,
-            language: language,
-          );
-        } else {
-          await NotificationService.instance.scheduleTaskReminder(
-            taskId: taskId,
-            title: updatedTask.title,
-            dueDate: updatedTask.dueDate!,
-            hasDueTime: updatedTask.hasDueTime,
-            language: language,
-          );
-        }
+        await _scheduleReminder(updatedTask);
       }
 
       debugPrint('TaskService: Updated task $taskId');
@@ -333,55 +405,47 @@ class TaskService {
     }
   }
 
-  /// Toggle task completion status
-  /// For recurring tasks: marks complete and auto-creates next occurrence
-  Future<bool> toggleTaskCompletion({
-    required String userId,
-    required String taskId,
-  }) async {
+  // ── Toggle completion ──────────────────────────────────────────────────────
+
+  Future<bool> toggleTaskCompletion({required String userId, required String taskId}) async {
     try {
-      Task? currentTask = _taskCache[taskId];
-      if (currentTask == null) {
-        final doc = await _firestore
-            .collection('users')
-            .doc(userId)
-            .collection('tasks')
-            .doc(taskId)
-            .get();
+      Task? currentTask;
 
-        if (!doc.exists) return false;
-
-        currentTask = Task.fromFirestore(doc);
+      if (_isGuest(userId)) {
+        await _initLocalTasks();
+        currentTask = _localTasks.firstWhere((t) => t.id == taskId, orElse: () => throw StateError('not found'));
+      } else {
+        currentTask = _taskCache[taskId];
+        if (currentTask == null) {
+          final doc = await _firestore
+              .collection('users')
+              .doc(userId)
+              .collection('tasks')
+              .doc(taskId)
+              .get();
+          if (!doc.exists) return false;
+          currentTask = Task.fromFirestore(doc);
+        }
       }
 
       final newStatus = !currentTask.isCompleted;
 
       if (currentTask.isRecurring) {
         if (newStatus) {
-          // Completing → create next occurrence
           await _completeRecurringTask(userId: userId, task: currentTask);
           return true;
         } else {
-          // Undoing → delete any children created from this task, then uncomplete
           await _deleteChildTasks(userId: userId, parentTaskId: currentTask.id);
-          // Also delete children that might point to the root parent
           if (currentTask.parentTaskId != null) {
             await _deleteChildTasks(userId: userId, parentTaskId: currentTask.parentTaskId!);
           }
         }
       }
 
-      final result = await updateTask(
-        userId: userId,
-        taskId: taskId,
-        isCompleted: newStatus,
-      );
-
-      // Check achievements after completing (not undoing) a task
+      final result = await updateTask(userId: userId, taskId: taskId, isCompleted: newStatus);
       if (result && newStatus) {
         AchievementService.instance.checkAndAward(userId: userId);
       }
-
       return result;
     } catch (e) {
       debugPrint('TaskService: Error toggling task - $e');
@@ -389,11 +453,12 @@ class TaskService {
     }
   }
 
-  /// Delete auto-generated child tasks for a recurring task being undone
-  Future<void> _deleteChildTasks({
-    required String userId,
-    required String parentTaskId,
-  }) async {
+  Future<void> _deleteChildTasks({required String userId, required String parentTaskId}) async {
+    if (_isGuest(userId)) {
+      _localTasks.removeWhere((t) => t.parentTaskId == parentTaskId && !t.isCompleted);
+      await _saveLocalTasks();
+      return;
+    }
     try {
       final snapshot = await _firestore
           .collection('users')
@@ -402,56 +467,33 @@ class TaskService {
           .where('parentTaskId', isEqualTo: parentTaskId)
           .where('isCompleted', isEqualTo: false)
           .get();
-
       for (final doc in snapshot.docs) {
         await doc.reference.delete();
         _taskCache.remove(doc.id);
-        debugPrint('TaskService: Deleted child task ${doc.id} of $parentTaskId');
       }
     } catch (e) {
       debugPrint('TaskService: Error deleting child tasks - $e');
     }
   }
 
-  /// Complete a recurring task and create the next occurrence
-  Future<void> _completeRecurringTask({
-    required String userId,
-    required Task task,
-  }) async {
-    // 1. Mark current task as completed
-    await updateTask(
-      userId: userId,
-      taskId: task.id,
-      isCompleted: true,
-    );
-
-    // 2. Calculate next due date
+  Future<void> _completeRecurringTask({required String userId, required Task task}) async {
+    await updateTask(userId: userId, taskId: task.id, isCompleted: true);
     final nextDate = task.nextRecurrenceDate;
     if (nextDate == null) return;
+    if (task.recurrenceEndDate != null && nextDate.isAfter(task.recurrenceEndDate!)) return;
 
-    // 3. Check if recurrence end date has passed
-    if (task.recurrenceEndDate != null &&
-        nextDate.isAfter(task.recurrenceEndDate!)) {
-      debugPrint('TaskService: Recurrence series ended for ${task.id}');
-      return;
+    if (!_isGuest(userId)) {
+      final existingChildren = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('tasks')
+          .where('parentTaskId', isEqualTo: task.id)
+          .where('isCompleted', isEqualTo: false)
+          .limit(1)
+          .get();
+      if (existingChildren.docs.isNotEmpty) return;
     }
 
-    // 4. Check if a child already exists to prevent duplicates
-    final existingChildren = await _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('tasks')
-        .where('parentTaskId', isEqualTo: task.id)
-        .where('isCompleted', isEqualTo: false)
-        .limit(1)
-        .get();
-
-    if (existingChildren.docs.isNotEmpty) {
-      debugPrint('TaskService: Child already exists for ${task.id}, skipping');
-      return;
-    }
-
-    // 5. Create next task instance — always use THIS task's ID as parent
     await addTask(
       userId: userId,
       title: task.title,
@@ -466,15 +508,47 @@ class TaskService {
       recurrenceEndDate: task.recurrenceEndDate,
       parentTaskId: task.id,
     );
-
-    debugPrint('TaskService: Created next recurrence for task ${task.id}');
   }
 
-  /// Batch update manualOrder for a list of tasks
-  Future<void> updateTaskOrders({
-    required String userId,
-    required List<Task> tasks,
-  }) async {
+  // ── Delete ─────────────────────────────────────────────────────────────────
+
+  Future<bool> deleteTask({required String userId, required String taskId}) async {
+    if (_isGuest(userId)) {
+      await _initLocalTasks();
+      _localTasks.removeWhere((t) => t.id == taskId);
+      await _saveLocalTasks();
+      _cancelReminder(taskId);
+      debugPrint('TaskService: Deleted local task $taskId');
+      _refreshDailySummary(userId);
+      return true;
+    }
+
+    try {
+      await _firestore.collection('users').doc(userId).collection('tasks').doc(taskId).delete();
+      _taskCache.remove(taskId);
+      _cancelReminder(taskId);
+      debugPrint('TaskService: Deleted task $taskId');
+      _refreshDailySummary(userId);
+      return true;
+    } catch (e) {
+      debugPrint('TaskService: Error deleting task - $e');
+      return false;
+    }
+  }
+
+  // ── Ordering ───────────────────────────────────────────────────────────────
+
+  Future<void> updateTaskOrders({required String userId, required List<Task> tasks}) async {
+    if (_isGuest(userId)) {
+      await _initLocalTasks();
+      for (int i = 0; i < tasks.length; i++) {
+        final idx = _localTasks.indexWhere((t) => t.id == tasks[i].id);
+        if (idx != -1) _localTasks[idx] = _localTasks[idx].copyWith(manualOrder: i);
+      }
+      await _saveLocalTasks();
+      return;
+    }
+
     try {
       final batch = _firestore.batch();
       for (int i = 0; i < tasks.length; i++) {
@@ -493,56 +567,36 @@ class TaskService {
     }
   }
 
-  /// Delete a task
-  Future<bool> deleteTask({
-    required String userId,
-    required String taskId,
-  }) async {
-    try {
-      await _firestore
-          .collection('users')
-          .doc(userId)
-          .collection('tasks')
-          .doc(taskId)
-          .delete();
+  // ── Statistics ─────────────────────────────────────────────────────────────
 
-      // Remove from cache
-      _taskCache.remove(taskId);
-
-      // Cancel any scheduled reminder
-      if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
-        DesktopNotificationService.instance.cancelTaskReminder(taskId);
-      } else {
-        await NotificationService.instance.cancelTaskNotification(taskId);
-      }
-
-      debugPrint('TaskService: Deleted task $taskId');
-      _refreshDailySummary(userId);
-      return true;
-    } catch (e) {
-      debugPrint('TaskService: Error deleting task - $e');
-      return false;
-    }
-  }
-
-  /// Get task statistics (optimized with single query)
   Future<TaskStatistics> getStatistics({required String userId}) async {
-    try {
-      // Use aggregation query for better performance
-      final tasks = await getTasksOnce(userId: userId, limit: 100);
-
+    if (_isGuest(userId)) {
+      await _initLocalTasks();
+      final tasks = _localTasks;
       final total = tasks.length;
       final completed = tasks.where((t) => t.isCompleted).length;
-      final pending = total - completed;
       final overdue = tasks.where((t) => t.isOverdue).length;
       final dueToday = tasks.where((t) => t.isDueToday && !t.isCompleted).length;
-
       return TaskStatistics(
         total: total,
         completed: completed,
-        pending: pending,
+        pending: total - completed,
         overdue: overdue,
         dueToday: dueToday,
+        completionRate: total > 0 ? (completed / total * 100).round() : 0,
+      );
+    }
+
+    try {
+      final tasks = await getTasksOnce(userId: userId, limit: 100);
+      final total = tasks.length;
+      final completed = tasks.where((t) => t.isCompleted).length;
+      return TaskStatistics(
+        total: total,
+        completed: completed,
+        pending: total - completed,
+        overdue: tasks.where((t) => t.isOverdue).length,
+        dueToday: tasks.where((t) => t.isDueToday && !t.isCompleted).length,
         completionRate: total > 0 ? (completed / total * 100).round() : 0,
       );
     } catch (e) {
@@ -551,14 +605,39 @@ class TaskService {
     }
   }
 
-  /// Clear cache
-  void clearCache() {
-    _taskCache.clear();
-    
-    _lastDocument = null;
+  // ── Helpers ────────────────────────────────────────────────────────────────
+
+  Future<void> _scheduleReminder(Task task) async {
+    if (task.dueDate == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    final language = prefs.getString('language') ?? 'en';
+    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+      await DesktopNotificationService.instance.scheduleTaskReminder(
+        taskId: task.id,
+        title: task.title,
+        dueDate: task.dueDate!,
+        hasDueTime: task.hasDueTime,
+        language: language,
+      );
+    } else {
+      await NotificationService.instance.scheduleTaskReminder(
+        taskId: task.id,
+        title: task.title,
+        dueDate: task.dueDate!,
+        hasDueTime: task.hasDueTime,
+        language: language,
+      );
+    }
   }
 
-  /// Refresh the daily task summary notification after any task change
+  void _cancelReminder(String taskId) {
+    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+      DesktopNotificationService.instance.cancelTaskReminder(taskId);
+    } else {
+      NotificationService.instance.cancelTaskNotification(taskId);
+    }
+  }
+
   Future<void> _refreshDailySummary(String userId) async {
     try {
       final stats = await getStatistics(userId: userId);
@@ -574,14 +653,19 @@ class TaskService {
     }
   }
 
-  /// Dispose of resources
+  void clearCache() {
+    _taskCache.clear();
+    _lastDocument = null;
+  }
+
   void dispose() {
     clearCache();
+    _localTasksController?.close();
+    _localTasksController = null;
     _isInitialized = false;
   }
 }
 
-/// Task statistics model
 class TaskStatistics {
   final int total;
   final int completed;
@@ -599,14 +683,12 @@ class TaskStatistics {
     required this.completionRate,
   });
 
-  factory TaskStatistics.empty() {
-    return const TaskStatistics(
-      total: 0,
-      completed: 0,
-      pending: 0,
-      overdue: 0,
-      dueToday: 0,
-      completionRate: 0,
-    );
-  }
+  factory TaskStatistics.empty() => const TaskStatistics(
+        total: 0,
+        completed: 0,
+        pending: 0,
+        overdue: 0,
+        dueToday: 0,
+        completionRate: 0,
+      );
 }

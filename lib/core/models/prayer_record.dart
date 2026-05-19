@@ -49,6 +49,32 @@ class PrayerRecord {
     };
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'userId': userId,
+      'prayerName': prayerName,
+      'date': date.toIso8601String(),
+      'prayedAt': prayedAt.toIso8601String(),
+      'status': status.value,
+      'method': method.value,
+      'notes': notes,
+    };
+  }
+
+  factory PrayerRecord.fromJson(Map<String, dynamic> data) {
+    return PrayerRecord(
+      id: data['id'] as String? ?? '',
+      userId: data['userId'] as String? ?? '',
+      prayerName: data['prayerName'] as String? ?? '',
+      date: DateTime.parse(data['date'] as String),
+      prayedAt: DateTime.parse(data['prayedAt'] as String),
+      status: PrayerStatus.fromString(data['status'] as String? ?? 'on_time'),
+      method: PrayerMethod.fromString(data['method'] as String? ?? 'congregation'),
+      notes: data['notes'] as String?,
+    );
+  }
+
   PrayerRecord copyWith({
     String? id,
     String? userId,

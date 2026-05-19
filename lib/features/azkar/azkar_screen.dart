@@ -240,7 +240,7 @@ class _ProgressHeader extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     color: isComplete
                         ? Colors.white
-                        : (isDark ? Colors.white : Colors.black87),
+                        : (AppConstants.textPrimary(isDark)),
                   ),
                 ),
               ],
@@ -259,7 +259,7 @@ class _ProgressHeader extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                     color: isComplete
                         ? Colors.white
-                        : (isDark ? Colors.white : Colors.black87),
+                        : (AppConstants.textPrimary(isDark)),
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -334,12 +334,12 @@ class _ZikrCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: isDone
             ? primary.withOpacity(0.1)
-            : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
+            : (AppConstants.card(isDark)),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         border: Border.all(
           color: isDone
               ? primary.withOpacity(0.4)
-              : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+              : (AppConstants.border(isDark)),
           width: isDone ? 1.5 : 1,
         ),
       ),
@@ -382,7 +382,7 @@ class _ZikrCard extends StatelessWidget {
                         height: 1.8,
                         color: isDone
                             ? primary
-                            : (isDark ? Colors.white : Colors.black87),
+                            : (AppConstants.textPrimary(isDark)),
                         decoration: TextDecoration.none,
                       ),
                       textDirection: TextDirection.rtl,

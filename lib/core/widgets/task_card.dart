@@ -70,13 +70,13 @@ class TaskCard extends StatelessWidget {
             ? (isDark
                 ? Colors.red.withOpacity(0.07)
                 : Colors.red.withOpacity(0.04))
-            : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
+            : (AppConstants.card(isDark)),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         border: isSelected
             ? Border.all(color: AppConstants.getPrimary(isDark), width: 2)
             : Border.all(
                 color:
-                    isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+                    AppConstants.border(isDark),
               ),
         boxShadow: [
           BoxShadow(
@@ -121,7 +121,7 @@ class TaskCard extends StatelessWidget {
                                     fontWeight: FontWeight.w600,
                                     color: task.isCompleted
                                         ? (isDark ? Colors.grey.shade600 : Colors.grey.shade400)
-                                        : (isDark ? Colors.white : Colors.black87),
+                                        : (AppConstants.textPrimary(isDark)),
                                     decoration: task.isCompleted ? TextDecoration.lineThrough : null,
                                   ),
                                   maxLines: 2,
@@ -164,7 +164,7 @@ class TaskCard extends StatelessWidget {
                         child: Text(
                           task.description!,
                           style: AppTypography.bodyS.copyWith(
-                            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                            color: AppConstants.textMuted(isDark),
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,

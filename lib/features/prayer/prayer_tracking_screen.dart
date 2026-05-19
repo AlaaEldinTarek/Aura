@@ -216,10 +216,10 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
         const SizedBox(height: AppConstants.paddingMedium),
         Container(
           decoration: BoxDecoration(
-            color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+            color: AppConstants.card(isDark),
             borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
             border: Border.all(
-              color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+              color: AppConstants.border(isDark),
             ),
           ),
           child: TableCalendar(
@@ -259,16 +259,16 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
               formatButtonVisible: false,
               titleCentered: true,
               titleTextStyle: AppTypography.bodyL.copyWith(
-                color: isDark ? Colors.white : Colors.black87,
+                color: AppConstants.textPrimary(isDark),
                 fontWeight: FontWeight.bold,
               ),
               leftChevronIcon: Icon(
                 Icons.chevron_left,
-                color: isDark ? Colors.white : Colors.black87,
+                color: AppConstants.textPrimary(isDark),
               ),
               rightChevronIcon: Icon(
                 Icons.chevron_right,
-                color: isDark ? Colors.white : Colors.black87,
+                color: AppConstants.textPrimary(isDark),
               ),
             ),
             daysOfWeekStyle: DaysOfWeekStyle(
@@ -324,10 +324,10 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
     return Container(
       padding: const EdgeInsets.all(AppConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         border: Border.all(
-          color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+          color: AppConstants.border(isDark),
         ),
       ),
       child: Column(
@@ -348,7 +348,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                 Text(
                   isArabic ? 'اضغط لتسجيل' : 'Tap to record',
                   style: AppTypography.labelS.copyWith(
-                    color: isDark ? Colors.white38 : Colors.black38,
+                    color: AppConstants.textDisabled(isDark),
                   ),
                 ),
             ],
@@ -386,7 +386,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
     required bool isArabic,
   }) {
     final isCompleted = status == PrayerStatus.onTime || status == PrayerStatus.late;
-    final isExplicitlyMissed = status == PrayerStatus.excused;
+    final isExplicitlyMissed = status == PrayerStatus.excused || status == PrayerStatus.missed;
 
     final showBadge = isCompleted || isExplicitlyMissed;
     final badgeColor = isExplicitlyMissed
@@ -419,7 +419,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                   displayName,
                   style: AppTypography.bodyL.copyWith(
                     fontWeight: showBadge ? FontWeight.w600 : FontWeight.normal,
-                    color: isDark ? Colors.white : Colors.black87,
+                    color: AppConstants.textPrimary(isDark),
                   ),
                 ),
               ),
@@ -468,13 +468,13 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.radio_button_unchecked,
-                          color: isDark ? Colors.white38 : Colors.black38, size: 16),
+                          color: AppConstants.textDisabled(isDark), size: 16),
                       const SizedBox(width: 4),
                       Text(
                         isArabic ? 'غير مُصلّاة' : 'Not Prayed',
                         style: AppTypography.caption.copyWith(
                           fontWeight: FontWeight.w500,
-                          color: isDark ? Colors.white38 : Colors.black38,
+                          color: AppConstants.textDisabled(isDark),
                         ),
                       ),
                     ],
@@ -508,7 +508,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
     }
 
     try {
-      if (currentStatus == PrayerStatus.onTime || currentStatus == PrayerStatus.late || currentStatus == PrayerStatus.excused) {
+      if (currentStatus == PrayerStatus.onTime || currentStatus == PrayerStatus.late || currentStatus == PrayerStatus.excused || currentStatus == PrayerStatus.missed) {
         // Show confirmation dialog before unmarking
         final confirmed = await showUnmarkConfirmDialog(
           context: context,
@@ -704,10 +704,10 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         border: Border.all(
-          color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+          color: AppConstants.border(isDark),
         ),
       ),
       child: Column(
@@ -718,13 +718,13 @@ class _StatCard extends StatelessWidget {
             value,
             style: AppTypography.headingM.copyWith(
               fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black87,
+              color: AppConstants.textPrimary(isDark),
             ),
           ),
           Text(
             label,
             style: AppTypography.caption.copyWith(
-              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+              color: AppConstants.textMuted(isDark),
             ),
           ),
         ],

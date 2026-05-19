@@ -43,7 +43,7 @@ class WirdNotifier extends StateNotifier<AsyncValue<WirdState>> {
     try {
       // Pull latest from Firestore first (no-op if offline or guest)
       final uid = FirebaseAuth.instance.currentUser?.uid;
-      if (uid != null) {
+      if (uid != null && uid != 'guest_user') {
         await WirdService.instance.syncFromFirestore(uid);
       }
       if (!mounted) return;

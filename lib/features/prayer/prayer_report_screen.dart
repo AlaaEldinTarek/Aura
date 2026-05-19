@@ -406,7 +406,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
                           displayName,
                           style: AppTypography.label.copyWith(
                             fontWeight: FontWeight.w600,
-                            color: isDark ? Colors.white : Colors.black87,
+                            color: AppConstants.textPrimary(isDark),
                           ),
                         ),
                       ),
@@ -418,7 +418,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
                               borderRadius: BorderRadius.circular(4),
                               child: LinearProgressIndicator(
                                 value: rate,
-                                backgroundColor: isDark ? Colors.white12 : Colors.black12,
+                                backgroundColor: AppConstants.divider(isDark),
                                 color: rate >= 0.8
                                     ? Colors.green
                                     : rate >= 0.5
@@ -466,10 +466,10 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
     return Container(
       padding: const EdgeInsets.all(AppConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(
-          color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+          color: AppConstants.border(isDark),
         ),
       ),
       child: Column(
@@ -486,7 +486,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
             Text(
               subtitle,
               style: AppTypography.caption.copyWith(
-                color: isDark ? Colors.white38 : Colors.black38,
+                color: AppConstants.textDisabled(isDark),
               ),
             ),
           ],
@@ -554,7 +554,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
                     '${_n((value * 100).toStringAsFixed(0), isArabic: isArabic)}%',
                     style: AppTypography.caption.copyWith(
                       fontSize: 10,
-                      color: isDark ? Colors.white38 : Colors.black38,
+                      color: AppConstants.textDisabled(isDark),
                     ),
                   );
                 },
@@ -710,7 +710,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: rate,
-              backgroundColor: isDark ? Colors.white12 : Colors.black12,
+              backgroundColor: AppConstants.divider(isDark),
               color: color,
               minHeight: 12,
             ),
@@ -755,10 +755,10 @@ class _ReportCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         border: Border.all(
-          color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+          color: AppConstants.border(isDark),
         ),
       ),
       child: Column(
@@ -769,13 +769,13 @@ class _ReportCard extends StatelessWidget {
             value,
             style: AppTypography.headingM.copyWith(
               fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black87,
+              color: AppConstants.textPrimary(isDark),
             ),
           ),
           Text(
             label,
             style: AppTypography.labelS.copyWith(
-              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+              color: AppConstants.textMuted(isDark),
             ),
           ),
           const SizedBox(height: 2),
@@ -783,7 +783,7 @@ class _ReportCard extends StatelessWidget {
             subtitle,
             style: AppTypography.caption.copyWith(
               fontSize: 10,
-              color: isDark ? Colors.white38 : Colors.black38,
+              color: AppConstants.textDisabled(isDark),
             ),
           ),
         ],

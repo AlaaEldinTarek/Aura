@@ -27,6 +27,7 @@ import '../../core/models/prayer_time.dart';
 import '../../core/models/achievement.dart';
 import '../../core/providers/daily_prayer_status_provider.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/providers/guest_migration_provider.dart';
 import '../../core/services/shared_preferences_service.dart';
 import '../home/home_screen.dart';
 import '../prayer/prayer_screen.dart';
@@ -146,8 +147,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       });
       _handleWidgetIntent();
       _scheduleDailySummaryOnStartup();
-      // On cold start, prayer times need time to load — check after a short delay
       Future.delayed(const Duration(seconds: 3), _checkUntrackedPrayers);
+      Future.delayed(const Duration(seconds: 1), _checkGuestMigration);
     });
 
     // Listen for app shortcut navigation from native side (Android only)
@@ -276,6 +277,43 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     } catch (e) {
       debugPrint('Error scheduling daily summary: $e');
     }
+  }
+
+  Future<void> _checkGuestMigration() async {
+    if (!mounted) return;
+    final migration = ref.read(guestMigrationProvider);
+    if (!migration.isPending || migration.dialogShownThisSession) return;
+    ref.read(guestMigrationProvider.notifier).markDialogShown();
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final count = migration.taskCount;
+    if (!mounted) return;
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Text('guest_sync_dialog_title'.tr()),
+        content: Text(
+          'guest_sync_dialog_body'.tr().replaceAll('%d', '$count'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: Text('guest_sync_later'.tr()),
+          ),
+          FilledButton(
+            onPressed: () async {
+              Navigator.of(ctx).pop();
+              await ref.read(guestMigrationProvider.notifier).migrate();
+              if (!mounted) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('guest_sync_success'.tr())),
+              );
+            },
+            child: Text('guest_sync_now'.tr()),
+          ),
+        ],
+      ),
+    );
   }
 
   bool _untrackedCheckInProgress = false;

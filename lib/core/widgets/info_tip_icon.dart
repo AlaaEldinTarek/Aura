@@ -34,7 +34,7 @@ class InfoTipIcon extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
+        backgroundColor: AppConstants.surface(isDark),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         ),
@@ -46,7 +46,7 @@ class InfoTipIcon extends StatelessWidget {
               child: Text(
                 titleKey.tr(),
                 style: AppTypography.bodyL.copyWith(
-                  color: isDark ? Colors.white : Colors.black87,
+                  color: AppConstants.textPrimary(isDark),
                   fontWeight: FontWeight.bold,
                 ),
               ),

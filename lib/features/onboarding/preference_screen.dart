@@ -18,6 +18,7 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
   int _step = 0;               // 0-4
   int _carouselSlide = 0;      // 0-2 within step 3
   bool _saving = false;
+  bool _navigating = false;
 
   String _language = 'en';
   String _theme = 'system';
@@ -167,25 +168,30 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
 
   // ── Navigation ─────────────────────────────────────────────────────────────
   void _next() {
-    if (_step == 3) {
-      // Within carousel
-      if (_carouselSlide < 2) {
-        _carouselController.nextPage(
-          duration: const Duration(milliseconds: 350),
-          curve: Curves.easeInOut,
-        );
-        setState(() => _carouselSlide++);
-        return;
-      }
+    if (_navigating || _saving) return;
+    if (_step == 3 && _carouselSlide < 2) {
+      setState(() { _navigating = true; _carouselSlide++; });
+      _carouselController.nextPage(
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeInOut,
+      );
+      Future.delayed(const Duration(milliseconds: 360), () {
+        if (mounted) setState(() => _navigating = false);
+      });
+      return;
     }
     if (_step < _totalSteps - 1) {
+      setState(() {
+        _navigating = true;
+        _step++;
+        if (_step == 3) _carouselSlide = 0;
+      });
       _pageController.nextPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
       );
-      setState(() {
-        _step++;
-        if (_step == 3) _carouselSlide = 0;
+      Future.delayed(const Duration(milliseconds: 410), () {
+        if (mounted) setState(() => _navigating = false);
       });
     } else {
       _finish();
@@ -193,20 +199,27 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
   }
 
   void _back() {
+    if (_navigating || _saving) return;
     if (_step == 3 && _carouselSlide > 0) {
+      setState(() { _navigating = true; _carouselSlide--; });
       _carouselController.previousPage(
         duration: const Duration(milliseconds: 350),
         curve: Curves.easeInOut,
       );
-      setState(() => _carouselSlide--);
+      Future.delayed(const Duration(milliseconds: 360), () {
+        if (mounted) setState(() => _navigating = false);
+      });
       return;
     }
     if (_step > 0) {
+      setState(() { _navigating = true; _step--; });
       _pageController.previousPage(
         duration: const Duration(milliseconds: 400),
         curve: Curves.easeInOut,
       );
-      setState(() => _step--);
+      Future.delayed(const Duration(milliseconds: 410), () {
+        if (mounted) setState(() => _navigating = false);
+      });
     }
   }
 

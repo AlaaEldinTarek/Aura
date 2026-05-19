@@ -39,7 +39,7 @@ class AuraBottomNavBar extends ConsumerWidget {
     return Container(
       key: navBarKey,
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
+        color: AppConstants.surface(isDark),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -143,7 +143,7 @@ class AuraBottomNavBar extends ConsumerWidget {
                     size: 24,
                     color: isSelected
                         ? AppConstants.getPrimary(isDark)
-                        : (isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary),
+                        : (AppConstants.textSecondary(isDark)),
                   ),
                   Positioned(
                     right: -8,
@@ -185,7 +185,7 @@ class AuraBottomNavBar extends ConsumerWidget {
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   color: isSelected
                       ? AppConstants.getPrimary(isDark)
-                      : (isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary),
+                      : (AppConstants.textSecondary(isDark)),
                 ),
               ),
               if (isComingSoon)

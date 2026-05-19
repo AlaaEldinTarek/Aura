@@ -47,7 +47,7 @@ class _ShimmerLoadingState extends State<ShimmerLoading>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final baseColor = widget.baseColor ??
-        (isDark ? AppConstants.darkCard : AppConstants.lightCard);
+        (AppConstants.card(isDark));
     final highlightColor = widget.highlightColor ??
         (isDark ? AppConstants.darkSurface : Colors.grey[100]);
 
@@ -341,7 +341,7 @@ class ShimmerPrayerCard extends StatelessWidget {
           color: isDark ? AppConstants.darkCard : Colors.grey[200],
           borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
           border: Border.all(
-            color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+            color: AppConstants.border(isDark),
           ),
         ),
         child: Row(
@@ -410,7 +410,7 @@ class ShimmerQuickActions extends StatelessWidget {
           color: isDark ? AppConstants.darkCard : Colors.grey[200],
           borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
           border: Border.all(
-            color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+            color: AppConstants.border(isDark),
           ),
         ),
         child: Column(

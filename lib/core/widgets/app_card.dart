@@ -26,10 +26,10 @@ class AppCard extends StatelessWidget {
       margin: margin,
       padding: padding ?? const EdgeInsets.all(AppConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: borderRadius ?? BorderRadius.circular(AppConstants.radiusMedium),
         border: Border.all(
-          color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+          color: AppConstants.border(isDark),
         ),
       ),
       child: child,

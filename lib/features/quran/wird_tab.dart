@@ -283,7 +283,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
     final daysEst = dailyGoal > 0 && remaining > 0
         ? (remaining / dailyGoal).ceil()
         : 0;
-    final secondaryColor = isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary;
+    final secondaryColor = AppConstants.textSecondary(isDark);
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -516,7 +516,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
   // ── Juz Grid ──────────────────────────────────────────────────────────────
 
   Widget _buildJuzGrid(BuildContext context, List<int> allCompleted, Color primary, bool isDark) {
-    final secondaryColor = isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary;
+    final secondaryColor = AppConstants.textSecondary(isDark);
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
@@ -648,7 +648,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                 Text(
                   'wird_streak'.tr(),
                   style: AppTypography.caption.copyWith(
-                    color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
+                    color: AppConstants.textSecondary(isDark),
                   ),
                 ),
                 Row(
@@ -661,7 +661,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                     Text(
                       'wird_streak_days'.tr(),
                       style: AppTypography.label.copyWith(
-                        color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
+                        color: AppConstants.textSecondary(isDark),
                       ),
                     ),
                   ],
@@ -692,7 +692,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
     BuildContext context, WirdState state, Color primary, bool isDark,
     int pagesRead, int goal, bool isCompleted, double progressRatio,
   ) {
-    final secondaryColor = isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary;
+    final secondaryColor = AppConstants.textSecondary(isDark);
     final remaining = goal - pagesRead;
 
     return Card(
@@ -919,7 +919,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
   // ── Stats Row ─────────────────────────────────────────────────────────────
 
   Widget _buildStatsRow(WirdState state, Color primary, bool isDark, bool isJuzMode, List<int> allCompletedJuz) {
-    final secondary = isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary;
+    final secondary = AppConstants.textSecondary(isDark);
     return Row(
       children: [
         Expanded(
@@ -1213,7 +1213,7 @@ class _BookmarkPagesSheet extends ConsumerWidget {
           Container(
             width: 40, height: 4,
             decoration: BoxDecoration(
-              color: isDark ? Colors.white38 : Colors.black38,
+              color: AppConstants.textDisabled(isDark),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -1274,7 +1274,7 @@ class _BookmarkPagesSheet extends ConsumerWidget {
                                           ? 'wird_bookmark_unique_pages'.tr().replaceAll('%d', count.toString())
                                           : 'wird_bookmark_no_bookmarks'.tr(),
                                       style: AppTypography.caption.copyWith(
-                                        color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
+                                        color: AppConstants.textSecondary(isDark),
                                       ),
                                     ),
                                   ],
@@ -1329,7 +1329,7 @@ class _BookmarkListSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final displayColor = _bookmarkColors[color]!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final secondary = isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary;
+    final secondary = AppConstants.textSecondary(isDark);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.55,
@@ -1346,7 +1346,7 @@ class _BookmarkListSheet extends StatelessWidget {
                   child: Container(
                     width: 40, height: 4,
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.white38 : Colors.black38,
+                      color: AppConstants.textDisabled(isDark),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),

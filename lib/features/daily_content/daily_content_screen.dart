@@ -57,7 +57,7 @@ class DailyContentScreen extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+                color: AppConstants.card(isDark),
                 borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
                 border: Border.all(color: accentColor.withValues(alpha: 0.25)),
                 boxShadow: [
@@ -76,7 +76,7 @@ class DailyContentScreen extends StatelessWidget {
                     content.arabic,
                     style: AppTypography.ar(AppTypography.headingM).copyWith(
                       fontSize: 22,
-                      color: isDark ? Colors.white : Colors.black87,
+                      color: AppConstants.textPrimary(isDark),
                       height: 2.0,
                     ),
                     textAlign: TextAlign.right,

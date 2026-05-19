@@ -55,13 +55,13 @@ class PrayerCard extends StatelessWidget {
       iconColor = AppConstants.getPrimary(isDark);
       borderWidth = 2;
     } else if (isNext) {
-      cardColor = isDark ? AppConstants.darkCard : AppConstants.lightCard;
+      cardColor = AppConstants.card(isDark);
       borderColor = AppConstants.getPrimary(isDark).withOpacity(0.5);
       iconColor = AppConstants.getPrimary(isDark);
       borderWidth = 1.5;
     } else {
-      cardColor = isDark ? AppConstants.darkCard : AppConstants.lightCard;
-      borderColor = isDark ? AppConstants.darkBorder : AppConstants.lightBorder;
+      cardColor = AppConstants.card(isDark);
+      borderColor = AppConstants.border(isDark);
       iconColor = isDark ? Colors.white54 : Colors.black54;
       borderWidth = 1;
     }
@@ -181,7 +181,7 @@ class PrayerCard extends StatelessWidget {
                 else
                   Icon(
                     Icons.chevron_right,
-                    color: isDark ? Colors.white38 : Colors.black38,
+                    color: AppConstants.textDisabled(isDark),
                   ),
               ],
             ),

@@ -77,16 +77,16 @@ class _EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final badgeColor = _badgeColor();
-    final secondary = isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary;
+    final secondary = AppConstants.textSecondary(isDark);
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         border: Border.all(
           color: item.daysUntil <= 7
               ? badgeColor.withOpacity(0.35)
-              : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+              : (AppConstants.border(isDark)),
         ),
         boxShadow: item.daysUntil <= 7
             ? [BoxShadow(color: badgeColor.withOpacity(0.08), blurRadius: 8, offset: const Offset(0, 2))]

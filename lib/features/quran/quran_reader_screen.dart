@@ -690,7 +690,7 @@ class _MushafPageState extends ConsumerState<_MushafPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? AppConstants.darkSurface : AppConstants.lightSurface;
+    final bgColor = AppConstants.surface(isDark);
     final bookmarks = ref.watch(quranBookmarksProvider).valueOrNull ?? [];
 
     return ColoredBox(
@@ -870,8 +870,8 @@ class _AyahSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final meta = QuranService.getSurahMeta(ayah.suraNo);
-    final surface = isDark ? AppConstants.darkCard : AppConstants.lightCard;
-    final hint = isDark ? Colors.white38 : Colors.black38;
+    final surface = AppConstants.card(isDark);
+    final hint = AppConstants.textDisabled(isDark);
 
     return Container(
       decoration: BoxDecoration(
@@ -1026,7 +1026,7 @@ class _BookmarkReplaceSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final displayColor = _colorValues[color]!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final secondary = isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary;
+    final secondary = AppConstants.textSecondary(isDark);
 
     return DraggableScrollableSheet(
       initialChildSize: 0.55,
@@ -1043,7 +1043,7 @@ class _BookmarkReplaceSheet extends StatelessWidget {
                   child: Container(
                     width: 40, height: 4,
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.white38 : Colors.black38,
+                      color: AppConstants.textDisabled(isDark),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -1259,10 +1259,10 @@ class _TopBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: (isDark ? AppConstants.darkSurface : AppConstants.lightSurface)
+        color: (AppConstants.surface(isDark))
             .withValues(alpha: 0.95),
         border: Border(
-          bottom: BorderSide(color: isDark ? Colors.white12 : Colors.black12),
+          bottom: BorderSide(color: AppConstants.divider(isDark)),
         ),
       ),
       child: Row(
@@ -1322,10 +1322,10 @@ class _BottomBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: (isDark ? AppConstants.darkSurface : AppConstants.lightSurface)
+        color: (AppConstants.surface(isDark))
             .withValues(alpha: 0.95),
         border: Border(
-          top: BorderSide(color: isDark ? Colors.white12 : Colors.black12),
+          top: BorderSide(color: AppConstants.divider(isDark)),
         ),
       ),
       child: SafeArea(

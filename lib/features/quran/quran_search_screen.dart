@@ -54,7 +54,7 @@ class _QuranSearchScreenState extends ConsumerState<QuranSearchScreen> {
             border: InputBorder.none,
             hintStyle: AppTypography.bodyM.copyWith(color: isDark ? Colors.white54 : Colors.black38),
           ),
-          style: AppTypography.bodyL.copyWith(color: isDark ? Colors.white : Colors.black87),
+          style: AppTypography.bodyL.copyWith(color: AppConstants.textPrimary(isDark)),
         ),
         actions: [
           if (_searchController.text.isNotEmpty)
@@ -116,7 +116,7 @@ class _SearchResults extends ConsumerWidget {
                   fontFamily: 'UthmanicHafs',
                   fontSize: 16,
                   height: 1.8,
-                  color: isDark ? Colors.white : Colors.black87,
+                  color: AppConstants.textPrimary(isDark),
                 ),
               ),
               subtitle: Padding(

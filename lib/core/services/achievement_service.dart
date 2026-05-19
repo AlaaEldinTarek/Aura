@@ -24,6 +24,7 @@ class AchievementService {
 
   /// Get all earned achievements for a user
   Future<List<Achievement>> getEarnedAchievements({required String userId}) async {
+    if (userId == 'guest_user') return [];
     try {
       final snapshot = await _firestore
           .collection('users')
@@ -47,6 +48,7 @@ class AchievementService {
   /// Check and award any newly earned achievements.
   /// Returns the list of newly earned achievements this call.
   Future<List<Achievement>> checkAndAward({required String userId}) async {
+    if (userId == 'guest_user') return [];
     final newlyEarned = <Achievement>[];
 
     try {

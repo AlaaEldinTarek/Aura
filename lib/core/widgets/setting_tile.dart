@@ -121,7 +121,7 @@ class SettingTile extends StatelessWidget {
                   Icon(
                     isRTL ? Icons.chevron_left : Icons.chevron_right,
                     size: chevronSz,
-                    color: isDark ? Colors.white38 : Colors.black38,
+                    color: AppConstants.textDisabled(isDark),
                   ),
               ],
             ),
@@ -318,10 +318,10 @@ class SettingsCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(
-          color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+          color: AppConstants.border(isDark),
         ),
         boxShadow: [
           BoxShadow(

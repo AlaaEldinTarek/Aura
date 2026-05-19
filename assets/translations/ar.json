@@ -459,5 +459,15 @@
   "khatma_finished_body": "وصلت إلى آخر صفحة في القرآن الكريم. هل أنهيت وردك اليومي؟",
   "khatma_finished_yes": "نعم، انتهيت!",
   "khatma_finished_no": "لا بعد",
-  "khatma_finished_keep": "أكمل القراءة"
+  "khatma_finished_keep": "أكمل القراءة",
+
+  "guest_sync_dialog_title": "مزامنة بياناتك",
+  "guest_sync_dialog_body": "لديك %d مهمة أنشأتها أثناء استخدام التطبيق كضيف. هل تريد نسخها إلى حسابك الآن؟",
+  "guest_sync_now": "مزامنة الآن",
+  "guest_sync_later": "لاحقاً",
+  "guest_sync_profile_title": "بيانات محلية غير متزامنة",
+  "guest_sync_profile_subtitle": "لديك %d مهمة من جلسة الضيف. قم بمزامنتها مع حسابك.",
+  "guest_sync_profile_btn": "مزامنة الآن",
+  "guest_sync_profile_note": "يمكنك المزامنة في أي وقت من صفحة الملف الشخصي.",
+  "guest_sync_success": "تمت مزامنة المهام مع حسابك!"
 }

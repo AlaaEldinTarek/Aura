@@ -261,12 +261,12 @@ class _AchievementBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: isEarned
             ? AppConstants.getPrimary(isDark).withOpacity(0.1)
-            : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
+            : (AppConstants.card(isDark)),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         border: Border.all(
           color: isEarned
               ? AppConstants.getPrimary(isDark).withOpacity(0.5)
-              : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+              : (AppConstants.border(isDark)),
         ),
       ),
       child: Column(
@@ -275,7 +275,7 @@ class _AchievementBadge extends StatelessWidget {
             achievement.iconEmoji,
             style: TextStyle(
               fontSize: 24,
-              color: isEarned ? null : (isDark ? Colors.white12 : Colors.black12),
+              color: isEarned ? null : (AppConstants.divider(isDark)),
             ),
           ),
           const SizedBox(height: 4),
@@ -284,7 +284,7 @@ class _AchievementBadge extends StatelessWidget {
             style: AppTypography.labelS.copyWith(
               fontWeight: FontWeight.bold,
               color: isEarned
-                  ? (isDark ? Colors.white : Colors.black87)
+                  ? (AppConstants.textPrimary(isDark))
                   : (isDark ? Colors.white24 : Colors.black26),
             ),
             textAlign: TextAlign.center,
@@ -298,7 +298,7 @@ class _AchievementBadge extends StatelessWidget {
               fontSize: 9,
               color: isEarned
                   ? (isDark ? Colors.white60 : Colors.black54)
-                  : (isDark ? Colors.white12 : Colors.black12),
+                  : (AppConstants.divider(isDark)),
             ),
             textAlign: TextAlign.center,
             maxLines: 2,

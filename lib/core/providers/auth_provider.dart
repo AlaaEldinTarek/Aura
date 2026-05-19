@@ -4,6 +4,8 @@ import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/shared_preferences_service.dart';
 import '../services/wird_service.dart';
+import '../services/task_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_data.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -111,7 +113,7 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<User?>> {
           debugPrint('✅ Firestore user data created with migrated preferences');
           // Push any local wird data accumulated as guest
           await WirdService.instance.syncToFirestore(uid);
-        } catch (e, st) {
+        } catch (e) {
           // Firestore not set up or unavailable - continue with local only
           debugPrint('⚠️ Firestore user data creation failed: $e');
           debugPrint('📍 Continuing with local storage only');
@@ -122,6 +124,14 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<User?>> {
       if (wasGuest) {
         await _prefsService.setGuest(false);
         debugPrint('✅ Guest mode cleared - user now signed in');
+        // If guest had local tasks, store a pending migration flag so the
+        // UI can prompt the user to sync (rather than auto-migrating silently).
+        final localCount = await TaskService.instance.getLocalTaskCount();
+        if (localCount > 0) {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('pending_guest_migration_uid', uid);
+          debugPrint('📦 $localCount local task(s) pending migration for $uid');
+        }
       }
     } catch (e, st) {
       // Log sync errors but allow login to succeed

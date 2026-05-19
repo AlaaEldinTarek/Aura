@@ -104,7 +104,7 @@ class _CircularCountdownTimerState extends State<CircularCountdownTimer>
     final isArabic = locale.languageCode == 'ar';
     final primaryColor = widget.primaryColor ?? AppConstants.getPrimary(isDark);
     final backgroundColor =
-        widget.backgroundColor ?? (isDark ? AppConstants.darkCard : AppConstants.lightCard);
+        widget.backgroundColor ?? (AppConstants.card(isDark));
 
     final hours = _remaining.inHours;
     final minutes = _remaining.inMinutes % 60;
@@ -137,7 +137,7 @@ class _CircularCountdownTimerState extends State<CircularCountdownTimer>
                 painter: _CountdownPainter(
                   progress: _progressAnimation.value,
                   primaryColor: primaryColor,
-                  trackColor: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+                  trackColor: AppConstants.border(isDark),
                   remaining: _remaining,
                   circleSize: sz,
                 ),
@@ -228,7 +228,7 @@ class _CircularCountdownTimerState extends State<CircularCountdownTimer>
       display,
       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black87,
+            color: AppConstants.textPrimary(isDark),
           ),
       textAlign: TextAlign.center,
     );

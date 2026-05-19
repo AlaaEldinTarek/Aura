@@ -459,5 +459,15 @@
   "khatma_finished_body": "You've reached the last page of the Quran. Did you complete your daily Wird?",
   "khatma_finished_yes": "Yes, I'm Done!",
   "khatma_finished_no": "Not Yet",
-  "khatma_finished_keep": "Keep Reading"
+  "khatma_finished_keep": "Keep Reading",
+
+  "guest_sync_dialog_title": "Sync Your Data",
+  "guest_sync_dialog_body": "You created %d task(s) while using the app as a guest. Would you like to copy them to your account now?",
+  "guest_sync_now": "Sync Now",
+  "guest_sync_later": "Later",
+  "guest_sync_profile_title": "Unsync'd Local Data",
+  "guest_sync_profile_subtitle": "You have %d task(s) from your guest session. Sync them to your account.",
+  "guest_sync_profile_btn": "Sync Now",
+  "guest_sync_profile_note": "You can also do this any time from your profile.",
+  "guest_sync_success": "Tasks synced to your account!"
 }

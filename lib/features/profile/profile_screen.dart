@@ -15,6 +15,7 @@ import '../../core/services/achievement_service.dart';
 import '../../core/models/achievement.dart';
 import '../../core/models/prayer_record.dart';
 import '../../core/providers/task_provider.dart';
+import '../../core/providers/guest_migration_provider.dart';
 
 import '../../core/widgets/setting_tile.dart';
 import '../../core/widgets/shimmer_loading.dart';
@@ -310,6 +311,71 @@ class ProfileScreen extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: AppConstants.paddingLarge),
+
+            // Guest data sync card (shown when local tasks are pending migration)
+            Builder(builder: (ctx) {
+              final migration = ref.watch(guestMigrationProvider);
+              if (!migration.isPending) return const SizedBox.shrink();
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppConstants.paddingMedium,
+                  0,
+                  AppConstants.paddingMedium,
+                  AppConstants.paddingMedium,
+                ),
+                child: Container(
+                  padding: const EdgeInsets.all(AppConstants.paddingMedium),
+                  decoration: BoxDecoration(
+                    color: AppConstants.getPrimary(isDark).withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
+                    border: Border.all(
+                      color: AppConstants.getPrimary(isDark).withOpacity(0.3),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.cloud_upload_outlined,
+                              color: AppConstants.getPrimary(isDark), size: 20),
+                          const SizedBox(width: 8),
+                          Text(
+                            'guest_sync_profile_title'.tr(),
+                            style: AppTypography.label.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppConstants.getPrimary(isDark),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'guest_sync_profile_subtitle'
+                            .tr()
+                            .replaceAll('%d', '${migration.taskCount}'),
+                        style: AppTypography.bodyS.copyWith(
+                          color: AppConstants.textSecondary(isDark),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      AuraButton(
+                        label: 'guest_sync_profile_btn'.tr(),
+                        onPressed: () async {
+                          await ref.read(guestMigrationProvider.notifier).migrate();
+                          if (!ctx.mounted) return;
+                          ScaffoldMessenger.of(ctx).showSnackBar(
+                            SnackBar(content: Text('guest_sync_success'.tr())),
+                          );
+                        },
+                        expanded: true,
+                        verticalPadding: 10,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
 
             // Logout Button
             Padding(

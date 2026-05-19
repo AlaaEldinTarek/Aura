@@ -29,7 +29,7 @@ class KhatmaDuaScreen extends ConsumerWidget {
     final lang = context.locale.languageCode;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = AppConstants.getPrimary(isDark);
-    final secondary = isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary;
+    final secondary = AppConstants.textSecondary(isDark);
 
     final wirdState = ref.watch(wirdStateProvider).valueOrNull;
     final khatmCount = wirdState?.khatmCount ?? 0;
@@ -58,7 +58,7 @@ class KhatmaDuaScreen extends ConsumerWidget {
                     textDirection: ui.TextDirection.rtl,
                     style: AppTypography.ar(AppTypography.headingS).copyWith(
                       height: 2.2,
-                      color: isDark ? Colors.white : Colors.black87,
+                      color: AppConstants.textPrimary(isDark),
                     ),
                   ),
 
