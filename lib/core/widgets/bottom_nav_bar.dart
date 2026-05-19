@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import '../constants/app_constants.dart';
 import '../providers/task_provider.dart';
 import '../providers/preferences_provider.dart';
+import '../theme/app_typography.dart';
 
 /// Custom bottom navigation bar for the app
 class AuraBottomNavBar extends ConsumerWidget {
@@ -164,7 +165,7 @@ class AuraBottomNavBar extends ConsumerWidget {
                             child: Text(
                               '$badge',
                               key: ValueKey(badge),
-                              style: const TextStyle(
+                              style: AppTypography.caption.copyWith(
                                 fontSize: 9,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
@@ -180,8 +181,7 @@ class AuraBottomNavBar extends ConsumerWidget {
               SizedBox(height: isComingSoon ? 1 : 2),
               Text(
                 label,
-                style: TextStyle(
-                  fontSize: 11,
+                style: AppTypography.labelS.copyWith(
                   fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                   color: isSelected
                       ? AppConstants.getPrimary(isDark)
@@ -198,7 +198,7 @@ class AuraBottomNavBar extends ConsumerWidget {
                   ),
                   child: Text(
                     'coming_soon'.tr(),
-                    style: const TextStyle(
+                    style: AppTypography.caption.copyWith(
                       fontSize: 7,
                       fontWeight: FontWeight.bold,
                       color: AppConstants.warning,

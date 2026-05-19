@@ -11,6 +11,7 @@ import '../../core/models/dhikr.dart';
 import '../../core/models/prayer_record.dart';
 import '../../core/services/dhikr_service.dart';
 import 'custom_zikr_form_screen.dart';
+import '../../core/theme/app_typography.dart';
 
 /// Dhikr Counter (Tasbeeh) Screen
 /// Digital tasbeeh with haptic feedback and progress tracking
@@ -183,8 +184,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
             const SizedBox(height: 16),
             Text(
               isArabic ? 'الحمد لله' : 'Alhamdulillah',
-              style: TextStyle(
-                fontSize: 24,
+              style: AppTypography.headingL.copyWith(
                 fontWeight: FontWeight.bold,
                 color: AppConstants.getPrimary(isDark),
               ),
@@ -192,7 +192,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
             const SizedBox(height: 8),
             Text(
               isArabic ? 'أكملت الذكر' : 'Zikr Completed!',
-              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+              style: AppTypography.bodyL.copyWith(color: Colors.grey.shade600),
             ),
             const SizedBox(height: 24),
             Row(
@@ -268,8 +268,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                     padding: const EdgeInsets.only(top: 8, bottom: 4),
                     child: Text(
                       isArabic ? 'أذكار مخصصة' : 'Custom Zikr',
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: AppTypography.caption.copyWith(
                         fontWeight: FontWeight.w600,
                         color: Colors.grey.shade500,
                       ),
@@ -293,7 +292,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                   ),
                   title: Text(
                     isArabic ? 'إضافة ذكر مخصص' : 'Add Custom Zikr',
-                    style: TextStyle(
+                    style: AppTypography.label.copyWith(
                       fontWeight: FontWeight.w600,
                       color: AppConstants.getPrimary(isDark),
                     ),
@@ -325,22 +324,21 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
         child: preset.arabicText.isNotEmpty
             ? Text(
                 preset.arabicText[0],
-                style: TextStyle(
+                style: AppTypography.bodyL.copyWith(
                   color: isSelected ? Colors.white : Colors.black87,
-                  fontSize: 16,
                 ),
               )
             : Icon(Icons.edit_note, size: 18, color: isSelected ? Colors.white : Colors.black87),
       ),
       title: Text(
         preset.arabicText.isNotEmpty ? preset.arabicText : preset.name,
-        style: TextStyle(
+        style: AppTypography.headingM.copyWith(
           fontWeight: FontWeight.bold,
           fontSize: preset.arabicText.isNotEmpty ? 20 : 16,
         ),
       ),
       subtitle: preset.translation.isNotEmpty
-          ? Text(preset.translation, style: const TextStyle(fontSize: 12))
+          ? Text(preset.translation, style: AppTypography.caption)
           : null,
       trailing: isCustom
           ? Row(
@@ -481,8 +479,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
               return ListTile(
                 title: Text(
                   '$target',
-                  style: const TextStyle(
-                    fontSize: 24,
+                  style: AppTypography.headingL.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -561,8 +558,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                         children: [
                           Text(
                             _selectedPreset?.displayName ?? 'Custom',
-                            style: TextStyle(
-                              fontSize: 20,
+                            style: AppTypography.headingM.copyWith(
                               fontWeight: FontWeight.bold,
                               color: isDark ? Colors.white : Colors.black87,
                             ),
@@ -571,8 +567,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                               _selectedPreset!.translation.isNotEmpty)
                             Text(
                               _selectedPreset!.translation,
-                              style: TextStyle(
-                                fontSize: 14,
+                              style: AppTypography.label.copyWith(
                                 color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                               ),
                             ),
@@ -611,13 +606,13 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                   children: [
                     Text(
                       isArabic ? 'الهدف: ' : 'Target: ',
-                      style: TextStyle(
+                      style: AppTypography.bodyM.copyWith(
                         color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                       ),
                     ),
                     Text(
                       '$_currentTarget',
-                      style: TextStyle(
+                      style: AppTypography.bodyM.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppConstants.getPrimary(isDark),
                       ),
@@ -655,8 +650,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                     ),
                     child: Text(
                       isArabic ? 'عدّ' : 'Count',
-                      style: const TextStyle(
-                        fontSize: 18,
+                      style: AppTypography.headingS.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -729,7 +723,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                 children: [
                   Text(
                     '$_currentCount',
-                    style: const TextStyle(
+                    style: AppTypography.displayL.copyWith(
                       fontSize: 56,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -738,8 +732,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                   ),
                   Text(
                     '/ $_currentTarget',
-                    style: TextStyle(
-                      fontSize: 20,
+                    style: AppTypography.headingM.copyWith(
                       fontWeight: FontWeight.w500,
                       color: Colors.white.withOpacity(0.8),
                     ),

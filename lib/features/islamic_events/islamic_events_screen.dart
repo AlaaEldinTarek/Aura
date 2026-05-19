@@ -8,6 +8,7 @@ import '../../core/models/islamic_event.dart';
 import '../../core/providers/islamic_events_provider.dart';
 import '../../core/utils/hijri_date.dart';
 import '../../core/utils/number_formatter.dart';
+import '../../core/theme/app_typography.dart';
 
 class IslamicEventsScreen extends ConsumerWidget {
   const IslamicEventsScreen({super.key});
@@ -126,16 +127,17 @@ class _EventCard extends StatelessWidget {
                     children: [
                       Text(
                         isArabic ? item.event.nameAr : item.event.nameEn,
-                        style: TextStyle(
+                        style: (isArabic
+                            ? AppTypography.ar(AppTypography.headingS)
+                            : AppTypography.headingS).copyWith(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
-                          fontFamily: isArabic ? 'Cairo' : null,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         _hijriLabel(),
-                        style: TextStyle(fontSize: 12, color: secondary),
+                        style: AppTypography.caption.copyWith(color: secondary),
                       ),
                     ],
                   ),
@@ -151,8 +153,7 @@ class _EventCard extends StatelessWidget {
                   ),
                   child: Text(
                     _countdownText(),
-                    style: TextStyle(
-                      fontSize: 12,
+                    style: AppTypography.caption.copyWith(
                       fontWeight: FontWeight.w600,
                       color: badgeColor,
                     ),
@@ -165,11 +166,11 @@ class _EventCard extends StatelessWidget {
             // Description
             Text(
               isArabic ? item.event.descriptionAr : item.event.descriptionEn,
-              style: TextStyle(
-                fontSize: 12,
+              style: (isArabic
+                  ? AppTypography.ar(AppTypography.caption)
+                  : AppTypography.caption).copyWith(
                 height: 1.5,
                 color: secondary,
-                fontFamily: isArabic ? 'Cairo' : null,
               ),
             ),
           ],

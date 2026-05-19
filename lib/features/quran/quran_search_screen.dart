@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:aura_app/core/constants/app_constants.dart';
+import 'package:aura_app/core/theme/app_typography.dart';
 import 'package:aura_app/core/models/quran_models.dart';
 import 'package:aura_app/core/providers/quran_provider.dart';
 import 'package:aura_app/core/utils/number_formatter.dart';
@@ -51,9 +52,9 @@ class _QuranSearchScreenState extends ConsumerState<QuranSearchScreen> {
           decoration: InputDecoration(
             hintText: 'search_quran'.tr(),
             border: InputBorder.none,
-            hintStyle: TextStyle(color: isDark ? Colors.white54 : Colors.black38),
+            hintStyle: AppTypography.bodyM.copyWith(color: isDark ? Colors.white54 : Colors.black38),
           ),
-          style: TextStyle(color: isDark ? Colors.white : Colors.black87, fontSize: 16),
+          style: AppTypography.bodyL.copyWith(color: isDark ? Colors.white : Colors.black87),
         ),
         actions: [
           if (_searchController.text.isNotEmpty)
@@ -73,7 +74,7 @@ class _QuranSearchScreenState extends ConsumerState<QuranSearchScreen> {
                 children: [
                   Icon(Icons.search, size: 64, color: Colors.grey[400]),
                   const SizedBox(height: 16),
-                  Text('search_quran_hint'.tr(), style: TextStyle(color: Colors.grey[500])),
+                  Text('search_quran_hint'.tr(), style: AppTypography.bodyM.copyWith(color: Colors.grey[500])),
                 ],
               ),
             )
@@ -98,7 +99,7 @@ class _SearchResults extends ConsumerWidget {
       error: (e, _) => Center(child: Text('Error: $e')),
       data: (results) {
         if (results.isEmpty) {
-          return Center(child: Text('no_results'.tr(), style: TextStyle(color: Colors.grey[500])));
+          return Center(child: Text('no_results'.tr(), style: AppTypography.bodyM.copyWith(color: Colors.grey[500])));
         }
 
         return ListView.builder(
@@ -124,7 +125,7 @@ class _SearchResults extends ConsumerWidget {
                   lang == 'ar'
                       ? '${ayah.suraNameAr} - ${NumberFormatter.withArabicNumeralsByLanguage(ayah.ayaNo.toString(), lang)}'
                       : '${ayah.suraNameEn} - ${ayah.ayaNo}',
-                  style: TextStyle(fontSize: 12, color: isDark ? Colors.grey[400] : Colors.grey[600]),
+                  style: AppTypography.caption.copyWith(color: isDark ? Colors.grey[400] : Colors.grey[600]),
                 ),
               ),
               onTap: () {

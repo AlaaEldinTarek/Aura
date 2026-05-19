@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/models/dhikr.dart';
 
 /// Full-screen form for adding or editing a custom Zikr
@@ -92,7 +93,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
             icon: const Icon(Icons.check, color: Colors.white),
             label: Text(
               isArabic ? 'حفظ' : 'Save',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              style: AppTypography.label.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -132,7 +133,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
               TextFormField(
                 controller: _arabicController,
                 textDirection: TextDirection.rtl,
-                style: const TextStyle(fontSize: 20),
+                style: AppTypography.headingM,
                 decoration: InputDecoration(
                   labelText: isArabic ? 'النص العربي' : 'Arabic Text',
                   hintText: isArabic ? 'مثال: اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ' : 'e.g., اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ',
@@ -172,8 +173,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
               // Target count
               Text(
                 isArabic ? 'العدد المستهدف' : 'Target Count',
-                style: TextStyle(
-                  fontSize: 14,
+                style: AppTypography.label.copyWith(
                   fontWeight: FontWeight.w600,
                   color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                 ),
@@ -199,7 +199,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
               // Quick pick chips
               Text(
                 isArabic ? 'اختيار سريع:' : 'Quick pick:',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+                style: AppTypography.caption.copyWith(color: Colors.grey.shade500),
               ),
               const SizedBox(height: 8),
               Wrap(
@@ -236,7 +236,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
                   _isEditing
                       ? (isArabic ? 'حفظ التعديلات' : 'Save Changes')
                       : (isArabic ? 'إضافة الذكر' : 'Add Zikr'),
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: AppTypography.bodyL.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
 
@@ -270,8 +270,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
         children: [
           Text(
             isArabic ? 'معاينة' : 'Preview',
-            style: TextStyle(
-              fontSize: 11,
+            style: AppTypography.labelS.copyWith(
               fontWeight: FontWeight.w600,
               color: Colors.grey.shade500,
             ),
@@ -285,9 +284,8 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
                 child: arabicText.isNotEmpty
                     ? Text(
                         arabicText[0],
-                        style: TextStyle(
+                        style: AppTypography.headingS.copyWith(
                           color: AppConstants.getPrimary(isDark),
-                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       )
@@ -300,7 +298,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
                   children: [
                     Text(
                       displayText,
-                      style: TextStyle(
+                      style: AppTypography.headingM.copyWith(
                         fontSize: arabicText.isNotEmpty ? 22 : 16,
                         fontWeight: FontWeight.bold,
                         color: isDark ? Colors.white : Colors.black87,
@@ -309,8 +307,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
                     if (translation.isNotEmpty)
                       Text(
                         translation,
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: AppTypography.caption.copyWith(
                           color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                         ),
                       ),
@@ -322,15 +319,14 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
                 children: [
                   Text(
                     '$target',
-                    style: TextStyle(
-                      fontSize: 18,
+                    style: AppTypography.headingS.copyWith(
                       fontWeight: FontWeight.bold,
                       color: AppConstants.getPrimary(isDark),
                     ),
                   ),
                   Text(
                     isArabic ? 'هدف' : 'target',
-                    style: TextStyle(fontSize: 10, color: Colors.grey.shade500),
+                    style: AppTypography.caption.copyWith(fontSize: 10, color: Colors.grey.shade500),
                   ),
                 ],
               ),

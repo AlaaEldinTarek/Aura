@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatf
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/preferences_provider.dart';
+import '../../core/theme/app_typography.dart';
 
 bool get _isDesktop =>
     defaultTargetPlatform == TargetPlatform.windows ||
@@ -119,7 +120,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               isRTL
                   ? 'سنرسل لك رابط إعادة تعيين كلمة المرور'
                   : 'We\'ll send you a password reset link',
-              style: const TextStyle(fontSize: 14),
+              style: AppTypography.label,
             ),
             const SizedBox(height: 16),
             TextField(
@@ -233,28 +234,23 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         children: [
                           TextSpan(
                             text: 'Aura',
-                            style: TextStyle(
-                              fontSize: 30,
+                            style: AppTypography.displayM.copyWith(
                               fontWeight: FontWeight.w700,
-                              fontFamily: 'Roboto',
                               letterSpacing: -0.5,
                               color: AppConstants.getPrimary(isDark),
                             ),
                           ),
                           TextSpan(
                             text: ' | ',
-                            style: TextStyle(
-                              fontSize: 30,
+                            style: AppTypography.displayM.copyWith(
                               fontWeight: FontWeight.w300,
                               color: AppConstants.getPrimary(isDark),
                             ),
                           ),
                           TextSpan(
                             text: 'هالة',
-                            style: TextStyle(
-                              fontSize: 30,
+                            style: AppTypography.ar(AppTypography.displayM).copyWith(
                               fontWeight: FontWeight.w700,
-                              fontFamily: 'Cairo',
                               color: AppConstants.getPrimary(isDark),
                             ),
                           ),
@@ -484,7 +480,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               onPressed: _isLoading ? null : _showForgotPasswordDialog,
               child: Text(
                 'auth_forgot_password'.tr(),
-                style: const TextStyle(fontWeight: FontWeight.w500),
+                style: AppTypography.label,
               ),
             ),
           ),
@@ -517,8 +513,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     )
                   : Text(
                       'auth_login_button'.tr(),
-                      style: const TextStyle(
-                        fontSize: 14,
+                      style: AppTypography.label.copyWith(
                         fontWeight: FontWeight.w600,
                         letterSpacing: 0.3,
                       ),
@@ -563,7 +558,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: OutlinedButton.icon(
             onPressed: _isLoading ? null : _signInWithGoogle,
             icon: const Icon(Icons.login, size: 18),
-            label: Text('auth_login_with_google'.tr(), style: const TextStyle(fontSize: 14)),
+            label: Text('auth_login_with_google'.tr(), style: AppTypography.label),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppConstants.getPrimary(isDark),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -586,7 +581,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       child: OutlinedButton.icon(
         onPressed: _isLoading ? null : _continueAsGuest,
         icon: const Icon(Icons.person_outline, size: 18),
-        label: Text('guest_mode'.tr(), style: const TextStyle(fontSize: 14)),
+        label: Text('guest_mode'.tr(), style: AppTypography.label),
         style: OutlinedButton.styleFrom(
           foregroundColor: AppConstants.getPrimary(isDark),
           side: BorderSide(color: AppConstants.getPrimary(isDark).withOpacity(0.5)),
@@ -619,7 +614,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             final isDark = Theme.of(context).brightness == Brightness.dark;
             return Text(
               'auth_signup'.tr(),
-              style: TextStyle(
+              style: AppTypography.label.copyWith(
                 fontWeight: FontWeight.bold,
                 color: AppConstants.getPrimary(isDark),
               ),

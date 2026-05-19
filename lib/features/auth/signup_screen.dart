@@ -5,6 +5,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatform;
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/auth_provider.dart';
+import '../../core/theme/app_typography.dart';
 
 bool get _isDesktopSignup =>
     defaultTargetPlatform == TargetPlatform.windows ||
@@ -474,8 +475,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                               )
                             : Text(
                                 'auth_signup_button'.tr(),
-                                style: const TextStyle(
-                                  fontSize: 14,
+                                style: AppTypography.label.copyWith(
                                   fontWeight: FontWeight.w600,
                                   letterSpacing: 0.3,
                                 ),
@@ -493,7 +493,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       child: OutlinedButton.icon(
                         onPressed: _isLoading ? null : _signUpWithGoogle,
                         icon: const Icon(Icons.login, size: 18),
-                        label: Text('auth_signup_with_google'.tr(), style: const TextStyle(fontSize: 14)),
+                        label: Text('auth_signup_with_google'.tr(), style: AppTypography.label),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppConstants.getPrimary(isDark),
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -527,7 +527,7 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                                 },
                           child: Text(
                             'auth_login'.tr(),
-                            style: const TextStyle(
+                            style: AppTypography.label.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ),

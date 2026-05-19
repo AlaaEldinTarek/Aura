@@ -8,6 +8,7 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/utils/haptic_feedback.dart';
 import '../../core/utils/number_formatter.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/services/prayer_tracking_service.dart';
 import '../../core/services/achievement_service.dart';
 import '../../core/models/achievement.dart';
@@ -553,7 +554,7 @@ class ProfileScreen extends ConsumerWidget {
                 title: Text(isArabic ? 'ألوان النظام (Material You)' : 'System Colors (Material You)'),
                 subtitle: Text(
                   isArabic ? 'استخدام ألوان الخلفية' : 'Use wallpaper-based colors',
-                  style: TextStyle(fontSize: 12, color: isArabic ? Colors.grey : Colors.grey[600]),
+                  style: AppTypography.caption.copyWith(color: isArabic ? Colors.grey : Colors.grey[600]),
                 ),
                 value: dynamicEnabled,
                 onChanged: (value) {
@@ -650,8 +651,7 @@ class ProfileScreen extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
               child: Text(
                 isArabic ? 'المهام' : 'Tasks',
-                style: TextStyle(
-                  fontSize: 13,
+                style: AppTypography.bodyS.copyWith(
                   fontWeight: FontWeight.w600,
                   color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                 ),
@@ -892,7 +892,7 @@ class ProfileScreen extends ConsumerWidget {
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
               'logout'.tr(),
-              style: const TextStyle(color: AppConstants.error),
+              style: AppTypography.label.copyWith(color: AppConstants.error),
             ),
           ),
         ],
@@ -933,8 +933,8 @@ class _ProfileStatCard extends StatelessWidget {
         children: [
           Icon(icon, color: color, size: 22),
           const SizedBox(height: 4),
-          Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
-          Text(label, style: TextStyle(fontSize: 10, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+          Text(value, style: AppTypography.headingS.copyWith(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
+          Text(label, style: AppTypography.caption.copyWith(fontSize: 10, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
         ],
       ),
     );
@@ -1129,7 +1129,7 @@ class _AchievementsBadgeGridState extends State<_AchievementsBadgeGrid> {
                                   _isExpanded
                                       ? (isArabic ? 'عرض أقل' : 'Show less')
                                       : (isArabic ? 'عرض الكل (${NumberFormatter.withArabicNumerals('${all.length - maxCollapsed}')}+)' : 'Show all (+${all.length - maxCollapsed})'),
-                                  style: TextStyle(fontSize: 12, color: primary, fontWeight: FontWeight.w600),
+                                  style: AppTypography.caption.copyWith(color: primary, fontWeight: FontWeight.w600),
                                 ),
                               ],
                             ),
@@ -1159,7 +1159,7 @@ class _AchievementsBadgeGridState extends State<_AchievementsBadgeGrid> {
                         isArabic
                             ? '${NumberFormatter.withArabicNumerals('${earned.length}')} من ${NumberFormatter.withArabicNumerals('${all.length}')} مكتمل'
                             : '${earned.length} of ${all.length} unlocked',
-                        style: TextStyle(fontSize: 12, color: primary, fontWeight: FontWeight.w600),
+                        style: AppTypography.caption.copyWith(color: primary, fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(width: 6),
                       Icon(Icons.arrow_forward_ios, size: 11, color: primary),

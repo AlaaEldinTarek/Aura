@@ -12,6 +12,8 @@ import 'package:aura_app/core/widgets/tutorial_overlay.dart';
 import 'package:aura_app/core/services/shared_preferences_service.dart';
 import 'quran_reader_screen.dart';
 import 'khatma_celebration_screen.dart';
+import 'package:aura_app/core/theme/app_typography.dart';
+import 'package:aura_app/core/theme/app_spacing.dart';
 
 class WirdTab extends ConsumerWidget {
   final String lang;
@@ -246,7 +248,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
           Expanded(
             child: Text(
               'wird_completed_today'.tr(),
-              style: const TextStyle(fontWeight: FontWeight.w600, color: Colors.green),
+              style: AppTypography.label.copyWith(color: Colors.green),
             ),
           ),
           if (_showUndo)
@@ -308,11 +310,11 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                       children: [
                         Text(
                           '${NumberFormatter.withArabicNumeralsByLanguage(done.toString(), widget.lang)}/30',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: AppTypography.bodyL.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(
                           'wird_unit_juz'.tr(),
-                          style: TextStyle(fontSize: 10, color: secondaryColor),
+                          style: AppTypography.caption.copyWith(fontSize: 10, color: secondaryColor),
                         ),
                       ],
                     ),
@@ -331,7 +333,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                       Flexible(
                         child: Text(
                           'wird_khatm_progress'.tr(),
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                          style: AppTypography.label,
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -343,24 +345,24 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                   ),
                   const SizedBox(height: 6),
                   if (done == total)
-                    Text('wird_khatm_done'.tr(), style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13))
+                    Text('wird_khatm_done'.tr(), style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.bold, color: Colors.green))
                   else
                     Text(
                       '${NumberFormatter.withArabicNumeralsByLanguage(remaining.toString(), widget.lang)} ${'wird_juz_remaining'.tr()}',
-                      style: TextStyle(fontSize: 12, color: secondaryColor),
+                      style: AppTypography.caption.copyWith(color: secondaryColor),
                     ),
                   if (daysEst > 0) ...[
                     const SizedBox(height: 2),
                     Text(
                       '~${NumberFormatter.withArabicNumeralsByLanguage(daysEst.toString(), widget.lang)} ${'wird_days_to_finish'.tr()}',
-                      style: TextStyle(fontSize: 12, color: secondaryColor),
+                      style: AppTypography.caption.copyWith(color: secondaryColor),
                     ),
                   ],
                   if (juzToday > 0) ...[
                     const SizedBox(height: 4),
                     Text(
                       '${NumberFormatter.withArabicNumeralsByLanguage(juzToday.toString(), widget.lang)}/${NumberFormatter.withArabicNumeralsByLanguage(dailyGoal.toString(), widget.lang)} ${'wird_juz_today'.tr()}',
-                      style: TextStyle(fontSize: 12, color: primary, fontWeight: FontWeight.w500),
+                      style: AppTypography.caption.copyWith(color: primary, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ],
@@ -524,7 +526,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
           children: [
             Row(
               children: [
-                Text('wird_juz_grid'.tr(), style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text('wird_juz_grid'.tr(), style: AppTypography.label),
                 const SizedBox(width: 4),
                 const InfoTipIcon(
                   titleKey: 'tutorial_wird_juz_grid_title',
@@ -584,12 +586,12 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                                 else
                                   Text(
                                     NumberFormatter.withArabicNumeralsByLanguage(juzNo.toString(), widget.lang),
-                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                    style: AppTypography.label.copyWith(fontWeight: FontWeight.bold),
                                   ),
                                 const SizedBox(height: 2),
                                 Text(
                                   'wird_unit_juz'.tr(),
-                                  style: TextStyle(fontSize: 9, color: secondaryColor),
+                                  style: AppTypography.caption.copyWith(fontSize: 9, color: secondaryColor),
                                 ),
                               ],
                             ),
@@ -645,8 +647,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
               children: [
                 Text(
                   'wird_streak'.tr(),
-                  style: TextStyle(
-                    fontSize: 12,
+                  style: AppTypography.caption.copyWith(
                     color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
                   ),
                 ),
@@ -654,13 +655,12 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                   children: [
                     Text(
                       NumberFormatter.withArabicNumeralsByLanguage(streak.toString(), widget.lang),
-                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: primary),
+                      style: AppTypography.headingL.copyWith(fontWeight: FontWeight.bold, color: primary),
                     ),
                     const SizedBox(width: 6),
                     Text(
                       'wird_streak_days'.tr(),
-                      style: TextStyle(
-                        fontSize: 14,
+                      style: AppTypography.label.copyWith(
                         color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
                       ),
                     ),
@@ -721,11 +721,11 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                         Text(
                           '${NumberFormatter.withArabicNumeralsByLanguage(pagesRead.toString(), widget.lang)}'
                           '/${NumberFormatter.withArabicNumeralsByLanguage(goal.toString(), widget.lang)}',
-                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                          style: AppTypography.headingS.copyWith(fontWeight: FontWeight.bold),
                         ),
                         Text(
                           'page'.tr(),
-                          style: TextStyle(fontSize: 10, color: secondaryColor),
+                          style: AppTypography.caption.copyWith(fontSize: 10, color: secondaryColor),
                         ),
                       ],
                     ),
@@ -744,7 +744,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                       Flexible(
                         child: Text(
                           'wird_today_progress'.tr(),
-                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                          style: AppTypography.label,
                         ),
                       ),
                       const SizedBox(width: 4),
@@ -756,11 +756,11 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                   ),
                   const SizedBox(height: 6),
                   if (isCompleted)
-                    Text('wird_completed_today'.tr(), style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 13))
+                    Text('wird_completed_today'.tr(), style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.bold, color: Colors.green))
                   else if (remaining > 0)
                     Text(
                       '${NumberFormatter.withArabicNumeralsByLanguage(remaining.toString(), widget.lang)} ${'wird_pages_remaining'.tr()}',
-                      style: TextStyle(fontSize: 12, color: secondaryColor),
+                      style: AppTypography.caption.copyWith(color: secondaryColor),
                     ),
                 ],
               ),
@@ -794,7 +794,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                 'wird_page_range'.tr()
                     .replaceAll('%s', NumberFormatter.withArabicNumeralsByLanguage(startPage.toString(), widget.lang))
                     .replaceAll('%e', NumberFormatter.withArabicNumeralsByLanguage(endPage.toString(), widget.lang)),
-                style: TextStyle(fontSize: 14, color: primary),
+                style: AppTypography.label.copyWith(color: primary),
               ),
               const SizedBox(width: 4),
               InfoTipIcon(
@@ -933,11 +933,11 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                     isJuzMode
                         ? '${NumberFormatter.withArabicNumeralsByLanguage(allCompletedJuz.length.toString(), widget.lang)}/30'
                         : NumberFormatter.withArabicNumeralsByLanguage(state.totalPagesRead.toString(), widget.lang),
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: primary),
+                    style: AppTypography.headingM.copyWith(fontWeight: FontWeight.bold, color: primary),
                   ),
                   Text(
                     isJuzMode ? 'wird_total_juz_done'.tr() : 'wird_total_pages'.tr(),
-                    style: TextStyle(fontSize: 11, color: secondary),
+                    style: AppTypography.labelS.copyWith(color: secondary),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -955,11 +955,11 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                 children: [
                   Text(
                     NumberFormatter.withArabicNumeralsByLanguage(state.totalDaysCompleted.toString(), widget.lang),
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: primary),
+                    style: AppTypography.headingM.copyWith(fontWeight: FontWeight.bold, color: primary),
                   ),
                   Text(
                     'wird_total_days'.tr(),
-                    style: TextStyle(fontSize: 11, color: secondary),
+                    style: AppTypography.labelS.copyWith(color: secondary),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -985,7 +985,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
               children: [
                 Icon(Icons.tune, color: primary, size: 20),
                 const SizedBox(width: 12),
-                Text('wird_tracking_mode'.tr(), style: const TextStyle(fontWeight: FontWeight.w500)),
+                Text('wird_tracking_mode'.tr(), style: AppTypography.label),
                 const SizedBox(width: 4),
                 const InfoTipIcon(
                   titleKey: 'tutorial_wird_settings_title',
@@ -1025,7 +1025,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                   ),
                   Text(
                     NumberFormatter.withArabicNumeralsByLanguage(state.settings.dailyPageGoal.toString(), widget.lang),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: AppTypography.label.copyWith(fontWeight: FontWeight.bold),
                   ),
                   IconButton(
                     onPressed: () {
@@ -1053,7 +1053,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                   ),
                   Text(
                     NumberFormatter.withArabicNumeralsByLanguage(state.settings.dailyJuzGoal.toString(), widget.lang),
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                    style: AppTypography.label.copyWith(fontWeight: FontWeight.bold),
                   ),
                   IconButton(
                     onPressed: () {
@@ -1079,7 +1079,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
               child: Align(
                 alignment: AlignmentDirectional.centerStart,
-                child: Text('wird_reminders'.tr(), style: const TextStyle(fontWeight: FontWeight.w600)),
+                child: Text('wird_reminders'.tr(), style: AppTypography.label),
               ),
             ),
             ...state.settings.reminderTimes.asMap().entries.map((entry) {
@@ -1091,7 +1091,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
               return ListTile(
                 dense: true,
                 leading: const Icon(Icons.access_time, size: 20),
-                title: Text(timeOfDay.format(context), style: const TextStyle(fontWeight: FontWeight.w500)),
+                title: Text(timeOfDay.format(context), style: AppTypography.label),
                 trailing: IconButton(
                   icon: const Icon(Icons.close, size: 18),
                   onPressed: () => ref.read(wirdStateProvider.notifier).removeReminder(idx),
@@ -1218,7 +1218,7 @@ class _BookmarkPagesSheet extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Text('wird_bookmark_pages_title'.tr(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          Text('wird_bookmark_pages_title'.tr(), style: AppTypography.headingS),
           const SizedBox(height: 16),
           bookmarksAsync.when(
             loading: () => const Padding(
@@ -1268,13 +1268,12 @@ class _BookmarkPagesSheet extends ConsumerWidget {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(_colorNameKeys[color]!.tr(), style: const TextStyle(fontWeight: FontWeight.w500)),
+                                    Text(_colorNameKeys[color]!.tr(), style: AppTypography.label),
                                     Text(
                                       hasPages
                                           ? 'wird_bookmark_unique_pages'.tr().replaceAll('%d', count.toString())
                                           : 'wird_bookmark_no_bookmarks'.tr(),
-                                      style: TextStyle(
-                                        fontSize: 12,
+                                      style: AppTypography.caption.copyWith(
                                         color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
                                       ),
                                     ),
@@ -1362,12 +1361,12 @@ class _BookmarkListSheet extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       _colorNameKeys[color]!.tr(),
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      style: AppTypography.headingS,
                     ),
                     const Spacer(),
                     Text(
                       'wird_bookmark_unique_pages'.tr().replaceAll('%d', bookmarks.length.toString()),
-                      style: TextStyle(fontSize: 12, color: secondary),
+                      style: AppTypography.caption.copyWith(color: secondary),
                     ),
                   ],
                 ),
@@ -1393,18 +1392,17 @@ class _BookmarkListSheet extends StatelessWidget {
                     child: Center(
                       child: Text(
                         NumberFormatter.withArabicNumeralsByLanguage(bm.page.toString(), lang),
-                        style: TextStyle(
+                        style: AppTypography.label.copyWith(
                           fontWeight: FontWeight.bold,
                           color: displayColor,
-                          fontSize: 14,
                         ),
                       ),
                     ),
                   ),
-                  title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                  title: Text(name, style: AppTypography.label),
                   subtitle: Text(
                     '${'ayah'.tr()} ${NumberFormatter.withArabicNumeralsByLanguage(bm.ayaNo.toString(), lang)}',
-                    style: TextStyle(fontSize: 12, color: secondary),
+                    style: AppTypography.caption.copyWith(color: secondary),
                   ),
                   trailing: Icon(Icons.add_circle_outline, color: displayColor),
                   onTap: () => onSelect(bm),
@@ -1530,12 +1528,12 @@ class _RecordPagesContentState extends State<_RecordPagesContent> {
 
         if (_error != null) ...[
           const SizedBox(height: 8),
-          Text(_error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+          Text(_error!, style: AppTypography.caption.copyWith(color: Colors.red)),
         ],
         const SizedBox(height: 4),
         Text(
           'wird_page_range_hint'.tr(),
-          style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+          style: AppTypography.labelS.copyWith(color: Colors.grey.shade600),
         ),
         const SizedBox(height: 8),
         Row(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/prayer_record.dart';
 import '../constants/app_constants.dart';
+import '../theme/app_typography.dart';
 /// Reusable dialog for selecting prayer status (On Time / Late / Missed)
 /// Returns null if user cancels.
 Future<PrayerStatus?> showPrayerStatusDialog({
@@ -33,7 +34,7 @@ Future<PrayerStatus?> showPrayerStatusDialog({
               const SizedBox(width: 12),
               Text(
                 isArabic ? 'في الوقت' : 'On Time',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style: AppTypography.bodyL.copyWith(fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -46,7 +47,7 @@ Future<PrayerStatus?> showPrayerStatusDialog({
               const SizedBox(width: 12),
               Text(
                 isArabic ? 'متأخر' : 'Late',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style: AppTypography.bodyL.copyWith(fontWeight: FontWeight.w600),
               ),
             ],
           ),
@@ -59,7 +60,7 @@ Future<PrayerStatus?> showPrayerStatusDialog({
               const SizedBox(width: 12),
               Text(
                 isArabic ? 'لم أصلّ' : 'Missed',
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style: AppTypography.bodyL.copyWith(fontWeight: FontWeight.w600),
               ),
             ],
           ),

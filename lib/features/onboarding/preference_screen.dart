@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/preferences_provider.dart';
+import '../../core/theme/app_typography.dart';
 
 class PreferenceScreen extends ConsumerStatefulWidget {
   const PreferenceScreen({super.key});
@@ -336,8 +337,7 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
                             )
                           : Text(
                               _btnLabel,
-                              style: const TextStyle(
-                                fontSize: 16,
+                              style: AppTypography.bodyL.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -349,9 +349,8 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
                       onPressed: _back,
                       child: Text(
                         _isAr ? 'رجوع' : 'Back',
-                        style: TextStyle(
+                        style: AppTypography.label.copyWith(
                           color: isDark ? Colors.white38 : Colors.black38,
-                          fontSize: 14,
                         ),
                       ),
                     ),
@@ -411,9 +410,8 @@ class _LanguageStep extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'You can change this later\nيمكنك تغييرها لاحقاً',
-            style: TextStyle(
+            style: AppTypography.label.copyWith(
               color: isDark ? Colors.white54 : Colors.black45,
-              fontSize: 14,
               height: 1.5,
             ),
             textAlign: TextAlign.center,
@@ -494,16 +492,14 @@ class _LangCard extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: TextStyle(
-                      fontSize: 18,
+                    style: AppTypography.headingS.copyWith(
                       fontWeight: FontWeight.bold,
                       color: isSelected ? AppConstants.getPrimary(isDark) : null,
                     ),
                   ),
                   Text(
                     sub,
-                    style: TextStyle(
-                      fontSize: 13,
+                    style: AppTypography.bodyS.copyWith(
                       color: isDark ? Colors.white54 : Colors.black45,
                     ),
                   ),
@@ -588,9 +584,8 @@ class _ThemeStep extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             isAr ? 'كيف تريد أن يبدو تطبيقك؟' : 'How do you want your app to look?',
-            style: TextStyle(
+            style: AppTypography.label.copyWith(
               color: isDark ? Colors.white54 : Colors.black45,
-              fontSize: 14,
             ),
             textAlign: TextAlign.center,
           ).animate().fadeIn(delay: 200.ms),
@@ -645,16 +640,14 @@ class _ThemeStep extends StatelessWidget {
                           children: [
                             Text(
                               opt.label,
-                              style: TextStyle(
-                                fontSize: 16,
+                              style: AppTypography.bodyL.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: isSelected ? opt.color : null,
                               ),
                             ),
                             Text(
                               opt.sub,
-                              style: TextStyle(
-                                fontSize: 12,
+                              style: AppTypography.caption.copyWith(
                                 color: isDark ? Colors.white54 : Colors.black45,
                               ),
                             ),
@@ -779,9 +772,8 @@ class _ModeStep extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             isAr ? 'يمكنك تغيير هذا لاحقاً من الإعدادات' : 'You can change this anytime in Settings',
-            style: TextStyle(
+            style: AppTypography.label.copyWith(
               color: isDark ? Colors.white54 : Colors.black45,
-              fontSize: 14,
             ),
             textAlign: TextAlign.center,
           ).animate().fadeIn(delay: 200.ms),
@@ -830,8 +822,7 @@ class _ModeStep extends StatelessWidget {
                               children: [
                                 Text(
                                   isAr ? opt.labelAr : opt.labelEn,
-                                  style: TextStyle(
-                                    fontSize: 16,
+                                  style: AppTypography.bodyL.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: isSelected ? opt.color : null,
                                   ),
@@ -846,7 +837,7 @@ class _ModeStep extends StatelessWidget {
                                     ),
                                     child: Text(
                                       isAr ? opt.badgeAr! : opt.badgeEn!,
-                                      style: const TextStyle(
+                                      style: AppTypography.caption.copyWith(
                                         color: Colors.white,
                                         fontSize: 10,
                                         fontWeight: FontWeight.bold,
@@ -859,8 +850,7 @@ class _ModeStep extends StatelessWidget {
                             const SizedBox(height: 3),
                             Text(
                               isAr ? opt.subAr : opt.subEn,
-                              style: TextStyle(
-                                fontSize: 12,
+                              style: AppTypography.caption.copyWith(
                                 color: isDark ? Colors.white54 : Colors.black45,
                               ),
                             ),
@@ -1026,7 +1016,7 @@ class _SlideView extends StatelessWidget {
 
           Text(
             isAr ? slide.subtitleAr : slide.subtitleEn,
-            style: TextStyle(
+            style: AppTypography.headingS.copyWith(
               fontSize: 15,
               height: 1.5,
               color: isDark ? Colors.white60 : Colors.black54,
@@ -1060,8 +1050,7 @@ class _SlideView extends StatelessWidget {
                     Expanded(
                       child: Text(
                         isAr ? f.textAr : f.textEn,
-                        style: TextStyle(
-                          fontSize: 14,
+                        style: AppTypography.label.copyWith(
                           fontWeight: FontWeight.w600,
                           color: isDark ? Colors.white : Colors.black87,
                         ),
@@ -1195,7 +1184,7 @@ class _AllSetStep extends StatelessWidget {
             isAr
                 ? 'هالة جاهزة لتبدأ رحلتك.\nإليك ما اخترته:'
                 : 'Aura is ready for your journey.\nHere\'s what you chose:',
-            style: TextStyle(
+            style: AppTypography.headingS.copyWith(
               fontSize: 15,
               height: 1.6,
               color: isDark ? Colors.white60 : Colors.black54,
@@ -1227,15 +1216,13 @@ class _AllSetStep extends StatelessWidget {
                         children: [
                           Text(
                             item.label,
-                            style: TextStyle(
-                              fontSize: 14,
+                            style: AppTypography.label.copyWith(
                               color: isDark ? Colors.white54 : Colors.black45,
                             ),
                           ),
                           Text(
                             item.value,
-                            style: const TextStyle(
-                              fontSize: 14,
+                            style: AppTypography.label.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
@@ -1259,8 +1246,7 @@ class _AllSetStep extends StatelessWidget {
             isAr
                 ? 'يمكنك تغيير أي من هذه الإعدادات لاحقاً من الملف الشخصي'
                 : 'You can change any of these settings later from Profile',
-            style: TextStyle(
-              fontSize: 12,
+            style: AppTypography.caption.copyWith(
               color: isDark ? Colors.white38 : Colors.black38,
             ),
             textAlign: TextAlign.center,

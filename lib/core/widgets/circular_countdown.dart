@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../constants/app_constants.dart';
 import '../utils/number_formatter.dart';
+import '../theme/app_typography.dart';
 
 /// A beautiful circular countdown timer for next prayer
 class CircularCountdownTimer extends StatefulWidget {
@@ -361,9 +362,8 @@ class CompactCountdown extends StatelessWidget {
           if (label != null) ...[
             Text(
               label!,
-              style: TextStyle(
+              style: AppTypography.caption.copyWith(
                 color: primaryColor.withOpacity(0.7),
-                fontSize: 12,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -377,10 +377,9 @@ class CompactCountdown extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             countdown,
-            style: TextStyle(
+            style: AppTypography.bodyS.copyWith(
               color: primaryColor,
               fontWeight: FontWeight.bold,
-              fontSize: 13,
             ),
           ),
         ],

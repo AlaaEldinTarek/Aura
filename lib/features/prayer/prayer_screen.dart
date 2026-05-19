@@ -1197,8 +1197,7 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
             ),
             child: Text(
               isArabic ? 'الإشعارات' : 'Notifications',
-              style: TextStyle(
-                fontSize: 14,
+              style: AppTypography.label.copyWith(
                 fontWeight: FontWeight.bold,
                 color: isDark ? Colors.grey[400] : Colors.grey[600],
               ),
@@ -1301,8 +1300,7 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
             ),
             child: Text(
               isArabic ? 'تنبيهات الصلاة' : 'Prayer Alerts',
-              style: TextStyle(
-                fontSize: 14,
+              style: AppTypography.label.copyWith(
                 fontWeight: FontWeight.bold,
                 color: isDark ? Colors.grey[400] : Colors.grey[600],
               ),
@@ -1393,8 +1391,7 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
             ),
             child: Text(
               isArabic ? 'تعديلات الصلاة' : 'Prayer Edits',
-              style: TextStyle(
-                fontSize: 14,
+              style: AppTypography.label.copyWith(
                 fontWeight: FontWeight.bold,
                 color: isDark ? Colors.grey[400] : Colors.grey[600],
               ),

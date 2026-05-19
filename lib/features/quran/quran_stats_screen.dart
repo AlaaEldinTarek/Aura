@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/models/wird.dart';
 import '../../core/providers/wird_provider.dart';
 import '../../core/utils/number_formatter.dart';
@@ -91,7 +92,7 @@ class _StatsContent extends StatelessWidget {
               children: [
                 Text(
                   'quran_stats_weekly_chart'.tr(),
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  style: AppTypography.headingS.copyWith(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 16),
                 _BarChart(
@@ -164,7 +165,7 @@ class _StatsContent extends StatelessWidget {
               children: [
                 Text(
                   'quran_stats_khatm_progress'.tr(),
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  style: AppTypography.headingS.copyWith(fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 20),
                 _KhatmCircle(
@@ -221,13 +222,12 @@ class _BadgeCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             value,
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: primary),
+            style: AppTypography.headingM.copyWith(fontWeight: FontWeight.bold, color: primary),
           ),
           const SizedBox(height: 2),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 11,
+            style: AppTypography.labelS.copyWith(
               color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
             ),
             textAlign: TextAlign.center,
@@ -288,10 +288,10 @@ class _StatTile extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             value,
-            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+            style: AppTypography.headingS.copyWith(fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 2),
-          Text(label, style: TextStyle(fontSize: 11, color: secondary)),
+          Text(label, style: AppTypography.labelS.copyWith(color: secondary)),
         ],
       ),
     );
@@ -340,11 +340,11 @@ class _KhatmCircle extends StatelessWidget {
               children: [
                 Text(
                   '${_n(done)}/${'${_n(total)}'}',
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: AppTypography.headingM.copyWith(fontWeight: FontWeight.bold),
                 ),
                 Text(
                   'wird_unit_juz'.tr(),
-                  style: TextStyle(fontSize: 12, color: secondary),
+                  style: AppTypography.caption.copyWith(color: secondary),
                 ),
               ],
             ),
@@ -393,7 +393,7 @@ class _BarChart extends StatelessWidget {
         child: Center(
           child: Text(
             'quran_stats_no_data'.tr(),
-            style: TextStyle(color: secondary, fontSize: 13),
+            style: AppTypography.bodyS.copyWith(color: secondary),
           ),
         ),
       );
@@ -422,8 +422,7 @@ class _BarChart extends StatelessWidget {
               child: Text(
                 _dayLabel(i),
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 11,
+                style: AppTypography.labelS.copyWith(
                   fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
                   color: isToday ? primary : secondary,
                 ),

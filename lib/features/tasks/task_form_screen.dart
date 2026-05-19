@@ -9,6 +9,7 @@ import '../../core/providers/prayer_times_provider.dart';
 import '../../core/providers/preferences_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/utils/number_formatter.dart';
+import '../../core/theme/app_typography.dart';
 
 /// Task Form Screen - Add or Edit a task
 class TaskFormScreen extends ConsumerStatefulWidget {
@@ -311,7 +312,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                   ),
                   title: Text(
                     labels[priority]!,
-                    style: TextStyle(
+                    style: AppTypography.bodyM.copyWith(
                       fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                       color: isSelected ? colors[priority] : null,
                     ),
@@ -378,7 +379,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                     ),
                     title: Text(
                       labels[category]!,
-                      style: TextStyle(
+                      style: AppTypography.bodyM.copyWith(
                         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
@@ -509,15 +510,13 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                         children: [
                           Text(
                             isArabic ? 'الأولوية' : 'Priority',
-                            style: TextStyle(
-                              fontSize: 12,
+                            style: AppTypography.caption.copyWith(
                               color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                             ),
                           ),
                           Text(
                             _getPriorityLabel(_selectedPriority, isArabic),
-                            style: const TextStyle(
-                              fontSize: 16,
+                            style: AppTypography.bodyL.copyWith(
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -557,15 +556,13 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                         children: [
                           Text(
                             isArabic ? 'الفئة' : 'Category',
-                            style: TextStyle(
-                              fontSize: 12,
+                            style: AppTypography.caption.copyWith(
                               color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                             ),
                           ),
                           Text(
                             _getCategoryLabel(_selectedCategory, isArabic),
-                            style: const TextStyle(
-                              fontSize: 16,
+                            style: AppTypography.bodyL.copyWith(
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -602,8 +599,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                         children: [
                           Text(
                             isArabic ? 'تاريخ الاستحقاق' : 'Due Date',
-                            style: TextStyle(
-                              fontSize: 12,
+                            style: AppTypography.caption.copyWith(
                               color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                             ),
                           ),
@@ -611,8 +607,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                             _selectedDueDate != null
                                 ? '${_selectedDueDate!.day}/${_selectedDueDate!.month}/${_selectedDueDate!.year}'
                                 : (isArabic ? 'غير محدد' : 'Not set'),
-                            style: const TextStyle(
-                              fontSize: 16,
+                            style: AppTypography.bodyL.copyWith(
                               fontWeight: FontWeight.w500,
                             ),
                           ),
@@ -648,8 +643,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                           children: [
                             Text(
                               isArabic ? 'الوقت' : 'Time',
-                              style: TextStyle(
-                                fontSize: 12,
+                              style: AppTypography.caption.copyWith(
                                 color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                               ),
                             ),
@@ -657,8 +651,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                               _selectedDueTime != null
                                   ? _selectedDueTime!.format(context)
                                   : (isArabic ? 'غير محدد' : 'Not set'),
-                              style: const TextStyle(
-                                fontSize: 16,
+                              style: AppTypography.bodyL.copyWith(
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -736,8 +729,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               _recurrenceEnabled
                   ? _getRecurrenceLabel(isArabic)
                   : (isArabic ? 'لا تكرار' : 'No repeat'),
-              style: TextStyle(
-                fontSize: 12,
+              style: AppTypography.caption.copyWith(
                 color: _recurrenceEnabled
                     ? AppConstants.getPrimary(isDark)
                     : Colors.grey,
@@ -759,8 +751,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                   // Frequency selector
                   Text(
                     isArabic ? 'التكرار' : 'Frequency',
-                    style: TextStyle(
-                      fontSize: 12,
+                    style: AppTypography.caption.copyWith(
                       color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                     ),
                   ),
@@ -785,7 +776,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                     children: [
                       Text(
                         isArabic ? 'كل' : 'Every',
-                        style: const TextStyle(fontSize: 14),
+                        style: AppTypography.label,
                       ),
                       const SizedBox(width: 12),
                       SizedBox(
@@ -810,7 +801,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                       const SizedBox(width: 12),
                       Text(
                         _getIntervalUnit(isArabic),
-                        style: const TextStyle(fontSize: 14),
+                        style: AppTypography.label,
                       ),
                     ],
                   ),
@@ -838,8 +829,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                                 : (isArabic
                                     ? 'تاريخ انتهاء (اختياري)'
                                     : 'End date (optional)'),
-                            style: TextStyle(
-                              fontSize: 14,
+                            style: AppTypography.label.copyWith(
                               color: isDark
                                   ? Colors.grey.shade300
                                   : Colors.grey.shade700,
@@ -933,7 +923,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(fontSize: 13, color: Colors.orange),
+              style: AppTypography.bodyS.copyWith(color: Colors.orange),
             ),
           ),
         ],
@@ -972,15 +962,14 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               const SizedBox(width: 8),
               Text(
                 isArabic ? 'كم تحتاج من وقت؟' : 'Time Needed',
-                style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+                style: AppTypography.headingS.copyWith(fontWeight: FontWeight.w600),
               ),
               const Spacer(),
               Text(
                 _formatMins(_estimatedMinutes),
-                style: TextStyle(
+                style: AppTypography.label.copyWith(
                   color: AppConstants.getPrimary(isDark),
                   fontWeight: FontWeight.bold,
-                  fontSize: 14,
                 ),
               ),
             ],
@@ -1003,8 +992,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                   ),
                   child: Text(
                     isArabic ? 'بدون' : 'None',
-                    style: TextStyle(
-                      fontSize: 13,
+                    style: AppTypography.bodyS.copyWith(
                       fontWeight: FontWeight.w500,
                       color: _estimatedMinutes == 0 ? Colors.white : AppConstants.getPrimary(isDark),
                     ),
@@ -1024,8 +1012,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                   ),
                   child: Text(
                     _formatMins(mins),
-                    style: TextStyle(
-                      fontSize: 13,
+                    style: AppTypography.bodyS.copyWith(
                       fontWeight: FontWeight.w500,
                       color: _estimatedMinutes == mins ? Colors.white : AppConstants.getPrimary(isDark),
                     ),
@@ -1065,8 +1052,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                   : (isArabic
                       ? 'قفل الشاشة وكتم الإشعارات'
                       : 'Lock screen & silence notifications'),
-              style: TextStyle(
-                fontSize: 12,
+              style: AppTypography.caption.copyWith(
                 color: _focusModeEnabled
                     ? AppConstants.getPrimary(isDark)
                     : Colors.grey,
@@ -1099,8 +1085,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                 children: [
                   Text(
                     isArabic ? 'مدة التركيز' : 'Focus Duration',
-                    style: TextStyle(
-                      fontSize: 12,
+                    style: AppTypography.caption.copyWith(
                       color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                     ),
                   ),
@@ -1122,8 +1107,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                     children: [
                       Text(
                         isArabic ? 'أو أدخل يدوياً:' : 'Custom:',
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: AppTypography.caption.copyWith(
                           color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                         ),
                       ),
@@ -1142,8 +1126,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                               borderSide: BorderSide(color: AppConstants.getPrimary(isDark)),
                             ),
                           ),
-                          style: TextStyle(
-                            fontSize: 14,
+                          style: AppTypography.label.copyWith(
                             color: isDark ? Colors.white : Colors.black87,
                           ),
                           onChanged: (val) {
@@ -1157,8 +1140,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                       const SizedBox(width: 8),
                       Text(
                         isArabic ? 'دقيقة' : 'min',
-                        style: TextStyle(
-                          fontSize: 13,
+                        style: AppTypography.bodyS.copyWith(
                           color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                         ),
                       ),
@@ -1194,8 +1176,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           child: Text(
             label,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
+            style: AppTypography.caption.copyWith(
               fontWeight: FontWeight.w600,
               color: isSelected
                   ? Colors.white
@@ -1310,8 +1291,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           child: Text(
             label,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
+            style: AppTypography.caption.copyWith(
               fontWeight: FontWeight.w600,
               color: isSelected
                   ? Colors.white
@@ -1397,7 +1377,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                 const SizedBox(width: 8),
                 Text(
                   isArabic ? 'الخطوات الفرعية' : 'Checklist',
-                  style: TextStyle(
+                  style: AppTypography.bodyM.copyWith(
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white : Colors.black87,
                   ),
@@ -1412,8 +1392,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                     ),
                     child: Text(
                       '$completedCount/${_subtasks.length}',
-                      style: TextStyle(
-                        fontSize: 11,
+                      style: AppTypography.labelS.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppConstants.getPrimary(isDark),
                       ),
@@ -1432,7 +1411,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                     controller: _subtaskController,
                     decoration: InputDecoration(
                       hintText: isArabic ? 'أضف خطوة...' : 'Add a step...',
-                      hintStyle: TextStyle(
+                      hintStyle: AppTypography.bodyM.copyWith(
                           color: isDark
                               ? Colors.grey.shade500
                               : Colors.grey.shade400),
@@ -1447,9 +1426,8 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                         borderSide: BorderSide.none,
                       ),
                     ),
-                    style: TextStyle(
-                        color: isDark ? Colors.white : Colors.black87,
-                        fontSize: 14),
+                    style: AppTypography.label.copyWith(
+                        color: isDark ? Colors.white : Colors.black87),
                     onSubmitted: (value) => _addSubtask(value),
                     textInputAction: TextInputAction.done,
                   ),
@@ -1531,8 +1509,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                           Expanded(
                             child: Text(
                               subtask.title,
-                              style: TextStyle(
-                                fontSize: 14,
+                              style: AppTypography.label.copyWith(
                                 color: subtask.isCompleted
                                     ? (isDark ? Colors.grey.shade600 : Colors.grey.shade400)
                                     : (isDark ? Colors.white : Colors.black87),
@@ -1595,7 +1572,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                 const SizedBox(width: 8),
                 Text(
                   isArabic ? 'التصنيفات' : 'Tags',
-                  style: TextStyle(
+                  style: AppTypography.bodyM.copyWith(
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white : Colors.black87,
                   ),
@@ -1612,7 +1589,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                     controller: _tagController,
                     decoration: InputDecoration(
                       hintText: isArabic ? 'أضف تصنيفاً...' : 'Add a tag...',
-                      hintStyle: TextStyle(
+                      hintStyle: AppTypography.bodyM.copyWith(
                           color: isDark
                               ? Colors.grey.shade500
                               : Colors.grey.shade400),
@@ -1627,9 +1604,8 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                         borderSide: BorderSide.none,
                       ),
                     ),
-                    style: TextStyle(
-                        color: isDark ? Colors.white : Colors.black87,
-                        fontSize: 14),
+                    style: AppTypography.label.copyWith(
+                        color: isDark ? Colors.white : Colors.black87),
                     onSubmitted: (value) => _addTag(value),
                     textInputAction: TextInputAction.done,
                   ),
@@ -1659,8 +1635,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                 children: _tags.map((tag) {
                   return Chip(
                     label: Text(tag,
-                        style:
-                            const TextStyle(fontSize: 12, color: Colors.white)),
+                        style: AppTypography.caption.copyWith(color: Colors.white)),
                     backgroundColor: AppConstants.getPrimary(isDark),
                     deleteIconColor: Colors.white70,
                     onDeleted: () => setState(() => _tags.remove(tag)),

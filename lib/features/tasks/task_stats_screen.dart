@@ -6,6 +6,7 @@ import '../../core/models/task.dart';
 import '../../core/providers/task_provider.dart';
 import '../../core/services/task_service.dart';
 import '../../core/utils/number_formatter.dart';
+import '../../core/theme/app_typography.dart';
 
 class TaskStatsScreen extends ConsumerStatefulWidget {
   const TaskStatsScreen({super.key});
@@ -67,7 +68,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
       appBar: AppBar(
         title: Text(
           isArabic ? 'إحصائيات المهام' : 'Task Statistics',
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: AppTypography.label.copyWith(fontWeight: FontWeight.bold),
         ),
         backgroundColor: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
         foregroundColor: isDark ? Colors.white : Colors.black87,
@@ -232,8 +233,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
           const SizedBox(height: 8),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 24,
+            style: AppTypography.headingL.copyWith(
               fontWeight: FontWeight.bold,
               color: isDark ? Colors.white : Colors.black87,
             ),
@@ -241,15 +241,14 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
           const SizedBox(height: 2),
           Text(
             title,
-            style: TextStyle(
-              fontSize: 12,
+            style: AppTypography.caption.copyWith(
               color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             subtitle,
-            style: TextStyle(
+            style: AppTypography.caption.copyWith(
               fontSize: 10,
               color: subtitleColor ??
                   (isDark ? Colors.grey.shade500 : Colors.grey.shade500),
@@ -322,8 +321,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
               const SizedBox(width: 8),
               Text(
                 isArabic ? 'آخر 7 أيام' : 'Last 7 Days',
-                style: TextStyle(
-                  fontSize: 16,
+                style: AppTypography.bodyL.copyWith(
                   fontWeight: FontWeight.bold,
                   color: isDark ? Colors.white : Colors.black87,
                 ),
@@ -340,8 +338,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                   isArabic
                       ? NumberFormatter.withArabicNumerals('$weekTotal')
                       : '$weekTotal',
-                  style: TextStyle(
-                    fontSize: 14,
+                  style: AppTypography.label.copyWith(
                     fontWeight: FontWeight.bold,
                     color: AppConstants.getPrimary(isDark),
                   ),
@@ -371,8 +368,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                             isArabic
                                 ? NumberFormatter.withArabicNumerals('${d.count}')
                                 : '${d.count}',
-                            style: TextStyle(
-                              fontSize: 11,
+                            style: AppTypography.labelS.copyWith(
                               fontWeight: FontWeight.bold,
                               color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
                             ),
@@ -394,7 +390,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                         // Label
                         Text(
                           d.label,
-                          style: TextStyle(
+                          style: AppTypography.caption.copyWith(
                             fontSize: 10,
                             color: isToday
                                 ? AppConstants.getPrimary(isDark)
@@ -485,8 +481,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
               const SizedBox(width: 8),
               Text(
                 isArabic ? 'حسب الفئة' : 'By Category',
-                style: TextStyle(
-                  fontSize: 16,
+                style: AppTypography.bodyL.copyWith(
                   fontWeight: FontWeight.bold,
                   color: isDark ? Colors.white : Colors.black87,
                 ),
@@ -512,8 +507,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                       Expanded(
                         child: Text(
                           label,
-                          style: TextStyle(
-                            fontSize: 13,
+                          style: AppTypography.bodyS.copyWith(
                             fontWeight: FontWeight.w500,
                             color: isDark ? Colors.white70 : Colors.black87,
                           ),
@@ -521,8 +515,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                       ),
                       Text(
                         '${s.completed}/${s.total}',
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: AppTypography.caption.copyWith(
                           color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                         ),
                       ),
@@ -532,8 +525,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                         child: Text(
                           '$rate%',
                           textAlign: TextAlign.end,
-                          style: TextStyle(
-                            fontSize: 12,
+                          style: AppTypography.caption.copyWith(
                             fontWeight: FontWeight.bold,
                             color: rate >= 70
                                 ? Colors.green
@@ -615,8 +607,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
               const SizedBox(width: 8),
               Text(
                 isArabic ? 'حسب الأولوية' : 'By Priority',
-                style: TextStyle(
-                  fontSize: 16,
+                style: AppTypography.bodyL.copyWith(
                   fontWeight: FontWeight.bold,
                   color: isDark ? Colors.white : Colors.black87,
                 ),
@@ -650,7 +641,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                         ),
                         Text(
                           '${s.total > 0 ? (s.completed / s.total * 100).round() : 0}%',
-                          style: TextStyle(
+                          style: AppTypography.caption.copyWith(
                             fontSize: 9,
                             fontWeight: FontWeight.bold,
                             color: isDark ? Colors.white70 : Colors.black87,
@@ -666,8 +657,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                       children: [
                         Text(
                           label,
-                          style: TextStyle(
-                            fontSize: 14,
+                          style: AppTypography.label.copyWith(
                             fontWeight: FontWeight.w600,
                             color: isDark ? Colors.white : Colors.black87,
                           ),
@@ -677,8 +667,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                           isArabic
                               ? '${s.completed} مكتمل من ${s.total}'
                               : '${s.completed} done of ${s.total}',
-                          style: TextStyle(
-                            fontSize: 11,
+                          style: AppTypography.labelS.copyWith(
                             color: isDark
                                 ? Colors.grey.shade400
                                 : Colors.grey.shade600,
@@ -847,8 +836,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                           const SizedBox(width: 8),
                           Text(
                             isArabic ? 'إحصائيات زمنية' : 'Time Stats',
-                            style: TextStyle(
-                              fontSize: 16,
+                            style: AppTypography.bodyL.copyWith(
                               fontWeight: FontWeight.bold,
                               color: isDark ? Colors.white : Colors.black87,
                             ),
@@ -948,8 +936,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                     isArabic
                         ? NumberFormatter.withArabicNumerals(item.value)
                         : item.value,
-                    style: TextStyle(
-                      fontSize: 22,
+                    style: AppTypography.headingM.copyWith(
                       fontWeight: FontWeight.bold,
                       color: isDark ? Colors.white : Colors.black87,
                     ),
@@ -959,8 +946,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
               const SizedBox(height: 6),
               Text(
                 item.label,
-                style: TextStyle(
-                  fontSize: 11,
+                style: AppTypography.labelS.copyWith(
                   color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                 ),
                 maxLines: 1,
@@ -986,16 +972,14 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
         Expanded(
           child: Text(
             label,
-            style: TextStyle(
-              fontSize: 13,
+            style: AppTypography.bodyS.copyWith(
               color: isDark ? Colors.grey.shade300 : Colors.black87,
             ),
           ),
         ),
         Text(
           value,
-          style: TextStyle(
-            fontSize: 14,
+          style: AppTypography.label.copyWith(
             fontWeight: FontWeight.bold,
             color: isDark ? Colors.white : Colors.black87,
           ),

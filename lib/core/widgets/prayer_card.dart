@@ -6,6 +6,7 @@ import '../models/prayer_time.dart';
 import '../models/prayer_record.dart';
 import '../utils/number_formatter.dart';
 import '../utils/date_formatter.dart';
+import '../theme/app_typography.dart';
 
 /// A beautiful prayer time card with countdown indicator
 class PrayerCard extends StatelessWidget {
@@ -246,7 +247,7 @@ class PrayerCard extends StatelessWidget {
       ),
       child: Text(
         isArabic ? 'الآن' : 'NOW',
-        style: const TextStyle(
+        style: AppTypography.caption.copyWith(
           color: Colors.white,
           fontSize: 10,
           fontWeight: FontWeight.bold,
@@ -289,10 +290,9 @@ class PrayerCard extends StatelessWidget {
       ),
       child: Text(
         countdown,
-        style: TextStyle(
+        style: AppTypography.bodyS.copyWith(
           color: AppConstants.getPrimary(isDark),
           fontWeight: FontWeight.bold,
-          fontSize: 13,
         ),
       ),
     );
@@ -379,10 +379,9 @@ class PrayerCard extends StatelessWidget {
                     : isLate
                         ? (isArabic ? 'متأخر' : 'Late')
                         : (isArabic ? 'في الوقت' : 'On Time'),
-                style: TextStyle(
+                style: AppTypography.caption.copyWith(
                   color: color,
                   fontWeight: FontWeight.bold,
-                  fontSize: 12,
                 ),
               ),
             ],
@@ -419,10 +418,9 @@ class PrayerCard extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 isArabic ? 'أديت' : 'Prayed',
-                style: TextStyle(
+                style: AppTypography.caption.copyWith(
                   color: AppConstants.getPrimary(isDark),
                   fontWeight: FontWeight.bold,
-                  fontSize: 12,
                 ),
               ),
             ],

@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../constants/app_constants.dart';
+import '../theme/app_typography.dart';
 
 class TutorialStep {
   final GlobalKey targetKey;
@@ -154,8 +155,7 @@ class _TutorialOverlayState extends State<TutorialOverlay>
                 children: [
                   Text(
                     '${'tutorial_step'.tr()} ${widget.currentIndex + 1} ${'tutorial_of'.tr()} ${widget.steps.length}',
-                    style: TextStyle(
-                      fontSize: 11,
+                    style: AppTypography.labelS.copyWith(
                       fontWeight: FontWeight.w600,
                       color: primary,
                     ),
@@ -163,8 +163,7 @@ class _TutorialOverlayState extends State<TutorialOverlay>
                   const SizedBox(height: 8),
                   Text(
                     step.titleKey.tr(),
-                    style: TextStyle(
-                      fontSize: 18,
+                    style: AppTypography.headingS.copyWith(
                       fontWeight: FontWeight.bold,
                       color: isDark ? Colors.white : Colors.black87,
                     ),
@@ -172,8 +171,7 @@ class _TutorialOverlayState extends State<TutorialOverlay>
                   const SizedBox(height: 8),
                   Text(
                     step.bodyKey.tr(),
-                    style: TextStyle(
-                      fontSize: 14,
+                    style: AppTypography.label.copyWith(
                       height: 1.5,
                       color: isDark ? Colors.white70 : Colors.black54,
                     ),
@@ -201,7 +199,7 @@ class _TutorialOverlayState extends State<TutorialOverlay>
                         ),
                         child: Text(
                           isLast ? 'tutorial_done'.tr() : 'tutorial_next'.tr(),
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          style: AppTypography.bodyM.copyWith(fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],

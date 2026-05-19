@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:aura_app/core/constants/app_constants.dart';
+import 'package:aura_app/core/theme/app_typography.dart';
 import 'package:aura_app/core/providers/wird_provider.dart';
 import 'package:aura_app/core/utils/number_formatter.dart';
 
@@ -55,9 +56,7 @@ class KhatmaDuaScreen extends ConsumerWidget {
                     _duaArabic,
                     textAlign: TextAlign.right,
                     textDirection: ui.TextDirection.rtl,
-                    style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: 18,
+                    style: AppTypography.ar(AppTypography.headingS).copyWith(
                       height: 2.2,
                       color: isDark ? Colors.white : Colors.black87,
                     ),
@@ -70,8 +69,7 @@ class KhatmaDuaScreen extends ConsumerWidget {
                   // English translation label
                   Text(
                     'khatma_dua_translation_label'.tr(),
-                    style: TextStyle(
-                      fontSize: 12,
+                    style: AppTypography.caption.copyWith(
                       fontWeight: FontWeight.w600,
                       color: primary,
                       letterSpacing: 0.5,
@@ -82,8 +80,7 @@ class KhatmaDuaScreen extends ConsumerWidget {
                   // English translation
                   Text(
                     _duaEnglish,
-                    style: TextStyle(
-                      fontSize: 14,
+                    style: AppTypography.label.copyWith(
                       height: 1.8,
                       color: secondary,
                       fontStyle: FontStyle.italic,
@@ -101,7 +98,7 @@ class KhatmaDuaScreen extends ConsumerWidget {
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Text(
               'khatma_history_title'.tr(),
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              style: AppTypography.bodyL.copyWith(fontWeight: FontWeight.bold),
             ),
           ),
           const SizedBox(height: 10),
@@ -114,7 +111,7 @@ class KhatmaDuaScreen extends ConsumerWidget {
                 child: Center(
                   child: Text(
                     'khatma_history_empty'.tr(),
-                    style: TextStyle(color: secondary),
+                    style: AppTypography.bodyM.copyWith(color: secondary),
                   ),
                 ),
               ),
@@ -155,20 +152,19 @@ class KhatmaDuaScreen extends ConsumerWidget {
                           child: Center(
                             child: Text(
                               numStr,
-                              style: TextStyle(
+                              style: AppTypography.label.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: primary,
-                                fontSize: 14,
                               ),
                             ),
                           ),
                         ),
                         title: Text(
                           'khatma_count_label'.tr().replaceAll('%d', numStr),
-                          style: const TextStyle(fontWeight: FontWeight.w600),
+                          style: AppTypography.bodyM.copyWith(fontWeight: FontWeight.w600),
                         ),
                         trailing: dateStr.isNotEmpty
-                            ? Text(dateStr, style: TextStyle(fontSize: 12, color: secondary))
+                            ? Text(dateStr, style: AppTypography.caption.copyWith(color: secondary))
                             : null,
                       ),
                     ],

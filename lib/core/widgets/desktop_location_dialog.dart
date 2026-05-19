@@ -8,6 +8,7 @@ import '../constants/app_constants.dart';
 import '../services/location_service.dart';
 import '../services/geocoding_service.dart';
 import '../providers/prayer_times_provider.dart';
+import '../theme/app_typography.dart';
 
 /// Shows the desktop location picker dialog.
 /// On save the prayer times provider is refreshed automatically.
@@ -323,7 +324,7 @@ class _DesktopLocationDialogState
                               size: 18, color: primary),
                           title: Text(r.cityName,
                               style:
-                                  const TextStyle(fontWeight: FontWeight.w500)),
+                                  AppTypography.bodyM.copyWith(fontWeight: FontWeight.w500)),
                           subtitle: r.country.isNotEmpty
                               ? Text(r.country,
                                   style: Theme.of(context).textTheme.bodySmall)
@@ -362,7 +363,7 @@ class _DesktopLocationDialogState
                         child: Text(
                           '${_selected!.cityName} (${_selected!.latitude.toStringAsFixed(3)}, ${_selected!.longitude.toStringAsFixed(3)})',
                           style:
-                              const TextStyle(fontWeight: FontWeight.w500),
+                              AppTypography.bodyM.copyWith(fontWeight: FontWeight.w500),
                         ),
                       ),
                     ],
@@ -389,9 +390,8 @@ class _DesktopLocationDialogState
                       const SizedBox(width: 4),
                       Text(
                         'location_manual_entry'.tr(),
-                        style: TextStyle(
+                        style: AppTypography.bodyS.copyWith(
                             color: primary,
-                            fontSize: 13,
                             fontWeight: FontWeight.w500),
                       ),
                     ],
@@ -456,9 +456,8 @@ class _DesktopLocationDialogState
               if (_error != null) ...[
                 const SizedBox(height: 8),
                 Text(_error!,
-                    style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                        fontSize: 13)),
+                    style: AppTypography.bodyS.copyWith(
+                        color: Theme.of(context).colorScheme.error)),
               ],
 
               const SizedBox(height: 20),
@@ -475,7 +474,7 @@ class _DesktopLocationDialogState
                 ),
                 child: Text(
                   'location_save'.tr(),
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: AppTypography.bodyM.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
             ],

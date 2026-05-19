@@ -5,6 +5,7 @@ import '../constants/app_constants.dart';
 import '../providers/connectivity_provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/offline_queue_service.dart';
+import '../theme/app_typography.dart';
 
 class OfflineBanner extends ConsumerWidget {
   const OfflineBanner({super.key});
@@ -52,9 +53,8 @@ class OfflineBanner extends ConsumerWidget {
               pendingCount > 0
                   ? '${'offline_mode'.tr()} (${pendingCount} pending)'
                   : 'offline_mode'.tr(),
-              style: const TextStyle(
+              style: AppTypography.label.copyWith(
                 color: Colors.white,
-                fontSize: 14,
                 fontWeight: FontWeight.w500,
               ),
             ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:aura_app/core/constants/app_constants.dart';
+import 'package:aura_app/core/theme/app_typography.dart';
 import 'package:aura_app/core/utils/number_formatter.dart';
 import 'khatma_dua_screen.dart';
 
@@ -103,9 +104,7 @@ class KhatmaCelebrationScreen extends StatelessWidget {
                           // Arabic Quran completion title
                           Text(
                             'ختم القرآن الكريم',
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: 28,
+                            style: AppTypography.ar(AppTypography.displayM).copyWith(
                               fontWeight: FontWeight.bold,
                               color: primary,
                             ),
@@ -119,8 +118,7 @@ class KhatmaCelebrationScreen extends StatelessWidget {
 
                           Text(
                             'khatma_celebration_title'.tr(),
-                            style: TextStyle(
-                              fontSize: 22,
+                            style: AppTypography.headingM.copyWith(
                               fontWeight: FontWeight.bold,
                               color: isDark ? Colors.white : Colors.black87,
                             ),
@@ -133,8 +131,7 @@ class KhatmaCelebrationScreen extends StatelessWidget {
 
                           Text(
                             'khatma_celebration_subtitle'.tr(),
-                            style: TextStyle(
-                              fontSize: 15,
+                            style: AppTypography.bodyL.copyWith(
                               color: isDark ? Colors.white60 : Colors.black54,
                             ),
                             textAlign: TextAlign.center,
@@ -156,7 +153,7 @@ class KhatmaCelebrationScreen extends StatelessWidget {
                               children: [
                                 Text(
                                   'khatma_count_label'.tr().replaceAll('%d', countStr),
-                                  style: TextStyle(
+                                  style: AppTypography.headingL.copyWith(
                                     fontSize: 26,
                                     fontWeight: FontWeight.bold,
                                     color: primary,
@@ -166,8 +163,7 @@ class KhatmaCelebrationScreen extends StatelessWidget {
                                 const SizedBox(height: 6),
                                 Text(
                                   'khatma_date_completed'.tr().replaceAll('%s', dateStr),
-                                  style: TextStyle(
-                                    fontSize: 13,
+                                  style: AppTypography.bodyS.copyWith(
                                     color: isDark ? Colors.white60 : Colors.black54,
                                   ),
                                 ),
@@ -196,7 +192,7 @@ class KhatmaCelebrationScreen extends StatelessWidget {
                               icon: const Icon(Icons.menu_book_rounded),
                               label: Text(
                                 'khatma_read_dua_btn'.tr(),
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                style: AppTypography.bodyL.copyWith(fontWeight: FontWeight.bold),
                               ),
                               style: FilledButton.styleFrom(
                                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -224,7 +220,7 @@ class KhatmaCelebrationScreen extends StatelessWidget {
                               ),
                               child: Text(
                                 'khatma_done_btn'.tr(),
-                                style: const TextStyle(fontSize: 16),
+                                style: AppTypography.bodyL,
                               ),
                             ),
                           )

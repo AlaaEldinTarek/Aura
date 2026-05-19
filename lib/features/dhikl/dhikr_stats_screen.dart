@@ -5,6 +5,7 @@ import '../../core/models/dhikr.dart';
 import '../../core/models/prayer_record.dart';
 import '../../core/services/dhikr_service.dart';
 import '../../core/utils/number_formatter.dart';
+import '../../core/theme/app_typography.dart';
 
 /// Dhikr Statistics Screen - Shows session history and stats
 class DhikrStatsScreen extends StatefulWidget {
@@ -158,7 +159,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
                               padding: const EdgeInsets.all(24),
                               child: Text(
                                 isArabic ? 'لا توجد جلسات بعد' : 'No sessions yet',
-                                style: TextStyle(
+                                style: AppTypography.bodyM.copyWith(
                                   color: isDark ? Colors.white38 : Colors.black38,
                                 ),
                                 textAlign: TextAlign.center,
@@ -201,16 +202,14 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
               children: [
                 Text(
                   session.dhikrText.isNotEmpty ? session.dhikrText : 'Custom',
-                  style: TextStyle(
-                    fontSize: 14,
+                  style: AppTypography.label.copyWith(
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white : Colors.black87,
                   ),
                 ),
                 Text(
                   _n(dateStr, isArabic: isArabic),
-                  style: TextStyle(
-                    fontSize: 11,
+                  style: AppTypography.labelS.copyWith(
                     color: isDark ? Colors.white38 : Colors.black38,
                   ),
                 ),
@@ -219,8 +218,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
           ),
           Text(
             '${_n(session.count, isArabic: isArabic)}/${_n(session.target, isArabic: isArabic)}',
-            style: TextStyle(
-              fontSize: 13,
+            style: AppTypography.bodyS.copyWith(
               fontWeight: FontWeight.bold,
               color: isDark ? Colors.white70 : Colors.black54,
             ),
@@ -250,7 +248,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
           Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
           if (subtitle.isNotEmpty) ...[
             const SizedBox(height: 2),
-            Text(subtitle, style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.black38)),
+            Text(subtitle, style: AppTypography.caption.copyWith(color: isDark ? Colors.white38 : Colors.black38)),
           ],
           const SizedBox(height: AppConstants.paddingMedium),
           child,
@@ -275,7 +273,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
                 final count = _n(rod.toY.round(), isArabic: isArabic);
                 return BarTooltipItem(
                   count,
-                  const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                  AppTypography.caption.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
                 );
               },
             ),
@@ -292,7 +290,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
                       padding: const EdgeInsets.only(top: 8),
                       child: Text(
                         _n(_weeklyLabels[idx], isArabic: isArabic),
-                        style: TextStyle(fontSize: 10, color: isDark ? Colors.white54 : Colors.black54),
+                        style: AppTypography.caption.copyWith(fontSize: 10, color: isDark ? Colors.white54 : Colors.black54),
                       ),
                     );
                   }
@@ -308,7 +306,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
                   if (value == 0) return const SizedBox.shrink();
                   return Text(
                     _n(value.round(), isArabic: isArabic),
-                    style: TextStyle(fontSize: 10, color: isDark ? Colors.white38 : Colors.black38),
+                    style: AppTypography.caption.copyWith(fontSize: 10, color: isDark ? Colors.white38 : Colors.black38),
                   );
                 },
               ),
@@ -377,11 +375,11 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             value,
-            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
+            style: AppTypography.headingM.copyWith(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
           ),
           Text(
             label,
-            style: TextStyle(fontSize: 11, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+            style: AppTypography.labelS.copyWith(color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
           ),
         ],
       ),

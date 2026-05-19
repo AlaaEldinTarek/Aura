@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/theme/app_typography.dart';
 import 'adhan_calculation_method.dart';
 import 'asr_madhab_selection.dart';
 
@@ -83,15 +84,14 @@ class PrayerCalculationSettingsDialog extends StatelessWidget {
                 ),
                 title: Text(
                   method.getLocalizedName(isArabic),
-                  style: TextStyle(
+                  style: AppTypography.bodyM.copyWith(
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
                 subtitle: method.description.isNotEmpty
                     ? Text(
                         method.getLocalizedName(isArabic, showDescription: true),
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: AppTypography.caption.copyWith(
                           color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                         ),
                       )
@@ -126,15 +126,14 @@ class PrayerCalculationSettingsDialog extends StatelessWidget {
                 ),
                 title: Text(
                   madhab.getLocalizedName(isArabic),
-                  style: TextStyle(
+                  style: AppTypography.bodyM.copyWith(
                     fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                   ),
                 ),
                 subtitle: madhab.description.isNotEmpty
                     ? Text(
                         madhab.getLocalizedName(isArabic, showDescription: true),
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: AppTypography.caption.copyWith(
                           color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                         ),
                       )
@@ -158,9 +157,8 @@ class PrayerCalculationSettingsDialog extends StatelessWidget {
               ),
               child: Text(
                 isArabic ? 'تم' : 'Done',
-                style: const TextStyle(
+                style: AppTypography.bodyL.copyWith(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
                 ),
               ),
             ),

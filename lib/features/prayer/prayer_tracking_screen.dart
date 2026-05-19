@@ -12,6 +12,7 @@ import '../../core/utils/haptic_feedback.dart' as haptic;
 import '../../core/widgets/prayer_status_dialog.dart';
 import '../../core/utils/prayer_time_rules.dart';
 import '../../core/utils/number_formatter.dart';
+import '../../core/theme/app_typography.dart';
 
 /// Prayer Tracking Screen - Shows prayer history and statistics
 class PrayerTrackingScreen extends ConsumerStatefulWidget {
@@ -250,14 +251,14 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                 color: Colors.green,
                 shape: BoxShape.circle,
               ),
-              weekendTextStyle: TextStyle(
+              weekendTextStyle: AppTypography.caption.copyWith(
                 color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
               ),
             ),
             headerStyle: HeaderStyle(
               formatButtonVisible: false,
               titleCentered: true,
-              titleTextStyle: TextStyle(
+              titleTextStyle: AppTypography.bodyL.copyWith(
                 color: isDark ? Colors.white : Colors.black87,
                 fontWeight: FontWeight.bold,
               ),
@@ -271,10 +272,10 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
               ),
             ),
             daysOfWeekStyle: DaysOfWeekStyle(
-              weekdayStyle: TextStyle(
+              weekdayStyle: AppTypography.caption.copyWith(
                 color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
               ),
-              weekendStyle: TextStyle(
+              weekendStyle: AppTypography.caption.copyWith(
                 color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
               ),
             ),
@@ -346,8 +347,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
               if (isPastDay || isToday)
                 Text(
                   isArabic ? 'اضغط لتسجيل' : 'Tap to record',
-                  style: TextStyle(
-                    fontSize: 11,
+                  style: AppTypography.labelS.copyWith(
                     color: isDark ? Colors.white38 : Colors.black38,
                   ),
                 ),
@@ -417,8 +417,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
               Expanded(
                 child: Text(
                   displayName,
-                  style: TextStyle(
-                    fontSize: 16,
+                  style: AppTypography.bodyL.copyWith(
                     fontWeight: showBadge ? FontWeight.w600 : FontWeight.normal,
                     color: isDark ? Colors.white : Colors.black87,
                   ),
@@ -450,8 +449,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                             : status == PrayerStatus.late
                                 ? (isArabic ? 'متأخر' : 'Late')
                                 : (isArabic ? 'في الوقت' : 'On Time'),
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: AppTypography.caption.copyWith(
                           fontWeight: FontWeight.w600,
                           color: badgeColor,
                         ),
@@ -474,8 +472,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                       const SizedBox(width: 4),
                       Text(
                         isArabic ? 'غير مُصلّاة' : 'Not Prayed',
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: AppTypography.caption.copyWith(
                           fontWeight: FontWeight.w500,
                           color: isDark ? Colors.white38 : Colors.black38,
                         ),
@@ -719,16 +716,14 @@ class _StatCard extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 20,
+            style: AppTypography.headingM.copyWith(
               fontWeight: FontWeight.bold,
               color: isDark ? Colors.white : Colors.black87,
             ),
           ),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 12,
+            style: AppTypography.caption.copyWith(
               color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
             ),
           ),

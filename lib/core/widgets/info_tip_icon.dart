@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../constants/app_constants.dart';
+import '../theme/app_typography.dart';
 
 class InfoTipIcon extends StatelessWidget {
   final String titleKey;
@@ -44,10 +45,9 @@ class InfoTipIcon extends StatelessWidget {
             Flexible(
               child: Text(
                 titleKey.tr(),
-                style: TextStyle(
+                style: AppTypography.bodyL.copyWith(
                   color: isDark ? Colors.white : Colors.black87,
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
                 ),
               ),
             ),
@@ -55,9 +55,8 @@ class InfoTipIcon extends StatelessWidget {
         ),
         content: Text(
           bodyKey.tr(),
-          style: TextStyle(
+          style: AppTypography.label.copyWith(
             color: isDark ? Colors.white70 : Colors.black54,
-            fontSize: 14,
             height: 1.5,
           ),
         ),

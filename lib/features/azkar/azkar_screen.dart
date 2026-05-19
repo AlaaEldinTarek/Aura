@@ -7,6 +7,7 @@ import '../../core/models/azkar.dart';
 import '../../core/providers/azkar_provider.dart';
 import '../../core/utils/haptic_feedback.dart' as app_haptic;
 import '../../core/utils/number_formatter.dart';
+import '../../core/theme/app_typography.dart';
 
 class AzkarScreen extends ConsumerStatefulWidget {
   const AzkarScreen({super.key});
@@ -234,7 +235,7 @@ class _ProgressHeader extends StatelessWidget {
                   isComplete
                       ? '✓'
                       : '${NumberFormatter.withArabicNumeralsByLanguage('$done', isArabic ? 'ar' : 'en')}/${NumberFormatter.withArabicNumeralsByLanguage('$total', isArabic ? 'ar' : 'en')}',
-                  style: TextStyle(
+                  style: AppTypography.bodyS.copyWith(
                     fontSize: isComplete ? 24 : 13,
                     fontWeight: FontWeight.bold,
                     color: isComplete
@@ -254,8 +255,7 @@ class _ProgressHeader extends StatelessWidget {
                   isComplete
                       ? (isArabic ? 'ما شاء الله! 🎉' : 'Well done! 🎉')
                       : (isArabic ? 'تقدمك اليوم' : "Today's Progress"),
-                  style: TextStyle(
-                    fontSize: 16,
+                  style: AppTypography.bodyL.copyWith(
                     fontWeight: FontWeight.bold,
                     color: isComplete
                         ? Colors.white
@@ -269,8 +269,7 @@ class _ProgressHeader extends StatelessWidget {
                       : (isArabic
                           ? '${NumberFormatter.withArabicNumerals('$done')} من ${NumberFormatter.withArabicNumerals('$total')} مكتمل'
                           : '$done of $total completed'),
-                  style: TextStyle(
-                    fontSize: 13,
+                  style: AppTypography.bodyS.copyWith(
                     color: isComplete
                         ? Colors.white.withOpacity(0.9)
                         : (isDark ? Colors.white60 : Colors.black54),
@@ -286,8 +285,7 @@ class _ProgressHeader extends StatelessWidget {
                         isArabic
                             ? '${NumberFormatter.withArabicNumerals('$streakCount')} يوم متتالي'
                             : '$streakCount day streak',
-                        style: TextStyle(
-                          fontSize: 12,
+                        style: AppTypography.caption.copyWith(
                           fontWeight: FontWeight.w600,
                           color: isComplete
                               ? Colors.white.withOpacity(0.9)
@@ -380,10 +378,8 @@ class _ZikrCard extends StatelessWidget {
                     // Arabic text
                     Text(
                       item.textAr,
-                      style: TextStyle(
-                        fontSize: 17,
+                      style: AppTypography.ar(AppTypography.headingS).copyWith(
                         height: 1.8,
-                        fontFamily: 'Cairo',
                         color: isDone
                             ? primary
                             : (isDark ? Colors.white : Colors.black87),
@@ -395,8 +391,7 @@ class _ZikrCard extends StatelessWidget {
                     // English translation
                     Text(
                       item.textEn,
-                      style: TextStyle(
-                        fontSize: 11,
+                      style: AppTypography.labelS.copyWith(
                         height: 1.4,
                         color: isDone
                             ? primary.withOpacity(0.7)
@@ -419,8 +414,7 @@ class _ZikrCard extends StatelessWidget {
                           isArabic
                               ? '× ${NumberFormatter.withArabicNumerals('${item.repeatCount}')}'
                               : '× ${item.repeatCount}',
-                          style: TextStyle(
-                            fontSize: 11,
+                          style: AppTypography.labelS.copyWith(
                             fontWeight: FontWeight.bold,
                             color: isDone
                                 ? primary

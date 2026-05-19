@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../constants/app_constants.dart';
 import '../services/platform_channel_service.dart';
 import '../services/notification_service.dart';
+import '../theme/app_typography.dart';
 
 /// Checks all required permissions and shows a dialog for missing ones.
 class PermissionDialogHandler extends StatefulWidget {
@@ -297,8 +298,7 @@ class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingO
                       : (isArabic
                           ? 'يحتاج التطبيق هذه الأذونات ليعمل بشكل صحيح'
                           : 'Aura needs these permissions to work properly'),
-                  style: TextStyle(
-                    fontSize: 16,
+                  style: AppTypography.bodyL.copyWith(
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white70 : Colors.black87,
                   ),
@@ -381,7 +381,7 @@ class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingO
                       allGranted
                           ? (isArabic ? 'تم' : 'Done')
                           : (isArabic ? 'تفعيل الكل' : 'Enable All'),
-                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      style: AppTypography.bodyM.copyWith(fontWeight: FontWeight.bold),
                     ),
                   ),
                 ),
@@ -448,9 +448,8 @@ class _GroupHeader extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             label,
-            style: TextStyle(
+            style: AppTypography.label.copyWith(
               fontWeight: FontWeight.bold,
-              fontSize: 14,
               color: color,
             ),
           ),
@@ -529,12 +528,11 @@ class _PermTile extends StatelessWidget {
         ),
         title: Text(
           _title(),
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+          style: AppTypography.label.copyWith(fontWeight: FontWeight.w600),
         ),
         subtitle: Text(
           _desc(),
-          style: TextStyle(
-            fontSize: 12,
+          style: AppTypography.caption.copyWith(
             height: 1.4,
             color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
           ),
@@ -548,10 +546,9 @@ class _PermTile extends StatelessWidget {
                 ),
                 child: Text(
                   isArabic ? 'مفعّل' : 'Granted',
-                  style: const TextStyle(
+                  style: AppTypography.labelS.copyWith(
                     color: Colors.green,
                     fontWeight: FontWeight.bold,
-                    fontSize: 11,
                   ),
                 ),
               )
@@ -568,7 +565,7 @@ class _PermTile extends StatelessWidget {
                 ),
                 child: Text(
                   isArabic ? 'تفعيل' : 'Enable',
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                  style: AppTypography.caption.copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
       ),

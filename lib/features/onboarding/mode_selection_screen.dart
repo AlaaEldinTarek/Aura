@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/preferences_provider.dart';
+import '../../core/theme/app_typography.dart';
 
 class ModeSelectionScreen extends ConsumerWidget {
   const ModeSelectionScreen({super.key});
@@ -85,8 +86,7 @@ class ModeSelectionScreen extends ConsumerWidget {
                 ),
                 child: Text(
                   isArabic ? 'ابدأ' : 'Get Started',
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: AppTypography.bodyL.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -132,8 +132,7 @@ class ModeSelectionScreen extends ConsumerWidget {
                 children: [
                   Text(
                     option.title,
-                    style: TextStyle(
-                      fontSize: 16,
+                    style: AppTypography.bodyL.copyWith(
                       fontWeight: FontWeight.bold,
                       color: isSelected ? option.color : null,
                     ),
@@ -141,8 +140,7 @@ class ModeSelectionScreen extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     option.subtitle,
-                    style: TextStyle(
-                      fontSize: 13,
+                    style: AppTypography.bodyS.copyWith(
                       color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                     ),
                   ),

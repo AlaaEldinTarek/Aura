@@ -1550,8 +1550,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     Center(
                       child: Text(
                         '$displayPercentage%',
-                        style: TextStyle(
-                          fontSize: 16,
+                        style: AppTypography.bodyL.copyWith(
                           fontWeight: FontWeight.bold,
                           color: isDark ? Colors.white : Colors.black87,
                         ),
@@ -1810,7 +1809,7 @@ class _HomeCelebrationOverlayState extends State<_HomeCelebrationOverlay>
                               children: [
                                 Text(
                                   widget.isArabic ? 'أُنجز الكل! ✨' : 'All Done! ✨',
-                                  style: TextStyle(
+                                  style: AppTypography.headingL.copyWith(
                                     fontSize: 26,
                                     fontWeight: FontWeight.bold,
                                     color: widget.isDark ? Colors.white : const Color(0xFF1A1A1A),
@@ -1822,8 +1821,7 @@ class _HomeCelebrationOverlayState extends State<_HomeCelebrationOverlay>
                                   widget.isArabic
                                       ? 'أكملت جميع مهام اليوم، استمر!'
                                       : 'You crushed every task today!',
-                                  style: TextStyle(
-                                    fontSize: 14,
+                                  style: AppTypography.label.copyWith(
                                     height: 1.5,
                                     color: widget.isDark ? Colors.white60 : Colors.black45,
                                   ),
@@ -1841,8 +1839,7 @@ class _HomeCelebrationOverlayState extends State<_HomeCelebrationOverlay>
                                   ),
                                   child: Text(
                                     widget.isArabic ? '🎯  يوم منتج!' : '🎯  Productive day!',
-                                    style: TextStyle(
-                                      fontSize: 13,
+                                    style: AppTypography.bodyS.copyWith(
                                       fontWeight: FontWeight.w600,
                                       color: AppConstants.getPrimary(isDark),
                                     ),

@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/theme/app_typography.dart';
 import '../../core/services/adhan_player_service.dart';
 import '../../core/services/prayer_alarm_service.dart';
 
@@ -525,7 +526,7 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
                     ),
                     child: Text(
                       isArabic ? 'الافتراضي' : 'Default',
-                      style: const TextStyle(
+                      style: AppTypography.caption.copyWith(
                         color: Colors.white,
                         fontSize: 9,
                         fontWeight: FontWeight.bold,
@@ -601,7 +602,7 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
     if (isDownloading) {
       return Text(
         '${(progress * 100).toInt()}%',
-        style: TextStyle(
+        style: AppTypography.label.copyWith(
           color: AppConstants.getPrimary(isDark),
           fontWeight: FontWeight.bold,
         ),
@@ -804,7 +805,7 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
               isArabic ? 'حذف' : 'Delete',
-              style: const TextStyle(color: Colors.red),
+              style: AppTypography.label.copyWith(color: Colors.red),
             ),
           ),
         ],

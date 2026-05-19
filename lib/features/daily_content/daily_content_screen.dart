@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/models/daily_content.dart';
 import '../../core/services/daily_content_service.dart';
+import '../../core/theme/app_typography.dart';
 
 class DailyContentScreen extends StatelessWidget {
   const DailyContentScreen({super.key});
@@ -73,9 +74,8 @@ class DailyContentScreen extends StatelessWidget {
                   // Arabic text
                   Text(
                     content.arabic,
-                    style: TextStyle(
+                    style: AppTypography.ar(AppTypography.headingM).copyWith(
                       fontSize: 22,
-                      fontFamily: 'Cairo',
                       color: isDark ? Colors.white : Colors.black87,
                       height: 2.0,
                     ),
@@ -91,8 +91,7 @@ class DailyContentScreen extends StatelessWidget {
                   // Translation
                   Text(
                     content.translation,
-                    style: TextStyle(
-                      fontSize: 16,
+                    style: AppTypography.bodyL.copyWith(
                       height: 1.7,
                       fontStyle: FontStyle.italic,
                       color: isDark ? Colors.white70 : Colors.black87,
@@ -114,8 +113,7 @@ class DailyContentScreen extends StatelessWidget {
                       ),
                       child: Text(
                         content.source,
-                        style: TextStyle(
-                          fontSize: 13,
+                        style: AppTypography.bodyS.copyWith(
                           fontWeight: FontWeight.w600,
                           color: accentColor,
                         ),

@@ -9,6 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/services/location_service.dart';
 import '../../core/widgets/offline_banner.dart';
+import '../../core/theme/app_typography.dart';
 
 /// Qibla Compass Screen - Shows direction to Mecca
 class QiblaScreen extends ConsumerStatefulWidget {
@@ -171,7 +172,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
                 titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
                 title: Text(
                   isArabic ? 'القبلة' : 'Qibla',
-                  style: TextStyle(
+                  style: AppTypography.label.copyWith(
                     color: isDark ? Colors.white : AppConstants.getPrimary(isDark),
                     fontWeight: FontWeight.bold,
                   ),
@@ -502,9 +503,8 @@ class CompassPainter extends CustomPainter {
       final textPainter = TextPainter(
         text: TextSpan(
           text: label,
-          style: TextStyle(
+          style: AppTypography.bodyL.copyWith(
             color: cardinalColors[angle] ?? (isDark ? Colors.white : Colors.black),
-            fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -525,9 +525,9 @@ class CompassPainter extends CustomPainter {
       final textPainter = TextPainter(
         text: TextSpan(
           text: label,
-          style: TextStyle(
-            color: isDark ? Colors.white24 : Colors.black26,
+          style: AppTypography.caption.copyWith(
             fontSize: 9,
+            color: isDark ? Colors.white24 : Colors.black26,
             fontWeight: FontWeight.w500,
           ),
         ),

@@ -21,6 +21,7 @@ import 'package:aura_app/core/services/shared_preferences_service.dart';
 import 'package:aura_app/core/models/wird.dart';
 import 'package:aura_app/core/providers/wird_provider.dart';
 import 'khatma_celebration_screen.dart';
+import 'package:aura_app/core/theme/app_typography.dart';
 
 class QuranReaderScreen extends ConsumerStatefulWidget {
   final int suraNo;
@@ -712,7 +713,7 @@ class _MushafPageState extends ConsumerState<_MushafPage> {
                   Text(
                     isOffline ? 'error_network'.tr() : 'Failed to load page',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                    style: AppTypography.bodyS.copyWith(color: Colors.grey[500]),
                   ),
                   const SizedBox(height: 8),
                   TextButton(onPressed: _retry, child: Text('retry'.tr())),
@@ -902,9 +903,7 @@ class _AyahSheet extends StatelessWidget {
             children: [
               Text(
                 lang == 'ar' ? (meta?.nameAr ?? '') : (meta?.nameEn ?? ''),
-                style: TextStyle(
-                  fontSize: 16, fontWeight: FontWeight.w700, color: primary,
-                ),
+                style: AppTypography.headingS.copyWith(fontWeight: FontWeight.w700, color: primary),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -914,9 +913,7 @@ class _AyahSheet extends StatelessWidget {
                 ),
                 child: Text(
                   '${NumberFormatter.withArabicNumeralsByLanguage(ayah.suraNo.toString(), lang)}:${NumberFormatter.withArabicNumeralsByLanguage(ayah.ayaNo.toString(), lang)}',
-                  style: TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w600, color: primary,
-                  ),
+                  style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.w600, color: primary),
                 ),
               ),
             ],
@@ -929,7 +926,7 @@ class _AyahSheet extends StatelessWidget {
             child: Text(
               ayah.ayaTextEmlaey,
               textAlign: TextAlign.right,
-              style: TextStyle(
+              style: AppTypography.ar(AppTypography.bodyL).copyWith(
                 fontSize: 18,
                 height: 1.9,
                 color: isDark ? Colors.white.withValues(alpha: 0.87) : Colors.black87,
@@ -954,7 +951,7 @@ class _AyahSheet extends StatelessWidget {
                 TextButton.icon(
                   onPressed: onRemove,
                   icon: const Icon(Icons.delete_outline, size: 18),
-                  label: Text('remove'.tr(), style: const TextStyle(fontSize: 13)),
+                  label: Text('remove'.tr(), style: AppTypography.bodyS),
                   style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
                 ),
             ],
@@ -1061,12 +1058,12 @@ class _BookmarkReplaceSheet extends StatelessWidget {
                     const SizedBox(width: 8),
                     Text(
                       _colorNameKeys[color]!.tr(),
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      style: AppTypography.headingS,
                     ),
                     const Spacer(),
                     Text(
                       'wird_bookmark_unique_pages'.tr().replaceAll('%d', bookmarks.length.toString()),
-                      style: TextStyle(fontSize: 12, color: secondary),
+                      style: AppTypography.caption.copyWith(color: secondary),
                     ),
                   ],
                 ),
@@ -1092,18 +1089,17 @@ class _BookmarkReplaceSheet extends StatelessWidget {
                     child: Center(
                       child: Text(
                         NumberFormatter.withArabicNumeralsByLanguage(bm.page.toString(), lang),
-                        style: TextStyle(
+                        style: AppTypography.label.copyWith(
                           fontWeight: FontWeight.bold,
                           color: displayColor,
-                          fontSize: 14,
                         ),
                       ),
                     ),
                   ),
-                  title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                  title: Text(name, style: AppTypography.label),
                   subtitle: Text(
                     '${'ayah'.tr()} ${NumberFormatter.withArabicNumeralsByLanguage(bm.ayaNo.toString(), lang)}',
-                    style: TextStyle(fontSize: 12, color: secondary),
+                    style: AppTypography.caption.copyWith(color: secondary),
                   ),
                   trailing: Icon(Icons.swap_horiz, color: displayColor),
                   onTap: () => onSelect(bm),
@@ -1280,8 +1276,7 @@ class _TopBar extends StatelessWidget {
             child: Text(
               surahName,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
+              style: AppTypography.headingS.copyWith(
                 fontWeight: FontWeight.w700,
                 color: theme.colorScheme.onSurface,
               ),
@@ -1348,8 +1343,7 @@ class _BottomBar extends StatelessWidget {
               child: Text(
                 '${NumberFormatter.withArabicNumeralsByLanguage(currentPage.toString(), lang)} / ${NumberFormatter.withArabicNumeralsByLanguage(totalPages.toString(), lang)}',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
+                style: AppTypography.label.copyWith(
                   fontWeight: FontWeight.w600,
                   color: theme.hintColor,
                 ),

@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/utils/haptic_feedback.dart';
 import '../../core/utils/number_formatter.dart';
+import '../../core/theme/app_typography.dart';
 
 class IqamaSettingsScreen extends ConsumerStatefulWidget {
   const IqamaSettingsScreen({super.key});
@@ -214,7 +215,7 @@ class _IqamaSettingsScreenState extends ConsumerState<IqamaSettingsScreen> {
               ),
               child: Text(
                 '$minutes',
-                style: TextStyle(
+                style: AppTypography.label.copyWith(
                   fontWeight: FontWeight.bold,
                   color: AppConstants.getPrimary(isDark),
                 ),
@@ -257,7 +258,7 @@ class _IqamaSettingsScreenState extends ConsumerState<IqamaSettingsScreen> {
             onPressed: () => Navigator.of(context).pop(true),
             child: Text(
               isArabic ? 'إعادة تعيين' : 'Reset',
-              style: const TextStyle(color: AppConstants.error),
+              style: AppTypography.label.copyWith(color: AppConstants.error),
             ),
           ),
         ],

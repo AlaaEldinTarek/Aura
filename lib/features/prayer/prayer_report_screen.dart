@@ -4,6 +4,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/models/prayer_record.dart';
 import '../../core/services/prayer_tracking_service.dart';
 import '../../core/utils/number_formatter.dart';
+import '../../core/theme/app_typography.dart';
 
 /// Prayer Report Screen - Weekly/Monthly statistics with charts
 class PrayerReportScreen extends StatefulWidget {
@@ -403,8 +404,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
                         flex: 2,
                         child: Text(
                           displayName,
-                          style: TextStyle(
-                            fontSize: 14,
+                          style: AppTypography.label.copyWith(
                             fontWeight: FontWeight.w600,
                             color: isDark ? Colors.white : Colors.black87,
                           ),
@@ -435,8 +435,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
                         width: 45,
                         child: Text(
                           '${_n((rate * 100).toStringAsFixed(0), isArabic: isArabic)}%',
-                          style: TextStyle(
-                            fontSize: 13,
+                          style: AppTypography.bodyS.copyWith(
                             fontWeight: FontWeight.bold,
                             color: isDark ? Colors.white70 : Colors.black54,
                           ),
@@ -486,8 +485,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
             const SizedBox(height: 2),
             Text(
               subtitle,
-              style: TextStyle(
-                fontSize: 12,
+              style: AppTypography.caption.copyWith(
                 color: isDark ? Colors.white38 : Colors.black38,
               ),
             ),
@@ -517,10 +515,9 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
                 final rate = _n((rod.toY * 100).toStringAsFixed(0), isArabic: isArabic);
                 return BarTooltipItem(
                   '$rate%',
-                  TextStyle(
+                  AppTypography.caption.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 12,
                   ),
                 );
               },
@@ -538,8 +535,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
                       padding: const EdgeInsets.only(top: 8),
                       child: Text(
                         _n(_weeklyLabels[idx], isArabic: isArabic),
-                        style: TextStyle(
-                          fontSize: 11,
+                        style: AppTypography.labelS.copyWith(
                           color: isDark ? Colors.white54 : Colors.black54,
                         ),
                       ),
@@ -556,7 +552,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
                 getTitlesWidget: (value, meta) {
                   return Text(
                     '${_n((value * 100).toStringAsFixed(0), isArabic: isArabic)}%',
-                    style: TextStyle(
+                    style: AppTypography.caption.copyWith(
                       fontSize: 10,
                       color: isDark ? Colors.white38 : Colors.black38,
                     ),
@@ -654,10 +650,9 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
                 isArabic
                     ? '$diffText ${isPositive ? 'تحسن' : 'تراجع'}'
                     : '$diffText ${isPositive ? 'improvement' : 'decline'}',
-                style: TextStyle(
+                style: AppTypography.label.copyWith(
                   color: isPositive ? Colors.green : Colors.red,
                   fontWeight: FontWeight.bold,
-                  fontSize: 14,
                 ),
               ),
             ],
@@ -679,16 +674,14 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontSize: 12,
+            style: AppTypography.caption.copyWith(
               color: isDark ? Colors.white54 : Colors.black54,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             '${_n((rate * 100).toStringAsFixed(1), isArabic: isArabic)}%',
-            style: TextStyle(
-              fontSize: 28,
+            style: AppTypography.displayM.copyWith(
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -706,8 +699,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
           width: 70,
           child: Text(
             label,
-            style: TextStyle(
-              fontSize: 13,
+            style: AppTypography.bodyS.copyWith(
               fontWeight: FontWeight.w500,
               color: color,
             ),
@@ -729,8 +721,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
           width: 35,
           child: Text(
             _n(count, isArabic: isArabic),
-            style: TextStyle(
-              fontSize: 13,
+            style: AppTypography.bodyS.copyWith(
               fontWeight: FontWeight.bold,
               color: isDark ? Colors.white70 : Colors.black54,
             ),
@@ -776,23 +767,21 @@ class _ReportCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 22,
+            style: AppTypography.headingM.copyWith(
               fontWeight: FontWeight.bold,
               color: isDark ? Colors.white : Colors.black87,
             ),
           ),
           Text(
             label,
-            style: TextStyle(
-              fontSize: 11,
+            style: AppTypography.labelS.copyWith(
               color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
             ),
           ),
           const SizedBox(height: 2),
           Text(
             subtitle,
-            style: TextStyle(
+            style: AppTypography.caption.copyWith(
               fontSize: 10,
               color: isDark ? Colors.white38 : Colors.black38,
             ),

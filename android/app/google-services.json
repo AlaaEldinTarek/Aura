@@ -14,11 +14,27 @@
       },
       "oauth_client": [
         {
+          "client_id": "101079644290-9nuce8qupq04h3rb7uopqb56ek3beuee.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aura.hala",
+            "certificate_hash": "9b5740ca31b9150eb443922b368a5021bf8574fd"
+          }
+        },
+        {
           "client_id": "101079644290-q2rssodlfmdvpv03vbp4u2ltjla031di.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.aura.hala",
             "certificate_hash": "a1b5ba157786ef05031e9b214a1a91023c42fec4"
+          }
+        },
+        {
+          "client_id": "101079644290-sism1mjlqokrdivp84k12d782dv5tfu5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.aura.hala",
+            "certificate_hash": "7660f1c52dac88e2c5319563f51629c460d1808d"
           }
         },
         {

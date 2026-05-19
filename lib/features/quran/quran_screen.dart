@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:aura_app/core/constants/app_constants.dart';
+import 'package:aura_app/core/theme/app_typography.dart';
+import 'package:aura_app/core/theme/app_spacing.dart';
 import 'package:aura_app/core/models/quran_models.dart';
 import 'package:aura_app/core/services/quran_service.dart';
 import 'package:aura_app/core/providers/quran_provider.dart';
@@ -216,12 +218,12 @@ class _LastReadCard extends ConsumerWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: ListTile(
           leading: Icon(Icons.auto_stories, color: primary),
-          title: Text('last_read'.tr(), style: const TextStyle(fontSize: 12)),
+          title: Text('last_read'.tr(), style: AppTypography.caption),
           subtitle: Text(
             lang == 'ar'
                 ? '${meta.nameAr} - ${NumberFormatter.withArabicNumeralsByLanguage(progress.ayaNo.toString(), lang)}'
                 : '${meta.nameEn} - ${progress.ayaNo}',
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: AppTypography.label.copyWith(fontWeight: FontWeight.bold),
           ),
           trailing: const Icon(Icons.arrow_forward, size: 18),
           onTap: () {
@@ -260,19 +262,18 @@ class _SurahTile extends StatelessWidget {
         backgroundColor: primary.withValues(alpha: 0.15),
         child: Text(
           NumberFormatter.withArabicNumeralsByLanguage(meta.suraNo.toString(), lang),
-          style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: primary),
+          style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.bold, color: primary),
         ),
       ),
       title: Text(
         lang == 'ar' ? meta.nameAr : meta.nameEn,
         overflow: TextOverflow.ellipsis,
-        style: const TextStyle(fontWeight: FontWeight.w600),
+        style: AppTypography.label,
       ),
       subtitle: Text(
         '${meta.revelationType == RevelationType.makki ? 'makki'.tr() : 'madani'.tr()} • ${NumberFormatter.withArabicNumeralsByLanguage(meta.ayahCount.toString(), lang)} ${'ayah_count'.tr()}',
         overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize: 12,
+        style: AppTypography.caption.copyWith(
           color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
         ),
       ),
@@ -331,14 +332,13 @@ class _JuzTab extends ConsumerWidget {
               backgroundColor: primary.withValues(alpha: 0.15),
               child: Text(
                 NumberFormatter.withArabicNumeralsByLanguage(juz.juzNo.toString(), lang),
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: primary),
+                style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.bold, color: primary),
               ),
             ),
             title: Text(lang == 'ar' ? juz.firstSurahNameAr : juz.firstSurahNameEn),
             subtitle: Text(
               '${'page'.tr()} ${NumberFormatter.withArabicNumeralsByLanguage(juz.startPage.toString(), lang)} - ${NumberFormatter.withArabicNumeralsByLanguage(juz.endPage.toString(), lang)}',
-              style: TextStyle(
-                fontSize: 12,
+              style: AppTypography.caption.copyWith(
                 color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
               ),
             ),
@@ -390,7 +390,7 @@ class _BookmarksTab extends ConsumerWidget {
               children: [
                 Icon(Icons.bookmark_outline, size: 64, color: Colors.grey[400]),
                 const SizedBox(height: 16),
-                Text('no_bookmarks'.tr(), style: TextStyle(fontSize: 16, color: Colors.grey[500])),
+                Text('no_bookmarks'.tr(), style: AppTypography.bodyL.copyWith(color: Colors.grey[500])),
               ],
             ),
           );
@@ -412,7 +412,7 @@ class _BookmarksTab extends ConsumerWidget {
               ),
               title: Text(
                 lang == 'ar' ? bm.suraNameAr : bm.suraNameEn,
-                style: const TextStyle(fontWeight: FontWeight.w600),
+                style: AppTypography.label,
               ),
               subtitle: Text(
                 bm.ayaText,
@@ -429,8 +429,7 @@ class _BookmarksTab extends ConsumerWidget {
                 children: [
                   Text(
                     '${NumberFormatter.withArabicNumeralsByLanguage(bm.suraNo.toString(), lang)}:${NumberFormatter.withArabicNumeralsByLanguage(bm.ayaNo.toString(), lang)}',
-                    style: TextStyle(
-                      fontSize: 13,
+                    style: AppTypography.bodyS.copyWith(
                       color: isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary,
                     ),
                   ),

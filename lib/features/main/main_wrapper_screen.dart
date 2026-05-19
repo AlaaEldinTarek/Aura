@@ -48,6 +48,7 @@ import '../quran/quran_screen.dart';
 import '../quran/quran_stats_screen.dart';
 import '../islamic_events/islamic_events_screen.dart';
 import '../../core/models/task.dart';
+import '../../core/theme/app_typography.dart';
 
 /// Desktop-only: controls sidebar visibility (false = hidden, e.g. during Quran reading)
 final desktopSidebarVisibleProvider = StateProvider<bool>((ref) => true);
@@ -409,7 +410,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
                                 minimumSize: Size.zero,
                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               ),
-                              child: Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                              child: Text(label, style: AppTypography.caption.copyWith(fontWeight: FontWeight.w600)),
                             ),
                           );
                         }),
@@ -424,7 +425,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
                     onPressed: () => Navigator.of(ctx).pop(),
                     child: Text(
                       isArabic ? 'لاحقاً' : 'Later',
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: AppTypography.bodyM.copyWith(color: Colors.grey[600]),
                     ),
                   ),
                 ),
@@ -492,7 +493,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
               },
               backgroundColor: isDark ? const Color(0xFF2A2B2E) : const Color(0xFFFFEACC),
               selectedColor: AppConstants.primaryColor,
-              labelStyle: TextStyle(
+              labelStyle: AppTypography.bodyM.copyWith(
                 color: isDark ? Colors.white : const Color(0xFF2A2418),
                 fontWeight: FontWeight.w600,
               ),
@@ -504,7 +505,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text(
               isArabic ? 'إلغاء' : 'Cancel',
-              style: const TextStyle(color: AppConstants.primaryColor),
+              style: AppTypography.label.copyWith(color: AppConstants.primaryColor),
             ),
           ),
         ],
@@ -650,7 +651,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
                   },
                   backgroundColor: isDark ? const Color(0xFF2A2B2E) : const Color(0xFFFFEACC),
                   selectedColor: AppConstants.primaryColor,
-                  labelStyle: TextStyle(
+                  labelStyle: AppTypography.bodyM.copyWith(
                     color: isDark ? Colors.white : const Color(0xFF2A2418),
                     fontWeight: FontWeight.w600,
                   ),
@@ -674,7 +675,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text(
               isArabic ? 'إلغاء' : 'Cancel',
-              style: const TextStyle(color: AppConstants.primaryColor),
+              style: AppTypography.label.copyWith(color: AppConstants.primaryColor),
             ),
           ),
         ],
@@ -1117,7 +1118,7 @@ class _DesktopSidebar extends ConsumerWidget {
                         Expanded(
                           child: Text(
                             'Aura | هالة',
-                            style: TextStyle(
+                            style: AppTypography.headingS.copyWith(
                               fontSize: 17,
                               fontWeight: FontWeight.bold,
                               color: primary,
@@ -1206,7 +1207,7 @@ class _DesktopSidebar extends ConsumerWidget {
                             padding: const EdgeInsets.symmetric(horizontal: 4),
                             constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                             decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(8)),
-                            child: Text('$badge', style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+                            child: Text('$badge', style: AppTypography.caption.copyWith(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
                           ),
                         ),
                     ],
@@ -1244,7 +1245,7 @@ class _DesktopSidebar extends ConsumerWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 4),
                           constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                           decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(8)),
-                          child: Text('$badge', style: const TextStyle(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+                          child: Text('$badge', style: AppTypography.caption.copyWith(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
                         ),
                       ),
                   ],
@@ -1253,7 +1254,7 @@ class _DesktopSidebar extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     label,
-                    style: TextStyle(
+                    style: AppTypography.headingS.copyWith(
                       fontSize: 15,
                       fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                       color: textColor,
@@ -1363,9 +1364,8 @@ class _DesktopPrayerToastState extends State<_DesktopPrayerToast>
                           widget.isArabic
                               ? 'حان وقت الصلاة'
                               : 'Prayer Time',
-                          style: TextStyle(
+                          style: AppTypography.headingS.copyWith(
                             fontWeight: FontWeight.bold,
-                            fontSize: 15,
                             color: primary,
                           ),
                         ),
@@ -1383,8 +1383,7 @@ class _DesktopPrayerToastState extends State<_DesktopPrayerToast>
                     widget.isArabic
                         ? 'حان موعد صلاة ${widget.prayerName}'
                         : "It's time for ${widget.prayerName} prayer",
-                    style: TextStyle(
-                      fontSize: 13,
+                    style: AppTypography.bodyS.copyWith(
                       color: isDark ? Colors.white70 : Colors.black87,
                     ),
                   ),
@@ -1413,7 +1412,7 @@ class _DesktopPrayerToastState extends State<_DesktopPrayerToast>
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),
-                          textStyle: const TextStyle(fontSize: 12),
+                          textStyle: AppTypography.caption,
                         ),
                       ),
                     ],
@@ -1536,9 +1535,8 @@ class _AchievementToastState extends State<_AchievementToast>
                           children: [
                             Text(
                               widget.isArabic ? '🏆 إنجاز جديد!' : '🏆 Achievement Unlocked!',
-                              style: const TextStyle(
+                              style: AppTypography.labelS.copyWith(
                                 color: Colors.white,
-                                fontSize: 11,
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 0.3,
                               ),
@@ -1546,9 +1544,8 @@ class _AchievementToastState extends State<_AchievementToast>
                             const SizedBox(height: 2),
                             Text(
                               widget.achievement.name(widget.isArabic),
-                              style: const TextStyle(
+                              style: AppTypography.headingS.copyWith(
                                 color: Colors.white,
-                                fontSize: 15,
                                 fontWeight: FontWeight.bold,
                               ),
                               maxLines: 1,
@@ -1556,9 +1553,8 @@ class _AchievementToastState extends State<_AchievementToast>
                             ),
                             Text(
                               widget.achievement.description(widget.isArabic),
-                              style: TextStyle(
+                              style: AppTypography.caption.copyWith(
                                 color: Colors.white.withValues(alpha: 0.85),
-                                fontSize: 12,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,

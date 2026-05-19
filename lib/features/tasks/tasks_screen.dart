@@ -217,19 +217,18 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                 decoration: InputDecoration(
                   hintText: isArabic ? 'بحث عن مهمة...' : 'Search tasks...',
                   border: InputBorder.none,
-                  hintStyle: TextStyle(
+                  hintStyle: AppTypography.bodyM.copyWith(
                     color: isDark ? Colors.grey.shade400 : Colors.grey.shade500,
                   ),
                 ),
-                style: TextStyle(
+                style: AppTypography.bodyL.copyWith(
                   color: isDark ? Colors.white : Colors.black87,
-                  fontSize: 16,
                 ),
                 onChanged: (value) => setState(() => _searchQuery = value),
               )
             : Text(
                 'task_management'.tr(),
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                style: AppTypography.label.copyWith(fontWeight: FontWeight.bold),
                 overflow: TextOverflow.ellipsis,
               ),
         centerTitle: false,
@@ -412,8 +411,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                         const SizedBox(width: 4),
                         Text(
                           label,
-                          style: TextStyle(
-                            fontSize: 12,
+                          style: AppTypography.caption.copyWith(
                             color: AppConstants.getPrimary(isDark),
                             fontWeight: FontWeight.w500,
                           ),
@@ -542,8 +540,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                 headerStyle: HeaderStyle(
                   titleCentered: true,
                   formatButtonVisible: false,
-                  titleTextStyle: TextStyle(
-                    fontSize: 16,
+                  titleTextStyle: AppTypography.bodyL.copyWith(
                     fontWeight: FontWeight.bold,
                     color: isDark ? Colors.white : Colors.black87,
                   ),
@@ -553,13 +550,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                       color: isDark ? Colors.white70 : Colors.black54),
                 ),
                 daysOfWeekStyle: DaysOfWeekStyle(
-                  weekdayStyle: TextStyle(
-                    fontSize: 12,
+                  weekdayStyle: AppTypography.caption.copyWith(
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                   ),
-                  weekendStyle: TextStyle(
-                    fontSize: 12,
+                  weekendStyle: AppTypography.caption.copyWith(
                     fontWeight: FontWeight.w600,
                     color: Colors.red.shade400,
                   ),
@@ -569,7 +564,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                     color: AppConstants.getPrimary(isDark).withOpacity(0.2),
                     shape: BoxShape.circle,
                   ),
-                  todayTextStyle: TextStyle(
+                  todayTextStyle: AppTypography.bodyM.copyWith(
                     color: AppConstants.getPrimary(isDark),
                     fontWeight: FontWeight.bold,
                   ),
@@ -577,17 +572,17 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                     color: AppConstants.getPrimary(isDark),
                     shape: BoxShape.circle,
                   ),
-                  selectedTextStyle: const TextStyle(
+                  selectedTextStyle: AppTypography.bodyM.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
                   ),
-                  defaultTextStyle: TextStyle(
+                  defaultTextStyle: AppTypography.bodyM.copyWith(
                     color: isDark ? Colors.white : Colors.black87,
                   ),
-                  weekendTextStyle: TextStyle(
+                  weekendTextStyle: AppTypography.bodyM.copyWith(
                     color: isDark ? Colors.red.shade300 : Colors.red.shade400,
                   ),
-                  outsideTextStyle: TextStyle(
+                  outsideTextStyle: AppTypography.bodyM.copyWith(
                     color: isDark ? Colors.grey.shade600 : Colors.grey.shade400,
                   ),
                   cellMargin: const EdgeInsets.all(4),
@@ -626,8 +621,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                 children: [
                   Text(
                     _formatDate(_calendarSelectedDay, isArabic),
-                    style: TextStyle(
-                      fontSize: 16,
+                    style: AppTypography.bodyL.copyWith(
                       fontWeight: FontWeight.bold,
                       color: isDark ? Colors.white : Colors.black87,
                     ),
@@ -641,8 +635,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                     ),
                     child: Text(
                       '${dayTasks.length}',
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: AppTypography.caption.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppConstants.getPrimary(isDark),
                       ),
@@ -666,8 +659,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                           const SizedBox(height: 12),
                           Text(
                             isArabic ? 'لا مهام في هذا اليوم' : 'No tasks on this day',
-                            style: TextStyle(
-                              fontSize: 15,
+                            style: AppTypography.bodyL.copyWith(
                               color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                             ),
                           ),
@@ -774,15 +766,14 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
             const SizedBox(height: 3),
             Text(
               value,
-              style: TextStyle(
-                fontSize: 16,
+              style: AppTypography.bodyL.copyWith(
                 fontWeight: FontWeight.bold,
                 color: isDark ? Colors.white : Colors.black87,
               ),
             ),
             Text(
               label,
-              style: TextStyle(
+              style: AppTypography.caption.copyWith(
                 fontSize: 10,
                 color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
               ),
@@ -880,7 +871,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                   SizedBox(width: isDesktop ? 6 : 4),
                   Text(
                     label,
-                    style: TextStyle(
+                    style: AppTypography.bodyM.copyWith(
                       fontSize: fontSize,
                       color: isSelected
                           ? AppConstants.getPrimary(isDark)
@@ -949,8 +940,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                   ),
                   child: Text(
                     '#$tag',
-                    style: TextStyle(
-                      fontSize: 11,
+                    style: AppTypography.labelS.copyWith(
                       fontWeight:
                           isSelected ? FontWeight.bold : FontWeight.normal,
                       color: isSelected
@@ -1380,8 +1370,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
         const SizedBox(width: 8),
         Text(
           title,
-          style: TextStyle(
-            fontSize: 16,
+          style: AppTypography.bodyL.copyWith(
             fontWeight: FontWeight.bold,
             color: isDark ? Colors.white : Colors.black87,
           ),
@@ -1395,8 +1384,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
           ),
           child: Text(
             '$count',
-            style: TextStyle(
-              fontSize: 12,
+            style: AppTypography.caption.copyWith(
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -1448,8 +1436,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                       const SizedBox(width: 3),
                       Text(
                         isArabic ? 'تركيز' : 'Focus',
-                        style: const TextStyle(
-                          fontSize: 11,
+                        style: AppTypography.labelS.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
@@ -1583,8 +1570,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                       const SizedBox(width: 3),
                       Text(
                         isArabic ? 'تركيز' : 'Focus',
-                        style: const TextStyle(
-                          fontSize: 11,
+                        style: AppTypography.labelS.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                         ),
@@ -1696,7 +1682,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
                 child: Text(
                   task.title,
-                  style: TextStyle(
+                  style: AppTypography.headingS.copyWith(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white : Colors.black87,
@@ -1781,7 +1767,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               ListTile(
                 leading: Icon(Icons.delete_outline, size: 22, color: Colors.red.shade400),
                 title: Text(isArabic ? 'حذف' : 'Delete',
-                    style: TextStyle(color: Colors.red.shade400)),
+                    style: AppTypography.bodyM.copyWith(color: Colors.red.shade400)),
                 onTap: () {
                   Navigator.pop(ctx);
                   _deleteTask(task, isArabic);
@@ -1814,8 +1800,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(labels[priority]!,
-          style: TextStyle(
-              fontSize: 11,
+          style: AppTypography.labelS.copyWith(
               fontWeight: FontWeight.w600,
               color: colors[priority])),
     );
@@ -1874,8 +1859,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
           children: [
             Text(
               isArabic ? '${NumberFormatter.withArabicNumerals('$count')} محدد' : '$count selected',
-              style: TextStyle(
-                fontSize: 14,
+              style: AppTypography.label.copyWith(
                 fontWeight: FontWeight.w600,
                 color: isDark ? Colors.white : Colors.black87,
               ),
@@ -1933,7 +1917,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       final snackCtrl1 = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
           isArabic ? 'تم إتمام ${NumberFormatter.withArabicNumerals('$completed')} مهام' : '$completed tasks completed',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          style: AppTypography.bodyM.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 2),
@@ -1973,7 +1957,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       final snackCtrl2 = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
           isArabic ? 'تم حذف ${NumberFormatter.withArabicNumerals('$deleted')} مهام' : '$deleted tasks deleted',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          style: AppTypography.bodyM.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 2),
@@ -2030,7 +2014,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       final snackCtrl3 = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text(
           isArabic ? 'تم حذف ${NumberFormatter.withArabicNumerals('$deleted')} مهام' : '$deleted tasks cleared',
-          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          style: AppTypography.bodyM.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
         ),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 2),
@@ -2069,8 +2053,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                 padding: const EdgeInsets.all(16),
                 child: Text(
                   isArabic ? 'اختر الأولوية' : 'Select Priority',
-                  style: TextStyle(
-                    fontSize: 16,
+                  style: AppTypography.bodyL.copyWith(
                     fontWeight: FontWeight.bold,
                     color: isDark ? Colors.white : Colors.black87,
                   ),
@@ -2135,7 +2118,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
           Text(
             isArabic ? 'جرب كلمة بحث مختلفة' : 'Try a different search term',
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: AppTypography.bodyM.copyWith(
               color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
             ),
           ),
@@ -2167,7 +2150,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                 ? 'اضغط + لإضافة مهمتك الأولى'
                 : 'Tap + to add your first task',
             textAlign: TextAlign.center,
-            style: TextStyle(
+            style: AppTypography.bodyM.copyWith(
               color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
             ),
           ),
@@ -2284,7 +2267,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
         final controller = messenger.showSnackBar(SnackBar(
           content: Text(
             isArabic ? 'تم حذف المهمة' : 'Task deleted',
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+            style: AppTypography.bodyM.copyWith(color: Colors.white, fontWeight: FontWeight.w600),
           ),
           backgroundColor: Colors.black87,
           duration: const Duration(seconds: 3),
@@ -2519,7 +2502,7 @@ class _CelebrationOverlayState extends State<_CelebrationOverlay>
                             children: [
                               Text(
                                 widget.isArabic ? 'أُنجز الكل! ✨' : 'All Done! ✨',
-                                style: TextStyle(
+                                style: AppTypography.headingL.copyWith(
                                   fontSize: 26,
                                   fontWeight: FontWeight.bold,
                                   color: widget.isDark ? Colors.white : const Color(0xFF1A1A1A),
@@ -2531,8 +2514,7 @@ class _CelebrationOverlayState extends State<_CelebrationOverlay>
                                 widget.isArabic
                                     ? 'أكملت جميع مهام اليوم، استمر!'
                                     : 'You crushed every task today!',
-                                style: TextStyle(
-                                  fontSize: 14,
+                                style: AppTypography.label.copyWith(
                                   height: 1.5,
                                   color: widget.isDark ? Colors.white60 : Colors.black45,
                                 ),
@@ -2551,8 +2533,7 @@ class _CelebrationOverlayState extends State<_CelebrationOverlay>
                                 ),
                                 child: Text(
                                   widget.isArabic ? '🎯  يوم منتج!' : '🎯  Productive day!',
-                                  style: TextStyle(
-                                    fontSize: 13,
+                                  style: AppTypography.bodyS.copyWith(
                                     fontWeight: FontWeight.w600,
                                     color: AppConstants.getPrimary(isDark),
                                   ),
@@ -2612,8 +2593,7 @@ class _TaskSettingsSheet extends ConsumerWidget {
           ),
           Text(
             isArabic ? 'إعدادات المهام' : 'Task Settings',
-            style: TextStyle(
-              fontSize: 16,
+            style: AppTypography.bodyL.copyWith(
               fontWeight: FontWeight.bold,
               color: isDark ? Colors.white : Colors.black87,
             ),
@@ -2625,12 +2605,11 @@ class _TaskSettingsSheet extends ConsumerWidget {
                 color: isEnabled ? AppConstants.getPrimary(isDark) : Colors.grey),
             title: Text(
               isArabic ? 'تذكير المهام' : 'Task Reminders',
-              style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+              style: AppTypography.bodyM.copyWith(color: isDark ? Colors.white : Colors.black87),
             ),
             subtitle: Text(
               isArabic ? 'إشعار قبل موعد المهمة' : 'Notify before task due time',
-              style: TextStyle(
-                fontSize: 12,
+              style: AppTypography.caption.copyWith(
                 color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
               ),
             ),
@@ -2643,8 +2622,7 @@ class _TaskSettingsSheet extends ConsumerWidget {
             const SizedBox(height: 8),
             Text(
               isArabic ? 'ذكرني قبل' : 'Remind me before',
-              style: TextStyle(
-                fontSize: 14,
+              style: AppTypography.label.copyWith(
                 fontWeight: FontWeight.w500,
                 color: isDark ? Colors.white70 : Colors.black87,
               ),
@@ -2675,8 +2653,7 @@ class _TaskSettingsSheet extends ConsumerWidget {
                     ),
                     child: Text(
                       isArabic ? '${NumberFormatter.withArabicNumerals('$mins')} دقيقة' : '$mins min',
-                      style: TextStyle(
-                        fontSize: 13,
+                      style: AppTypography.bodyS.copyWith(
                         fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                         color: selected
                             ? AppConstants.getPrimary(isDark)
@@ -2768,8 +2745,8 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
             ),
             Text(
               isArabic ? 'إضافة مهمة سريعة' : 'Quick Add Task',
-              style: TextStyle(
-                fontSize: 16, fontWeight: FontWeight.bold,
+              style: AppTypography.bodyL.copyWith(
+                fontWeight: FontWeight.bold,
                 color: isDark ? Colors.white : Colors.black87,
               ),
             ),
@@ -2789,7 +2766,7 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
                 ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
-              style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+              style: AppTypography.bodyM.copyWith(color: isDark ? Colors.white : Colors.black87),
             ),
             const SizedBox(height: 12),
             Row(
@@ -2815,8 +2792,7 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
                           ),
                         ),
                         child: Text(label,
-                          style: TextStyle(
-                            fontSize: 11,
+                          style: AppTypography.labelS.copyWith(
                             fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                             color: selected ? color : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
                           )),
@@ -2922,7 +2898,7 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
                           Icon(icon, size: 12,
                               color: selected ? AppConstants.getPrimary(isDark) : (isDark ? Colors.grey.shade500 : Colors.grey.shade600)),
                           const SizedBox(width: 3),
-                          Text(label, style: TextStyle(
+                          Text(label, style: AppTypography.caption.copyWith(
                             fontSize: 10,
                             fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                             color: selected ? AppConstants.getPrimary(isDark) : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
@@ -2947,7 +2923,7 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
                 ),
                 child: Text(
                   isArabic ? 'إضافة' : 'Add Task',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  style: AppTypography.headingS.copyWith(fontWeight: FontWeight.bold),
                 ),
               ),
             ),
@@ -3107,8 +3083,7 @@ class _InlineSubtaskCardState extends State<_InlineSubtaskCard> {
                               Expanded(
                                 child: Text(
                                   sub.title,
-                                  style: TextStyle(
-                                    fontSize: 14,
+                                  style: AppTypography.label.copyWith(
                                     decoration: sub.isCompleted
                                         ? TextDecoration.lineThrough
                                         : null,

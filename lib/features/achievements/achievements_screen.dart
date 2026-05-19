@@ -6,6 +6,7 @@ import '../../core/models/prayer_record.dart';
 import '../../core/services/achievement_service.dart';
 import '../../core/utils/number_formatter.dart';
 import '../../core/providers/preferences_provider.dart';
+import '../../core/theme/app_typography.dart';
 
 /// Achievements Screen - Grid of badges (earned and locked)
 class AchievementsScreen extends ConsumerStatefulWidget {
@@ -101,8 +102,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                               children: [
                                 Text(
                                   isArabic ? 'إنجازاتك' : 'Your Achievements',
-                                  style: const TextStyle(
-                                    fontSize: 20,
+                                  style: AppTypography.headingM.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
                                   ),
@@ -112,8 +112,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                                   isArabic
                                       ? '${NumberFormatter.withArabicNumerals('$earnedCount')} من ${NumberFormatter.withArabicNumerals('$visibleTotal')} مكتمل'
                                       : '$earnedCount of $visibleTotal unlocked',
-                                  style: TextStyle(
-                                    fontSize: 14,
+                                  style: AppTypography.label.copyWith(
                                     color: Colors.white.withOpacity(0.8),
                                   ),
                                 ),
@@ -122,8 +121,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                           ),
                           Text(
                             '${NumberFormatter.withArabicNumeralsByLanguage('$earnedCount', isArabic ? 'ar' : 'en')}/${NumberFormatter.withArabicNumeralsByLanguage('$visibleTotal', isArabic ? 'ar' : 'en')}',
-                            style: const TextStyle(
-                              fontSize: 32,
+                            style: AppTypography.displayM.copyWith(
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
@@ -283,8 +281,7 @@ class _AchievementBadge extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             achievement.name(isArabic),
-            style: TextStyle(
-              fontSize: 11,
+            style: AppTypography.labelS.copyWith(
               fontWeight: FontWeight.bold,
               color: isEarned
                   ? (isDark ? Colors.white : Colors.black87)
@@ -297,7 +294,7 @@ class _AchievementBadge extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             achievement.description(isArabic),
-            style: TextStyle(
+            style: AppTypography.caption.copyWith(
               fontSize: 9,
               color: isEarned
                   ? (isDark ? Colors.white60 : Colors.black54)
