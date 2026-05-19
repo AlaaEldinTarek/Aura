@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../constants/app_constants.dart';
+import 'aura_button.dart';
 
 /// A beautiful empty state widget for when there's no data
 class EmptyState extends StatelessWidget {
@@ -76,18 +77,10 @@ class EmptyState extends StatelessWidget {
             // Action Button
             if (actionLabel != null && onAction != null) ...[
               const SizedBox(height: AppConstants.paddingLarge),
-              ElevatedButton.icon(
+              AuraButton(
+                label: actionLabel!,
                 onPressed: onAction,
                 icon: const Icon(Icons.refresh),
-                label: Text(actionLabel!),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppConstants.getPrimary(isDark),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppConstants.paddingLarge,
-                    vertical: AppConstants.paddingMedium,
-                  ),
-                ),
               ),
             ],
           ],

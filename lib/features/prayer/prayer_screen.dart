@@ -8,6 +8,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/widgets/aura_button.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/providers/prayer_times_provider.dart';
 import '../../core/providers/connectivity_provider.dart';
@@ -819,10 +820,10 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     return Container(
       padding: const EdgeInsets.all(AppSpacing.base),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(
-          color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+          color: AppConstants.border(isDark),
         ),
       ),
       child: Column(
@@ -973,14 +974,10 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.xl),
-          ElevatedButton.icon(
-            onPressed: () => _loadPrayerTimes(),
+          AuraButton(
+            label: isArabic ? 'إعادة المحاولة' : 'Retry',
+            onPressed: _loadPrayerTimes,
             icon: const Icon(Icons.refresh),
-            label: Text(isArabic ? 'إعادة المحاولة' : 'Retry'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppConstants.getPrimary(isDark),
-              foregroundColor: Colors.white,
-            ),
           ),
         ],
       ),
@@ -1178,7 +1175,7 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     return Scaffold(
-      backgroundColor: isDark ? AppConstants.darkBackground : AppConstants.lightBackground,
+      backgroundColor: AppConstants.background(isDark),
       appBar: AppBar(
         title: Text(isArabic ? 'إعدادات الصلاة' : 'Prayer Settings'),
         backgroundColor: Colors.transparent,

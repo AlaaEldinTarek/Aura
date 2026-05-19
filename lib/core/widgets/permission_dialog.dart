@@ -8,6 +8,7 @@ import '../constants/app_constants.dart';
 import '../services/platform_channel_service.dart';
 import '../services/notification_service.dart';
 import '../theme/app_typography.dart';
+import 'aura_button.dart';
 
 /// Checks all required permissions and shows a dialog for missing ones.
 class PermissionDialogHandler extends StatefulWidget {
@@ -360,12 +361,11 @@ class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingO
             child: Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
+                  child: AuraButton.secondary(
+                    label: isArabic ? 'لاحقاً' : 'Later',
                     onPressed: () => Navigator.pop(context),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    child: Text(isArabic ? 'لاحقاً' : 'Later'),
+                    expanded: true,
+                    verticalPadding: 14,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -503,12 +503,12 @@ class _PermTile extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: isGranted
               ? Colors.green.withValues(alpha: 0.4)
-              : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+              : (AppConstants.border(isDark)),
         ),
       ),
       child: ListTile(
@@ -534,7 +534,7 @@ class _PermTile extends StatelessWidget {
           _desc(),
           style: AppTypography.caption.copyWith(
             height: 1.4,
-            color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+            color: AppConstants.textMuted(isDark),
           ),
         ),
         trailing: isGranted

@@ -6,6 +6,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/utils/haptic_feedback.dart';
 import '../../core/utils/number_formatter.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/widgets/aura_button.dart';
 
 class IqamaSettingsScreen extends ConsumerStatefulWidget {
   const IqamaSettingsScreen({super.key});
@@ -134,17 +135,11 @@ class _IqamaSettingsScreenState extends ConsumerState<IqamaSettingsScreen> {
           // Reset Button
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
-            child: OutlinedButton.icon(
-              onPressed: () {
-                _showResetDialog(context, isArabic);
-              },
+            child: AuraButton.secondary(
+              label: isArabic ? 'إعادة تعيين' : 'Reset to Defaults',
+              onPressed: () => _showResetDialog(context, isArabic),
               icon: const Icon(Icons.restore),
-              label: Text(isArabic ? 'إعادة تعيين' : 'Reset to Defaults'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppConstants.getPrimary(isDark),
-                side: BorderSide(color: AppConstants.getPrimary(isDark).withOpacity(0.5)),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
+              expanded: true,
             ),
           ),
 
@@ -168,10 +163,10 @@ class _IqamaSettingsScreenState extends ConsumerState<IqamaSettingsScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: AppConstants.paddingSmall),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(
-          color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+          color: AppConstants.border(isDark),
         ),
       ),
       child: ListTile(

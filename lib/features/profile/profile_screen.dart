@@ -9,6 +9,7 @@ import '../../core/providers/preferences_provider.dart';
 import '../../core/utils/haptic_feedback.dart';
 import '../../core/utils/number_formatter.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/widgets/aura_button.dart';
 import '../../core/services/prayer_tracking_service.dart';
 import '../../core/services/achievement_service.dart';
 import '../../core/models/achievement.dart';
@@ -128,23 +129,10 @@ class ProfileScreen extends ConsumerWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppConstants.paddingXLarge),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.of(context).pushReplacementNamed('/login');
-              },
+            AuraButton(
+              label: 'login'.tr(),
+              onPressed: () => Navigator.of(context).pushReplacementNamed('/login'),
               icon: const Icon(Icons.login),
-              label: Text('login'.tr()),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppConstants.getPrimary(isDark),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppConstants.paddingXLarge,
-                  vertical: AppConstants.paddingMedium,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
-                ),
-              ),
             ),
           ],
         ),
@@ -653,7 +641,7 @@ class ProfileScreen extends ConsumerWidget {
                 isArabic ? 'المهام' : 'Tasks',
                 style: AppTypography.bodyS.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                  color: AppConstants.textMuted(isDark),
                 ),
               ),
             ),
@@ -925,16 +913,16 @@ class _ProfileStatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-        border: Border.all(color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+        border: Border.all(color: AppConstants.border(isDark)),
       ),
       child: Column(
         children: [
           Icon(icon, color: color, size: 22),
           const SizedBox(height: 4),
-          Text(value, style: AppTypography.headingS.copyWith(fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87)),
-          Text(label, style: AppTypography.caption.copyWith(fontSize: 10, color: isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+          Text(value, style: AppTypography.headingS.copyWith(fontWeight: FontWeight.bold, color: AppConstants.textPrimary(isDark))),
+          Text(label, style: AppTypography.caption.copyWith(fontSize: 10, color: AppConstants.textMuted(isDark))),
         ],
       ),
     );
@@ -1046,7 +1034,7 @@ class _AchievementsBadgeGridState extends State<_AchievementsBadgeGrid> {
           border: Border.all(
             color: isEarned
                 ? primary.withOpacity(isTask ? 0.6 : 0.35)
-                : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+                : (AppConstants.border(isDark)),
             width: isEarned && isTask ? 2 : 1,
           ),
         ),
@@ -1080,9 +1068,9 @@ class _AchievementsBadgeGridState extends State<_AchievementsBadgeGrid> {
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
           decoration: BoxDecoration(
-            color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+            color: AppConstants.card(isDark),
             borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
-            border: Border.all(color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+            border: Border.all(color: AppConstants.border(isDark)),
           ),
           child: Column(
             children: [
@@ -1150,7 +1138,7 @@ class _AchievementsBadgeGridState extends State<_AchievementsBadgeGrid> {
                   decoration: BoxDecoration(
                     color: primary.withOpacity(0.06),
                     borderRadius: const BorderRadius.vertical(bottom: Radius.circular(AppConstants.radiusLarge)),
-                    border: Border(top: BorderSide(color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder)),
+                    border: Border(top: BorderSide(color: AppConstants.border(isDark))),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,

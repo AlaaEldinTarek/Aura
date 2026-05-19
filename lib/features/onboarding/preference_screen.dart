@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/widgets/aura_button.dart';
 
 class PreferenceScreen extends ConsumerStatefulWidget {
   const PreferenceScreen({super.key});
@@ -240,7 +241,7 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark ? AppConstants.darkBackground : AppConstants.lightBackground,
+      backgroundColor: AppConstants.background(isDark),
       body: SafeArea(
         child: Column(
           children: [
@@ -258,7 +259,7 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
                       decoration: BoxDecoration(
                         color: active
                             ? AppConstants.getPrimary(isDark)
-                            : (isDark ? Colors.white12 : Colors.black12),
+                            : (AppConstants.divider(isDark)),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
@@ -313,46 +314,17 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  SizedBox(
-                    width: double.infinity,
-                    height: 54,
-                    child: ElevatedButton(
-                      onPressed: _saving ? null : _next,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppConstants.getPrimary(isDark),
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                      ),
-                      child: _saving
-                          ? const SizedBox(
-                              width: 22,
-                              height: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.white,
-                              ),
-                            )
-                          : Text(
-                              _btnLabel,
-                              style: AppTypography.bodyL.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                    ),
+                  AuraButton(
+                    label: _btnLabel,
+                    onPressed: _next,
+                    loading: _saving,
+                    expanded: true,
                   ),
                   if (_step > 0) ...[
                     const SizedBox(height: 4),
-                    TextButton(
+                    AuraButton.ghost(
+                      label: _isAr ? 'رجوع' : 'Back',
                       onPressed: _back,
-                      child: Text(
-                        _isAr ? 'رجوع' : 'Back',
-                        style: AppTypography.label.copyWith(
-                          color: isDark ? Colors.white38 : Colors.black38,
-                        ),
-                      ),
                     ),
                   ] else
                     const SizedBox(height: 36),
@@ -464,12 +436,12 @@ class _LangCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? AppConstants.getPrimary(isDark).withValues(alpha: 0.1)
-              : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
+              : (AppConstants.card(isDark)),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: isSelected
                 ? AppConstants.getPrimary(isDark)
-                : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+                : (AppConstants.border(isDark)),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
@@ -604,12 +576,12 @@ class _ThemeStep extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? opt.color.withValues(alpha: 0.1)
-                        : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
+                        : (AppConstants.card(isDark)),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
                       color: isSelected
                           ? opt.color
-                          : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+                          : (AppConstants.border(isDark)),
                       width: isSelected ? 2 : 1,
                     ),
                     boxShadow: isSelected
@@ -792,12 +764,12 @@ class _ModeStep extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: isSelected
                         ? opt.color.withValues(alpha: 0.1)
-                        : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
+                        : (AppConstants.card(isDark)),
                     borderRadius: BorderRadius.circular(18),
                     border: Border.all(
                       color: isSelected
                           ? opt.color
-                          : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+                          : (AppConstants.border(isDark)),
                       width: isSelected ? 2 : 1,
                     ),
                     boxShadow: isSelected
@@ -1052,7 +1024,7 @@ class _SlideView extends StatelessWidget {
                         isAr ? f.textAr : f.textEn,
                         style: AppTypography.label.copyWith(
                           fontWeight: FontWeight.w600,
-                          color: isDark ? Colors.white : Colors.black87,
+                          color: AppConstants.textPrimary(isDark),
                         ),
                       ),
                     ),
@@ -1197,10 +1169,10 @@ class _AllSetStep extends StatelessWidget {
           // Summary cards
           Container(
             decoration: BoxDecoration(
-              color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+              color: AppConstants.card(isDark),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+                color: AppConstants.border(isDark),
               ),
             ),
             child: Column(
@@ -1232,7 +1204,7 @@ class _AllSetStep extends StatelessWidget {
                     if (i < summaryItems.length - 1)
                       Divider(
                         height: 1,
-                        color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+                        color: AppConstants.border(isDark),
                       ),
                   ],
                 );
@@ -1247,7 +1219,7 @@ class _AllSetStep extends StatelessWidget {
                 ? 'يمكنك تغيير أي من هذه الإعدادات لاحقاً من الملف الشخصي'
                 : 'You can change any of these settings later from Profile',
             style: AppTypography.caption.copyWith(
-              color: isDark ? Colors.white38 : Colors.black38,
+              color: AppConstants.textDisabled(isDark),
             ),
             textAlign: TextAlign.center,
           ).animate().fadeIn(delay: 350.ms),

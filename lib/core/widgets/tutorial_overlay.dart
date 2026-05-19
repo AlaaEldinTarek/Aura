@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../constants/app_constants.dart';
 import '../theme/app_typography.dart';
+import 'aura_button.dart';
 
 class TutorialStep {
   final GlobalKey targetKey;
@@ -139,7 +140,7 @@ class _TutorialOverlayState extends State<TutorialOverlay>
                   child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
+                color: AppConstants.surface(isDark),
                 borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
                 boxShadow: [
                   BoxShadow(
@@ -165,7 +166,7 @@ class _TutorialOverlayState extends State<TutorialOverlay>
                     step.titleKey.tr(),
                     style: AppTypography.headingS.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black87,
+                      color: AppConstants.textPrimary(isDark),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -180,27 +181,14 @@ class _TutorialOverlayState extends State<TutorialOverlay>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      TextButton(
+                      AuraButton.ghost(
+                        label: 'tutorial_skip'.tr(),
                         onPressed: widget.onSkip,
-                        style: TextButton.styleFrom(
-                          foregroundColor: isDark ? Colors.white38 : Colors.black38,
-                        ),
-                        child: Text('tutorial_skip'.tr()),
                       ),
-                      ElevatedButton(
+                      AuraButton(
+                        label: isLast ? 'tutorial_done'.tr() : 'tutorial_next'.tr(),
                         onPressed: widget.onNext,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primary,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-                          ),
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-                        ),
-                        child: Text(
-                          isLast ? 'tutorial_done'.tr() : 'tutorial_next'.tr(),
-                          style: AppTypography.bodyM.copyWith(fontWeight: FontWeight.bold),
-                        ),
+                        verticalPadding: 10,
                       ),
                     ],
                   ),

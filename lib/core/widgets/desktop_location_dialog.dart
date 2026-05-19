@@ -9,6 +9,7 @@ import '../services/location_service.dart';
 import '../services/geocoding_service.dart';
 import '../providers/prayer_times_provider.dart';
 import '../theme/app_typography.dart';
+import 'aura_button.dart';
 
 /// Shows the desktop location picker dialog.
 /// On save the prayer times provider is refreshed automatically.
@@ -235,26 +236,15 @@ class _DesktopLocationDialogState
               const SizedBox(height: 16),
 
               // Auto-detect button
-              OutlinedButton.icon(
+              AuraButton.secondary(
+                label: _detecting
+                    ? 'location_detecting'.tr()
+                    : 'location_auto_detect'.tr(),
                 onPressed: _detecting ? null : _autoDetect,
-                icon: _detecting
-                    ? SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: primary),
-                      )
-                    : Icon(Icons.my_location, color: primary),
-                label: Text(
-                  _detecting
-                      ? 'location_detecting'.tr()
-                      : 'location_auto_detect'.tr(),
-                ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: primary,
-                  side: BorderSide(color: primary.withValues(alpha: 0.5)),
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
+                icon: Icon(Icons.my_location, color: primary),
+                loading: _detecting,
+                expanded: true,
+                verticalPadding: 12,
               ),
 
               const SizedBox(height: 12),
@@ -463,19 +453,10 @@ class _DesktopLocationDialogState
               const SizedBox(height: 20),
 
               // Save button
-              ElevatedButton(
+              AuraButton(
+                label: 'location_save'.tr(),
                 onPressed: _save,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primary,
-                  foregroundColor: isDark ? Colors.black : Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-                child: Text(
-                  'location_save'.tr(),
-                  style: AppTypography.bodyM.copyWith(fontWeight: FontWeight.bold),
-                ),
+                expanded: true,
               ),
             ],
           ),

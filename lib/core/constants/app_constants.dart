@@ -11,6 +11,17 @@ class AppConstants {
   /// Theme-aware primary: #B5821B for light, #F5B301 for dark (matches native widgets)
   static Color getPrimary(bool isDark) => isDark ? primaryColor : const Color(0xFFB5821B);
 
+  // ── Semantic theme-aware color tokens ────────────────────────────────────
+  static Color card(bool isDark) => isDark ? darkCard : lightCard;
+  static Color surface(bool isDark) => isDark ? darkSurface : lightSurface;
+  static Color background(bool isDark) => isDark ? darkBackground : lightBackground;
+  static Color textPrimary(bool isDark) => isDark ? Colors.white : Colors.black87;
+  static Color textSecondary(bool isDark) => isDark ? darkTextSecondary : lightTextSecondary;
+  static Color textMuted(bool isDark) => isDark ? Colors.grey.shade400 : Colors.grey.shade600;
+  static Color textDisabled(bool isDark) => isDark ? Colors.white38 : Colors.black38;
+  static Color border(bool isDark) => isDark ? darkBorder : lightBorder;
+  static Color divider(bool isDark) => isDark ? Colors.white12 : Colors.black12;
+
   // Accent Colors
   static const Color accentCyan = Color(0xFFE8A849);
   static const Color accentPurple = Color(0xFF9D4EDD);
@@ -68,8 +79,11 @@ class AppConstants {
   static const double radiusXLarge = 24.0;
 
   // Spacing
+  static const double gap4 = 4.0;
   static const double paddingSmall = 8.0;
+  static const double gap12 = 12.0;
   static const double paddingMedium = 16.0;
+  static const double gap20 = 20.0;
   static const double paddingLarge = 24.0;
   static const double paddingXLarge = 32.0;
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/widgets/aura_button.dart';
 
 class ModeSelectionScreen extends ConsumerWidget {
   const ModeSelectionScreen({super.key});
@@ -62,7 +63,7 @@ class ModeSelectionScreen extends ConsumerWidget {
               Text(
                 isArabic ? 'يمكنك تغيير هذا لاحقاً من الملف الشخصي' : 'You can change this later from Profile',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                  color: AppConstants.textMuted(isDark),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -75,22 +76,10 @@ class ModeSelectionScreen extends ConsumerWidget {
                 onTap: () => ref.read(appModeProvider.notifier).setMode(option.mode),
               )),
               const Spacer(),
-              ElevatedButton(
+              AuraButton(
+                label: isArabic ? 'ابدأ' : 'Get Started',
                 onPressed: () => Navigator.pushReplacementNamed(context, '/home'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppConstants.getPrimary(isDark),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
-                  ),
-                ),
-                child: Text(
-                  isArabic ? 'ابدأ' : 'Get Started',
-                  style: AppTypography.bodyL.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
+                expanded: true,
               ),
             ],
           ),
@@ -115,10 +104,10 @@ class ModeSelectionScreen extends ConsumerWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? option.color.withOpacity(0.1)
-              : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
+              : (AppConstants.card(isDark)),
           borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
           border: Border.all(
-            color: isSelected ? option.color : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+            color: isSelected ? option.color : (AppConstants.border(isDark)),
             width: isSelected ? 2 : 1,
           ),
         ),
@@ -141,7 +130,7 @@ class ModeSelectionScreen extends ConsumerWidget {
                   Text(
                     option.subtitle,
                     style: AppTypography.bodyS.copyWith(
-                      color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                      color: AppConstants.textMuted(isDark),
                     ),
                   ),
                 ],

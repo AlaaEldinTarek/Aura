@@ -12,6 +12,7 @@ import '../../core/models/prayer_record.dart';
 import '../../core/services/dhikr_service.dart';
 import 'custom_zikr_form_screen.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/widgets/aura_button.dart';
 
 /// Dhikr Counter (Tasbeeh) Screen
 /// Digital tasbeeh with haptic feedback and progress tracking
@@ -198,25 +199,24 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
+                  child: AuraButton.secondary(
+                    label: isArabic ? 'بدء جديد' : 'Start New',
                     onPressed: () {
                       Navigator.pop(context);
                       _resetCounter();
                     },
-                    child: Text(isArabic ? 'بدء جديد' : 'Start New'),
+                    expanded: true,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: ElevatedButton(
+                  child: AuraButton(
+                    label: isArabic ? 'متابعة' : 'Continue',
                     onPressed: () {
                       Navigator.pop(context);
-                      _incrementCounter(); // Continue counting
+                      _incrementCounter();
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppConstants.getPrimary(isDark),
-                    ),
-                    child: Text(isArabic ? 'متابعة' : 'Continue'),
+                    expanded: true,
                   ),
                 ),
               ],
@@ -539,10 +539,10 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
               child: Container(
                 padding: const EdgeInsets.all(AppConstants.paddingMedium),
                 decoration: BoxDecoration(
-                  color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+                  color: AppConstants.card(isDark),
                   borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
                   border: Border.all(
-                    color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+                    color: AppConstants.border(isDark),
                   ),
                 ),
                 child: Row(
@@ -560,7 +560,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                             _selectedPreset?.displayName ?? 'Custom',
                             style: AppTypography.headingM.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.black87,
+                              color: AppConstants.textPrimary(isDark),
                             ),
                           ),
                           if (_selectedPreset?.translation != null &&
@@ -568,14 +568,14 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                             Text(
                               _selectedPreset!.translation,
                               style: AppTypography.label.copyWith(
-                                color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                                color: AppConstants.textMuted(isDark),
                               ),
                             ),
                         ],
                       ),
                     ),
                     Icon(Icons.chevron_right,
-                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                        color: AppConstants.textMuted(isDark)),
                   ],
                 ),
               ),
@@ -607,7 +607,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                     Text(
                       isArabic ? 'الهدف: ' : 'Target: ',
                       style: AppTypography.bodyM.copyWith(
-                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                        color: AppConstants.textMuted(isDark),
                       ),
                     ),
                     Text(
@@ -629,31 +629,20 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton.icon(
+                  child: AuraButton.secondary(
+                    label: isArabic ? 'إعادة' : 'Reset',
                     onPressed: _resetCounter,
                     icon: const Icon(Icons.refresh),
-                    label: Text(isArabic ? 'إعادة' : 'Reset'),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
+                    expanded: true,
                   ),
                 ),
                 const SizedBox(width: AppConstants.paddingMedium),
                 Expanded(
                   flex: 2,
-                  child: ElevatedButton(
+                  child: AuraButton(
+                    label: isArabic ? 'عدّ' : 'Count',
                     onPressed: _incrementCounter,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppConstants.getPrimary(isDark),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      elevation: 4,
-                    ),
-                    child: Text(
-                      isArabic ? 'عدّ' : 'Count',
-                      style: AppTypography.headingS.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                    expanded: true,
                   ),
                 ),
               ],

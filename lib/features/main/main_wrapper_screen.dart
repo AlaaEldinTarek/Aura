@@ -49,6 +49,7 @@ import '../quran/quran_stats_screen.dart';
 import '../islamic_events/islamic_events_screen.dart';
 import '../../core/models/task.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/widgets/aura_button.dart';
 
 /// Desktop-only: controls sidebar visibility (false = hidden, e.g. during Quran reading)
 final desktopSidebarVisibleProvider = StateProvider<bool>((ref) => true);
@@ -1072,7 +1073,7 @@ class _DesktopSidebar extends ConsumerWidget {
           data: (tasks) => tasks.where((t) => !t.isCompleted && t.isOverdue).length,
         ) ?? 0;
 
-    final bgColor = isDark ? AppConstants.darkSurface : AppConstants.lightSurface;
+    final bgColor = AppConstants.surface(isDark);
 
     return Container(
       width: double.infinity,
@@ -1175,7 +1176,7 @@ class _DesktopSidebar extends ConsumerWidget {
     int badge = 0,
   }) {
     final isSelected = currentIndex == index;
-    final textColor = isSelected ? primary : (isDark ? AppConstants.darkTextSecondary : AppConstants.lightTextSecondary);
+    final textColor = isSelected ? primary : (AppConstants.textSecondary(isDark));
     final itemBg = isSelected ? primary.withOpacity(0.13) : Colors.transparent;
     final icon = isSelected ? iconFilled : iconOutlined;
 
@@ -1402,18 +1403,12 @@ class _DesktopPrayerToastState extends State<_DesktopPrayerToast>
                         child: Text(widget.isArabic ? 'إغلاق' : 'Dismiss'),
                       ),
                       const SizedBox(width: 8),
-                      ElevatedButton.icon(
+                      AuraButton(
+                        label: widget.isArabic ? 'إيقاف الأذان' : 'Stop Adhan',
                         onPressed: widget.onStopAdhan,
                         icon: const Icon(Icons.stop_circle_outlined, size: 16),
-                        label: Text(
-                            widget.isArabic ? 'إيقاف الأذان' : 'Stop Adhan'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: primary,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                          textStyle: AppTypography.caption,
-                        ),
+                        verticalPadding: 6,
+                        fontSize: 12,
                       ),
                     ],
                   ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/widgets/aura_button.dart';
 import '../../core/models/dhikr.dart';
 
 /// Full-screen form for adding or editing a custom Zikr
@@ -175,7 +176,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
                 isArabic ? 'العدد المستهدف' : 'Target Count',
                 style: AppTypography.label.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                  color: AppConstants.textMuted(isDark),
                 ),
               ),
               const SizedBox(height: 8),
@@ -223,21 +224,12 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
               const SizedBox(height: AppConstants.paddingXLarge),
 
               // Save button
-              ElevatedButton(
+              AuraButton(
+                label: _isEditing
+                    ? (isArabic ? 'حفظ التعديلات' : 'Save Changes')
+                    : (isArabic ? 'إضافة الذكر' : 'Add Zikr'),
                 onPressed: _save,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppConstants.getPrimary(isDark),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-                  ),
-                ),
-                child: Text(
-                  _isEditing
-                      ? (isArabic ? 'حفظ التعديلات' : 'Save Changes')
-                      : (isArabic ? 'إضافة الذكر' : 'Add Zikr'),
-                  style: AppTypography.bodyL.copyWith(fontWeight: FontWeight.bold),
-                ),
+                expanded: true,
               ),
 
               const SizedBox(height: 60),
@@ -259,7 +251,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
     return Container(
       padding: const EdgeInsets.all(AppConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(
           color: AppConstants.getPrimary(isDark).withOpacity(0.3),
@@ -301,14 +293,14 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
                       style: AppTypography.headingM.copyWith(
                         fontSize: arabicText.isNotEmpty ? 22 : 16,
                         fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white : Colors.black87,
+                        color: AppConstants.textPrimary(isDark),
                       ),
                     ),
                     if (translation.isNotEmpty)
                       Text(
                         translation,
                         style: AppTypography.caption.copyWith(
-                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          color: AppConstants.textMuted(isDark),
                         ),
                       ),
                   ],

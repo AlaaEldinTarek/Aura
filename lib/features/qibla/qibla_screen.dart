@@ -10,6 +10,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/services/location_service.dart';
 import '../../core/widgets/offline_banner.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/widgets/aura_button.dart';
 
 /// Qibla Compass Screen - Shows direction to Mecca
 class QiblaScreen extends ConsumerStatefulWidget {
@@ -167,7 +168,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
               expandedHeight: 120,
               floating: false,
               pinned: true,
-              backgroundColor: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
+              backgroundColor: AppConstants.surface(isDark),
               flexibleSpace: FlexibleSpaceBar(
                 titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
                 title: Text(
@@ -236,10 +237,10 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
     return Container(
       padding: const EdgeInsets.all(AppConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(
-          color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+          color: AppConstants.border(isDark),
         ),
       ),
       child: Column(
@@ -370,10 +371,10 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
     return Container(
       padding: const EdgeInsets.all(AppConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(
-          color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+          color: AppConstants.border(isDark),
         ),
       ),
       child: Column(
@@ -424,14 +425,10 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppConstants.paddingLarge),
-          ElevatedButton.icon(
+          AuraButton(
+            label: 'retry'.tr(),
             onPressed: _initializeCompass,
             icon: const Icon(Icons.refresh),
-            label: Text('retry'.tr()),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppConstants.getPrimary(isDark),
-              foregroundColor: Colors.white,
-            ),
           ),
         ],
       ),
@@ -457,7 +454,7 @@ class CompassPainter extends CustomPainter {
     final radius = size.width / 2 - 20;
 
     final tickPaint = Paint()
-      ..color = isDark ? Colors.white38 : Colors.black38
+      ..color = AppConstants.textDisabled(isDark)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
 

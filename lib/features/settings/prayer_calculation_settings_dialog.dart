@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/widgets/aura_button.dart';
 import 'adhan_calculation_method.dart';
 import 'asr_madhab_selection.dart';
 
@@ -92,7 +93,7 @@ class PrayerCalculationSettingsDialog extends StatelessWidget {
                     ? Text(
                         method.getLocalizedName(isArabic, showDescription: true),
                         style: AppTypography.caption.copyWith(
-                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          color: AppConstants.textMuted(isDark),
                         ),
                       )
                     : null,
@@ -134,7 +135,7 @@ class PrayerCalculationSettingsDialog extends StatelessWidget {
                     ? Text(
                         madhab.getLocalizedName(isArabic, showDescription: true),
                         style: AppTypography.caption.copyWith(
-                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          color: AppConstants.textMuted(isDark),
                         ),
                       )
                     : null,
@@ -147,20 +148,10 @@ class PrayerCalculationSettingsDialog extends StatelessWidget {
             const SizedBox(height: AppConstants.paddingLarge),
 
             // Apply Button
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppConstants.getPrimary(isDark),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: Text(
-                isArabic ? 'تم' : 'Done',
-                style: AppTypography.bodyL.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+            AuraButton(
+              label: isArabic ? 'تم' : 'Done',
+              onPressed: () => Navigator.pop(context),
+              expanded: true,
             ),
           ],
         ),
@@ -179,7 +170,7 @@ class PrayerCalculationSettingsDialog extends StatelessWidget {
           title,
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black87,
+                color: AppConstants.textPrimary(isDark),
               ),
         ),
       ],

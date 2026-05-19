@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:aura_app/core/constants/app_constants.dart';
 import 'package:aura_app/core/theme/app_typography.dart';
+import 'package:aura_app/core/widgets/aura_button.dart';
 import 'package:aura_app/core/utils/number_formatter.dart';
 import 'khatma_dua_screen.dart';
 
@@ -120,7 +121,7 @@ class KhatmaCelebrationScreen extends StatelessWidget {
                             'khatma_celebration_title'.tr(),
                             style: AppTypography.headingM.copyWith(
                               fontWeight: FontWeight.bold,
-                              color: isDark ? Colors.white : Colors.black87,
+                              color: AppConstants.textPrimary(isDark),
                             ),
                             textAlign: TextAlign.center,
                           )
@@ -208,21 +209,11 @@ class KhatmaCelebrationScreen extends StatelessWidget {
 
                           const SizedBox(height: 12),
 
-                          SizedBox(
-                            width: double.infinity,
-                            child: OutlinedButton(
-                              onPressed: () => Navigator.of(context).pop(),
-                              style: OutlinedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                              ),
-                              child: Text(
-                                'khatma_done_btn'.tr(),
-                                style: AppTypography.bodyL,
-                              ),
-                            ),
+                          AuraButton.secondary(
+                            label: 'khatma_done_btn'.tr(),
+                            onPressed: () => Navigator.of(context).pop(),
+                            expanded: true,
+                            verticalPadding: 14,
                           )
                               .animate()
                               .fadeIn(duration: 500.ms, delay: 950.ms),

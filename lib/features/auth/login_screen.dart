@@ -7,6 +7,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/widgets/aura_button.dart';
 
 bool get _isDesktop =>
     defaultTargetPlatform == TargetPlatform.windows ||
@@ -136,11 +137,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           ],
         ),
         actions: [
-          TextButton(
+          AuraButton.ghost(
+            label: isRTL ? 'إلغاء' : 'Cancel',
             onPressed: () => Navigator.pop(ctx),
-            child: Text(isRTL ? 'إلغاء' : 'Cancel'),
           ),
-          ElevatedButton(
+          AuraButton(
+            label: isRTL ? 'إرسال' : 'Send',
             onPressed: () async {
               final email = resetController.text.trim();
               if (email.isEmpty) return;
@@ -166,8 +168,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 if (mounted) _showErrorSnackBar(e.toString());
               }
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppConstants.getPrimary(Theme.of(context).brightness == Brightness.dark), foregroundColor: Colors.white),
-            child: Text(isRTL ? 'إرسال' : 'Send'),
           ),
         ],
       ),
@@ -318,10 +318,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     return Container(
       padding: const EdgeInsets.all(AppConstants.paddingLarge),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusXLarge),
         border: Border.all(
-          color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+          color: AppConstants.border(isDark),
         ),
         boxShadow: [
           BoxShadow(
@@ -488,37 +488,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           const SizedBox(height: AppConstants.paddingMedium),
 
           // Login Button
-          SizedBox(
-            height: 44,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _signInWithEmail,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppConstants.getPrimary(isDark),
-                foregroundColor: Colors.white,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(AppConstants.radiusMedium),
-                ),
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : Text(
-                      'auth_login_button'.tr(),
-                      style: AppTypography.label.copyWith(
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.3,
-                      ),
-                    ),
-            ),
+          AuraButton(
+            label: 'auth_login_button'.tr(),
+            onPressed: _signInWithEmail,
+            loading: _isLoading,
+            expanded: true,
+            verticalPadding: 10,
           ),
         ],
       ),
@@ -552,23 +527,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         const SizedBox(height: AppConstants.paddingMedium),
 
         // Google Sign-In Button (same as signup page)
-        SizedBox(
-          width: double.infinity,
-          height: 44,
-          child: OutlinedButton.icon(
-            onPressed: _isLoading ? null : _signInWithGoogle,
-            icon: const Icon(Icons.login, size: 18),
-            label: Text('auth_login_with_google'.tr(), style: AppTypography.label),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppConstants.getPrimary(isDark),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              side:
-                  BorderSide(color: AppConstants.getPrimary(isDark).withOpacity(0.5)),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-              ),
-            ),
-          ),
+        AuraButton.secondary(
+          label: 'auth_login_with_google'.tr(),
+          onPressed: _isLoading ? null : _signInWithGoogle,
+          icon: const Icon(Icons.login, size: 18),
+          expanded: true,
+          verticalPadding: 10,
         ),
       ],
     );
@@ -576,21 +540,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Widget _buildGuestModeButton(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return SizedBox(
-      height: 44,
-      child: OutlinedButton.icon(
-        onPressed: _isLoading ? null : _continueAsGuest,
-        icon: const Icon(Icons.person_outline, size: 18),
-        label: Text('guest_mode'.tr(), style: AppTypography.label),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppConstants.getPrimary(isDark),
-          side: BorderSide(color: AppConstants.getPrimary(isDark).withOpacity(0.5)),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-          ),
-        ),
-      ),
+    return AuraButton.secondary(
+      label: 'guest_mode'.tr(),
+      onPressed: _isLoading ? null : _continueAsGuest,
+      icon: const Icon(Icons.person_outline, size: 18),
+      expanded: true,
+      verticalPadding: 10,
     );
   }
 

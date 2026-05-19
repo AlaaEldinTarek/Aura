@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatf
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/widgets/aura_button.dart';
 
 bool get _isDesktopSignup =>
     defaultTargetPlatform == TargetPlatform.windows ||
@@ -449,61 +450,24 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                     const SizedBox(height: AppConstants.paddingXLarge),
 
                     // Sign Up Button
-                    SizedBox(
-                      height: 44,
-                      child: ElevatedButton(
-                        onPressed: _isLoading ? null : _signUp,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppConstants.getPrimary(isDark),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 10),
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(AppConstants.radiusMedium),
-                          ),
-                        ),
-                        child: _isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : Text(
-                                'auth_signup_button'.tr(),
-                                style: AppTypography.label.copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  letterSpacing: 0.3,
-                                ),
-                              ),
-                      ),
+                    AuraButton(
+                      label: 'auth_signup_button'.tr(),
+                      onPressed: _signUp,
+                      loading: _isLoading,
+                      expanded: true,
+                      verticalPadding: 10,
                     ).animate().fadeIn(delay: 600.ms, duration: 400.ms),
 
                     if (!_isDesktopSignup) ...[
                     const SizedBox(height: AppConstants.paddingLarge),
 
                     // Google Sign-In Button (mobile only)
-                    SizedBox(
-                      width: double.infinity,
-                      height: 44,
-                      child: OutlinedButton.icon(
-                        onPressed: _isLoading ? null : _signUpWithGoogle,
-                        icon: const Icon(Icons.login, size: 18),
-                        label: Text('auth_signup_with_google'.tr(), style: AppTypography.label),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppConstants.getPrimary(isDark),
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                          side:
-                              BorderSide(color: AppConstants.getPrimary(isDark).withOpacity(0.5)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-                          ),
-                        ),
-                      ),
+                    AuraButton.secondary(
+                      label: 'auth_signup_with_google'.tr(),
+                      onPressed: _isLoading ? null : _signUpWithGoogle,
+                      icon: const Icon(Icons.login, size: 18),
+                      expanded: true,
+                      verticalPadding: 10,
                     ).animate().fadeIn(delay: 700.ms, duration: 400.ms),
                     ],
 

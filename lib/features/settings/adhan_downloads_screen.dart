@@ -9,6 +9,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/widgets/aura_button.dart';
 import '../../core/services/adhan_player_service.dart';
 import '../../core/services/prayer_alarm_service.dart';
 
@@ -472,14 +473,14 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: AppConstants.paddingMedium),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(
           color: isSelected
               ? AppConstants.getPrimary(isDark)
               : (isDownloaded
                   ? AppConstants.getPrimary(isDark).withOpacity(0.5)
-                  : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder)),
+                  : (AppConstants.border(isDark))),
           width: isSelected ? 2 : 1,
         ),
       ),
@@ -715,14 +716,10 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
       );
     }
 
-    return ElevatedButton.icon(
+    return AuraButton(
+      label: isArabic ? 'تحميل' : 'Download',
       onPressed: () => _downloadAdhan(reciter, isArabic),
       icon: const Icon(Icons.download),
-      label: Text(isArabic ? 'تحميل' : 'Download'),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppConstants.getPrimary(isDark),
-        foregroundColor: Colors.white,
-      ),
     );
   }
 
