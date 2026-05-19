@@ -30,8 +30,21 @@
 -keep class androidx.work.** { *; }
 -dontwarn androidx.work.**
 
-# ── App-specific receivers / services ────────────────────────────────────────
--keep class com.aura.hala.** { *; }
+# ── App components (manifest-registered — names must survive obfuscation) ────
+-keep public class com.aura.hala.MainActivity
+-keep public class com.aura.hala.AdhanFullScreenActivity
+-keep public class com.aura.hala.FocusModeActivity
+-keep public class com.aura.hala.AuraAccessibilityService
+-keep public class com.aura.hala.PrayerForegroundService
+-keep public class com.aura.hala.FocusModeService
+-keep public class com.aura.hala.PrayerAlarmReceiver
+-keep public class com.aura.hala.DailySummaryReceiver
+-keep public class com.aura.hala.JumuahReminderReceiver
+-keep public class com.aura.hala.PrayerBootReceiver
+-keep public class com.aura.hala.FocusModeReceiver
+-keep public class com.aura.hala.StopAdhanReceiver
+-keep public class com.aura.hala.ToggleSilentModeReceiver
+-keep public class com.aura.hala.SilentOffReceiver
 
 # ── Enum values (needed for serialisation) ───────────────────────────────────
 -keepclassmembers enum * {
