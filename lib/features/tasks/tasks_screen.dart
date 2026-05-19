@@ -208,7 +208,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
 
     return Scaffold(
       backgroundColor:
-          isDark ? AppConstants.darkBackground : AppConstants.lightBackground,
+          AppConstants.background(isDark),
       appBar: AppBar(
         title: _showSearch
             ? TextField(
@@ -222,7 +222,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                   ),
                 ),
                 style: AppTypography.bodyL.copyWith(
-                  color: isDark ? Colors.white : Colors.black87,
+                  color: AppConstants.textPrimary(isDark),
                 ),
                 onChanged: (value) => setState(() => _searchQuery = value),
               )
@@ -232,8 +232,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                 overflow: TextOverflow.ellipsis,
               ),
         centerTitle: false,
-        backgroundColor: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
-        foregroundColor: isDark ? Colors.white : Colors.black87,
+        backgroundColor: AppConstants.surface(isDark),
+        foregroundColor: AppConstants.textPrimary(isDark),
         elevation: 0,
         actions: [
           // Select mode toggle (hide in search/calendar mode)
@@ -512,7 +512,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
             Container(
               margin: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+                color: AppConstants.card(isDark),
                 borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
                 boxShadow: [
                   BoxShadow(
@@ -542,7 +542,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                   formatButtonVisible: false,
                   titleTextStyle: AppTypography.bodyL.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black87,
+                    color: AppConstants.textPrimary(isDark),
                   ),
                   leftChevronIcon: Icon(Icons.chevron_left,
                       color: isDark ? Colors.white70 : Colors.black54),
@@ -552,7 +552,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                 daysOfWeekStyle: DaysOfWeekStyle(
                   weekdayStyle: AppTypography.caption.copyWith(
                     fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                    color: AppConstants.textMuted(isDark),
                   ),
                   weekendStyle: AppTypography.caption.copyWith(
                     fontWeight: FontWeight.w600,
@@ -577,7 +577,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                     fontWeight: FontWeight.bold,
                   ),
                   defaultTextStyle: AppTypography.bodyM.copyWith(
-                    color: isDark ? Colors.white : Colors.black87,
+                    color: AppConstants.textPrimary(isDark),
                   ),
                   weekendTextStyle: AppTypography.bodyM.copyWith(
                     color: isDark ? Colors.red.shade300 : Colors.red.shade400,
@@ -623,7 +623,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                     _formatDate(_calendarSelectedDay, isArabic),
                     style: AppTypography.bodyL.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black87,
+                      color: AppConstants.textPrimary(isDark),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -660,7 +660,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                           Text(
                             isArabic ? 'لا مهام في هذا اليوم' : 'No tasks on this day',
                             style: AppTypography.bodyL.copyWith(
-                              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                              color: AppConstants.textMuted(isDark),
                             ),
                           ),
                         ],
@@ -750,7 +750,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         decoration: BoxDecoration(
-          color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+          color: AppConstants.card(isDark),
           borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
           boxShadow: [
             BoxShadow(
@@ -768,14 +768,14 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               value,
               style: AppTypography.bodyL.copyWith(
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black87,
+                color: AppConstants.textPrimary(isDark),
               ),
             ),
             Text(
               label,
               style: AppTypography.caption.copyWith(
                 fontSize: 10,
-                color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                color: AppConstants.textMuted(isDark),
               ),
             ),
           ],
@@ -848,7 +848,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppConstants.getPrimary(isDark).withOpacity(0.12)
-                    : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
+                    : (AppConstants.card(isDark)),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
                   color: isSelected
@@ -928,7 +928,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppConstants.getPrimary(isDark).withOpacity(0.15)
-                        : (isDark ? AppConstants.darkCard : AppConstants.lightCard),
+                        : (AppConstants.card(isDark)),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: isSelected
@@ -1372,7 +1372,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
           title,
           style: AppTypography.bodyL.copyWith(
             fontWeight: FontWeight.bold,
-            color: isDark ? Colors.white : Colors.black87,
+            color: AppConstants.textPrimary(isDark),
           ),
         ),
         const SizedBox(width: 8),
@@ -1659,7 +1659,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         decoration: BoxDecoration(
-          color: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
+          color: AppConstants.surface(isDark),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SafeArea(
@@ -1685,7 +1685,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                   style: AppTypography.headingS.copyWith(
                     fontSize: 15,
                     fontWeight: FontWeight.w600,
-                    color: isDark ? Colors.white : Colors.black87,
+                    color: AppConstants.textPrimary(isDark),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1845,7 +1845,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
+        color: AppConstants.surface(isDark),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),
@@ -1861,7 +1861,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               isArabic ? '${NumberFormatter.withArabicNumerals('$count')} محدد' : '$count selected',
               style: AppTypography.label.copyWith(
                 fontWeight: FontWeight.w600,
-                color: isDark ? Colors.white : Colors.black87,
+                color: AppConstants.textPrimary(isDark),
               ),
             ),
             const Spacer(),
@@ -2032,7 +2032,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
         decoration: BoxDecoration(
-          color: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
+          color: AppConstants.surface(isDark),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: SafeArea(
@@ -2055,7 +2055,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                   isArabic ? 'اختر الأولوية' : 'Select Priority',
                   style: AppTypography.bodyL.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black87,
+                    color: AppConstants.textPrimary(isDark),
                   ),
                 ),
               ),
@@ -2119,7 +2119,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
             isArabic ? 'جرب كلمة بحث مختلفة' : 'Try a different search term',
             textAlign: TextAlign.center,
             style: AppTypography.bodyM.copyWith(
-              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+              color: AppConstants.textMuted(isDark),
             ),
           ),
         ],
@@ -2151,7 +2151,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                 : 'Tap + to add your first task',
             textAlign: TextAlign.center,
             style: AppTypography.bodyM.copyWith(
-              color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+              color: AppConstants.textMuted(isDark),
             ),
           ),
         ],
@@ -2432,7 +2432,7 @@ class _CelebrationOverlayState extends State<_CelebrationOverlay>
                   child: Container(
                     margin: const EdgeInsets.symmetric(horizontal: 36),
                     decoration: BoxDecoration(
-                      color: widget.isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
+                      color: AppConstants.surface(isDark),
                       borderRadius: BorderRadius.circular(28),
                       border: Border.all(
                         color: AppConstants.getPrimary(isDark).withValues(alpha: 0.25),
@@ -2574,7 +2574,7 @@ class _TaskSettingsSheet extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
+        color: AppConstants.surface(isDark),
         borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: Column(
@@ -2595,7 +2595,7 @@ class _TaskSettingsSheet extends ConsumerWidget {
             isArabic ? 'إعدادات المهام' : 'Task Settings',
             style: AppTypography.bodyL.copyWith(
               fontWeight: FontWeight.bold,
-              color: isDark ? Colors.white : Colors.black87,
+              color: AppConstants.textPrimary(isDark),
             ),
           ),
           const SizedBox(height: 16),
@@ -2605,12 +2605,12 @@ class _TaskSettingsSheet extends ConsumerWidget {
                 color: isEnabled ? AppConstants.getPrimary(isDark) : Colors.grey),
             title: Text(
               isArabic ? 'تذكير المهام' : 'Task Reminders',
-              style: AppTypography.bodyM.copyWith(color: isDark ? Colors.white : Colors.black87),
+              style: AppTypography.bodyM.copyWith(color: AppConstants.textPrimary(isDark)),
             ),
             subtitle: Text(
               isArabic ? 'إشعار قبل موعد المهمة' : 'Notify before task due time',
               style: AppTypography.caption.copyWith(
-                color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                color: AppConstants.textMuted(isDark),
               ),
             ),
             value: isEnabled,
@@ -2657,7 +2657,7 @@ class _TaskSettingsSheet extends ConsumerWidget {
                         fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                         color: selected
                             ? AppConstants.getPrimary(isDark)
-                            : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                            : (AppConstants.textMuted(isDark)),
                       ),
                     ),
                   ),
@@ -2726,7 +2726,7 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
       child: Container(
         padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
         decoration: BoxDecoration(
-          color: isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
+          color: AppConstants.surface(isDark),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(
@@ -2747,7 +2747,7 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
               isArabic ? 'إضافة مهمة سريعة' : 'Quick Add Task',
               style: AppTypography.bodyL.copyWith(
                 fontWeight: FontWeight.bold,
-                color: isDark ? Colors.white : Colors.black87,
+                color: AppConstants.textPrimary(isDark),
               ),
             ),
             const SizedBox(height: 12),
@@ -2766,7 +2766,7 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
                 ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               ),
-              style: AppTypography.bodyM.copyWith(color: isDark ? Colors.white : Colors.black87),
+              style: AppTypography.bodyM.copyWith(color: AppConstants.textPrimary(isDark)),
             ),
             const SizedBox(height: 12),
             Row(
@@ -2794,7 +2794,7 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
                         child: Text(label,
                           style: AppTypography.labelS.copyWith(
                             fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                            color: selected ? color : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                            color: selected ? color : (AppConstants.textMuted(isDark)),
                           )),
                       ),
                     ),
@@ -2822,12 +2822,12 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
                     ),
                     child: Row(mainAxisSize: MainAxisSize.min, children: [
                       Icon(Icons.calendar_today, size: 13,
-                          color: _dueDate != null ? AppConstants.getPrimary(isDark) : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+                          color: _dueDate != null ? AppConstants.getPrimary(isDark) : (AppConstants.textMuted(isDark))),
                       const SizedBox(width: 3),
                       Text(
                         _dueDate != null ? '${_dueDate!.day}/${_dueDate!.month}' : (isArabic ? 'التاريخ' : 'Date'),
                         style: AppTypography.labelS.copyWith(
-                          color: _dueDate != null ? AppConstants.getPrimary(isDark) : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+                          color: _dueDate != null ? AppConstants.getPrimary(isDark) : (AppConstants.textMuted(isDark))),
                       ),
                     ]),
                   ),
@@ -2853,12 +2853,12 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
                       ),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
                         Icon(Icons.access_time, size: 13,
-                            color: _dueTime != null ? AppConstants.getPrimary(isDark) : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+                            color: _dueTime != null ? AppConstants.getPrimary(isDark) : (AppConstants.textMuted(isDark))),
                         const SizedBox(width: 3),
                         Text(
                           _dueTime != null ? _dueTime!.format(context) : (isArabic ? 'الوقت' : 'Time'),
                           style: AppTypography.labelS.copyWith(
-                            color: _dueTime != null ? AppConstants.getPrimary(isDark) : (isDark ? Colors.grey.shade400 : Colors.grey.shade600)),
+                            color: _dueTime != null ? AppConstants.getPrimary(isDark) : (AppConstants.textMuted(isDark))),
                         ),
                       ]),
                     ),
@@ -2901,7 +2901,7 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
                           Text(label, style: AppTypography.caption.copyWith(
                             fontSize: 10,
                             fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                            color: selected ? AppConstants.getPrimary(isDark) : (isDark ? Colors.grey.shade400 : Colors.grey.shade600),
+                            color: selected ? AppConstants.getPrimary(isDark) : (AppConstants.textMuted(isDark)),
                           )),
                         ]),
                       ),
@@ -3048,13 +3048,13 @@ class _InlineSubtaskCardState extends State<_InlineSubtaskCard> {
               ? Container(
                   margin: const EdgeInsets.only(top: 2, left: 12, right: 4),
                   decoration: BoxDecoration(
-                    color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+                    color: AppConstants.card(isDark),
                     borderRadius: const BorderRadius.only(
                       bottomLeft: Radius.circular(AppConstants.radiusMedium),
                       bottomRight: Radius.circular(AppConstants.radiusMedium),
                     ),
                     border: Border.all(
-                      color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+                      color: AppConstants.border(isDark),
                     ),
                   ),
                   child: Column(
@@ -3089,7 +3089,7 @@ class _InlineSubtaskCardState extends State<_InlineSubtaskCard> {
                                         : null,
                                     color: sub.isCompleted
                                         ? (isDark ? Colors.grey.shade500 : Colors.grey.shade400)
-                                        : (isDark ? Colors.white : Colors.black87),
+                                        : (AppConstants.textPrimary(isDark)),
                                   ),
                                 ),
                               ),
@@ -3108,7 +3108,7 @@ class _InlineSubtaskCardState extends State<_InlineSubtaskCard> {
 
                       // Divider before add field
                       if (widget.task.subtasks.isNotEmpty)
-                        Divider(height: 1, color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+                        Divider(height: 1, color: AppConstants.border(isDark)),
 
                       // Quick add field
                       Padding(

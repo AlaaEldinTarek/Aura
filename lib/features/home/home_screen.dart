@@ -309,7 +309,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         child: Text(
           '${'version'.tr()} 1.0.2',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: isDark ? Colors.white38 : Colors.black38,
+            color: AppConstants.textDisabled(isDark),
           ),
         ),
       ),
@@ -456,7 +456,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         width: double.infinity,
         padding: const EdgeInsets.all(AppSpacing.base),
         decoration: BoxDecoration(
-          color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+          color: AppConstants.card(isDark),
           borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
           border: Border.all(
             color: primary.withValues(alpha: 0.25),
@@ -698,7 +698,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                             : AppTypography.bodyM)
                         .copyWith(
                       fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white : Colors.black87,
+                      color: AppConstants.textPrimary(isDark),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xs),
@@ -922,10 +922,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     return Container(
       padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium)),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(
-          color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+          color: AppConstants.border(isDark),
         ),
       ),
       child: Column(
@@ -967,7 +967,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             child: LinearProgressIndicator(
               value: progress,
               minHeight: 6,
-              backgroundColor: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+              backgroundColor: AppConstants.border(isDark),
               valueColor: AlwaysStoppedAnimation<Color>(
                 progress >= 1.0 ? Colors.green : AppConstants.getPrimary(isDark),
               ),
@@ -1002,7 +1002,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                 color = Colors.red;
                 icon = Icons.cancel;
               } else {
-                color = isDark ? AppConstants.darkBorder : AppConstants.lightBorder;
+                color = AppConstants.border(isDark);
                 icon = Icons.circle_outlined;
               }
 
@@ -1019,7 +1019,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                             ? color.withValues(alpha: 0.15)
                             : (isDark ? AppConstants.darkSurface : Colors.grey[100]),
                         border: Border.all(
-                          color: isTracked ? color : (isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+                          color: isTracked ? color : (AppConstants.border(isDark)),
                           width: 1.5,
                         ),
                       ),
@@ -1075,9 +1075,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         return Container(
           padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium)),
           decoration: BoxDecoration(
-            color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+            color: AppConstants.card(isDark),
             borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
-            border: Border.all(color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+            border: Border.all(color: AppConstants.border(isDark)),
           ),
           child: Row(
             children: [
@@ -1094,7 +1094,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       CircularProgressIndicator(
                         value: progress,
                         strokeWidth: 5,
-                        backgroundColor: isDark ? Colors.white12 : Colors.black12,
+                        backgroundColor: AppConstants.divider(isDark),
                         valueColor: AlwaysStoppedAnimation<Color>(
                           progress >= 1.0 ? Colors.green : AppConstants.getPrimary(isDark),
                         ),
@@ -1105,7 +1105,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                           style: TextStyle(
                             fontSize: ts.scale(15.0),
                             fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white : Colors.black87,
+                            color: AppConstants.textPrimary(isDark),
                           ),
                         ),
                       ),
@@ -1153,7 +1153,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                         child: LinearProgressIndicator(
                           value: progress,
                           minHeight: 5,
-                          backgroundColor: isDark ? Colors.white12 : Colors.black12,
+                          backgroundColor: AppConstants.divider(isDark),
                           valueColor: AlwaysStoppedAnimation<Color>(
                             progress >= 1.0 ? Colors.green : AppConstants.getPrimary(isDark),
                           ),
@@ -1226,10 +1226,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     return Container(
       padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium)),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(
-          color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder,
+          color: AppConstants.border(isDark),
         ),
       ),
       child: Column(
@@ -1299,7 +1299,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                           ? '${NumberFormatter.withArabicNumerals('$done')} من ${NumberFormatter.withArabicNumerals('${stats.dueToday}')} مكتملة'
                           : '$done of ${stats.dueToday} completed',
                       style: AppTypography.caption.copyWith(
-                        color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                        color: AppConstants.textMuted(isDark),
                       ),
                     ),
                   ],
@@ -1333,7 +1333,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       Text(
                         isArabic ? 'أنجزت كل مهام اليوم!' : 'All done for today!',
                         style: AppTypography.bodyS.copyWith(
-                          color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                          color: AppConstants.textMuted(isDark),
                         ),
                       ),
                     ],
@@ -1518,9 +1518,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     return Container(
       padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium)),
       decoration: BoxDecoration(
-        color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+        color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
-        border: Border.all(color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+        border: Border.all(color: AppConstants.border(isDark)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1542,7 +1542,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     CircularProgressIndicator(
                       value: progress,
                       strokeWidth: 6,
-                      backgroundColor: isDark ? Colors.white12 : Colors.black12,
+                      backgroundColor: AppConstants.divider(isDark),
                       valueColor: AlwaysStoppedAnimation<Color>(
                         progress >= 1.0 ? Colors.green : AppConstants.getPrimary(isDark),
                       ),
@@ -1552,7 +1552,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                         '$displayPercentage%',
                         style: AppTypography.bodyL.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: isDark ? Colors.white : Colors.black87,
+                          color: AppConstants.textPrimary(isDark),
                         ),
                       ),
                     ),
@@ -1602,9 +1602,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         return Container(
           padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppSpacing.base)),
           decoration: BoxDecoration(
-            color: isDark ? AppConstants.darkCard : AppConstants.lightCard,
+            color: AppConstants.card(isDark),
             borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
-            border: Border.all(color: isDark ? AppConstants.darkBorder : AppConstants.lightBorder),
+            border: Border.all(color: AppConstants.border(isDark)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1642,7 +1642,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       Expanded(
                         child: Text(
                           isArabic ? record.prayerName : record.prayerName,
-                          style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.w500, color: isDark ? Colors.white : Colors.black87),
+                          style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.w500, color: AppConstants.textPrimary(isDark)),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -1659,7 +1659,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       const SizedBox(width: 6),
                       Text(
                         displayTime,
-                        style: AppTypography.caption.copyWith(color: isDark ? Colors.white38 : Colors.black38),
+                        style: AppTypography.caption.copyWith(color: AppConstants.textDisabled(isDark)),
                       ),
                     ],
                   ),
@@ -1744,7 +1744,7 @@ class _HomeCelebrationOverlayState extends State<_HomeCelebrationOverlay>
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 36),
                       decoration: BoxDecoration(
-                        color: widget.isDark ? AppConstants.darkSurface : AppConstants.lightSurface,
+                        color: AppConstants.surface(isDark),
                         borderRadius: BorderRadius.circular(28),
                         border: Border.all(
                           color: AppConstants.getPrimary(isDark).withValues(alpha: 0.25),
