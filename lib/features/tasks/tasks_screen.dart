@@ -203,6 +203,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final ts = MediaQuery.textScalerOf(context);
     final allTasksAsync = ref.watch(allTasksProvider);
     final statsAsync = ref.watch(taskStatisticsProvider);
 
@@ -404,11 +405,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                       ? (isArabic ? '~${NumberFormatter.withArabicNumerals('$h')} س ${m > 0 ? '${NumberFormatter.withArabicNumerals('$m')} د' : ''} لليوم' : '~${h}h ${m > 0 ? '${m}m ' : ''}today')
                       : (isArabic ? '~${NumberFormatter.withArabicNumerals('$m')} د لليوم' : '~${m}m today');
                   return Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                    padding: EdgeInsets.fromLTRB(ts.scale(16.0), 0, ts.scale(16.0), ts.scale(8.0)),
                     child: Row(
                       children: [
-                        Icon(Icons.timer_outlined, size: 14, color: AppConstants.getPrimary(isDark)),
-                        const SizedBox(width: 4),
+                        Icon(Icons.timer_outlined, size: ts.scale(14.0), color: AppConstants.getPrimary(isDark)),
+                        SizedBox(width: ts.scale(4.0)),
                         Text(
                           label,
                           style: AppTypography.caption.copyWith(
@@ -700,10 +701,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
   // ─── Stats Row ───────────────────────────────────────────────────────────
 
   Widget _buildStatsRow(TaskStatistics stats, bool isDark, bool isArabic) {
+    final ts = MediaQuery.textScalerOf(context);
     return GestureDetector(
       onTap: () => Navigator.of(context).pushNamed('/task_stats'),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        padding: EdgeInsets.fromLTRB(ts.scale(16.0), ts.scale(16.0), ts.scale(16.0), ts.scale(8.0)),
         child: Row(
           children: [
             _buildStatCard(
@@ -713,7 +715,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               color: AppConstants.getPrimary(isDark),
               isDark: isDark,
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: ts.scale(10.0)),
             _buildStatCard(
               icon: Icons.warning_amber_rounded,
               label: isArabic ? 'متأخرة' : 'Overdue',
@@ -721,7 +723,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               color: Colors.red,
               isDark: isDark,
             ),
-            const SizedBox(width: 10),
+            SizedBox(width: ts.scale(10.0)),
             _buildStatCard(
               icon: Icons.check_circle,
               label: isArabic ? 'مكتمل' : 'Done',
@@ -729,9 +731,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
               color: Colors.green,
               isDark: isDark,
             ),
-            const SizedBox(width: 6),
+            SizedBox(width: ts.scale(6.0)),
             Icon(Icons.chevron_right,
-                size: 20,
+                size: ts.scale(20.0),
                 color: isDark ? Colors.grey.shade600 : Colors.grey.shade400),
           ],
         ),
@@ -746,9 +748,10 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
     required Color color,
     required bool isDark,
   }) {
+    final ts = MediaQuery.textScalerOf(context);
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+        padding: EdgeInsets.symmetric(vertical: ts.scale(8.0), horizontal: ts.scale(8.0)),
         decoration: BoxDecoration(
           color: AppConstants.card(isDark),
           borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -762,8 +765,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
         ),
         child: Column(
           children: [
-            Icon(icon, color: color, size: 18),
-            const SizedBox(height: 3),
+            Icon(icon, color: color, size: ts.scale(18.0)),
+            SizedBox(height: ts.scale(3.0)),
             Text(
               value,
               style: AppTypography.bodyL.copyWith(
@@ -774,9 +777,10 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
             Text(
               label,
               style: AppTypography.caption.copyWith(
-                fontSize: 10,
+                fontSize: ts.scale(10.0),
                 color: AppConstants.textMuted(isDark),
               ),
+              textScaler: TextScaler.noScaling,
             ),
           ],
         ),
@@ -814,13 +818,14 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       (TaskCategory.other, isArabic ? 'أخرى' : 'Other', Icons.more_horiz),
     ];
 
+    final ts = MediaQuery.textScalerOf(context);
     final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
-    const chipHeight = 38.0;
-    const iconSize = 14.0;
+    final chipHeight = ts.scale(38.0);
+    final iconSize = ts.scale(14.0);
     const fontSize = 12.0;
-    const hPad = 12.0;
-    const vPad = 6.0;
-    const gap = 8.0;
+    final hPad = ts.scale(12.0);
+    final vPad = ts.scale(6.0);
+    final gap = ts.scale(8.0);
 
     final chips = SizedBox(
       height: chipHeight,
@@ -868,7 +873,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                             ? Colors.grey.shade400
                             : Colors.grey.shade600),
                   ),
-                  SizedBox(width: isDesktop ? 6 : 4),
+                  SizedBox(width: ts.scale(4.0)),
                   Text(
                     label,
                     style: AppTypography.bodyM.copyWith(
@@ -908,23 +913,24 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
     }
     if (allTags.isEmpty) return const SizedBox.shrink();
 
+    final ts = MediaQuery.textScalerOf(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+      padding: EdgeInsets.fromLTRB(ts.scale(16.0), ts.scale(4.0), ts.scale(16.0), ts.scale(8.0)),
       child: SizedBox(
-        height: 36,
+        height: ts.scale(36.0),
         child: ListView(
           scrollDirection: Axis.horizontal,
           children: allTags.map((tag) {
             final isSelected = _selectedTag == tag;
             return Padding(
-              padding: const EdgeInsets.only(right: 6),
+              padding: EdgeInsets.only(right: ts.scale(6.0)),
               child: GestureDetector(
                 onTap: () => setState(() {
                   _selectedTag = isSelected ? null : tag;
                 }),
                 child: Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      EdgeInsets.symmetric(horizontal: ts.scale(10.0), vertical: ts.scale(6.0)),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppConstants.getPrimary(isDark).withOpacity(0.15)
@@ -1005,8 +1011,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       return _buildEmptyState(isDark, isArabic);
     }
 
+    final ts = MediaQuery.textScalerOf(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: EdgeInsets.fromLTRB(ts.scale(16.0), ts.scale(12.0), ts.scale(16.0), 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1200,8 +1207,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
           : _buildEmptyState(isDark, isArabic);
     }
 
+    final ts = MediaQuery.textScalerOf(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: EdgeInsets.fromLTRB(ts.scale(16.0), ts.scale(12.0), ts.scale(16.0), 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1364,10 +1372,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
     required Color color,
     required bool isDark,
   }) {
+    final ts = MediaQuery.textScalerOf(context);
     return Row(
       children: [
-        Icon(icon, size: 18, color: color),
-        const SizedBox(width: 8),
+        Icon(icon, size: ts.scale(18.0), color: color),
+        SizedBox(width: ts.scale(8.0)),
         Text(
           title,
           style: AppTypography.bodyL.copyWith(
@@ -1375,9 +1384,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
             color: AppConstants.textPrimary(isDark),
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: ts.scale(8.0)),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+          padding: EdgeInsets.symmetric(horizontal: ts.scale(8.0), vertical: ts.scale(2.0)),
           decoration: BoxDecoration(
             color: color.withOpacity(0.15),
             borderRadius: BorderRadius.circular(12),
@@ -1842,8 +1851,9 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
 
   Widget _buildBulkActionBar(bool isDark, bool isArabic) {
     final count = _selectedTaskIds.length;
+    final ts = MediaQuery.textScalerOf(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: ts.scale(16.0), vertical: ts.scale(12.0)),
       decoration: BoxDecoration(
         color: AppConstants.surface(isDark),
         boxShadow: [
@@ -2098,23 +2108,24 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
   }
 
   Widget _buildNoResultsState(bool isDark, bool isArabic) {
+    final ts = MediaQuery.textScalerOf(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 64, horizontal: 32),
+      padding: EdgeInsets.symmetric(vertical: ts.scale(64.0), horizontal: ts.scale(32.0)),
       child: Column(
         children: [
           Icon(
             Icons.search_off,
-            size: 72,
+            size: ts.scale(72.0),
             color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: ts.scale(16.0)),
           Text(
             isArabic ? 'لا توجد نتائج' : 'No results found',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: isDark ? Colors.white70 : Colors.black54,
                 ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: ts.scale(8.0)),
           Text(
             isArabic ? 'جرب كلمة بحث مختلفة' : 'Try a different search term',
             textAlign: TextAlign.center,
@@ -2128,23 +2139,24 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
   }
 
   Widget _buildEmptyState(bool isDark, bool isArabic) {
+    final ts = MediaQuery.textScalerOf(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 64, horizontal: 32),
+      padding: EdgeInsets.symmetric(vertical: ts.scale(64.0), horizontal: ts.scale(32.0)),
       child: Column(
         children: [
           Icon(
             Icons.task_alt_outlined,
-            size: 72,
+            size: ts.scale(72.0),
             color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: ts.scale(16.0)),
           Text(
             isArabic ? 'لا توجد مهام' : 'No tasks yet',
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   color: isDark ? Colors.white70 : Colors.black54,
                 ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: ts.scale(8.0)),
           Text(
             isArabic
                 ? 'اضغط + لإضافة مهمتك الأولى'
@@ -3024,6 +3036,7 @@ class _InlineSubtaskCardState extends State<_InlineSubtaskCard> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final ts = MediaQuery.textScalerOf(context);
 
     return Column(
       children: [
@@ -3063,7 +3076,7 @@ class _InlineSubtaskCardState extends State<_InlineSubtaskCard> {
                       ...widget.task.subtasks.map((sub) => InkWell(
                         onTap: () => _toggleSubtask(sub),
                         child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          padding: EdgeInsets.symmetric(horizontal: ts.scale(16.0), vertical: ts.scale(10.0)),
                           child: Row(
                             children: [
                               AnimatedScale(
@@ -3073,13 +3086,13 @@ class _InlineSubtaskCardState extends State<_InlineSubtaskCard> {
                                   sub.isCompleted
                                       ? Icons.check_circle
                                       : Icons.radio_button_unchecked,
-                                  size: 20,
+                                  size: ts.scale(20.0),
                                   color: sub.isCompleted
                                       ? Colors.green
                                       : (isDark ? Colors.grey.shade500 : Colors.grey.shade400),
                                 ),
                               ),
-                              const SizedBox(width: 12),
+                              SizedBox(width: ts.scale(12.0)),
                               Expanded(
                                 child: Text(
                                   sub.title,
@@ -3096,8 +3109,8 @@ class _InlineSubtaskCardState extends State<_InlineSubtaskCard> {
                               GestureDetector(
                                 onTap: () => _deleteSubtask(sub),
                                 child: Padding(
-                                  padding: const EdgeInsets.all(4),
-                                  child: Icon(Icons.close, size: 16,
+                                  padding: EdgeInsets.all(ts.scale(4.0)),
+                                  child: Icon(Icons.close, size: ts.scale(16.0),
                                     color: isDark ? Colors.grey.shade600 : Colors.grey.shade400),
                                 ),
                               ),
@@ -3112,11 +3125,11 @@ class _InlineSubtaskCardState extends State<_InlineSubtaskCard> {
 
                       // Quick add field
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: EdgeInsets.symmetric(horizontal: ts.scale(12.0), vertical: ts.scale(8.0)),
                         child: Row(
                           children: [
-                            Icon(Icons.add, size: 18, color: AppConstants.getPrimary(isDark)),
-                            const SizedBox(width: 8),
+                            Icon(Icons.add, size: ts.scale(18.0), color: AppConstants.getPrimary(isDark)),
+                            SizedBox(width: ts.scale(8.0)),
                             Expanded(
                               child: TextField(
                                 controller: _addController,
@@ -3139,7 +3152,7 @@ class _InlineSubtaskCardState extends State<_InlineSubtaskCard> {
                             else
                               GestureDetector(
                                 onTap: () => _addSubtask(_addController.text),
-                                child: Icon(Icons.send, size: 16, color: AppConstants.getPrimary(isDark)),
+                                child: Icon(Icons.send, size: ts.scale(16.0), color: AppConstants.getPrimary(isDark)),
                               ),
                           ],
                         ),

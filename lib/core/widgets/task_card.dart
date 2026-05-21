@@ -36,6 +36,7 @@ class TaskCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final isOverdue = task.isOverdue && !task.isCompleted;
+    final ts = MediaQuery.textScalerOf(context);
 
     // Left accent color
     final Color leftAccent;
@@ -98,11 +99,11 @@ class TaskCard extends StatelessWidget {
               onLongPress: onLongPress,
               borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.base,
-                  AppSpacing.base,
-                  AppSpacing.base,
-                  6,
+                padding: EdgeInsets.fromLTRB(
+                  ts.scale(AppSpacing.base),
+                  ts.scale(AppSpacing.base),
+                  ts.scale(AppSpacing.base),
+                  ts.scale(6.0),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -131,10 +132,10 @@ class TaskCard extends StatelessWidget {
                               if (task.isPinned && !task.isCompleted)
                                 Padding(
                                   padding: EdgeInsets.only(
-                                      left: isArabic ? 0 : 4,
-                                      right: isArabic ? 4 : 0),
+                                      left: isArabic ? 0 : ts.scale(4.0),
+                                      right: isArabic ? ts.scale(4.0) : 0),
                                   child: Icon(Icons.push_pin,
-                                      size: 14, color: pinColor),
+                                      size: ts.scale(14.0), color: pinColor),
                                 ),
                             ],
                           ),
@@ -145,9 +146,9 @@ class TaskCard extends StatelessWidget {
                             onTap: onMenuTap,
                             behavior: HitTestBehavior.opaque,
                             child: Padding(
-                              padding: const EdgeInsets.all(4),
+                              padding: EdgeInsets.all(ts.scale(4.0)),
                               child: Icon(Icons.more_vert,
-                                  size: 20,
+                                  size: ts.scale(20.0),
                                   color: isDark
                                       ? Colors.grey.shade500
                                       : Colors.grey.shade600),
@@ -160,7 +161,7 @@ class TaskCard extends StatelessWidget {
                     if (task.description != null &&
                         task.description!.isNotEmpty)
                       Padding(
-                        padding: const EdgeInsets.only(top: 4),
+                        padding: EdgeInsets.only(top: ts.scale(4.0)),
                         child: Text(
                           task.description!,
                           style: AppTypography.bodyS.copyWith(
@@ -170,12 +171,12 @@ class TaskCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: ts.scale(8.0)),
 
                     // Badges — all info under title
                     Wrap(
-                      spacing: 8,
-                      runSpacing: 4,
+                      spacing: ts.scale(8.0),
+                      runSpacing: ts.scale(4.0),
                       children: [
                         _PriorityBadge(priority: task.priority),
                         if (task.category != TaskCategory.other)
@@ -201,7 +202,7 @@ class TaskCard extends StatelessWidget {
 
                     // Progress bar
                     if (task.subtasks.isNotEmpty) ...[
-                      const SizedBox(height: 6),
+                      SizedBox(height: ts.scale(6.0)),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(3),
                         child: LinearProgressIndicator(
@@ -220,14 +221,14 @@ class TaskCard extends StatelessWidget {
 
                     // Tags
                     if (task.tags != null && task.tags!.isNotEmpty) ...[
-                      const SizedBox(height: 6),
+                      SizedBox(height: ts.scale(6.0)),
                       Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
+                        spacing: ts.scale(6.0),
+                        runSpacing: ts.scale(6.0),
                         children: task.tags!.take(3).map((tag) {
                           return Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 15, vertical: 4),
+                            padding: EdgeInsets.symmetric(
+                                horizontal: ts.scale(15.0), vertical: ts.scale(4.0)),
                             decoration: BoxDecoration(
                               color:
                                   AppConstants.getPrimary(isDark).withOpacity(0.1),
@@ -247,13 +248,13 @@ class TaskCard extends StatelessWidget {
 
                     // === BOTTOM ACTION BAR ===
                     if (showBottomBar) ...[
-                      const SizedBox(height: 8),
+                      SizedBox(height: ts.scale(8.0)),
                       Divider(
                           height: 1,
                           color: isDark
                               ? AppConstants.darkBorder
                               : AppConstants.lightBorder),
-                      const SizedBox(height: 6),
+                      SizedBox(height: ts.scale(6.0)),
                       _buildBottomBar(context, isDark, isArabic),
                     ],
                   ],
@@ -322,6 +323,7 @@ class TaskCard extends StatelessWidget {
   }
 
   Widget _buildBottomBar(BuildContext context, bool isDark, bool isArabic) {
+    final ts = MediaQuery.textScalerOf(context);
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -340,7 +342,7 @@ class TaskCard extends StatelessWidget {
                   : AppConstants.getPrimary(isDark),
               onTap: onToggle!,
             ),
-          if (onToggle != null) const SizedBox(width: 6),
+          if (onToggle != null) SizedBox(width: ts.scale(6.0)),
           // Postpone
           if (onPostpone != null && !task.isCompleted) ...[
             _ActionButton(
@@ -349,7 +351,7 @@ class TaskCard extends StatelessWidget {
               color: Colors.orange,
               onTap: onPostpone!,
             ),
-            const SizedBox(width: 6),
+            SizedBox(width: ts.scale(6.0)),
           ],
           // Expand subtasks
           if (onExpand != null) ...[
@@ -363,7 +365,7 @@ class TaskCard extends StatelessWidget {
               color: AppConstants.getPrimary(isDark),
               onTap: onExpand!,
             ),
-            const SizedBox(width: 6),
+            SizedBox(width: ts.scale(6.0)),
           ],
           // Delete
           if (onDelete != null)
@@ -384,34 +386,37 @@ class TaskCard extends StatelessWidget {
     required IconData icon,
     required String label,
   }) {
-    return Container(
-      alignment: alignment,
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (alignment == Alignment.centerLeft) ...[
-            Icon(icon, color: Colors.white, size: 22),
-            const SizedBox(width: 8),
-            Text(label,
-                style: AppTypography.bodyS.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold)),
-          ] else ...[
-            Text(label,
-                style: AppTypography.bodyS.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold)),
-            const SizedBox(width: 8),
-            Icon(icon, color: Colors.white, size: 22),
+    return Builder(builder: (ctx) {
+      final ts = MediaQuery.textScalerOf(ctx);
+      return Container(
+        alignment: alignment,
+        padding: EdgeInsets.symmetric(horizontal: ts.scale(20.0)),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (alignment == Alignment.centerLeft) ...[
+              Icon(icon, color: Colors.white, size: ts.scale(22.0)),
+              SizedBox(width: ts.scale(8.0)),
+              Text(label,
+                  style: AppTypography.bodyS.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold)),
+            ] else ...[
+              Text(label,
+                  style: AppTypography.bodyS.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold)),
+              SizedBox(width: ts.scale(8.0)),
+              Icon(icon, color: Colors.white, size: ts.scale(22.0)),
+            ],
           ],
-        ],
-      ),
-    );
+        ),
+      );
+    });
   }
 }
 
@@ -431,11 +436,12 @@ class _ActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: EdgeInsets.symmetric(horizontal: ts.scale(8.0), vertical: ts.scale(4.0)),
         decoration: BoxDecoration(
           color: color.withOpacity(0.12),
           borderRadius: BorderRadius.circular(12),
@@ -444,8 +450,8 @@ class _ActionButton extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Icon(icon, size: 14, color: color),
-            const SizedBox(width: 4),
+            Icon(icon, size: ts.scale(14.0), color: color),
+            SizedBox(width: ts.scale(4.0)),
             Text(label,
                 style: AppTypography.labelS.copyWith(
                     fontWeight: FontWeight.w600,
@@ -466,6 +472,7 @@ class _PriorityBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final ts = MediaQuery.textScalerOf(context);
     final colors = {
       TaskPriority.high: Colors.red,
       TaskPriority.medium: Colors.orange,
@@ -478,7 +485,7 @@ class _PriorityBadge extends StatelessWidget {
     };
     final color = colors[priority]!;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: EdgeInsets.symmetric(horizontal: ts.scale(8.0), vertical: ts.scale(2.0)),
       decoration: BoxDecoration(
           color: color.withOpacity(0.15),
           borderRadius: BorderRadius.circular(4)),
@@ -496,6 +503,7 @@ class _CategoryBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final ts = MediaQuery.textScalerOf(context);
     final labels = {
       TaskCategory.work: isArabic ? 'عمل' : 'Work',
       TaskCategory.personal: isArabic ? 'شخصي' : 'Personal',
@@ -505,7 +513,7 @@ class _CategoryBadge extends StatelessWidget {
       TaskCategory.prayer: isArabic ? 'صلاة' : 'Prayer',
     };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: EdgeInsets.symmetric(horizontal: ts.scale(8.0), vertical: ts.scale(2.0)),
       decoration: BoxDecoration(
           color: AppConstants.getPrimary(isDark).withOpacity(0.15),
           borderRadius: BorderRadius.circular(4)),
@@ -524,21 +532,22 @@ class _RecurrenceBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final ts = MediaQuery.textScalerOf(context);
     final labels = {
       RecurrenceType.daily: isArabic ? 'يومي' : 'Daily',
       RecurrenceType.weekly: isArabic ? 'أسبوعي' : 'Weekly',
       RecurrenceType.monthly: isArabic ? 'شهري' : 'Monthly',
     };
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: EdgeInsets.symmetric(horizontal: ts.scale(8.0), vertical: ts.scale(2.0)),
       decoration: BoxDecoration(
           color: Colors.purple.withOpacity(0.15),
           borderRadius: BorderRadius.circular(4)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.repeat, size: 11, color: Colors.purple),
-          const SizedBox(width: 4),
+          Icon(Icons.repeat, size: ts.scale(11.0), color: Colors.purple),
+          SizedBox(width: ts.scale(4.0)),
           Text(labels[recurrenceType] ?? '',
               style: AppTypography.labelS.copyWith(
                   fontWeight: FontWeight.w500,
@@ -559,6 +568,7 @@ class _DueDateBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final ts = MediaQuery.textScalerOf(context);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final dueDay = DateTime(dueDate.year, dueDate.month, dueDate.day);
@@ -583,7 +593,7 @@ class _DueDateBadge extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: EdgeInsets.symmetric(horizontal: ts.scale(8.0), vertical: ts.scale(2.0)),
       decoration: BoxDecoration(
         color: isOverdue
             ? Colors.red.withOpacity(0.15)
@@ -594,8 +604,8 @@ class _DueDateBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(isOverdue ? Icons.warning : Icons.schedule,
-              size: 11, color: isOverdue ? Colors.red : Colors.grey),
-          const SizedBox(width: 4),
+              size: ts.scale(11.0), color: isOverdue ? Colors.red : Colors.grey),
+          SizedBox(width: ts.scale(4.0)),
           Text(label,
               style: AppTypography.labelS.copyWith(
                   fontWeight: FontWeight.w500,
@@ -613,8 +623,9 @@ class _SubtaskBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: EdgeInsets.symmetric(horizontal: ts.scale(8.0), vertical: ts.scale(2.0)),
       decoration: BoxDecoration(
           color: completed == total
               ? Colors.green.withOpacity(0.15)
@@ -624,9 +635,9 @@ class _SubtaskBadge extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(Icons.checklist,
-              size: 11,
+              size: ts.scale(11.0),
               color: completed == total ? Colors.green : Colors.blue),
-          const SizedBox(width: 4),
+          SizedBox(width: ts.scale(4.0)),
           Text('$completed/$total',
               style: AppTypography.labelS.copyWith(
                   fontWeight: FontWeight.w500,
@@ -644,21 +655,22 @@ class _EstimateBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final ts = MediaQuery.textScalerOf(context);
     final h = minutes ~/ 60;
     final m = minutes % 60;
     final label = h > 0
         ? (m > 0 ? '${h}h ${m}m' : '${h}h')
         : '${m}m';
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      padding: EdgeInsets.symmetric(horizontal: ts.scale(6.0), vertical: ts.scale(3.0)),
       decoration: BoxDecoration(
           color: AppConstants.getPrimary(isDark).withOpacity(0.12),
           borderRadius: BorderRadius.circular(4)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.timer_outlined, size: 11, color: AppConstants.getPrimary(isDark)),
-          const SizedBox(width: 3),
+          Icon(Icons.timer_outlined, size: ts.scale(11.0), color: AppConstants.getPrimary(isDark)),
+          SizedBox(width: ts.scale(3.0)),
           Text(label,
               style: AppTypography.labelS.copyWith(
                   fontWeight: FontWeight.w500,

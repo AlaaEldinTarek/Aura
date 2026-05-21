@@ -425,6 +425,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final ts = MediaQuery.textScalerOf(context);
     final isEditing = widget.task != null;
 
     return Scaffold(
@@ -449,7 +450,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(AppConstants.paddingMedium),
+          padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
           children: [
             // Title field
             TextFormField(
@@ -469,7 +470,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               },
             ),
 
-            const SizedBox(height: AppConstants.paddingMedium),
+            SizedBox(height: ts.scale(AppConstants.paddingMedium)),
 
             // Description field
             TextFormField(
@@ -484,13 +485,13 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               textInputAction: TextInputAction.done,
             ),
 
-            const SizedBox(height: AppConstants.paddingLarge),
+            SizedBox(height: ts.scale(AppConstants.paddingLarge)),
 
             // Priority selector
             InkWell(
               onTap: _showPrioritySelector,
               child: Container(
-                padding: const EdgeInsets.all(AppConstants.paddingMedium),
+                padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: AppConstants.border(isDark),
@@ -503,7 +504,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                       Icons.flag,
                       color: _getPriorityColor(_selectedPriority),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: ts.scale(12.0)),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -530,13 +531,13 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               ),
             ),
 
-            const SizedBox(height: AppConstants.paddingMedium),
+            SizedBox(height: ts.scale(AppConstants.paddingMedium)),
 
             // Category selector
             InkWell(
               onTap: _showCategorySelector,
               child: Container(
-                padding: const EdgeInsets.all(AppConstants.paddingMedium),
+                padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: AppConstants.border(isDark),
@@ -549,7 +550,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                       _getCategoryIcon(_selectedCategory),
                       color: AppConstants.getPrimary(isDark),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: ts.scale(12.0)),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -576,13 +577,13 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               ),
             ),
 
-            const SizedBox(height: AppConstants.paddingMedium),
+            SizedBox(height: ts.scale(AppConstants.paddingMedium)),
 
             // Due date & time
             InkWell(
               onTap: _selectDueDate,
               child: Container(
-                padding: const EdgeInsets.all(AppConstants.paddingMedium),
+                padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: AppConstants.border(isDark),
@@ -592,7 +593,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                 child: Row(
                   children: [
                     const Icon(Icons.calendar_today),
-                    const SizedBox(width: 12),
+                    SizedBox(width: ts.scale(12.0)),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -622,11 +623,11 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
             ),
 
             if (_selectedDueDate != null) ...[
-              const SizedBox(height: AppConstants.paddingMedium),
+              SizedBox(height: ts.scale(AppConstants.paddingMedium)),
               InkWell(
                 onTap: _selectDueTime,
                 child: Container(
-                  padding: const EdgeInsets.all(AppConstants.paddingMedium),
+                  padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
                   decoration: BoxDecoration(
                     border: Border.all(
                       color: AppConstants.border(isDark),
@@ -636,7 +637,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                   child: Row(
                     children: [
                       const Icon(Icons.access_time),
-                      const SizedBox(width: 12),
+                      SizedBox(width: ts.scale(12.0)),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -676,32 +677,32 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
             // Prayer conflict warning (only in Both mode)
             _buildPrayerConflictWarning(isDark, isArabic),
 
-            const SizedBox(height: AppConstants.paddingMedium),
+            SizedBox(height: ts.scale(AppConstants.paddingMedium)),
 
             // Recurrence Card
             _buildRecurrenceCard(isDark, isArabic),
 
-            const SizedBox(height: AppConstants.paddingMedium),
+            SizedBox(height: ts.scale(AppConstants.paddingMedium)),
 
             // Focus Mode Card
             _buildFocusModeCard(isDark, isArabic),
 
-            const SizedBox(height: AppConstants.paddingMedium),
+            SizedBox(height: ts.scale(AppConstants.paddingMedium)),
 
             // Estimated Duration Card
             _buildEstimatedDurationCard(isDark, isArabic),
 
-            const SizedBox(height: AppConstants.paddingMedium),
+            SizedBox(height: ts.scale(AppConstants.paddingMedium)),
 
             // Tags Card
             _buildTagsCard(isDark, isArabic),
 
-            const SizedBox(height: AppConstants.paddingMedium),
+            SizedBox(height: ts.scale(AppConstants.paddingMedium)),
 
             // Subtasks Card
             _buildSubtasksCard(isDark, isArabic),
 
-            const SizedBox(height: AppConstants.paddingLarge * 2),
+            SizedBox(height: ts.scale(AppConstants.paddingLarge * 2)),
           ],
         ),
       ),
@@ -709,6 +710,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   }
 
   Widget _buildRecurrenceCard(bool isDark, bool isArabic) {
+    final ts = MediaQuery.textScalerOf(context);
     final borderColor = AppConstants.border(isDark);
 
     return Container(
@@ -744,7 +746,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           if (_recurrenceEnabled) ...[
             const Divider(height: 1),
             Padding(
-              padding: const EdgeInsets.all(AppConstants.paddingMedium),
+              padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -755,21 +757,21 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                       color: AppConstants.textMuted(isDark),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: ts.scale(8.0)),
                   Row(
                     children: [
                       _buildFrequencyChip(RecurrenceType.daily,
                           isArabic ? 'يومي' : 'Daily', isDark),
-                      const SizedBox(width: 8),
+                      SizedBox(width: ts.scale(8.0)),
                       _buildFrequencyChip(RecurrenceType.weekly,
                           isArabic ? 'أسبوعي' : 'Weekly', isDark),
-                      const SizedBox(width: 8),
+                      SizedBox(width: ts.scale(8.0)),
                       _buildFrequencyChip(RecurrenceType.monthly,
                           isArabic ? 'شهري' : 'Monthly', isDark),
                     ],
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: ts.scale(16.0)),
 
                   // Interval input
                   Row(
@@ -778,7 +780,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                         isArabic ? 'كل' : 'Every',
                         style: AppTypography.label,
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: ts.scale(12.0)),
                       SizedBox(
                         width: 60,
                         child: TextFormField(
@@ -798,7 +800,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                           },
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      SizedBox(width: ts.scale(12.0)),
                       Text(
                         _getIntervalUnit(isArabic),
                         style: AppTypography.label,
@@ -806,7 +808,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                     ],
                   ),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: ts.scale(16.0)),
 
                   // End date (optional)
                   InkWell(
@@ -815,12 +817,12 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                       children: [
                         Icon(
                           Icons.event_available,
-                          size: 20,
+                          size: ts.scale(20.0),
                           color: isDark
                               ? Colors.grey.shade400
                               : Colors.grey.shade600,
                         ),
-                        const SizedBox(width: 8),
+                        SizedBox(width: ts.scale(8.0)),
                         Expanded(
                           child: Text(
                             _recurrenceEndDate != null
@@ -908,9 +910,10 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
         ? (isArabic ? '⚠️ هذا الوقت يتزامن مع صلاة $prayerDisplay' : '⚠️ This time overlaps with $prayerDisplay prayer')
         : (isArabic ? '⚠️ هذا الوقت قريب من صلاة $prayerDisplay (${NumberFormatter.withArabicNumerals('$minutesDiff')} دقيقة)' : '⚠️ This time is $minutesDiff min from $prayerDisplay prayer');
 
+    final ts = MediaQuery.textScalerOf(context);
     return Container(
-      margin: const EdgeInsets.only(top: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      margin: EdgeInsets.only(top: ts.scale(8.0)),
+      padding: EdgeInsets.symmetric(horizontal: ts.scale(12.0), vertical: ts.scale(10.0)),
       decoration: BoxDecoration(
         color: Colors.orange.withOpacity(0.12),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -918,8 +921,8 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.mosque_outlined, size: 16, color: Colors.orange),
-          const SizedBox(width: 8),
+          Icon(Icons.mosque_outlined, size: ts.scale(16.0), color: Colors.orange),
+          SizedBox(width: ts.scale(8.0)),
           Expanded(
             child: Text(
               message,
@@ -934,6 +937,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   // ─── Estimated Duration ────────────────────────────────────────────────
 
   Widget _buildEstimatedDurationCard(bool isDark, bool isArabic) {
+    final ts = MediaQuery.textScalerOf(context);
     final borderColor = AppConstants.border(isDark);
     final presets = [15, 30, 45, 60, 90, 120];
 
@@ -952,14 +956,14 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         border: Border.all(color: borderColor),
       ),
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+      padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.timer_outlined, size: 18, color: AppConstants.getPrimary(isDark)),
-              const SizedBox(width: 8),
+              Icon(Icons.timer_outlined, size: ts.scale(18.0), color: AppConstants.getPrimary(isDark)),
+              SizedBox(width: ts.scale(8.0)),
               Text(
                 isArabic ? 'كم تحتاج من وقت؟' : 'Time Needed',
                 style: AppTypography.headingS.copyWith(fontWeight: FontWeight.w600),
@@ -974,16 +978,16 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: ts.scale(12.0)),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: ts.scale(8.0),
+            runSpacing: ts.scale(8.0),
             children: [
               // None option
               GestureDetector(
                 onTap: () => setState(() => _estimatedMinutes = 0),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  padding: EdgeInsets.symmetric(horizontal: ts.scale(14.0), vertical: ts.scale(7.0)),
                   decoration: BoxDecoration(
                     color: _estimatedMinutes == 0
                         ? AppConstants.getPrimary(isDark)
@@ -1003,7 +1007,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
               ...presets.map((mins) => GestureDetector(
                 onTap: () => setState(() => _estimatedMinutes = mins),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                  padding: EdgeInsets.symmetric(horizontal: ts.scale(14.0), vertical: ts.scale(7.0)),
                   decoration: BoxDecoration(
                     color: _estimatedMinutes == mins
                         ? AppConstants.getPrimary(isDark)
@@ -1029,6 +1033,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   // ─── Focus Mode ────────────────────────────────────────────────────────
 
   Widget _buildFocusModeCard(bool isDark, bool isArabic) {
+    final ts = MediaQuery.textScalerOf(context);
     final borderColor = AppConstants.border(isDark);
 
     return Container(
@@ -1079,7 +1084,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
           if (_focusModeEnabled) ...[
             const Divider(height: 1),
             Padding(
-              padding: const EdgeInsets.all(AppConstants.paddingMedium),
+              padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -1089,19 +1094,19 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                       color: AppConstants.textMuted(isDark),
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  SizedBox(height: ts.scale(8.0)),
                   Row(
                     children: [
                       _buildDurationChip(15, isArabic ? '١٥' : '15', isDark),
-                      const SizedBox(width: 8),
+                      SizedBox(width: ts.scale(8.0)),
                       _buildDurationChip(25, isArabic ? '٢٥' : '25', isDark),
-                      const SizedBox(width: 8),
+                      SizedBox(width: ts.scale(8.0)),
                       _buildDurationChip(45, isArabic ? '٤٥' : '45', isDark),
-                      const SizedBox(width: 8),
+                      SizedBox(width: ts.scale(8.0)),
                       _buildDurationChip(60, isArabic ? '٦٠' : '60', isDark),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: ts.scale(12.0)),
                   // Custom duration input
                   Row(
                     children: [
@@ -1111,7 +1116,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                           color: AppConstants.textMuted(isDark),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: ts.scale(8.0)),
                       SizedBox(
                         width: 70,
                         child: TextFormField(
@@ -1137,7 +1142,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                           },
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: ts.scale(8.0)),
                       Text(
                         isArabic ? 'دقيقة' : 'min',
                         style: AppTypography.bodyS.copyWith(
@@ -1356,6 +1361,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   // ─── Subtasks ────────────────────────────────────────────────────────────
 
   Widget _buildSubtasksCard(bool isDark, bool isArabic) {
+    final ts = MediaQuery.textScalerOf(context);
     final borderColor = AppConstants.border(isDark);
     final completedCount = _subtasks.where((s) => s.isCompleted).length;
 
@@ -1365,16 +1371,16 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppConstants.paddingMedium),
+        padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Icon(Icons.checklist,
-                    size: 20,
+                    size: ts.scale(20.0),
                     color: AppConstants.textMuted(isDark)),
-                const SizedBox(width: 8),
+                SizedBox(width: ts.scale(8.0)),
                 Text(
                   isArabic ? 'الخطوات الفرعية' : 'Checklist',
                   style: AppTypography.bodyM.copyWith(
@@ -1385,7 +1391,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                 if (_subtasks.isNotEmpty) ...[
                   const Spacer(),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: EdgeInsets.symmetric(horizontal: ts.scale(8.0), vertical: ts.scale(2.0)),
                     decoration: BoxDecoration(
                       color: AppConstants.getPrimary(isDark).withOpacity(0.12),
                       borderRadius: BorderRadius.circular(10),
@@ -1401,7 +1407,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                 ],
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: ts.scale(12.0)),
 
             // Subtask input row
             Row(
@@ -1416,8 +1422,8 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                               ? Colors.grey.shade500
                               : Colors.grey.shade400),
                       isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
+                      contentPadding: EdgeInsets.symmetric(
+                          horizontal: ts.scale(12.0), vertical: ts.scale(10.0)),
                       filled: true,
                       fillColor:
                           isDark ? AppConstants.darkCard : Colors.grey.shade50,
@@ -1432,16 +1438,16 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                     textInputAction: TextInputAction.done,
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: ts.scale(8.0)),
                 GestureDetector(
                   onTap: () => _addSubtask(_subtaskController.text),
                   child: Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: EdgeInsets.all(ts.scale(10.0)),
                     decoration: BoxDecoration(
                       color: AppConstants.getPrimary(isDark),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Icon(Icons.add, color: Colors.white, size: 18),
+                    child: Icon(Icons.add, color: Colors.white, size: ts.scale(18.0)),
                   ),
                 ),
               ],
@@ -1449,7 +1455,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
 
             // Subtask list
             if (_subtasks.isNotEmpty) ...[
-              const SizedBox(height: 8),
+              SizedBox(height: ts.scale(8.0)),
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
                 child: LinearProgressIndicator(
@@ -1461,7 +1467,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                   minHeight: 3,
                 ),
               ),
-              const SizedBox(height: 8),
+              SizedBox(height: ts.scale(8.0)),
               ...List.generate(_subtasks.length, (index) {
                 final subtask = _subtasks[index];
                 return Dismissible(
@@ -1470,9 +1476,9 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                   onDismissed: (_) => setState(() => _subtasks.removeAt(index)),
                   background: Container(
                     alignment: Alignment.centerRight,
-                    padding: const EdgeInsets.only(right: 16),
+                    padding: EdgeInsets.only(right: ts.scale(16.0)),
                     color: Colors.red,
-                    child: const Icon(Icons.delete, color: Colors.white, size: 20),
+                    child: Icon(Icons.delete, color: Colors.white, size: ts.scale(20.0)),
                   ),
                   child: InkWell(
                     onTap: () => setState(() {
@@ -1481,14 +1487,14 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                     }),
                     borderRadius: BorderRadius.circular(8),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 6),
+                      padding: EdgeInsets.symmetric(vertical: ts.scale(6.0)),
                       child: Row(
                         children: [
                           // Checkbox
                           AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
-                            width: 22,
-                            height: 22,
+                            width: ts.scale(22.0),
+                            height: ts.scale(22.0),
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               color: subtask.isCompleted
@@ -1502,10 +1508,10 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                               ),
                             ),
                             child: subtask.isCompleted
-                                ? const Icon(Icons.check, size: 14, color: Colors.white)
+                                ? Icon(Icons.check, size: ts.scale(14.0), color: Colors.white)
                                 : null,
                           ),
-                          const SizedBox(width: 10),
+                          SizedBox(width: ts.scale(10.0)),
                           Expanded(
                             child: Text(
                               subtask.title,
@@ -1552,6 +1558,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   final TextEditingController _tagController = TextEditingController();
 
   Widget _buildTagsCard(bool isDark, bool isArabic) {
+    final ts = MediaQuery.textScalerOf(context);
     final borderColor = AppConstants.border(isDark);
 
     return Container(
@@ -1560,16 +1567,16 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppConstants.paddingMedium),
+        padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Icon(Icons.label_outline,
-                    size: 20,
+                    size: ts.scale(20.0),
                     color: AppConstants.textMuted(isDark)),
-                const SizedBox(width: 8),
+                SizedBox(width: ts.scale(8.0)),
                 Text(
                   isArabic ? 'التصنيفات' : 'Tags',
                   style: AppTypography.bodyM.copyWith(
@@ -1579,7 +1586,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: ts.scale(12.0)),
 
             // Tag input row
             Row(
@@ -1594,8 +1601,8 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                               ? Colors.grey.shade500
                               : Colors.grey.shade400),
                       isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
+                      contentPadding: EdgeInsets.symmetric(
+                          horizontal: ts.scale(12.0), vertical: ts.scale(10.0)),
                       filled: true,
                       fillColor:
                           isDark ? AppConstants.darkCard : Colors.grey.shade50,
@@ -1610,17 +1617,16 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
                     textInputAction: TextInputAction.done,
                   ),
                 ),
-                const SizedBox(width: 8),
+                SizedBox(width: ts.scale(8.0)),
                 GestureDetector(
                   onTap: () => _addTag(_tagController.text),
                   child: Container(
-                    padding: const EdgeInsets.all(10),
+                    padding: EdgeInsets.all(ts.scale(10.0)),
                     decoration: BoxDecoration(
                       color: AppConstants.getPrimary(isDark),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child:
-                        const Icon(Icons.add, color: Colors.white, size: 18),
+                    child: Icon(Icons.add, color: Colors.white, size: ts.scale(18.0)),
                   ),
                 ),
               ],
@@ -1628,10 +1634,10 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
 
             // Existing tags
             if (_tags.isNotEmpty) ...[
-              const SizedBox(height: 10),
+              SizedBox(height: ts.scale(10.0)),
               Wrap(
-                spacing: 6,
-                runSpacing: 6,
+                spacing: ts.scale(6.0),
+                runSpacing: ts.scale(6.0),
                 children: _tags.map((tag) {
                   return Chip(
                     label: Text(tag,

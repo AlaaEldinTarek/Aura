@@ -156,6 +156,10 @@ class SettingTileSwitch extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final ts = MediaQuery.textScalerOf(context);
+    final iconContSz = ts.scale(40.0);
+    final iconSz = ts.scale(20.0);
+    final emojiFontSz = ts.scale(22.0);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 1),
@@ -182,8 +186,8 @@ class SettingTileSwitch extends StatelessWidget {
                 // Icon
                 if (icon != null)
                   Container(
-                    width: 40,
-                    height: 40,
+                    width: iconContSz,
+                    height: iconContSz,
                     decoration: BoxDecoration(
                       color: (iconColor ?? AppConstants.getPrimary(isDark)).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -191,13 +195,13 @@ class SettingTileSwitch extends StatelessWidget {
                     child: Icon(
                       icon,
                       color: iconColor ?? AppConstants.getPrimary(isDark),
-                      size: 20,
+                      size: iconSz,
                     ),
                   )
                 else if (iconEmoji != null)
                   Container(
-                    width: 40,
-                    height: 40,
+                    width: iconContSz,
+                    height: iconContSz,
                     decoration: BoxDecoration(
                       color: AppConstants.getPrimary(isDark).withOpacity(0.1),
                       borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -205,7 +209,7 @@ class SettingTileSwitch extends StatelessWidget {
                     child: Center(
                       child: Text(
                         iconEmoji!,
-                        style: const TextStyle(fontSize: 22),
+                        style: TextStyle(fontSize: emojiFontSz),
                       ),
                     ),
                   ),
@@ -264,23 +268,24 @@ class SettingsSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final ts = MediaQuery.textScalerOf(context);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppConstants.paddingMedium,
-        AppConstants.paddingLarge,
-        AppConstants.paddingMedium,
-        AppConstants.paddingSmall,
+      padding: EdgeInsets.fromLTRB(
+        ts.scale(AppConstants.paddingMedium),
+        ts.scale(AppConstants.paddingLarge),
+        ts.scale(AppConstants.paddingMedium),
+        ts.scale(AppConstants.paddingSmall),
       ),
       child: Row(
         children: [
           if (icon != null) ...[
             Icon(
               icon,
-              size: 18,
+              size: ts.scale(18.0),
               color: AppConstants.getPrimary(isDark),
             ),
-            const SizedBox(width: AppConstants.paddingSmall),
+            SizedBox(width: ts.scale(AppConstants.paddingSmall)),
           ],
           Text(
             title,

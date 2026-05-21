@@ -1,5 +1,3 @@
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../constants/app_constants.dart';
 import '../models/prayer_time.dart';
@@ -40,6 +38,7 @@ class PrayerCard extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final locale = Localizations.localeOf(context);
     final isArabic = locale.languageCode == 'ar';
+    final ts = MediaQuery.textScalerOf(context);
 
     // Determine colors based on state
     Color cardColor;
@@ -97,12 +96,12 @@ class PrayerCard extends StatelessWidget {
             onTap: onTap,
             borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
             child: Padding(
-              padding: const EdgeInsets.all(AppConstants.paddingMedium),
+              padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
               child: Row(
               children: [
                 // Prayer Icon with Indicator
                 _buildPrayerIcon(context, isCurrent, isNext, iconColor),
-                const SizedBox(width: AppConstants.paddingMedium),
+                SizedBox(width: ts.scale(AppConstants.paddingMedium)),
 
                 // Prayer Info
                 Expanded(
@@ -132,12 +131,12 @@ class PrayerCard extends StatelessWidget {
                             ),
                           ),
                           if (isCurrent) ...[
-                            const SizedBox(width: AppConstants.paddingSmall),
+                            SizedBox(width: ts.scale(AppConstants.paddingSmall)),
                             _buildCurrentBadge(context, isArabic),
                           ],
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      SizedBox(height: ts.scale(4.0)),
 
                       // Prayer Time
                       Text(
@@ -153,7 +152,7 @@ class PrayerCard extends StatelessWidget {
 
                       // Iqamah Time
                       if (prayer.iqamaTime != null) ...[
-                        const SizedBox(height: 2),
+                        SizedBox(height: ts.scale(2.0)),
                         Text(
                           isArabic
                               ? 'الإقامة: ${DateFormatter.formatTime(prayer.iqamaTime!, languageCode: 'ar')}'
@@ -195,9 +194,9 @@ class PrayerCard extends StatelessWidget {
   Widget _buildPrayerIcon(
       BuildContext context, bool isCurrent, bool isNext, Color iconColor) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
-    final containerSize = isDesktop ? 72.0 : 52.0;
-    final imageSize = isDesktop ? 44.0 : 30.0;
+    final ts = MediaQuery.textScalerOf(context);
+    final containerSize = ts.scale(52.0);
+    final imageSize = ts.scale(30.0);
     return Container(
       width: containerSize,
       height: containerSize,
@@ -216,12 +215,12 @@ class PrayerCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
       ),
       child: Center(
-        child: _buildPrayerIconChild(iconColor, isCurrent, imageSize: imageSize),
+        child: _buildPrayerIconChild(context, iconColor, isCurrent, imageSize: imageSize),
       ),
     );
   }
 
-  Widget _buildPrayerIconChild(Color iconColor, bool isCurrent, {double imageSize = 30}) {
+  Widget _buildPrayerIconChild(BuildContext context, Color iconColor, bool isCurrent, {double imageSize = 30}) {
     final assetPath = _getPrayerIconAsset();
     if (assetPath != null) {
       return Image.asset(
@@ -231,16 +230,20 @@ class PrayerCard extends StatelessWidget {
         color: isCurrent ? Colors.white : null,
       );
     }
-    return Text(
-      _getPrayerEmoji(),
-      style: TextStyle(fontSize: imageSize - 2),
+    return MediaQuery(
+      data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+      child: Text(
+        _getPrayerEmoji(),
+        style: TextStyle(fontSize: imageSize - 2),
+      ),
     );
   }
 
   Widget _buildCurrentBadge(BuildContext context, bool isArabic) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final ts = MediaQuery.textScalerOf(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      padding: EdgeInsets.symmetric(horizontal: ts.scale(8.0), vertical: ts.scale(2.0)),
       decoration: BoxDecoration(
         color: AppConstants.getPrimary(isDark),
         borderRadius: BorderRadius.circular(12),
@@ -249,9 +252,10 @@ class PrayerCard extends StatelessWidget {
         isArabic ? 'الآن' : 'NOW',
         style: AppTypography.caption.copyWith(
           color: Colors.white,
-          fontSize: 10,
+          fontSize: ts.scale(10.0),
           fontWeight: FontWeight.bold,
         ),
+        textScaler: TextScaler.noScaling,
       ),
     );
   }
@@ -279,8 +283,9 @@ class PrayerCard extends StatelessWidget {
       countdown = NumberFormatter.withArabicNumeralsByLanguage(countdown, 'ar');
     }
 
+    final ts = MediaQuery.textScalerOf(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: ts.scale(10.0), vertical: ts.scale(6.0)),
       decoration: BoxDecoration(
         color: AppConstants.getPrimary(isDark).withOpacity(0.1),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -351,6 +356,7 @@ class PrayerCard extends StatelessWidget {
     final isLate = status == PrayerStatus.late;
     final isMissed = status == PrayerStatus.excused || status == PrayerStatus.missed;
     final color = isMissed ? Colors.red : (isLate ? Colors.orange : Colors.green);
+    final ts = MediaQuery.textScalerOf(context);
 
     return Material(
       color: Colors.transparent,
@@ -358,7 +364,7 @@ class PrayerCard extends StatelessWidget {
         onTap: onUncheck,
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: EdgeInsets.symmetric(horizontal: ts.scale(12.0), vertical: ts.scale(6.0)),
           decoration: BoxDecoration(
             color: color.withOpacity(0.15),
             borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -370,9 +376,9 @@ class PrayerCard extends StatelessWidget {
               Icon(
                 isMissed ? Icons.cancel : (isLate ? Icons.schedule : Icons.check_circle),
                 color: color,
-                size: 18,
+                size: ts.scale(18.0),
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: ts.scale(6.0)),
               Text(
                 isMissed
                     ? (isArabic ? 'لم أصلّ' : 'Missed')
@@ -393,13 +399,14 @@ class PrayerCard extends StatelessWidget {
 
   /// Build "Mark as Prayed" button
   Widget _buildMarkPrayedButton(BuildContext context, bool isArabic, bool isDark) {
+    final ts = MediaQuery.textScalerOf(context);
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onMarkPrayed,
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: EdgeInsets.symmetric(horizontal: ts.scale(12.0), vertical: ts.scale(6.0)),
           decoration: BoxDecoration(
             color: AppConstants.getPrimary(isDark).withOpacity(0.1),
             borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -413,9 +420,9 @@ class PrayerCard extends StatelessWidget {
               Icon(
                 Icons.check_circle_outline,
                 color: AppConstants.getPrimary(isDark),
-                size: 18,
+                size: ts.scale(18.0),
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: ts.scale(6.0)),
               Text(
                 isArabic ? 'أديت' : 'Prayed',
                 style: AppTypography.caption.copyWith(

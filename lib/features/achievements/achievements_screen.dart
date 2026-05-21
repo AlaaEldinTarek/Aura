@@ -52,6 +52,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final ts = MediaQuery.textScalerOf(context);
 
     final earnedIds = _earnedAchievements.map((a) => a.id).toSet();
     final appMode = ref.watch(appModeProvider);
@@ -81,8 +82,8 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                   // Summary header
                   SliverToBoxAdapter(
                     child: Container(
-                      margin: const EdgeInsets.all(AppConstants.paddingMedium),
-                      padding: const EdgeInsets.all(AppConstants.paddingLarge),
+                      margin: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
+                      padding: EdgeInsets.all(ts.scale(AppConstants.paddingLarge)),
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topLeft,
@@ -107,7 +108,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                                     color: Colors.white,
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                SizedBox(height: ts.scale(4.0)),
                                 Text(
                                   isArabic
                                       ? '${NumberFormatter.withArabicNumerals('$earnedCount')} من ${NumberFormatter.withArabicNumerals('$visibleTotal')} مكتمل'
@@ -168,9 +169,9 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                               }
                             }),
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: AppConstants.paddingMedium,
-                                vertical: AppConstants.paddingSmall,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: ts.scale(AppConstants.paddingMedium),
+                                vertical: ts.scale(AppConstants.paddingSmall),
                               ),
                               child: Row(
                                 children: [
@@ -190,13 +191,13 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                                       color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                                     ),
                                   ),
-                                  const SizedBox(width: 4),
+                                  SizedBox(width: ts.scale(4.0)),
                                   AnimatedRotation(
                                     turns: isCollapsed ? 0 : 0.5,
                                     duration: const Duration(milliseconds: 200),
                                     child: Icon(
                                       Icons.expand_more,
-                                      size: 20,
+                                      size: ts.scale(20.0),
                                       color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5),
                                     ),
                                   ),
@@ -210,10 +211,10 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                             child: isCollapsed
                                 ? const SizedBox.shrink()
                                 : Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
+                                    padding: EdgeInsets.symmetric(horizontal: ts.scale(AppConstants.paddingMedium)),
                                     child: Wrap(
-                                      spacing: 8,
-                                      runSpacing: 8,
+                                      spacing: ts.scale(8.0),
+                                      runSpacing: ts.scale(8.0),
                                       children: achievements.map((achievement) {
                                         final isEarned = earnedIds.contains(achievement.id);
                                         return _AchievementBadge(
@@ -226,7 +227,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                                     ),
                                   ),
                           ),
-                          const SizedBox(height: AppConstants.paddingMedium),
+                          SizedBox(height: ts.scale(AppConstants.paddingMedium)),
                         ],
                       ),
                     );
@@ -255,9 +256,10 @@ class _AchievementBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     return Container(
       width: (MediaQuery.of(context).size.width - AppConstants.paddingMedium * 2 - 8 * 2) / 3,
-      padding: const EdgeInsets.all(8),
+      padding: EdgeInsets.all(ts.scale(8.0)),
       decoration: BoxDecoration(
         color: isEarned
             ? AppConstants.getPrimary(isDark).withOpacity(0.1)
@@ -274,11 +276,12 @@ class _AchievementBadge extends StatelessWidget {
           Text(
             achievement.iconEmoji,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: ts.scale(24.0),
               color: isEarned ? null : (AppConstants.divider(isDark)),
             ),
+            textScaler: TextScaler.noScaling,
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: ts.scale(4.0)),
           Text(
             achievement.name(isArabic),
             style: AppTypography.labelS.copyWith(
@@ -291,11 +294,11 @@ class _AchievementBadge extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(height: 2),
+          SizedBox(height: ts.scale(2.0)),
           Text(
             achievement.description(isArabic),
             style: AppTypography.caption.copyWith(
-              fontSize: 9,
+              fontSize: ts.scale(9.0),
               color: isEarned
                   ? (isDark ? Colors.white60 : Colors.black54)
                   : (AppConstants.divider(isDark)),
@@ -303,10 +306,11 @@ class _AchievementBadge extends StatelessWidget {
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
+            textScaler: TextScaler.noScaling,
           ),
           if (isEarned) ...[
-            const SizedBox(height: 3),
-            Icon(Icons.check_circle, color: AppConstants.getPrimary(isDark), size: 14),
+            SizedBox(height: ts.scale(3.0)),
+            Icon(Icons.check_circle, color: AppConstants.getPrimary(isDark), size: ts.scale(14.0)),
           ],
         ],
       ),

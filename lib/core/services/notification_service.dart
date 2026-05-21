@@ -1383,7 +1383,8 @@ class NotificationService {
     if (defaultTargetPlatform != TargetPlatform.android) return false;
     try {
       return await _focusChannel.invokeMethod('canDrawOverlays') ?? false;
-    } on PlatformException {
+    } catch (e) {
+      debugPrint('canDrawOverlays: error - $e');
       return false;
     }
   }
@@ -1393,8 +1394,8 @@ class NotificationService {
     if (defaultTargetPlatform != TargetPlatform.android) return;
     try {
       await _focusChannel.invokeMethod('requestOverlayPermission');
-    } on PlatformException catch (e) {
-      debugPrint('FocusMode: Error requesting overlay - ${e.message}');
+    } catch (e) {
+      debugPrint('FocusMode: Error requesting overlay - $e');
     }
   }
 

@@ -48,6 +48,22 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
       return;
     }
 
+    try {
+      await _runChecks();
+    } catch (e) {
+      debugPrint('PermissionDialog: unexpected error - $e');
+    } finally {
+      if (!_hasChecked) {
+        _hasChecked = true;
+        if (!PermissionDialogHandler._completer.isCompleted) {
+          PermissionDialogHandler._completer.complete();
+        }
+        widget.onDone?.call();
+      }
+    }
+  }
+
+  Future<void> _runChecks() async {
     // Read app mode to filter relevant permissions
     final prefs = await SharedPreferences.getInstance();
     final appMode = prefs.getString('app_mode') ?? 'both';

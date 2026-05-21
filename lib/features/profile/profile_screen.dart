@@ -105,39 +105,42 @@ class ProfileScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(isArabic ? 'الملف الشخصي' : 'Profile'),
       ),
-      body: Center(
+      body: Builder(builder: (ctx) {
+        final ts = MediaQuery.textScalerOf(ctx);
+        return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.account_circle,
-              size: 100,
+              size: ts.scale(100.0),
               color: isDark ? Colors.white24 : Colors.black12,
             ),
-            const SizedBox(height: AppConstants.paddingLarge),
+            SizedBox(height: ts.scale(AppConstants.paddingLarge)),
             Text(
               'login_required'.tr(),
-              style: Theme.of(context).textTheme.titleLarge,
+              style: Theme.of(ctx).textTheme.titleLarge,
             ),
-            const SizedBox(height: AppConstants.paddingMedium),
+            SizedBox(height: ts.scale(AppConstants.paddingMedium)),
             Text(
               'login_required_desc'.tr(),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(
                     color: isDark
                         ? AppConstants.darkTextSecondary
                         : AppConstants.lightTextSecondary,
                   ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: AppConstants.paddingXLarge),
+            SizedBox(height: ts.scale(AppConstants.paddingXLarge)),
             AuraButton(
               label: 'login'.tr(),
-              onPressed: () => Navigator.of(context).pushReplacementNamed('/login'),
+              onPressed: () => Navigator.of(ctx).pushReplacementNamed('/login'),
               icon: const Icon(Icons.login),
             ),
           ],
         ),
-      ),
+      );
+      }),
     );
   }
 
@@ -151,6 +154,9 @@ class ProfileScreen extends ConsumerWidget {
     final themeModeAsync = ref.watch(themeModeProvider);
     final appMode = ref.watch(appModeProvider);
 
+    final ts = MediaQuery.textScalerOf(context);
+    final gapM = ts.scale(AppConstants.paddingMedium).clamp(0.0, 20.0);
+    final gapL = ts.scale(AppConstants.paddingLarge).clamp(0.0, 28.0);
     return Scaffold(
       appBar: AppBar(
         title: Text(isArabic ? 'الملف الشخصي' : 'Profile'),
@@ -158,23 +164,23 @@ class ProfileScreen extends ConsumerWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const SizedBox(height: AppConstants.paddingMedium),
+            SizedBox(height: gapM),
 
             // Profile Header Card
             _buildProfileHeader(context, user, isDark, isArabic)
                 .animate().fadeIn(duration: 400.ms),
 
-            const SizedBox(height: AppConstants.paddingMedium),
+            SizedBox(height: gapM),
 
             // Prayer Stats Summary
             _buildPrayerStatsSummary(context, isDark, isArabic),
 
-            const SizedBox(height: AppConstants.paddingMedium),
+            SizedBox(height: gapM),
 
             // Task Stats Summary
             _buildTaskStatsSummary(context, ref, isDark, isArabic),
 
-            const SizedBox(height: AppConstants.paddingMedium),
+            SizedBox(height: gapM),
 
             // Account Section
             SettingsSectionHeader(
@@ -209,7 +215,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: AppConstants.paddingLarge),
+            SizedBox(height: gapL),
 
             // App Mode Section
             SettingsSectionHeader(
@@ -222,7 +228,7 @@ class ProfileScreen extends ConsumerWidget {
               ],
             ),
 
-            const SizedBox(height: AppConstants.paddingLarge),
+            SizedBox(height: gapL),
 
             // Achievements Section
             SettingsSectionHeader(
@@ -230,7 +236,7 @@ class ProfileScreen extends ConsumerWidget {
               title: isArabic ? 'الإنجازات' : 'Achievements',
             ),
             _AchievementsBadgeGrid(isDark: isDark, isArabic: isArabic, appMode: appMode),
-            const SizedBox(height: AppConstants.paddingLarge),
+            SizedBox(height: gapL),
 
             // App Settings Section
             SettingsSectionHeader(
@@ -277,7 +283,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: AppConstants.paddingLarge),
+            SizedBox(height: gapL),
 
             // Prayer Notifications Section
             SettingsSectionHeader(
@@ -289,7 +295,7 @@ class ProfileScreen extends ConsumerWidget {
                 _JumuahReminderTile(isDark: isDark, isArabic: isArabic),
               ],
             ),
-            const SizedBox(height: AppConstants.paddingLarge),
+            SizedBox(height: gapL),
 
             // About Section
             SettingsSectionHeader(
@@ -310,7 +316,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ],
             ),
-            const SizedBox(height: AppConstants.paddingLarge),
+            SizedBox(height: gapL),
 
             // Guest data sync card (shown when local tasks are pending migration)
             Builder(builder: (ctx) {
@@ -379,13 +385,13 @@ class ProfileScreen extends ConsumerWidget {
 
             // Logout Button
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
+              padding: EdgeInsets.symmetric(horizontal: ts.scale(AppConstants.paddingMedium)),
               child: SizedBox(
                 width: double.infinity,
-                height: 54,
+                height: ts.scale(54.0),
                 child: ElevatedButton.icon(
                   onPressed: () => _showLogoutDialog(context, ref, isArabic),
-                  icon: const Icon(Icons.logout),
+                  icon: Icon(Icons.logout, size: ts.scale(20.0)),
                   label: Text('logout'.tr()),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppConstants.error.withOpacity(0.1),
@@ -400,7 +406,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
 
             // Bottom padding for nav bar
-            const SizedBox(height: 100),
+            SizedBox(height: ts.scale(100.0)),
           ],
         ),
       ),
@@ -495,7 +501,7 @@ class ProfileScreen extends ConsumerWidget {
             ),
           );
           }),
-          const SizedBox(width: AppConstants.paddingLarge),
+          SizedBox(width: MediaQuery.textScalerOf(context).scale(AppConstants.paddingLarge)),
 
           // Name and Email
           Expanded(
@@ -511,7 +517,7 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                   textAlign: isArabic ? TextAlign.right : TextAlign.left,
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: MediaQuery.textScalerOf(context).scale(4.0)),
 
                 // Email
                 if (user.email != null)
@@ -640,8 +646,10 @@ class ProfileScreen extends ConsumerWidget {
             ? '${(completionRate * 100).round()}%'
             : '--';
 
+        final ts = MediaQuery.textScalerOf(context);
+        final gap = SizedBox(width: ts.scale(8.0));
         return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
+          padding: EdgeInsets.symmetric(horizontal: ts.scale(AppConstants.paddingMedium)),
           child: Row(
             children: [
               Expanded(
@@ -653,7 +661,7 @@ class ProfileScreen extends ConsumerWidget {
                   isDark: isDark,
                 ),
               ),
-              const SizedBox(width: 8),
+              gap,
               Expanded(
                 child: _ProfileStatCard(
                   icon: Icons.mosque_outlined,
@@ -663,7 +671,7 @@ class ProfileScreen extends ConsumerWidget {
                   isDark: isDark,
                 ),
               ),
-              const SizedBox(width: 8),
+              gap,
               Expanded(
                 child: _ProfileStatCard(
                   icon: Icons.check_circle,
@@ -673,7 +681,7 @@ class ProfileScreen extends ConsumerWidget {
                   isDark: isDark,
                 ),
               ),
-              const SizedBox(width: 8),
+              gap,
               Expanded(
                 child: _ProfileStatCard(
                   icon: Icons.emoji_events,
@@ -698,11 +706,13 @@ class ProfileScreen extends ConsumerWidget {
       error: (_, __) => const SizedBox.shrink(),
       data: (stats) {
         if (stats.total == 0) return const SizedBox.shrink();
+        final ts = MediaQuery.textScalerOf(context);
+        final gap = SizedBox(width: ts.scale(8.0));
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
+              padding: EdgeInsets.symmetric(horizontal: ts.scale(AppConstants.paddingMedium)),
               child: Text(
                 isArabic ? 'المهام' : 'Tasks',
                 style: AppTypography.bodyS.copyWith(
@@ -711,9 +721,9 @@ class ProfileScreen extends ConsumerWidget {
                 ),
               ),
             ),
-            const SizedBox(height: 8),
+            SizedBox(height: ts.scale(8.0)),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
+              padding: EdgeInsets.symmetric(horizontal: ts.scale(AppConstants.paddingMedium)),
               child: Row(
                 children: [
                   Expanded(
@@ -726,7 +736,7 @@ class ProfileScreen extends ConsumerWidget {
                       isDark: isDark,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  gap,
                   Expanded(
                     child: _ProfileStatCard(
                       icon: Icons.task_alt,
@@ -737,7 +747,7 @@ class ProfileScreen extends ConsumerWidget {
                       isDark: isDark,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  gap,
                   Expanded(
                     child: _ProfileStatCard(
                       icon: Icons.pending_actions,
@@ -976,19 +986,28 @@ class _ProfileStatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(ts.scale(12.0)),
       decoration: BoxDecoration(
         color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         border: Border.all(color: AppConstants.border(isDark)),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(height: 4),
-          Text(value, style: AppTypography.headingS.copyWith(fontWeight: FontWeight.bold, color: AppConstants.textPrimary(isDark))),
-          Text(label, style: AppTypography.caption.copyWith(fontSize: 10, color: AppConstants.textMuted(isDark))),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: color, size: ts.scale(18.0)),
+              SizedBox(width: ts.scale(8.0)),
+              Text(value, style: AppTypography.headingS.copyWith(fontWeight: FontWeight.bold, color: AppConstants.textPrimary(isDark))),
+            ],
+          ),
+          SizedBox(height: ts.scale(2.0)),
+          Text(label, style: AppTypography.caption.copyWith(fontSize: ts.scale(10.0), color: AppConstants.textMuted(isDark)), textScaler: TextScaler.noScaling),
         ],
       ),
     );
@@ -1085,13 +1104,13 @@ class _AchievementsBadgeGridState extends State<_AchievementsBadgeGrid> {
         .catchError((_) => AchievementService.instance.getEarnedAchievements(userId: userId));
   }
 
-  Widget _buildBadge(Achievement achievement, bool isEarned, Color primary, bool isDark, bool isArabic) {
+  Widget _buildBadge(Achievement achievement, bool isEarned, Color primary, bool isDark, bool isArabic, {required double size}) {
     final isTask = achievement.category == AchievementCategory.tasks;
     return Tooltip(
       message: isArabic ? achievement.nameAr : achievement.nameEn,
       child: Container(
-        width: 52,
-        height: 52,
+        width: size,
+        height: size,
         decoration: BoxDecoration(
           color: isEarned
               ? primary.withOpacity(isTask ? 0.15 : 0.08)
@@ -1107,7 +1126,11 @@ class _AchievementsBadgeGridState extends State<_AchievementsBadgeGrid> {
         child: Center(
           child: Opacity(
             opacity: isEarned ? 1.0 : 0.25,
-            child: Text(achievement.iconEmoji, style: const TextStyle(fontSize: 22)),
+            child: Text(
+              achievement.iconEmoji,
+              textScaler: TextScaler.noScaling,
+              style: TextStyle(fontSize: size * 0.42),
+            ),
           ),
         ),
       ),
@@ -1143,8 +1166,9 @@ class _AchievementsBadgeGridState extends State<_AchievementsBadgeGrid> {
               // Badge grid — collapses to 2 rows
               LayoutBuilder(
                 builder: (context, constraints) {
-                  const itemSize = 52.0;
-                  const spacing = 10.0;
+                  final ts = MediaQuery.textScalerOf(context);
+                  final itemSize = ts.scale(52.0);
+                  final spacing = ts.scale(10.0);
                   final innerWidth = constraints.maxWidth - AppConstants.paddingMedium * 2;
                   final perRow = ((innerWidth + spacing) / (itemSize + spacing)).floor().clamp(1, 100);
                   final maxCollapsed = perRow * 2;
@@ -1161,7 +1185,7 @@ class _AchievementsBadgeGridState extends State<_AchievementsBadgeGrid> {
                           child: Wrap(
                             spacing: spacing,
                             runSpacing: spacing,
-                            children: visibleItems.map((a) => _buildBadge(a, earnedIds.contains(a.id), primary, isDark, isArabic)).toList(),
+                            children: visibleItems.map((a) => _buildBadge(a, earnedIds.contains(a.id), primary, isDark, isArabic, size: itemSize)).toList(),
                           ),
                         ),
                       ),
@@ -1176,7 +1200,7 @@ class _AchievementsBadgeGridState extends State<_AchievementsBadgeGrid> {
                                 AnimatedRotation(
                                   turns: _isExpanded ? 0.5 : 0,
                                   duration: const Duration(milliseconds: 250),
-                                  child: Icon(Icons.expand_more, size: 18, color: primary),
+                                  child: Icon(Icons.expand_more, size: ts.scale(18.0), color: primary),
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
@@ -1216,7 +1240,7 @@ class _AchievementsBadgeGridState extends State<_AchievementsBadgeGrid> {
                         style: AppTypography.caption.copyWith(color: primary, fontWeight: FontWeight.w600),
                       ),
                       const SizedBox(width: 6),
-                      Icon(Icons.arrow_forward_ios, size: 11, color: primary),
+                      Icon(Icons.arrow_forward_ios, size: MediaQuery.textScalerOf(context).scale(11.0), color: primary),
                     ],
                   ),
                 ),

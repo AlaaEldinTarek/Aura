@@ -480,11 +480,12 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
       return _buildErrorState(context, state.errorMessage!, isArabic);
     }
 
+    final ts = MediaQuery.textScalerOf(context);
     return RefreshIndicator(
       onRefresh: _refreshPrayerTimes,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(AppSpacing.base),
+        padding: EdgeInsets.all(ts.scale(AppSpacing.base)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -494,7 +495,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
             if (state.location != null)
               _buildLocationHeader(context, state.location!, isDark, isArabic),
 
-            const SizedBox(height: AppSpacing.sm),
+            SizedBox(height: ts.scale(AppSpacing.sm).clamp(0.0, 12.0)),
 
             // Date Header Card with Hijri-style design
             _buildDateHeader(context, state.selectedDate, state.prayerTimes,
@@ -503,7 +504,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                 .fadeIn(duration: 400.ms)
                 .slideY(begin: 0.08, duration: 400.ms),
 
-            const SizedBox(height: AppSpacing.base),
+            SizedBox(height: ts.scale(AppSpacing.base).clamp(0.0, 20.0)),
 
             // Next Prayer Countdown (Circular)
             if (state.nextPrayer != null) ...[
@@ -511,7 +512,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                       context, state.nextPrayer!, isDark, isArabic)
                   .animate()
                   .fadeIn(delay: 100.ms, duration: 400.ms),
-              const SizedBox(height: AppSpacing.xl),
+              SizedBox(height: ts.scale(AppSpacing.xl).clamp(0.0, 32.0)),
             ],
 
             // Prayers List Header
@@ -522,13 +523,13 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                   .fadeIn(delay: 200.ms, duration: 400.ms),
             ),
 
-            const SizedBox(height: AppSpacing.sm),
+            SizedBox(height: ts.scale(AppSpacing.sm).clamp(0.0, 12.0)),
 
             // Prayer Cards
             ..._buildPrayerCards(context, state, isDark, isArabic),
 
             // Muslim Toolkit
-            const SizedBox(height: AppSpacing.xl),
+            SizedBox(height: ts.scale(AppSpacing.xl).clamp(0.0, 32.0)),
             SizedBox(
               key: _toolkitKey,
               child: _buildMuslimToolkit(context, isDark, isArabic)
@@ -537,7 +538,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
             ),
 
             // Bottom padding for nav bar
-            const SizedBox(height: 80),
+            SizedBox(height: ts.scale(80.0)),
           ],
         ),
       ),
@@ -550,6 +551,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     bool isDark,
     bool isArabic,
   ) {
+    final ts = MediaQuery.textScalerOf(context);
     final cityName = location.cityName ?? 'Unknown';
     final localizedCityName =
         getLocalizedCityName(cityName, isArabic ? 'ar' : 'en');
@@ -561,8 +563,8 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
       mainAxisSize: MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(Icons.location_on, color: primary, size: 20),
-        const SizedBox(width: 6),
+        Icon(Icons.location_on, color: primary, size: ts.scale(20.0)),
+        SizedBox(width: ts.scale(6.0)),
         Text(
           localizedCityName,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -571,8 +573,8 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
               ),
         ),
         if (isDesktop) ...[
-          const SizedBox(width: 6),
-          Icon(Icons.edit_location_alt_outlined, color: primary, size: 17),
+          SizedBox(width: ts.scale(6.0)),
+          Icon(Icons.edit_location_alt_outlined, color: primary, size: ts.scale(17.0)),
         ],
       ],
     );
@@ -580,7 +582,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     if (!isDesktop) {
       return Container(
         margin: const EdgeInsets.symmetric(horizontal: 0),
-        padding: const EdgeInsets.all(AppSpacing.sm),
+        padding: EdgeInsets.all(ts.scale(AppSpacing.sm)),
         child: row,
       );
     }
@@ -590,9 +592,9 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
       borderRadius: BorderRadius.circular(8),
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 0),
-        padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: AppSpacing.sm - 2),
+        padding: EdgeInsets.symmetric(
+            horizontal: ts.scale(AppSpacing.sm),
+            vertical: ts.scale(AppSpacing.sm - 2)),
         child: row,
       ),
     );
@@ -647,7 +649,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                   color: Colors.white70,
                   size: _dts.scale(14.0),
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: _dts.scale(6.0)),
                 Flexible(
                   child: Text(
                     hijriDateStr,
@@ -664,10 +666,10 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
           // Today Badge (center)
           if (isToday)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: EdgeInsets.symmetric(horizontal: _dts.scale(8.0)),
               child: Container(
                 padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    EdgeInsets.symmetric(horizontal: _dts.scale(10.0), vertical: _dts.scale(4.0)),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.25),
                   borderRadius: BorderRadius.circular(AppConstants.radiusSmall),
@@ -696,7 +698,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                const SizedBox(width: 6),
+                SizedBox(width: _dts.scale(6.0)),
                 Icon(
                   Icons.calendar_today,
                   color: Colors.white70,
@@ -716,6 +718,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     bool isDark,
     bool isArabic,
   ) {
+    final ts = MediaQuery.textScalerOf(context);
     return Column(
       children: [
         Text(
@@ -725,12 +728,12 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                 color: AppConstants.getPrimary(isDark),
               ),
         ),
-        const SizedBox(height: AppSpacing.base),
+        SizedBox(height: ts.scale(AppSpacing.base)),
         CircularCountdownTimer(
           targetTime: nextPrayer.time,
           prayerName: isArabic ? nextPrayer.nameAr : nextPrayer.name,
           prayerTime: DateFormatter.formatTime(nextPrayer.time, languageCode: isArabic ? 'ar' : 'en'),
-          size: (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) ? 280 : 180,
+          size: ts.scale(180.0),
           onComplete: () {
             // Refresh when prayer time is reached - wrap in microtask to avoid modifying during build
             Future.microtask(() async {
@@ -784,8 +787,10 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
       // Don't show mark button for Sunrise
       final canMark = prayer.name != 'Sunrise';
 
-      return Padding(
-        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      return Builder(builder: (ctx) {
+        final cardTs = MediaQuery.textScalerOf(ctx);
+        return Padding(
+        padding: EdgeInsets.only(bottom: cardTs.scale(AppSpacing.sm)),
         child: PrayerCard(
           prayer: prayer,
           isNext: isNext,
@@ -801,6 +806,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
             delay: Duration(milliseconds: 250 + (index * 50)),
             duration: 400.ms,
           );
+      });
     }).toList();
   }
 
@@ -817,8 +823,9 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
       _ToolkitAction(icon: Icons.bar_chart, label: isArabic ? 'التقرير' : 'Report', route: '/prayer_report', color: primary),
     ];
 
+    final tkTs = MediaQuery.textScalerOf(context);
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.base),
+      padding: EdgeInsets.all(tkTs.scale(AppSpacing.base)),
       decoration: BoxDecoration(
         color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
@@ -843,13 +850,13 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.base),
+          Builder(builder: (ctx) => SizedBox(height: MediaQuery.textScalerOf(ctx).scale(AppSpacing.base))),
           Row(
             children: actions.map((action) {
-              final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+              final ts = MediaQuery.textScalerOf(context);
               return Expanded(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: isDesktop ? 10 : 4),
+                  padding: EdgeInsets.symmetric(horizontal: ts.scale(4.0)),
                   child: Material(
                     color: Colors.transparent,
                     child: InkWell(
@@ -860,7 +867,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                       },
                       borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
                       child: Container(
-                        padding: EdgeInsets.symmetric(vertical: isDesktop ? 20 : 14),
+                        padding: EdgeInsets.symmetric(vertical: ts.scale(14.0)),
                         decoration: BoxDecoration(
                           color: action.color.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -868,9 +875,8 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                         ),
                         child: Column(
                           children: [
-                            Icon(action.icon, color: action.color,
-                                size: (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) ? 40 : 24),
-                            const SizedBox(height: 6),
+                            Icon(action.icon, color: action.color, size: ts.scale(24.0)),
+                            SizedBox(height: ts.scale(6.0)),
                             Text(
                               action.label,
                               style: AppTypography.labelS.copyWith(
@@ -894,8 +900,9 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
 
 
   Widget _buildLoadingState(BuildContext context, bool isDark) {
+    final ts = MediaQuery.textScalerOf(context);
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppSpacing.base),
+      padding: EdgeInsets.all(ts.scale(AppSpacing.base)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -905,42 +912,42 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
           // Location header
           const ShimmerLocationHeader(),
 
-          const SizedBox(height: AppSpacing.sm),
+          SizedBox(height: ts.scale(AppSpacing.sm).clamp(0.0, 12.0)),
 
           // Date header (mirrors the blue bar with Hijri/Gregorian)
           const ShimmerDateHeader(),
 
-          const SizedBox(height: AppSpacing.base),
+          SizedBox(height: ts.scale(AppSpacing.base).clamp(0.0, 20.0)),
 
           // "Next Prayer" label
           const ShimmerSectionLabel(width: 100),
-          const SizedBox(height: AppSpacing.base),
+          SizedBox(height: ts.scale(AppSpacing.base).clamp(0.0, 20.0)),
 
           // Circular countdown (mirrors the 180x180 circle)
           const Center(child: ShimmerCircularCountdown()),
 
-          const SizedBox(height: AppSpacing.xl),
+          SizedBox(height: ts.scale(AppSpacing.xl).clamp(0.0, 32.0)),
 
           // "Today's Prayer Times" section header
           const ShimmerSectionHeader(width: 180),
 
-          const SizedBox(height: AppSpacing.sm),
+          SizedBox(height: ts.scale(AppSpacing.sm).clamp(0.0, 12.0)),
 
           // 6 Prayer cards (mirrors PrayerCard layout)
           ...List.generate(
             6,
-            (_) => const Padding(
-              padding: EdgeInsets.only(bottom: AppSpacing.sm),
-              child: ShimmerPrayerCard(),
+            (_) => Padding(
+              padding: EdgeInsets.only(bottom: ts.scale(AppSpacing.sm)),
+              child: const ShimmerPrayerCard(),
             ),
           ),
 
           // Quick Actions section
-          const SizedBox(height: AppSpacing.xl),
+          SizedBox(height: ts.scale(AppSpacing.xl).clamp(0.0, 32.0)),
           const ShimmerQuickActions(),
 
           // Bottom padding for nav bar
-          const SizedBox(height: 80),
+          SizedBox(height: ts.scale(80.0)),
         ],
       ),
     );
@@ -948,24 +955,25 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
 
   Widget _buildErrorState(BuildContext context, String error, bool isArabic) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final ts = MediaQuery.textScalerOf(context);
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.xxl),
+      padding: EdgeInsets.all(ts.scale(AppSpacing.xxl)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
             Icons.error_outline,
-            size: 64,
+            size: ts.scale(64.0),
             color: AppConstants.error,
           ),
-          const SizedBox(height: AppSpacing.base),
+          SizedBox(height: ts.scale(AppSpacing.base)),
           Text(
             isArabic ? 'خطأ في جلب أوقات الصلاة' : 'Error Loading Prayer Times',
             style: Theme.of(context).textTheme.titleLarge,
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: AppSpacing.sm),
+          SizedBox(height: ts.scale(AppSpacing.sm)),
           Text(
             error,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -973,7 +981,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                 ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: AppSpacing.xl),
+          SizedBox(height: ts.scale(AppSpacing.xl)),
           AuraButton(
             label: isArabic ? 'إعادة المحاولة' : 'Retry',
             onPressed: _loadPrayerTimes,

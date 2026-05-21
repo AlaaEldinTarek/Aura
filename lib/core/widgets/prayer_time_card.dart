@@ -23,6 +23,7 @@ class PrayerTimeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final ts = MediaQuery.textScalerOf(context);
 
     // Time formatting
     final hour = prayerTime.time.hour % 12 == 0 ? 12 : prayerTime.time.hour % 12;
@@ -33,7 +34,7 @@ class PrayerTimeCard extends StatelessWidget {
     final timeRemaining = prayerTime.time.difference(DateTime.now());
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 4),
+      margin: EdgeInsets.symmetric(horizontal: ts.scale(4.0)),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -56,7 +57,7 @@ class PrayerTimeCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: EdgeInsets.symmetric(horizontal: ts.scale(16.0), vertical: ts.scale(12.0)),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
               border: Border.all(
@@ -71,8 +72,8 @@ class PrayerTimeCard extends StatelessWidget {
               children: [
                 // Prayer emoji
                 Container(
-                  width: 32,
-                  height: 32,
+                  width: ts.scale(32.0),
+                  height: ts.scale(32.0),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.2),
                     shape: BoxShape.circle,
@@ -80,11 +81,12 @@ class PrayerTimeCard extends StatelessWidget {
                   child: Center(
                     child: Text(
                       prayerTime.emoji,
-                      style: const TextStyle(fontSize: 18),
+                      style: TextStyle(fontSize: ts.scale(18.0)),
+                      textScaler: TextScaler.noScaling,
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: ts.scale(8.0)),
 
                 // Prayer name
                 Text(
@@ -97,7 +99,7 @@ class PrayerTimeCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: ts.scale(4.0)),
 
                 // Prayer time
                 Text(
@@ -111,9 +113,9 @@ class PrayerTimeCard extends StatelessWidget {
                 // Time remaining (if next prayer)
                 if (isNext && timeRemaining.inSeconds > 0)
                   Padding(
-                    padding: const EdgeInsets.only(top: 4),
+                    padding: EdgeInsets.only(top: ts.scale(4.0)),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: EdgeInsets.symmetric(horizontal: ts.scale(6.0), vertical: ts.scale(2.0)),
                       decoration: BoxDecoration(
                         color: Colors.white.withOpacity(0.2),
                         borderRadius: BorderRadius.circular(8),
@@ -122,8 +124,9 @@ class PrayerTimeCard extends StatelessWidget {
                         _formatTimeRemaining(timeRemaining),
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Colors.white,
-                              fontSize: 10,
+                              fontSize: ts.scale(10.0),
                             ),
+                        textScaler: TextScaler.noScaling,
                       ),
                     ),
                   ),

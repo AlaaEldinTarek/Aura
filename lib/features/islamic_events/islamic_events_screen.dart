@@ -15,6 +15,7 @@ class IslamicEventsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final ts = MediaQuery.textScalerOf(context);
     final events = ref.watch(islamicEventsProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
@@ -30,9 +31,9 @@ class IslamicEventsScreen extends ConsumerWidget {
       body: events.isEmpty
           ? Center(child: Text('events_no_events'.tr()))
           : ListView.separated(
-                  padding: const EdgeInsets.all(AppConstants.paddingMedium),
+                  padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
                   itemCount: events.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  separatorBuilder: (_, __) => SizedBox(height: ts.scale(10.0)),
                   itemBuilder: (context, index) => buildCard(events[index]),
                 ),
     );
@@ -76,6 +77,7 @@ class _EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     final badgeColor = _badgeColor();
     final secondary = AppConstants.textSecondary(isDark);
 
@@ -93,7 +95,7 @@ class _EventCard extends StatelessWidget {
             : null,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppConstants.paddingMedium),
+        padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -119,7 +121,7 @@ class _EventCard extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: ts.scale(12.0)),
                 // Col 2: 2-line text
                 Expanded(
                   child: Column(
@@ -130,11 +132,12 @@ class _EventCard extends StatelessWidget {
                         style: (isArabic
                             ? AppTypography.ar(AppTypography.headingS)
                             : AppTypography.headingS).copyWith(
-                          fontSize: 15,
+                          fontSize: ts.scale(15.0),
                           fontWeight: FontWeight.bold,
                         ),
+                        textScaler: TextScaler.noScaling,
                       ),
-                      const SizedBox(height: 2),
+                      SizedBox(height: ts.scale(2.0)),
                       Text(
                         _hijriLabel(),
                         style: AppTypography.caption.copyWith(color: secondary),
@@ -142,10 +145,10 @@ class _EventCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: ts.scale(12.0)),
                 // Col 3: countdown badge chip
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  padding: EdgeInsets.symmetric(horizontal: ts.scale(10.0), vertical: ts.scale(5.0)),
                   decoration: BoxDecoration(
                     color: badgeColor.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(20),
@@ -162,7 +165,7 @@ class _EventCard extends StatelessWidget {
               ],
             );
             }),
-            const SizedBox(height: 10),
+            SizedBox(height: ts.scale(10.0)),
             // Description
             Text(
               isArabic ? item.event.descriptionAr : item.event.descriptionEn,

@@ -4,6 +4,7 @@ import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 import '../models/prayer_time.dart';
 import 'desktop_adhan_service.dart';
+import 'desktop_prayer_scheduler.dart';
 
 /// System-tray icon + minimize-to-tray for Windows/macOS/Linux.
 /// Shows next prayer in the tray menu and intercepts the window close
@@ -79,12 +80,35 @@ class DesktopTrayService with TrayListener, WindowListener {
       ),
       MenuItem.separator(),
       if (_adhanPlaying)
-        MenuItem(key: 'stop_adhan', label: '🔇 Stop Adhan'),
-      if (_adhanPlaying)
-        MenuItem.separator(),
-      MenuItem(key: 'open', label: 'Open Aura'),
+        MenuItem(
+          key: 'stop_adhan',
+          label: '🔇 Stop Adhan',
+          onClick: (_) {
+            DesktopAdhanService.instance.stop();
+            setAdhanPlaying(false);
+          },
+        ),
+      if (_adhanPlaying) MenuItem.separator(),
+      MenuItem(
+        key: 'open',
+        label: 'Open Aura',
+        onClick: (_) => showWindow(),
+      ),
       MenuItem.separator(),
-      MenuItem(key: 'quit', label: 'Quit'),
+      MenuItem(
+        key: 'test_notif',
+        label: '🔔 Test Notification',
+        onClick: (_) {
+          debugPrint('🔔 [TRAY] test_notif onClick fired');
+          DesktopPrayerScheduler.instance.fireTestAdhan();
+        },
+      ),
+      MenuItem.separator(),
+      MenuItem(
+        key: 'quit',
+        label: 'Quit',
+        onClick: (_) => _quit(),
+      ),
     ]));
   }
 
@@ -112,6 +136,9 @@ class DesktopTrayService with TrayListener, WindowListener {
       case 'open':
         showWindow();
         break;
+      case 'test_notif':
+        DesktopPrayerScheduler.instance.fireTestAdhan();
+        break;
       case 'quit':
         _quit();
         break;
@@ -136,15 +163,13 @@ class DesktopTrayService with TrayListener, WindowListener {
 
   Future<void> _showWindow() async {
     _isHidden = false;
+    await windowManager.setSkipTaskbar(false);
     if (!await windowManager.isVisible()) await windowManager.show();
     await windowManager.focus();
   }
 
-  Future<void> _quit() async {
-    try {
-      await windowManager.setPreventClose(false);
-      await windowManager.close();
-    } catch (_) {}
+  void _quit() {
+    windowManager.setPreventClose(false).ignore();
     exit(0);
   }
 }

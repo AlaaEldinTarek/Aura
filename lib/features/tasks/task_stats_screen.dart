@@ -61,6 +61,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final ts = MediaQuery.textScalerOf(context);
 
     return Scaffold(
       backgroundColor:
@@ -153,6 +154,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
   }
 
   Widget _buildTopCards(TaskStatistics stats, bool isDark, bool isArabic) {
+    final ts = MediaQuery.textScalerOf(context);
     return Row(
       children: [
         // Streak card
@@ -170,7 +172,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
             isDark: isDark,
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: ts.scale(12.0)),
         // Completion rate card
         Expanded(
           child: _buildInfoCard(
@@ -184,7 +186,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
             isDark: isDark,
           ),
         ),
-        const SizedBox(width: 12),
+        SizedBox(width: ts.scale(12.0)),
         // Today card
         Expanded(
           child: _buildInfoCard(
@@ -214,8 +216,9 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
     required bool isDark,
     Color? subtitleColor,
   }) {
+    final ts = MediaQuery.textScalerOf(context);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(ts.scale(16.0)),
       decoration: BoxDecoration(
         color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
@@ -229,8 +232,8 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
       ),
       child: Column(
         children: [
-          Icon(icon, color: iconColor, size: 28),
-          const SizedBox(height: 8),
+          Icon(icon, color: iconColor, size: ts.scale(28.0)),
+          SizedBox(height: ts.scale(8.0)),
           Text(
             value,
             style: AppTypography.headingL.copyWith(
@@ -238,21 +241,22 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
               color: AppConstants.textPrimary(isDark),
             ),
           ),
-          const SizedBox(height: 2),
+          SizedBox(height: ts.scale(2.0)),
           Text(
             title,
             style: AppTypography.caption.copyWith(
               color: AppConstants.textMuted(isDark),
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: ts.scale(4.0)),
           Text(
             subtitle,
             style: AppTypography.caption.copyWith(
-              fontSize: 10,
+              fontSize: ts.scale(10.0),
               color: subtitleColor ??
                   (isDark ? Colors.grey.shade500 : Colors.grey.shade500),
             ),
+            textScaler: TextScaler.noScaling,
           ),
         ],
       ),
@@ -262,6 +266,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
   // ─── 7-Day Completion Chart ────────────────────────────────────────────────
 
   Widget _buildWeeklyChart(List<Task> tasks, bool isDark, bool isArabic) {
+    final ts = MediaQuery.textScalerOf(context);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
@@ -317,8 +322,8 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
           Row(
             children: [
               Icon(Icons.bar_chart_rounded,
-                  color: AppConstants.getPrimary(isDark), size: 20),
-              const SizedBox(width: 8),
+                  color: AppConstants.getPrimary(isDark), size: ts.scale(20.0)),
+              SizedBox(width: ts.scale(8.0)),
               Text(
                 isArabic ? 'آخر 7 أيام' : 'Last 7 Days',
                 style: AppTypography.bodyL.copyWith(
@@ -346,10 +351,10 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          SizedBox(height: ts.scale(20.0)),
           // Bar chart
           SizedBox(
-            height: 140,
+            height: ts.scale(140.0),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: days.map((d) {
@@ -358,7 +363,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                 final isToday = d.day == today;
                 return Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    padding: EdgeInsets.symmetric(horizontal: ts.scale(4.0)),
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -373,7 +378,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                               color: isDark ? Colors.grey.shade300 : Colors.grey.shade700,
                             ),
                           ),
-                        const SizedBox(height: 4),
+                        SizedBox(height: ts.scale(4.0)),
                         // Bar
                         AnimatedContainer(
                           duration: const Duration(milliseconds: 600),
@@ -386,12 +391,12 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                             borderRadius: BorderRadius.circular(6),
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        SizedBox(height: ts.scale(8.0)),
                         // Label
                         Text(
                           d.label,
                           style: AppTypography.caption.copyWith(
-                            fontSize: 10,
+                            fontSize: ts.scale(10.0),
                             color: isToday
                                 ? AppConstants.getPrimary(isDark)
                                 : (isDark
@@ -400,6 +405,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                             fontWeight:
                                 isToday ? FontWeight.bold : FontWeight.normal,
                           ),
+                          textScaler: TextScaler.noScaling,
                         ),
                       ],
                     ),
@@ -428,6 +434,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
   // ─── Category Breakdown ────────────────────────────────────────────────────
 
   Widget _buildCategoryBreakdown(List<Task> tasks, bool isDark, bool isArabic) {
+    final ts = MediaQuery.textScalerOf(context);
     final categoryData = <TaskCategory, _CategoryStats>{};
 
     for (final task in tasks) {
@@ -477,8 +484,8 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
           Row(
             children: [
               Icon(Icons.category_outlined,
-                  color: AppConstants.getPrimary(isDark), size: 20),
-              const SizedBox(width: 8),
+                  color: AppConstants.getPrimary(isDark), size: ts.scale(20.0)),
+              SizedBox(width: ts.scale(8.0)),
               Text(
                 isArabic ? 'حسب الفئة' : 'By Category',
                 style: AppTypography.bodyL.copyWith(
@@ -488,7 +495,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: ts.scale(16.0)),
           ...sorted.map((s) {
             final info = categoryInfo[s.category];
             final icon = info?.$1 ?? Icons.label_outline;
@@ -497,13 +504,13 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
             final rate = s.total > 0 ? (s.completed / s.total * 100).round() : 0;
 
             return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: EdgeInsets.only(bottom: ts.scale(12.0)),
               child: Column(
                 children: [
                   Row(
                     children: [
-                      Icon(icon, size: 18, color: color),
-                      const SizedBox(width: 8),
+                      Icon(icon, size: ts.scale(18.0), color: color),
+                      SizedBox(width: ts.scale(8.0)),
                       Expanded(
                         child: Text(
                           label,
@@ -519,9 +526,9 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                           color: AppConstants.textMuted(isDark),
                         ),
                       ),
-                      const SizedBox(width: 8),
+                      SizedBox(width: ts.scale(8.0)),
                       SizedBox(
-                        width: 42,
+                        width: ts.scale(42.0),
                         child: Text(
                           '$rate%',
                           textAlign: TextAlign.end,
@@ -535,7 +542,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: ts.scale(6.0)),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
@@ -558,6 +565,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
   // ─── Priority Breakdown ────────────────────────────────────────────────────
 
   Widget _buildPriorityBreakdown(List<Task> tasks, bool isDark, bool isArabic) {
+    final ts = MediaQuery.textScalerOf(context);
     final priorityData = <TaskPriority, _PriorityStats>{};
 
     for (final task in tasks) {
@@ -603,8 +611,8 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
           Row(
             children: [
               Icon(Icons.flag_outlined,
-                  color: AppConstants.getPrimary(isDark), size: 20),
-              const SizedBox(width: 8),
+                  color: AppConstants.getPrimary(isDark), size: ts.scale(20.0)),
+              SizedBox(width: ts.scale(8.0)),
               Text(
                 isArabic ? 'حسب الأولوية' : 'By Priority',
                 style: AppTypography.bodyL.copyWith(
@@ -614,20 +622,20 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: ts.scale(16.0)),
           ...sorted.map((s) {
             final info = priorityInfo[s.priority];
             final label = info?.$2 ?? s.priority.value;
             final color = info?.$3 ?? Colors.grey;
 
             return Padding(
-              padding: const EdgeInsets.only(bottom: 16),
+              padding: EdgeInsets.only(bottom: ts.scale(16.0)),
               child: Row(
                 children: [
                   // Donut indicator
                   SizedBox(
-                    width: 44,
-                    height: 44,
+                    width: ts.scale(44.0),
+                    height: ts.scale(44.0),
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
@@ -642,15 +650,16 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                         Text(
                           '${s.total > 0 ? (s.completed / s.total * 100).round() : 0}%',
                           style: AppTypography.caption.copyWith(
-                            fontSize: 9,
+                            fontSize: ts.scale(9.0),
                             fontWeight: FontWeight.bold,
                             color: isDark ? Colors.white70 : Colors.black87,
                           ),
+                          textScaler: TextScaler.noScaling,
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: ts.scale(12.0)),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -662,7 +671,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                             color: AppConstants.textPrimary(isDark),
                           ),
                         ),
-                        const SizedBox(height: 2),
+                        SizedBox(height: ts.scale(2.0)),
                         Text(
                           isArabic
                               ? '${s.completed} مكتمل من ${s.total}'
@@ -899,6 +908,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
 
   Widget _buildDetailGrid(
       List<_DetailItem> items, bool isDark, bool isArabic) {
+    final ts = MediaQuery.textScalerOf(context);
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
@@ -912,7 +922,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
       itemBuilder: (_, index) {
         final item = items[index];
         return Container(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(ts.scale(12.0)),
           decoration: BoxDecoration(
             color: AppConstants.card(isDark),
             borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -930,7 +940,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
             children: [
               Row(
                 children: [
-                  Icon(item.icon, color: item.color, size: 18),
+                  Icon(item.icon, color: item.color, size: ts.scale(18.0)),
                   const Spacer(),
                   Text(
                     isArabic
@@ -943,7 +953,7 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: ts.scale(6.0)),
               Text(
                 item.label,
                 style: AppTypography.labelS.copyWith(
@@ -965,10 +975,11 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
     required String value,
     required bool isDark,
   }) {
+    final ts = MediaQuery.textScalerOf(context);
     return Row(
       children: [
-        Icon(icon, size: 18, color: AppConstants.textMuted(isDark)),
-        const SizedBox(width: 8),
+        Icon(icon, size: ts.scale(18.0), color: AppConstants.textMuted(isDark)),
+        SizedBox(width: ts.scale(8.0)),
         Expanded(
           child: Text(
             label,

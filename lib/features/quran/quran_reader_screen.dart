@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:math' show min, max, pi;
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter/gestures.dart' show kMiddleMouseButton, PointerScrollEvent;
 import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'dart:ui' as ui show TextDirection;
 import 'package:flutter/material.dart';
@@ -41,15 +40,29 @@ class QuranReaderScreen extends ConsumerStatefulWidget {
   ConsumerState<QuranReaderScreen> createState() => _QuranReaderScreenState();
 }
 
-class _MushafScrollController extends ChangeNotifier {
+class _MushafController extends ChangeNotifier {
   double _dy = 0;
   double get dy => _dy;
-  void scrollBy(double dy) { _dy = dy; notifyListeners(); }
+
+  double _zoomFactor = 1.0;
+  double get zoomFactor => _zoomFactor;
+
+  void scrollBy(double dy) {
+    _dy = dy;
+    _zoomFactor = 1.0;
+    notifyListeners();
+  }
+
+  void zoom(double factor) {
+    _dy = 0;
+    _zoomFactor = factor;
+    notifyListeners();
+  }
 }
 
 class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
   late PageController _pageController;
-  final _mushafScroll = _MushafScrollController();
+  final _mushafCtrl = _MushafController();
   int _currentPage = 1;
   bool _showUI = true;
   double _zoomScale = 1.0;
@@ -125,7 +138,7 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
       try { ref.read(desktopSidebarVisibleProvider.notifier).state = true; } catch (_) {}
     }
     _pageController.dispose();
-    _mushafScroll.dispose();
+    _mushafCtrl.dispose();
     super.dispose();
   }
 
@@ -448,7 +461,7 @@ void _togglePageBookmark() {
                     onAyahTap: _handleAyahTap,
                     onEmptyTap: () => setState(() => _showUI = !_showUI),
                     initialScale: _zoomScale,
-                    scrollController: (index + 1 == _currentPage) ? _mushafScroll : null,
+                    scrollController: (index + 1 == _currentPage) ? _mushafCtrl : null,
                     onScaleChanged: (s) => _zoomScale = s,
                   ),
                 );
@@ -499,6 +512,31 @@ void _togglePageBookmark() {
                       : null,
                 ),
               ),
+
+            // Desktop-only floating controls: zoom, scroll, page navigation
+            if (_isDesktop)
+              Positioned(
+                right: 16,
+                bottom: 70,
+                child: _DesktopControls(
+                  onZoomIn:  () => _mushafCtrl.zoom(1.15),
+                  onZoomOut: () => _mushafCtrl.zoom(0.87),
+                  onScrollUp:   () => _mushafCtrl.scrollBy(120),
+                  onScrollDown: () => _mushafCtrl.scrollBy(-120),
+                  onPrevPage: _currentPage > 1
+                      ? () => _pageController.previousPage(
+                            duration: const Duration(milliseconds: 350),
+                            curve: Curves.easeInOut,
+                          )
+                      : null,
+                  onNextPage: _currentPage < 604
+                      ? () => _pageController.nextPage(
+                            duration: const Duration(milliseconds: 350),
+                            curve: Curves.easeInOut,
+                          )
+                      : null,
+                ),
+              ),
           ],
         ),
       ),
@@ -526,11 +564,21 @@ void _togglePageBookmark() {
           return KeyEventResult.handled;
         }
         if (event.logicalKey == LogicalKeyboardKey.arrowDown) {
-          _mushafScroll.scrollBy(-80);
+          _mushafCtrl.scrollBy(-120);
           return KeyEventResult.handled;
         }
         if (event.logicalKey == LogicalKeyboardKey.arrowUp) {
-          _mushafScroll.scrollBy(80);
+          _mushafCtrl.scrollBy(120);
+          return KeyEventResult.handled;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.equal ||
+            event.logicalKey == LogicalKeyboardKey.numpadAdd) {
+          _mushafCtrl.zoom(1.15);
+          return KeyEventResult.handled;
+        }
+        if (event.logicalKey == LogicalKeyboardKey.minus ||
+            event.logicalKey == LogicalKeyboardKey.numpadSubtract) {
+          _mushafCtrl.zoom(0.87);
           return KeyEventResult.handled;
         }
         if (event.logicalKey == LogicalKeyboardKey.escape) {
@@ -551,7 +599,7 @@ class _MushafPage extends ConsumerStatefulWidget {
   final Future<void> Function(Ayah) onAyahTap;
   final VoidCallback onEmptyTap;
   final double initialScale;
-  final _MushafScrollController? scrollController;
+  final _MushafController? scrollController;
   final ValueChanged<double>? onScaleChanged;
 
   const _MushafPage({
@@ -620,7 +668,23 @@ class _MushafPageState extends ConsumerState<_MushafPage> {
   }
 
   void _onScrollCommand() {
-    final dy = widget.scrollController?.dy ?? 0;
+    final ctrl = widget.scrollController;
+    if (ctrl == null) return;
+
+    if (ctrl.zoomFactor != 1.0) {
+      final currentScale = _transformController.value.getMaxScaleOnAxis();
+      final newScale = (currentScale * ctrl.zoomFactor).clamp(0.5, _computedMaxScale);
+      final tx = (_lastWidth ?? 0.0) * (1 - newScale) / 2;
+      final ty = _transformController.value.getTranslation().y;
+      _transformController.value = Matrix4.identity()
+        ..translate(tx, ty)
+        ..scale(newScale);
+      widget.onScaleChanged?.call(newScale);
+      return;
+    }
+
+    final dy = ctrl.dy;
+    if (dy == 0) return;
     final scale = _transformController.value.getMaxScaleOnAxis();
     if (scale <= 1.05) return;
     final t = _transformController.value.getTranslation();
@@ -636,27 +700,6 @@ class _MushafPageState extends ConsumerState<_MushafPage> {
     widget.scrollController?.removeListener(_onScrollCommand);
     _transformController.dispose();
     super.dispose();
-  }
-
-  void _handleScrollZoom(PointerScrollEvent event) {
-    final delta = event.scrollDelta.dy;
-    if (delta == 0) return;
-    final scaleFactor = delta > 0 ? 0.92 : 1.08;
-    final current = _transformController.value;
-    final currentScale = current.getMaxScaleOnAxis();
-    final newScale = (currentScale * scaleFactor).clamp(0.5, _computedMaxScale);
-    if (newScale == currentScale) return;
-
-    // Keep pointer's y-position fixed while always centering horizontally
-    final fp = event.localPosition;
-    final currentTy = current.getTranslation().y;
-    final newTy = fp.dy + (currentTy - fp.dy) * (newScale / currentScale);
-    final newTx = (_lastWidth ?? 0.0) * (1 - newScale) / 2;
-
-    _transformController.value = Matrix4.identity()
-      ..translate(newTx, newTy)
-      ..scale(newScale);
-    widget.onScaleChanged?.call(newScale);
   }
 
   // Converts a tap position in widget space to SVG coordinate space.
@@ -777,13 +820,9 @@ class _MushafPageState extends ConsumerState<_MushafPage> {
             },
           );
 
-          // Desktop: scroll wheel zoom, auto-center on sidebar resize, zoom persists across pages
+          // Desktop: auto-center on sidebar resize, zoom persists across pages
           if (_isDesktop) {
-            return Listener(
-              onPointerSignal: (event) {
-                if (event is PointerScrollEvent) _handleScrollZoom(event);
-              },
-              child: LayoutBuilder(
+            return LayoutBuilder(
                 builder: (ctx, cons) {
                   final viewW = cons.maxWidth;
                   final viewH = cons.maxHeight;
@@ -829,7 +868,6 @@ class _MushafPageState extends ConsumerState<_MushafPage> {
                     ),
                   );
                 },
-              ),
             );
           }
 
@@ -1358,6 +1396,103 @@ class _BottomBar extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ── Desktop floating controls ─────────────────────────────────────────────────
+
+class _DesktopControls extends StatelessWidget {
+  final VoidCallback onZoomIn;
+  final VoidCallback onZoomOut;
+  final VoidCallback onScrollUp;
+  final VoidCallback onScrollDown;
+  final VoidCallback? onPrevPage;
+  final VoidCallback? onNextPage;
+
+  const _DesktopControls({
+    required this.onZoomIn,
+    required this.onZoomOut,
+    required this.onScrollUp,
+    required this.onScrollDown,
+    this.onPrevPage,
+    this.onNextPage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = AppConstants.getPrimary(isDark);
+    final bg = AppConstants.surface(isDark).withValues(alpha: 0.92);
+    final border = AppConstants.border(isDark);
+
+    Widget btn(IconData icon, VoidCallback? onTap, {bool active = true}) {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Icon(
+              icon,
+              size: 22,
+              color: (onTap != null && active) ? primary : Colors.grey.shade600,
+            ),
+          ),
+        ),
+      );
+    }
+
+    Widget divider() => Container(
+          height: 1,
+          color: border,
+          margin: const EdgeInsets.symmetric(horizontal: 6),
+        );
+
+    return Container(
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: border),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.18), blurRadius: 12, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Zoom
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              btn(Icons.remove, onZoomOut),
+              Container(width: 1, height: 36, color: border),
+              btn(Icons.add, onZoomIn),
+            ],
+          ),
+          divider(),
+          // Scroll up / down
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              btn(Icons.keyboard_arrow_up, onScrollUp),
+              Container(width: 1, height: 36, color: border),
+              btn(Icons.keyboard_arrow_down, onScrollDown),
+            ],
+          ),
+          divider(),
+          // Page prev / next
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              btn(Icons.arrow_back_ios_new, onPrevPage),
+              Container(width: 1, height: 36, color: border),
+              btn(Icons.arrow_forward_ios, onNextPage),
+            ],
+          ),
+        ],
       ),
     );
   }

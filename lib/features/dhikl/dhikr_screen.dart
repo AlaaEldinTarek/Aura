@@ -507,6 +507,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final ts = MediaQuery.textScalerOf(context);
 
     final isDesktop =
         !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
@@ -530,14 +531,14 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppConstants.paddingLarge),
+        padding: EdgeInsets.all(ts.scale(AppConstants.paddingLarge)),
         child: Column(
           children: [
             // Preset selector
             GestureDetector(
               onTap: _showPresetSelector,
               child: Container(
-                padding: const EdgeInsets.all(AppConstants.paddingMedium),
+                padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
                 decoration: BoxDecoration(
                   color: AppConstants.card(isDark),
                   borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -551,7 +552,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                       _selectedPreset?.isCustom == true ? Icons.edit_note : Icons.dashboard,
                       color: AppConstants.getPrimary(isDark),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: ts.scale(12.0)),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -581,25 +582,25 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
               ),
             ),
 
-            const SizedBox(height: AppConstants.paddingLarge),
+            SizedBox(height: ts.scale(AppConstants.paddingLarge)),
 
             // Counter display
             _buildCounterDisplay(context, isDark, isArabic),
 
-            const SizedBox(height: AppConstants.paddingLarge),
+            SizedBox(height: ts.scale(AppConstants.paddingLarge)),
 
             // Progress bar
             _buildProgressBar(context, isDark),
 
-            const SizedBox(height: AppConstants.paddingMedium),
+            SizedBox(height: ts.scale(AppConstants.paddingMedium)),
 
             // Target selector
             GestureDetector(
               onTap: _showTargetSelector,
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppConstants.paddingMedium,
-                  vertical: AppConstants.paddingSmall,
+                padding: EdgeInsets.symmetric(
+                  horizontal: ts.scale(AppConstants.paddingMedium),
+                  vertical: ts.scale(AppConstants.paddingSmall),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -617,13 +618,13 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                         color: AppConstants.getPrimary(isDark),
                       ),
                     ),
-                    Icon(Icons.chevron_right, size: 18, color: AppConstants.getPrimary(isDark)),
+                    Icon(Icons.chevron_right, size: ts.scale(18.0), color: AppConstants.getPrimary(isDark)),
                   ],
                 ),
               ),
             ),
 
-            const SizedBox(height: AppConstants.paddingLarge),
+            SizedBox(height: ts.scale(AppConstants.paddingLarge)),
 
             // Control buttons
             Row(
@@ -636,7 +637,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                     expanded: true,
                   ),
                 ),
-                const SizedBox(width: AppConstants.paddingMedium),
+                SizedBox(width: ts.scale(AppConstants.paddingMedium)),
                 Expanded(
                   flex: 2,
                   child: AuraButton(
@@ -673,6 +674,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
   }
 
   Widget _buildCounterDisplay(BuildContext context, bool isDark, bool isArabic) {
+    final ts = MediaQuery.textScalerOf(context);
     return AnimatedBuilder(
       animation: _pulseAnimation,
       builder: (context, child) {
@@ -684,8 +686,8 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
               button: true,
               label: '${isArabic ? 'عداد التسبيح' : 'Tasbeeh counter'}: $_currentCount / $_currentTarget',
               child: Container(
-              width: 190,
-              height: 190,
+              width: ts.scale(190.0),
+              height: ts.scale(190.0),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: LinearGradient(
@@ -713,11 +715,12 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                   Text(
                     '$_currentCount',
                     style: AppTypography.displayL.copyWith(
-                      fontSize: 56,
+                      fontSize: ts.scale(56.0),
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                       height: 1,
                     ),
+                    textScaler: TextScaler.noScaling,
                   ),
                   Text(
                     '/ $_currentTarget',

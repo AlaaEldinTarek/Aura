@@ -36,6 +36,7 @@ class AuraBottomNavBar extends ConsumerWidget {
     final showQuran = appMode == AppMode.both || appMode == AppMode.prayerOnly;
     final showTasks = appMode != AppMode.prayerOnly;
 
+    final ts = MediaQuery.textScalerOf(context);
     return Container(
       key: navBarKey,
       decoration: BoxDecoration(
@@ -50,7 +51,7 @@ class AuraBottomNavBar extends ConsumerWidget {
       ),
       child: SafeArea(
         child: SizedBox(
-          height: 65,
+          height: ts.scale(65.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
@@ -128,7 +129,8 @@ class AuraBottomNavBar extends ConsumerWidget {
           padding: EdgeInsets.symmetric(vertical: isComingSoon ? 6 : 8),
           child: Builder(builder: (ctx) {
           final mq = MediaQuery.of(ctx);
-          final cappedScale = mq.textScaler.scale(1.0).clamp(0.9, 1.3);
+          final ts = mq.textScaler;
+          final cappedScale = ts.scale(1.0).clamp(0.9, 1.3);
           return MediaQuery(
             data: mq.copyWith(textScaler: TextScaler.linear(cappedScale)),
             child: Column(
@@ -140,7 +142,7 @@ class AuraBottomNavBar extends ConsumerWidget {
                 children: [
                   Icon(
                     icon,
-                    size: 24,
+                    size: ts.scale(24.0),
                     color: isSelected
                         ? AppConstants.getPrimary(isDark)
                         : (AppConstants.textSecondary(isDark)),
@@ -153,8 +155,8 @@ class AuraBottomNavBar extends ConsumerWidget {
                       duration: const Duration(milliseconds: 220),
                       curve: Curves.elasticOut,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                        padding: EdgeInsets.symmetric(horizontal: ts.scale(4.0)),
+                        constraints: BoxConstraints(minWidth: ts.scale(16.0), minHeight: ts.scale(16.0)),
                         decoration: BoxDecoration(
                           color: Colors.red,
                           borderRadius: BorderRadius.circular(8),
@@ -166,10 +168,11 @@ class AuraBottomNavBar extends ConsumerWidget {
                               '$badge',
                               key: ValueKey(badge),
                               style: AppTypography.caption.copyWith(
-                                fontSize: 9,
+                                fontSize: ts.scale(9.0),
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white,
                               ),
+                              textScaler: TextScaler.noScaling,
                             ),
                           ),
                         ),
@@ -190,8 +193,8 @@ class AuraBottomNavBar extends ConsumerWidget {
               ),
               if (isComingSoon)
                 Container(
-                  margin: const EdgeInsets.only(top: 1),
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  margin: EdgeInsets.only(top: ts.scale(1.0)),
+                  padding: EdgeInsets.symmetric(horizontal: ts.scale(4.0)),
                   decoration: BoxDecoration(
                     color: AppConstants.warning.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(4),
@@ -199,10 +202,11 @@ class AuraBottomNavBar extends ConsumerWidget {
                   child: Text(
                     'coming_soon'.tr(),
                     style: AppTypography.caption.copyWith(
-                      fontSize: 7,
+                      fontSize: ts.scale(7.0),
                       fontWeight: FontWeight.bold,
                       color: AppConstants.warning,
                     ),
+                    textScaler: TextScaler.noScaling,
                   ),
                 ),
             ],

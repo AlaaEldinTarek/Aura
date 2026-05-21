@@ -10,6 +10,7 @@ class DailyContentScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final content = DailyContentService.instance.getToday();
@@ -28,15 +29,15 @@ class DailyContentScreen extends StatelessWidget {
         title: Text(typeLabel),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppConstants.paddingLarge),
+        padding: EdgeInsets.all(ts.scale(AppConstants.paddingLarge)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Accent icon circle
             Center(
               child: Container(
-                width: 80,
-                height: 80,
+                width: ts.scale(80.0),
+                height: ts.scale(80.0),
                 decoration: BoxDecoration(
                   color: accentColor.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
@@ -45,17 +46,17 @@ class DailyContentScreen extends StatelessWidget {
                 child: Center(
                   child: Text(
                     isAyah ? '📖' : '📜',
-                    style: const TextStyle(fontSize: 36),
+                    style: TextStyle(fontSize: ts.scale(36.0)),
                   ),
                 ),
               ),
             ).animate().fadeIn(duration: 500.ms).scale(curve: Curves.elasticOut),
 
-            const SizedBox(height: 24),
+            SizedBox(height: ts.scale(24.0)),
 
             // Card
             Container(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(ts.scale(24.0)),
               decoration: BoxDecoration(
                 color: AppConstants.card(isDark),
                 borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
@@ -75,18 +76,19 @@ class DailyContentScreen extends StatelessWidget {
                   Text(
                     content.arabic,
                     style: AppTypography.ar(AppTypography.headingM).copyWith(
-                      fontSize: 22,
+                      fontSize: ts.scale(22.0),
                       color: AppConstants.textPrimary(isDark),
                       height: 2.0,
                     ),
+                    textScaler: TextScaler.noScaling,
                     textAlign: TextAlign.right,
                   ).animate().fadeIn(delay: 200.ms),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: ts.scale(16.0)),
 
                   Divider(color: accentColor.withValues(alpha: 0.2)),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: ts.scale(16.0)),
 
                   // Translation
                   Text(
@@ -99,13 +101,13 @@ class DailyContentScreen extends StatelessWidget {
                     textAlign: isArabic ? TextAlign.right : TextAlign.left,
                   ).animate().fadeIn(delay: 300.ms),
 
-                  const SizedBox(height: 16),
+                  SizedBox(height: ts.scale(16.0)),
 
                   // Source badge
                   Align(
                     alignment: isArabic ? Alignment.centerRight : Alignment.centerLeft,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                      padding: EdgeInsets.symmetric(horizontal: ts.scale(14.0), vertical: ts.scale(6.0)),
                       decoration: BoxDecoration(
                         color: accentColor.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(20),

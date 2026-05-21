@@ -167,14 +167,15 @@ class _SurahListTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final ts = MediaQuery.textScalerOf(context);
     final surahsAsync = ref.watch(surahListProvider);
 
     return surahsAsync.when(
       loading: () => ListView.builder(
         itemCount: 12,
-        itemBuilder: (_, __) => const Padding(
-          padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-          child: ShimmerListTile(),
+        itemBuilder: (_, __) => Padding(
+          padding: EdgeInsets.symmetric(vertical: ts.scale(4.0), horizontal: ts.scale(8.0)),
+          child: const ShimmerListTile(),
         ),
       ),
       error: (e, _) => Center(child: Text('Error: $e')),
@@ -206,13 +207,14 @@ class _LastReadCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final ts = MediaQuery.textScalerOf(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = AppConstants.getPrimary(isDark);
     final meta = QuranService.getSurahMeta(progress.suraNo);
     if (meta == null) return const SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+      padding: EdgeInsets.fromLTRB(ts.scale(16.0), ts.scale(12.0), ts.scale(16.0), ts.scale(4.0)),
       child: Card(
         color: primary.withValues(alpha: 0.15),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -225,7 +227,7 @@ class _LastReadCard extends ConsumerWidget {
                 : '${meta.nameEn} - ${progress.ayaNo}',
             style: AppTypography.label.copyWith(fontWeight: FontWeight.bold),
           ),
-          trailing: const Icon(Icons.arrow_forward, size: 18),
+          trailing: Icon(Icons.arrow_forward, size: ts.scale(18.0)),
           onTap: () {
             Navigator.push(
               context,
@@ -252,13 +254,14 @@ class _SurahTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = AppConstants.getPrimary(isDark);
     final meta = surah.meta;
 
     return ListTile(
       leading: CircleAvatar(
-        radius: 18,
+        radius: ts.scale(18.0),
         backgroundColor: primary.withValues(alpha: 0.15),
         child: Text(
           NumberFormatter.withArabicNumeralsByLanguage(meta.suraNo.toString(), lang),
@@ -309,6 +312,7 @@ class _JuzTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final ts = MediaQuery.textScalerOf(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = AppConstants.getPrimary(isDark);
     final juzAsync = ref.watch(juzListProvider);
@@ -316,9 +320,9 @@ class _JuzTab extends ConsumerWidget {
     return juzAsync.when(
       loading: () => ListView.builder(
         itemCount: 10,
-        itemBuilder: (_, __) => const Padding(
-          padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-          child: ShimmerListTile(),
+        itemBuilder: (_, __) => Padding(
+          padding: EdgeInsets.symmetric(vertical: ts.scale(4.0), horizontal: ts.scale(8.0)),
+          child: const ShimmerListTile(),
         ),
       ),
       error: (e, _) => Center(child: Text('Error: $e')),
@@ -328,7 +332,7 @@ class _JuzTab extends ConsumerWidget {
           final juz = juzList[index];
           return ListTile(
             leading: CircleAvatar(
-              radius: 18,
+              radius: ts.scale(18.0),
               backgroundColor: primary.withValues(alpha: 0.15),
               child: Text(
                 NumberFormatter.withArabicNumeralsByLanguage(juz.juzNo.toString(), lang),
@@ -370,15 +374,16 @@ class _BookmarksTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final ts = MediaQuery.textScalerOf(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bookmarksAsync = ref.watch(quranBookmarksProvider);
 
     return bookmarksAsync.when(
       loading: () => ListView.builder(
         itemCount: 8,
-        itemBuilder: (_, __) => const Padding(
-          padding: EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-          child: ShimmerListTile(),
+        itemBuilder: (_, __) => Padding(
+          padding: EdgeInsets.symmetric(vertical: ts.scale(4.0), horizontal: ts.scale(8.0)),
+          child: const ShimmerListTile(),
         ),
       ),
       error: (e, _) => Center(child: Text('Error: $e')),
@@ -388,8 +393,8 @@ class _BookmarksTab extends ConsumerWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.bookmark_outline, size: 64, color: Colors.grey[400]),
-                const SizedBox(height: 16),
+                Icon(Icons.bookmark_outline, size: ts.scale(64.0), color: Colors.grey[400]),
+                SizedBox(height: ts.scale(16.0)),
                 Text('no_bookmarks'.tr(), style: AppTypography.bodyL.copyWith(color: Colors.grey[500])),
               ],
             ),
@@ -403,12 +408,12 @@ class _BookmarksTab extends ConsumerWidget {
             final dotColor = _bookmarkColors[bm.color] ?? const Color(0xFF43A047);
             return ListTile(
               leading: Container(
-                width: 32, height: 32,
+                width: ts.scale(32.0), height: ts.scale(32.0),
                 decoration: BoxDecoration(
                   color: dotColor.withValues(alpha: 0.2),
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.bookmark, color: dotColor, size: 18),
+                child: Icon(Icons.bookmark, color: dotColor, size: ts.scale(18.0)),
               ),
               title: Text(
                 lang == 'ar' ? bm.suraNameAr : bm.suraNameEn,
@@ -420,7 +425,7 @@ class _BookmarksTab extends ConsumerWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontFamily: 'UthmanicHafs',
-                  fontSize: 14,
+                  fontSize: ts.scale(14.0),
                   color: AppConstants.textSecondary(isDark),
                 ),
               ),
@@ -433,9 +438,9 @@ class _BookmarksTab extends ConsumerWidget {
                       color: AppConstants.textSecondary(isDark),
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  SizedBox(width: ts.scale(4.0)),
                   IconButton(
-                    icon: Icon(Icons.delete_outline, size: 20, color: AppConstants.textSecondary(isDark)),
+                    icon: Icon(Icons.delete_outline, size: ts.scale(20.0), color: AppConstants.textSecondary(isDark)),
                     onPressed: () {
                       showDialog(
                         context: context,
@@ -458,7 +463,7 @@ class _BookmarksTab extends ConsumerWidget {
                                     content: Text('bookmark_deleted'.tr()),
                                     duration: const Duration(seconds: 3),
                                     behavior: SnackBarBehavior.floating,
-                                    margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
+                                    margin: EdgeInsets.only(bottom: ts.scale(82.0), left: ts.scale(16.0), right: ts.scale(16.0)),
                                     action: SnackBarAction(
                                       label: 'undo'.tr(),
                                       onPressed: () {

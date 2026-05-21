@@ -184,6 +184,7 @@ class _TutorialOverlayState extends State<TutorialOverlay>
                       AuraButton.ghost(
                         label: 'tutorial_skip'.tr(),
                         onPressed: widget.onSkip,
+                        verticalPadding: 10,
                       ),
                       AuraButton(
                         label: isLast ? 'tutorial_done'.tr() : 'tutorial_next'.tr(),
@@ -288,12 +289,24 @@ void showTutorial({
       Future<void> advance() async {
         if (nextContext != null) {
           try {
-            await Scrollable.ensureVisible(
-              nextContext,
-              duration: const Duration(milliseconds: 350),
-              curve: Curves.easeInOut,
-              alignment: 0.25, // show target in upper quarter so tooltip fits below
-            );
+            final renderBox =
+                nextContext.findRenderObject() as RenderBox?;
+            bool alreadyVisible = false;
+            if (renderBox != null && renderBox.hasSize) {
+              final offset = renderBox.localToGlobal(Offset.zero);
+              final screenSize = MediaQuery.sizeOf(nextContext);
+              final targetRect = offset & renderBox.size;
+              final screenRect = Offset.zero & screenSize;
+              alreadyVisible = screenRect.overlaps(targetRect);
+            }
+            if (!alreadyVisible) {
+              await Scrollable.ensureVisible(
+                nextContext,
+                duration: const Duration(milliseconds: 350),
+                curve: Curves.easeInOut,
+                alignment: 0.25,
+              );
+            }
           } catch (_) {
             // target is not inside a scrollable (e.g. fixed nav bar) — skip scroll
           }

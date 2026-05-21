@@ -396,6 +396,8 @@
   "tutorial_wird_juz_actions_body": "• Mark Complete — marks your daily juz goal as done.\n• Add from Bookmarks — links a bookmark color and auto-marks all juz up to the bookmarked page.",
   "tutorial_wird_juz_grid_title": "Juz Completion Grid",
   "tutorial_wird_juz_grid_body": "Each cell represents one of the 30 Juz. Tap a cell to toggle it between done and not done. Completed juz are highlighted and count toward your Khatm progress.",
+  "tutorial_wird_stats_title": "Your Reading Stats",
+  "tutorial_wird_stats_body": "A quick summary of your total reading progress — total pages (or juz) read across all time and the total number of days you completed your Wird goal.",
   "tutorial_wird_settings_title": "Wird Settings",
   "tutorial_wird_settings_body": "• Tracking Mode: switch between Pages and Juz to match how you read.\n• Daily Goal: set how many pages or juz you aim to finish each day.\n• Reminders: schedule daily notifications so you never miss your Wird.",
   "tutorial_reader_topbar_title": "Page Controls",

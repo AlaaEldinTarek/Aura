@@ -34,6 +34,7 @@ class _AzkarScreenState extends ConsumerState<AzkarScreen>
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final primary = AppConstants.getPrimary(isDark);
@@ -45,11 +46,11 @@ class _AzkarScreenState extends ConsumerState<AzkarScreen>
           controller: _tabController,
           tabs: [
             Tab(
-              icon: const Text('🌅', style: TextStyle(fontSize: 18)),
+              icon: Text('🌅', style: TextStyle(fontSize: ts.scale(18.0))),
               text: isArabic ? 'أذكار الصباح' : 'Morning',
             ),
             Tab(
-              icon: const Text('🌙', style: TextStyle(fontSize: 18)),
+              icon: Text('🌙', style: TextStyle(fontSize: ts.scale(18.0))),
               text: isArabic ? 'أذكار المساء' : 'Evening',
             ),
           ],
@@ -91,6 +92,7 @@ class _AzkarTabView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final ts = MediaQuery.textScalerOf(context);
     final state = ref.watch(azkarProvider);
     final items = AzkarData.forCategory(category);
     final doneCount = state.doneCount(category);
@@ -134,14 +136,14 @@ class _AzkarTabView extends ConsumerWidget {
         // Zikr list — 2-column grid on desktop, single column on mobile
         if (isDesktop)
           SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: AppConstants.paddingMedium),
+            padding: EdgeInsets.symmetric(horizontal: ts.scale(AppConstants.paddingMedium)),
             sliver: SliverToBoxAdapter(
               child: LayoutBuilder(builder: (_, constraints) {
-                const spacing = 12.0;
+                final spacing = ts.scale(12.0);
                 final itemWidth = (constraints.maxWidth - spacing) / 2;
                 return Wrap(
                   spacing: spacing,
-                  runSpacing: 10,
+                  runSpacing: ts.scale(10.0),
                   children: items.map((item) => SizedBox(
                     width: itemWidth,
                     child: buildCard(item),
@@ -158,7 +160,7 @@ class _AzkarTabView extends ConsumerWidget {
             ),
           ),
 
-        const SliverToBoxAdapter(child: SizedBox(height: 32)),
+        SliverToBoxAdapter(child: SizedBox(height: ts.scale(32.0))),
       ],
     );
   }
@@ -185,11 +187,13 @@ class _ProgressHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     final progress = total > 0 ? done / total : 0.0;
+    final circleSz = ts.scale(72.0);
 
     return Container(
-      margin: const EdgeInsets.all(AppConstants.paddingMedium),
-      padding: const EdgeInsets.all(AppConstants.paddingLarge),
+      margin: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
+      padding: EdgeInsets.all(ts.scale(AppConstants.paddingLarge)),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -212,14 +216,14 @@ class _ProgressHeader extends StatelessWidget {
         children: [
           // Circular progress
           SizedBox(
-            width: 72,
-            height: 72,
+            width: circleSz,
+            height: circleSz,
             child: Stack(
               alignment: Alignment.center,
               children: [
                 SizedBox(
-                  width: 72,
-                  height: 72,
+                  width: circleSz,
+                  height: circleSz,
                   child: CircularProgressIndicator(
                     value: progress,
                     strokeWidth: 6,
@@ -231,22 +235,26 @@ class _ProgressHeader extends StatelessWidget {
                     ),
                   ),
                 ),
-                Text(
-                  isComplete
-                      ? '✓'
-                      : '${NumberFormatter.withArabicNumeralsByLanguage('$done', isArabic ? 'ar' : 'en')}/${NumberFormatter.withArabicNumeralsByLanguage('$total', isArabic ? 'ar' : 'en')}',
-                  style: AppTypography.bodyS.copyWith(
-                    fontSize: isComplete ? 24 : 13,
-                    fontWeight: FontWeight.bold,
-                    color: isComplete
-                        ? Colors.white
-                        : (AppConstants.textPrimary(isDark)),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(
+                    isComplete
+                        ? '✓'
+                        : '${NumberFormatter.withArabicNumeralsByLanguage('$done', isArabic ? 'ar' : 'en')}/${NumberFormatter.withArabicNumeralsByLanguage('$total', isArabic ? 'ar' : 'en')}',
+                    style: AppTypography.bodyS.copyWith(
+                      fontSize: isComplete ? ts.scale(24.0) : ts.scale(13.0),
+                      fontWeight: FontWeight.bold,
+                      color: isComplete
+                          ? Colors.white
+                          : (AppConstants.textPrimary(isDark)),
+                    ),
+                    textScaler: TextScaler.noScaling,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
+          SizedBox(width: ts.scale(16.0)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -262,7 +270,7 @@ class _ProgressHeader extends StatelessWidget {
                         : (AppConstants.textPrimary(isDark)),
                   ),
                 ),
-                const SizedBox(height: 4),
+                SizedBox(height: ts.scale(4.0)),
                 Text(
                   isComplete
                       ? (isArabic ? 'أكملت جميع الأذكار' : 'All azkar completed')
@@ -276,11 +284,11 @@ class _ProgressHeader extends StatelessWidget {
                   ),
                 ),
                 if (streakCount > 0) ...[
-                  const SizedBox(height: 6),
+                  SizedBox(height: ts.scale(6.0)),
                   Row(
                     children: [
-                      const Text('🔥', style: TextStyle(fontSize: 12)),
-                      const SizedBox(width: 4),
+                      Text('🔥', style: TextStyle(fontSize: ts.scale(12.0))),
+                      SizedBox(width: ts.scale(4.0)),
                       Text(
                         isArabic
                             ? '${NumberFormatter.withArabicNumerals('$streakCount')} يوم متتالي'
@@ -325,11 +333,12 @@ class _ZikrCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       margin: EdgeInsets.symmetric(
-        horizontal: isGridItem ? 0 : AppConstants.paddingMedium,
-        vertical: 5,
+        horizontal: isGridItem ? 0 : ts.scale(AppConstants.paddingMedium),
+        vertical: ts.scale(5.0),
       ),
       decoration: BoxDecoration(
         color: isDone
@@ -347,16 +356,16 @@ class _ZikrCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: EdgeInsets.all(ts.scale(14.0)),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Checkbox circle
               AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                width: 28,
-                height: 28,
-                margin: const EdgeInsets.only(top: 2),
+                width: ts.scale(28.0),
+                height: ts.scale(28.0),
+                margin: EdgeInsets.only(top: ts.scale(2.0)),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: isDone ? primary : Colors.transparent,
@@ -366,10 +375,10 @@ class _ZikrCard extends StatelessWidget {
                   ),
                 ),
                 child: isDone
-                    ? const Icon(Icons.check, color: Colors.white, size: 16)
+                    ? Icon(Icons.check, color: Colors.white, size: ts.scale(16.0))
                     : null,
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: ts.scale(12.0)),
               // Text content
               Expanded(
                 child: Column(
@@ -387,7 +396,7 @@ class _ZikrCard extends StatelessWidget {
                       ),
                       textDirection: TextDirection.rtl,
                     ),
-                    const SizedBox(height: 6),
+                    SizedBox(height: ts.scale(6.0)),
                     // English translation
                     Text(
                       item.textEn,
@@ -399,11 +408,11 @@ class _ZikrCard extends StatelessWidget {
                         fontStyle: FontStyle.italic,
                       ),
                     ),
-                    const SizedBox(height: 8),
+                    SizedBox(height: ts.scale(8.0)),
                     // Repeat count badge
                     if (item.repeatCount > 1)
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        padding: EdgeInsets.symmetric(horizontal: ts.scale(8.0), vertical: ts.scale(3.0)),
                         decoration: BoxDecoration(
                           color: isDone
                               ? primary.withOpacity(0.15)

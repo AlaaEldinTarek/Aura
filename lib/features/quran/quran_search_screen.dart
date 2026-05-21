@@ -41,6 +41,7 @@ class _QuranSearchScreenState extends ConsumerState<QuranSearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -72,8 +73,8 @@ class _QuranSearchScreenState extends ConsumerState<QuranSearchScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.search, size: 64, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
+                  Icon(Icons.search, size: ts.scale(64.0), color: Colors.grey[400]),
+                  SizedBox(height: ts.scale(16.0)),
                   Text('search_quran_hint'.tr(), style: AppTypography.bodyM.copyWith(color: Colors.grey[500])),
                 ],
               ),
@@ -91,6 +92,7 @@ class _SearchResults extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final ts = MediaQuery.textScalerOf(context);
     final resultsAsync = ref.watch(quranSearchProvider(query));
     final lang = context.locale.languageCode;
 
@@ -114,13 +116,13 @@ class _SearchResults extends ConsumerWidget {
                 textAlign: TextAlign.right,
                 style: TextStyle(
                   fontFamily: 'UthmanicHafs',
-                  fontSize: 16,
+                  fontSize: ts.scale(16.0),
                   height: 1.8,
                   color: AppConstants.textPrimary(isDark),
                 ),
               ),
               subtitle: Padding(
-                padding: const EdgeInsets.only(top: 4),
+                padding: EdgeInsets.only(top: ts.scale(4.0)),
                 child: Text(
                   lang == 'ar'
                       ? '${ayah.suraNameAr} - ${NumberFormatter.withArabicNumeralsByLanguage(ayah.ayaNo.toString(), lang)}'

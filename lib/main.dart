@@ -1,4 +1,4 @@
-import 'dart:io' show Platform;
+import 'dart:io' show Platform, Process;
 import 'dart:ui' show PlatformDispatcher;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
@@ -51,25 +51,44 @@ import 'features/quran/quran_stats_screen.dart';
 import 'features/quran/khatma_dua_screen.dart';
 import 'features/islamic_events/islamic_events_screen.dart';
 
-void main() async {
+void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  final isStartup = !kIsWeb && Platform.isWindows && args.contains('--startup');
 
   // Desktop window setup
   if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
     await windowManager.ensureInitialized();
 
-    await windowManager.waitUntilReadyToShow(
-      const WindowOptions(
-        size: Size(900, 1400),
-        center: true,
-        title: 'Aura | هالة',
-        backgroundColor: Colors.transparent,
-      ),
-      () async {
-        await windowManager.show();
-        await windowManager.focus();
-      },
-    );
+    if (isStartup) {
+      // Start hidden – only the tray icon will be visible
+      await windowManager.waitUntilReadyToShow(
+        const WindowOptions(
+          size: Size(900, 1400),
+          center: true,
+          title: 'Aura | هالة',
+          backgroundColor: Colors.transparent,
+          skipTaskbar: true,
+        ),
+        () async {},
+      );
+    } else {
+      await windowManager.waitUntilReadyToShow(
+        const WindowOptions(
+          size: Size(900, 1400),
+          center: true,
+          title: 'Aura | هالة',
+          backgroundColor: Colors.transparent,
+        ),
+        () async {
+          await windowManager.show();
+          await windowManager.focus();
+        },
+      );
+    }
+
+    // Keep the registry entry current so it survives MSIX updates
+    if (Platform.isWindows) _registerWindowsStartup();
   }
 
   // Initialize Firebase with error handling
@@ -204,6 +223,7 @@ void main() async {
   );
 
   NotificationService.instance.attachContainer(container);
+  DesktopNotificationService.instance.attachContainer(container);
 
   runApp(
     UncontrolledProviderScope(
@@ -211,6 +231,27 @@ void main() async {
       child: const AuraApp(),
     ),
   );
+}
+
+Future<void> _registerWindowsStartup() async {
+  try {
+    final exePath = Platform.resolvedExecutable;
+    final result = await Process.run('reg', [
+      'add',
+      r'HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run',
+      '/v', 'Aura',
+      '/t', 'REG_SZ',
+      '/d', '"$exePath" --startup',
+      '/f',
+    ]);
+    if (result.exitCode == 0) {
+      debugPrint('✅ [STARTUP] Windows startup registered: $exePath');
+    } else {
+      debugPrint('⚠️ [STARTUP] reg add failed: ${result.stderr}');
+    }
+  } catch (e) {
+    debugPrint('⚠️ [STARTUP] Failed to register Windows startup: $e');
+  }
 }
 
 class AuraApp extends ConsumerWidget {

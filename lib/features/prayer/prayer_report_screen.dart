@@ -248,8 +248,9 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
   }
 
   Widget _buildOverviewTab(BuildContext context, bool isDark, bool isArabic) {
+    final ts = MediaQuery.textScalerOf(context);
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+      padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -266,7 +267,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
                   isDark: isDark,
                 ),
               ),
-              const SizedBox(width: AppConstants.paddingSmall),
+              SizedBox(width: ts.scale(AppConstants.paddingSmall).clamp(0.0, 12.0)),
               Expanded(
                 child: _ReportCard(
                   icon: Icons.check_circle,
@@ -277,7 +278,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
                   isDark: isDark,
                 ),
               ),
-              const SizedBox(width: AppConstants.paddingSmall),
+              SizedBox(width: ts.scale(AppConstants.paddingSmall).clamp(0.0, 12.0)),
               Expanded(
                 child: _ReportCard(
                   icon: Icons.schedule,
@@ -291,7 +292,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
             ],
           ),
 
-          const SizedBox(height: AppConstants.paddingLarge),
+          SizedBox(height: ts.scale(AppConstants.paddingLarge).clamp(0.0, 28.0)),
 
           // Weekly Trend Chart
           _buildSectionCard(
@@ -302,7 +303,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
             isDark,
           ),
 
-          const SizedBox(height: AppConstants.paddingLarge),
+          SizedBox(height: ts.scale(AppConstants.paddingLarge).clamp(0.0, 28.0)),
 
           // Monthly Comparison
           _buildSectionCard(
@@ -313,13 +314,14 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
             isDark,
           ),
 
-          const SizedBox(height: 80),
+          SizedBox(height: ts.scale(80.0)),
         ],
       ),
     );
   }
 
   Widget _buildDetailsTab(BuildContext context, bool isDark, bool isArabic) {
+    final ts = MediaQuery.textScalerOf(context);
     final prayerEmojis = {
       'Fajr': '🌙', 'Zuhr': '☀️', 'Asr': '🌤️', 'Maghrib': '🌇', 'Isha': '🌃',
     };
@@ -328,7 +330,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
     };
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+      padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -347,7 +349,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
                   isDark,
                   isArabic: isArabic,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: ts.scale(8.0)),
                 _buildStatusBar(
                   isArabic ? 'متأخر' : 'Late',
                   _totalLate,
@@ -356,7 +358,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
                   isDark,
                   isArabic: isArabic,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: ts.scale(8.0)),
                 _buildStatusBar(
                   isArabic ? 'لم أصلّ' : 'Missed',
                   _totalMissed,
@@ -365,7 +367,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
                   isDark,
                   isArabic: isArabic,
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: ts.scale(8.0)),
                 _buildStatusBar(
                   isArabic ? 'معذور' : 'Excused',
                   _totalExcused,
@@ -379,7 +381,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
             isDark,
           ),
 
-          const SizedBox(height: AppConstants.paddingLarge),
+          SizedBox(height: ts.scale(AppConstants.paddingLarge).clamp(0.0, 28.0)),
 
           // Per-prayer breakdown
           _buildSectionCard(
@@ -395,11 +397,11 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
                 final displayName = isArabic ? (prayerNamesAr[name] ?? name) : name;
 
                 return Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  padding: EdgeInsets.symmetric(vertical: ts.scale(6.0)),
                   child: Row(
                     children: [
-                      Text(emoji, style: const TextStyle(fontSize: 22)),
-                      const SizedBox(width: 10),
+                      Text(emoji, style: TextStyle(fontSize: ts.scale(22.0)), textScaler: TextScaler.noScaling),
+                      SizedBox(width: ts.scale(10.0)),
                       Expanded(
                         flex: 2,
                         child: Text(
@@ -430,9 +432,9 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
                           ],
                         ),
                       ),
-                      const SizedBox(width: 10),
+                      SizedBox(width: ts.scale(10.0)),
                       SizedBox(
-                        width: 45,
+                        width: ts.scale(45.0),
                         child: Text(
                           '${_n((rate * 100).toStringAsFixed(0), isArabic: isArabic)}%',
                           style: AppTypography.bodyS.copyWith(
@@ -450,7 +452,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
             isDark,
           ),
 
-          const SizedBox(height: 80),
+          SizedBox(height: ts.scale(80.0)),
         ],
       ),
     );
@@ -463,8 +465,9 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
     Widget child,
     bool isDark,
   ) {
+    final ts = MediaQuery.textScalerOf(context);
     return Container(
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+      padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
       decoration: BoxDecoration(
         color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
@@ -482,7 +485,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
                 ),
           ),
           if (subtitle.isNotEmpty) ...[
-            const SizedBox(height: 2),
+            SizedBox(height: ts.scale(2.0)),
             Text(
               subtitle,
               style: AppTypography.caption.copyWith(
@@ -490,7 +493,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
               ),
             ),
           ],
-          const SizedBox(height: AppConstants.paddingMedium),
+          SizedBox(height: ts.scale(AppConstants.paddingMedium).clamp(0.0, 20.0)),
           child,
         ],
       ),
@@ -604,7 +607,9 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
     final isPositive = diff >= 0;
     final diffText = '${isPositive ? '+' : ''}${_n((diff * 100).toStringAsFixed(1), isArabic: isArabic)}%';
 
-    return Column(
+    return Builder(builder: (ctx) {
+      final ts = MediaQuery.textScalerOf(ctx);
+      return Column(
       children: [
         Row(
           children: [
@@ -617,7 +622,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
                 isArabic: isArabic,
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: ts.scale(16.0).clamp(0.0, 22.0)),
             Expanded(
               child: _buildMonthCard(
                 isArabic ? 'الشهر الماضي' : 'Last Month',
@@ -629,9 +634,9 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: ts.scale(12.0).clamp(0.0, 18.0)),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: EdgeInsets.symmetric(horizontal: ts.scale(16.0), vertical: ts.scale(8.0)),
           decoration: BoxDecoration(
             color: (isPositive ? Colors.green : Colors.red).withOpacity(0.1),
             borderRadius: BorderRadius.circular(20),
@@ -643,9 +648,9 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
               Icon(
                 isPositive ? Icons.trending_up : Icons.trending_down,
                 color: isPositive ? Colors.green : Colors.red,
-                size: 20,
+                size: ts.scale(20.0),
               ),
-              const SizedBox(width: 6),
+              SizedBox(width: ts.scale(6.0)),
               Text(
                 isArabic
                     ? '$diffText ${isPositive ? 'تحسن' : 'تراجع'}'
@@ -660,11 +665,14 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
         ),
       ],
     );
+    });
   }
 
   Widget _buildMonthCard(String label, double rate, Color color, bool isDark, {bool isArabic = false}) {
-    return Container(
-      padding: const EdgeInsets.all(16),
+    return Builder(builder: (ctx) {
+      final ts = MediaQuery.textScalerOf(ctx);
+      return Container(
+      padding: EdgeInsets.all(ts.scale(16.0)),
       decoration: BoxDecoration(
         color: color.withOpacity(0.08),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -678,7 +686,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
               color: isDark ? Colors.white54 : Colors.black54,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: ts.scale(4.0)),
           Text(
             '${_n((rate * 100).toStringAsFixed(1), isArabic: isArabic)}%',
             style: AppTypography.displayM.copyWith(
@@ -689,14 +697,16 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
         ],
       ),
     );
+    });
   }
 
   Widget _buildStatusBar(String label, int count, int total, Color color, bool isDark, {bool isArabic = false}) {
+    final ts = MediaQuery.textScalerOf(context);
     final rate = total > 0 ? count / total : 0.0;
     return Row(
       children: [
         SizedBox(
-          width: 70,
+          width: ts.scale(70.0),
           child: Text(
             label,
             style: AppTypography.bodyS.copyWith(
@@ -716,9 +726,9 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
             ),
           ),
         ),
-        const SizedBox(width: 10),
+        SizedBox(width: ts.scale(10.0)),
         SizedBox(
-          width: 35,
+          width: ts.scale(35.0),
           child: Text(
             _n(count, isArabic: isArabic),
             style: AppTypography.bodyS.copyWith(
@@ -752,8 +762,9 @@ class _ReportCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(ts.scale(12.0)),
       decoration: BoxDecoration(
         color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -763,8 +774,8 @@ class _ReportCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(icon, color: color, size: 24),
-          const SizedBox(height: 6),
+          Icon(icon, color: color, size: ts.scale(24.0)),
+          SizedBox(height: ts.scale(6.0)),
           Text(
             value,
             style: AppTypography.headingM.copyWith(
@@ -778,13 +789,14 @@ class _ReportCard extends StatelessWidget {
               color: AppConstants.textMuted(isDark),
             ),
           ),
-          const SizedBox(height: 2),
+          SizedBox(height: ts.scale(2.0)),
           Text(
             subtitle,
             style: AppTypography.caption.copyWith(
-              fontSize: 10,
+              fontSize: ts.scale(10.0),
               color: AppConstants.textDisabled(isDark),
             ),
+            textScaler: TextScaler.noScaling,
           ),
         ],
       ),

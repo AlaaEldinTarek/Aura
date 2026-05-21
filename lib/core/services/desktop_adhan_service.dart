@@ -52,7 +52,12 @@ class DesktopAdhanService {
   }
 
   Future<void> stop() async {
-    await _player.stop();
+    try {
+      await _player.stop();
+      await _player.seek(Duration.zero);
+    } catch (e) {
+      debugPrint('DesktopAdhanService: Error stopping adhan - $e');
+    }
   }
 
   void setEnabled(bool enabled) {

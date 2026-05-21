@@ -17,7 +17,6 @@ import '../../core/services/task_service.dart';
 import '../../core/services/achievement_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/desktop_notification_service.dart';
-import '../../core/services/desktop_prayer_scheduler.dart';
 import '../../core/services/desktop_adhan_service.dart';
 import '../../core/services/prayer_alarm_service.dart';
 import '../../core/services/prayer_tracking_service.dart';
@@ -75,11 +74,20 @@ class MainWrapperScreen extends ConsumerStatefulWidget {
 }
 
 class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
-    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
+    with TickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
   late int _currentIndex;
   StreamSubscription<Achievement>? _achievementSub;
-  StreamSubscription<DesktopPrayerEvent>? _desktopPrayerToastSub;
+  StreamSubscription<DesktopInAppNotif>? _desktopNotifSub;
+
+  // Desktop notification popup queue (replaces in-app banners)
+  _NotifPopup? _activePopup;
+  final List<_NotifPopup> _popupQueue = [];
+  bool _isShowingPopup = false;
+  bool _popupDismissing = false;
+  bool _popupWasVisible = false;
+  Timer? _autoDismissTimer;
+  AnimationController? _popupAnimCtrl;
 
   // PageController for smooth page transitions
   final PageController _pageController = PageController();
@@ -114,12 +122,16 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     _tabController.index = _currentIndex;
     _updateCurrentRoute();
 
-    // Desktop: show in-app overlay toast at prayer time
-    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
-      _desktopPrayerToastSub =
-          DesktopPrayerScheduler.instance.prayerTimeStream.listen((event) {
+    // Desktop: show in-app banners for reminders/tasks/wird (not adhan — that uses Windows toast).
+    if (_isDesktop) {
+      _desktopNotifSub =
+          DesktopNotificationService.instance.notificationStream.listen((notif) {
         if (!mounted) return;
-        _showDesktopPrayerToast(event);
+        _enqueuePopup(_NotifPopup(
+          emoji: notif.emoji,
+          title: notif.title,
+          body: notif.body,
+        ));
       });
     }
 
@@ -148,6 +160,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       _handleWidgetIntent();
       _scheduleDailySummaryOnStartup();
       Future.delayed(const Duration(seconds: 3), _checkUntrackedPrayers);
+
       Future.delayed(const Duration(seconds: 1), _checkGuestMigration);
     });
 
@@ -184,8 +197,10 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
 
   @override
   void dispose() {
+    _autoDismissTimer?.cancel();
+    _popupAnimCtrl?.dispose();
     _achievementSub?.cancel();
-    _desktopPrayerToastSub?.cancel();
+    _desktopNotifSub?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _tabController.dispose();
     _pageController.dispose();
@@ -205,29 +220,123 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     overlay.insert(entry);
   }
 
-  void _showDesktopPrayerToast(DesktopPrayerEvent event) async {
+  // ── Desktop popup queue ──────────────────────────────────────────────────
+
+  void _enqueuePopup(_NotifPopup popup) {
+    _popupQueue.add(popup);
+    if (!_isShowingPopup) _processNextPopup();
+  }
+
+  Future<void> _processNextPopup() async {
+    if (_popupQueue.isEmpty || !mounted) {
+      _isShowingPopup = false;
+      return;
+    }
+    _isShowingPopup = true;
+    final popup = _popupQueue.removeAt(0);
+    await _showPopupWindow(popup);
+  }
+
+  Future<void> _showPopupWindow(_NotifPopup popup) async {
+    _popupWasVisible = await windowManager.isVisible();
+
+    const windowW = 360.0;
+    final windowH = popup.isAdhan ? 190.0 : (popup.body != null ? 155.0 : 120.0);
+
+    try {
+      double screenW = 1920, screenH = 1080;
+      try {
+        final view = WidgetsBinding.instance.platformDispatcher.views.first;
+        final dpr = view.devicePixelRatio;
+        screenW = view.display.size.width / dpr;
+        screenH = view.display.size.height / dpr;
+      } catch (_) {}
+
+      const taskbarH = 52.0;
+      const margin = 12.0;
+
+      await windowManager.setTitleBarStyle(TitleBarStyle.hidden); // remove title bar
+      await windowManager.setMinimumSize(const Size(1, 1));       // allow small resize
+      await windowManager.setAlwaysOnTop(true);
+      await windowManager.setSize(Size(windowW, windowH));
+      await windowManager.setPosition(Offset(
+        screenW - windowW - margin,
+        screenH - windowH - taskbarH - margin,
+      ));
+      await windowManager.setSkipTaskbar(false);
+      // show() is called after setState so popup content renders first (no flash)
+    } catch (e) {
+      debugPrint('⚠️ [DESKTOP] showPopupWindow failed: $e');
+    }
+
     if (!mounted) return;
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final overlay = Overlay.of(context);
-    late OverlayEntry entry;
-    entry = OverlayEntry(
-      builder: (_) => _DesktopPrayerToast(
-        prayerName: isArabic ? event.nameAr : event.name,
-        isArabic: isArabic,
-        onDismiss: () {
-          try { entry.remove(); } catch (_) {}
-        },
-        onStopAdhan: () {
-          DesktopAdhanService.instance.stop();
-          try { entry.remove(); } catch (_) {}
-        },
-      ),
+
+    // Set popup content BEFORE showing the window (prevents flash of main app content)
+    _popupAnimCtrl?.dispose();
+    _popupAnimCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 320),
     );
-    overlay.insert(entry);
-    // Auto-dismiss after 15 seconds
-    Future.delayed(const Duration(seconds: 15), () {
-      try { entry.remove(); } catch (_) {}
-    });
+    setState(() => _activePopup = popup);
+    _popupDismissing = false;
+
+    // Wait one frame so popup content renders while window is still hidden
+    await Future.delayed(const Duration(milliseconds: 32));
+    if (!mounted) return;
+
+    try {
+      await windowManager.show();
+    } catch (_) {}
+
+    // Start slide-up after window is visible
+    _popupAnimCtrl?.forward();
+
+    _autoDismissTimer?.cancel();
+    _autoDismissTimer = Timer(
+      popup.isAdhan ? const Duration(minutes: 5) : const Duration(seconds: 8),
+      () { if (mounted && _activePopup == popup) _dismissCurrentPopup(); },
+    );
+  }
+
+  Future<void> _dismissCurrentPopup() async {
+    if (_popupDismissing) return;
+    _popupDismissing = true;
+    _autoDismissTimer?.cancel();
+
+    // Slide-down before hiding
+    if (_popupAnimCtrl != null && mounted) {
+      await _popupAnimCtrl!.reverse();
+    }
+    _popupAnimCtrl?.dispose();
+    _popupAnimCtrl = null;
+
+    if (!mounted) return;
+
+    try {
+      if (!_popupWasVisible) {
+        // Hide FIRST so the main app content never flashes
+        await windowManager.hide();
+      }
+      await windowManager.setTitleBarStyle(TitleBarStyle.normal);
+      await windowManager.setAlwaysOnTop(false);
+      await windowManager.setMinimumSize(const Size(400, 600));
+      await windowManager.setSize(const Size(900, 1400));
+      await windowManager.center();
+      if (_popupWasVisible) {
+        await windowManager.setSkipTaskbar(false);
+      } else {
+        await windowManager.setSkipTaskbar(true);
+      }
+    } catch (e) {
+      debugPrint('⚠️ [DESKTOP] dismissCurrentPopup failed: $e');
+    }
+
+    setState(() => _activePopup = null);
+    _popupDismissing = false;
+
+    _isShowingPopup = false;
+    await Future.delayed(const Duration(milliseconds: 300));
+    _processNextPopup();
   }
 
   Future<void> _handleWidgetIntent() async {
@@ -876,6 +985,109 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     // Keep task widget synced
     ref.watch(taskWidgetSyncProvider);
 
+    // Desktop notification popup — slides up above taskbar clock, no focus steal
+    if (_isDesktop && _activePopup != null && _popupAnimCtrl != null) {
+      final popup = _activePopup!;
+      final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final primary = isDark ? const Color(0xFFF5B301) : const Color(0xFFB5821B);
+      final bgColor = isDark ? const Color(0xFF1A1B1E) : Colors.white;
+
+      final title = popup.isAdhan
+          ? (isArabic ? 'حان وقت الصلاة' : 'Prayer Time')
+          : popup.title;
+      final body = popup.isAdhan
+          ? (isArabic
+              ? 'حان موعد صلاة ${popup.prayerNameAr ?? popup.prayerName}'
+              : "It's time for ${popup.prayerName} prayer")
+          : popup.body;
+
+      final slideAnim = Tween<Offset>(
+        begin: const Offset(0, 1),  // starts below (from taskbar)
+        end: Offset.zero,
+      ).animate(CurvedAnimation(
+        parent: _popupAnimCtrl!,
+        curve: Curves.easeOutCubic,
+      ));
+
+      return Scaffold(
+        backgroundColor: bgColor,
+        body: SlideTransition(
+          position: slideAnim,
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: primary.withOpacity(0.4), width: 1.5),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(popup.emoji, style: const TextStyle(fontSize: 22)),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: AppTypography.headingS.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: primary,
+                          ),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: _dismissCurrentPopup,
+                        child: Icon(Icons.close, size: 18,
+                            color: isDark ? Colors.white54 : Colors.black45),
+                      ),
+                    ],
+                  ),
+                  if (body != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      body,
+                      style: AppTypography.bodyS.copyWith(
+                        color: isDark ? Colors.white70 : Colors.black87,
+                      ),
+                    ),
+                  ],
+                  if (popup.isAdhan) ...[
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: _dismissCurrentPopup,
+                          style: TextButton.styleFrom(
+                            foregroundColor: isDark ? Colors.white54 : Colors.black45,
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          ),
+                          child: Text(isArabic ? 'إغلاق' : 'Dismiss'),
+                        ),
+                        const SizedBox(width: 8),
+                        AuraButton(
+                          label: isArabic ? 'إيقاف الأذان' : 'Stop Adhan',
+                          onPressed: () {
+                            DesktopAdhanService.instance.stop();
+                            _dismissCurrentPopup();
+                          },
+                          icon: const Icon(Icons.stop_circle_outlined, size: 16),
+                          verticalPadding: 6,
+                          fontSize: 12,
+                        ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     final pageView = PageView(
       controller: _pageController,
       // Disable swipe on desktop — navigation is via sidebar
@@ -1319,148 +1531,26 @@ class _DesktopSidebar extends ConsumerWidget {
   }
 }
 
-// ─── Desktop prayer-time toast overlay ───────────────────────────────────────
-
-class _DesktopPrayerToast extends StatefulWidget {
-  final String prayerName;
-  final bool isArabic;
-  final VoidCallback onDismiss;
-  final VoidCallback onStopAdhan;
-
-  const _DesktopPrayerToast({
-    required this.prayerName,
-    required this.isArabic,
-    required this.onDismiss,
-    required this.onStopAdhan,
-  });
-
-  @override
-  State<_DesktopPrayerToast> createState() => _DesktopPrayerToastState();
-}
-
-class _DesktopPrayerToastState extends State<_DesktopPrayerToast>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<Offset> _slide;
-  late Animation<double> _fade;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 350));
-    _slide = Tween<Offset>(begin: const Offset(1, 0), end: Offset.zero)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
-    _fade = Tween<double>(begin: 0, end: 1)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
-    _ctrl.forward();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  Future<void> _dismiss() async {
-    await _ctrl.reverse();
-    widget.onDismiss();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = isDark ? const Color(0xFFF5B301) : const Color(0xFFB5821B);
-
-    return Positioned(
-      bottom: 28,
-      right: 28,
-      child: SlideTransition(
-        position: _slide,
-        child: FadeTransition(
-          opacity: _fade,
-          child: Material(
-            elevation: 12,
-            borderRadius: BorderRadius.circular(12),
-            color: isDark ? const Color(0xFF1A1B1E) : Colors.white,
-            child: Container(
-              width: 300,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: primary.withOpacity(0.4), width: 1.5),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Text('🕌', style: const TextStyle(fontSize: 22)),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          widget.isArabic
-                              ? 'حان وقت الصلاة'
-                              : 'Prayer Time',
-                          style: AppTypography.headingS.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: primary,
-                          ),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: _dismiss,
-                        child: Icon(Icons.close,
-                            size: 18,
-                            color: isDark ? Colors.white54 : Colors.black45),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    widget.isArabic
-                        ? 'حان موعد صلاة ${widget.prayerName}'
-                        : "It's time for ${widget.prayerName} prayer",
-                    style: AppTypography.bodyS.copyWith(
-                      color: isDark ? Colors.white70 : Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: _dismiss,
-                        style: TextButton.styleFrom(
-                          foregroundColor:
-                              isDark ? Colors.white54 : Colors.black45,
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
-                        ),
-                        child: Text(widget.isArabic ? 'إغلاق' : 'Dismiss'),
-                      ),
-                      const SizedBox(width: 8),
-                      AuraButton(
-                        label: widget.isArabic ? 'إيقاف الأذان' : 'Stop Adhan',
-                        onPressed: widget.onStopAdhan,
-                        icon: const Icon(Icons.stop_circle_outlined, size: 16),
-                        verticalPadding: 6,
-                        fontSize: 12,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
+
+/// Internal model for a desktop notification popup.
+class _NotifPopup {
+  final String emoji;
+  final String title;
+  final String? body;
+  final bool isAdhan;
+  final String? prayerName;
+  final String? prayerNameAr;
+
+  const _NotifPopup({
+    this.emoji = '🔔',
+    this.title = '',
+    this.body,
+    this.isAdhan = false,
+    this.prayerName,
+    this.prayerNameAr,
+  });
+}
 
 class _AchievementToast extends StatefulWidget {
   final Achievement achievement;

@@ -16,14 +16,15 @@ class InfoTipIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final ts = MediaQuery.textScalerOf(context);
 
     return GestureDetector(
       onTap: () => _showTipDialog(context, isDark),
       child: Padding(
-        padding: const EdgeInsets.all(4),
+        padding: EdgeInsets.all(ts.scale(4.0)),
         child: Icon(
           Icons.info_outline,
-          size: 18,
+          size: ts.scale(18.0),
           color: AppConstants.getPrimary(isDark).withOpacity(0.7),
         ),
       ),
@@ -33,15 +34,17 @@ class InfoTipIcon extends StatelessWidget {
   void _showTipDialog(BuildContext context, bool isDark) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
+      builder: (ctx) {
+        final ts = MediaQuery.textScalerOf(ctx);
+        return AlertDialog(
         backgroundColor: AppConstants.surface(isDark),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         ),
         title: Row(
           children: [
-            Icon(Icons.info_outline, color: AppConstants.getPrimary(isDark), size: 22),
-            const SizedBox(width: 8),
+            Icon(Icons.info_outline, color: AppConstants.getPrimary(isDark), size: ts.scale(22.0)),
+            SizedBox(width: ts.scale(8.0)),
             Flexible(
               child: Text(
                 titleKey.tr(),
@@ -69,7 +72,8 @@ class InfoTipIcon extends StatelessWidget {
             child: Text('banner_got_it'.tr()),
           ),
         ],
-      ),
+      );
+      },
     );
   }
 }

@@ -95,37 +95,41 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
           ),
         ],
       ),
-      body: RefreshIndicator(
+      body: Builder(builder: (ctx) {
+        final ts = MediaQuery.textScalerOf(ctx);
+        return RefreshIndicator(
         onRefresh: _loadMonthData,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(AppConstants.paddingMedium),
+          padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Statistics cards
               _buildStatisticsCards(context, isDark, isArabic),
 
-              const SizedBox(height: AppConstants.paddingLarge),
+              SizedBox(height: ts.scale(AppConstants.paddingLarge).clamp(0.0, 28.0)),
 
               // Calendar
               _buildCalendar(context, isDark, isArabic),
 
-              const SizedBox(height: AppConstants.paddingLarge),
+              SizedBox(height: ts.scale(AppConstants.paddingLarge).clamp(0.0, 28.0)),
 
               // Selected day details
               if (_selectedDay != null)
                 _buildDayDetails(context, _selectedDay!, isDark, isArabic),
 
-              const SizedBox(height: 80),
+              SizedBox(height: ts.scale(80.0)),
             ],
           ),
         ),
-      ),
+      );
+      }),
     );
   }
 
   Widget _buildStatisticsCards(BuildContext context, bool isDark, bool isArabic) {
+    final ts = MediaQuery.textScalerOf(context);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
@@ -165,7 +169,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                 fontWeight: FontWeight.bold,
               ),
         ),
-        const SizedBox(height: AppConstants.paddingMedium),
+        SizedBox(height: ts.scale(AppConstants.paddingMedium).clamp(0.0, 20.0)),
         Row(
           children: [
             Expanded(
@@ -177,7 +181,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                 isDark: isDark,
               ),
             ),
-            const SizedBox(width: AppConstants.paddingMedium),
+            SizedBox(width: ts.scale(AppConstants.paddingMedium).clamp(0.0, 20.0)),
             Expanded(
               child: _StatCard(
                 icon: Icons.check_circle,
@@ -187,7 +191,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                 isDark: isDark,
               ),
             ),
-            const SizedBox(width: AppConstants.paddingMedium),
+            SizedBox(width: ts.scale(AppConstants.paddingMedium).clamp(0.0, 20.0)),
             Expanded(
               child: _StatCard(
                 icon: Icons.schedule,
@@ -204,6 +208,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
   }
 
   Widget _buildCalendar(BuildContext context, bool isDark, bool isArabic) {
+    final ts = MediaQuery.textScalerOf(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -213,7 +218,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                 fontWeight: FontWeight.bold,
               ),
         ),
-        const SizedBox(height: AppConstants.paddingMedium),
+        SizedBox(height: ts.scale(AppConstants.paddingMedium).clamp(0.0, 20.0)),
         Container(
           decoration: BoxDecoration(
             color: AppConstants.card(isDark),
@@ -321,8 +326,9 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
       statuses[name] = summary?.prayers[name] ?? PrayerStatus.missed;
     }
 
+    final ts = MediaQuery.textScalerOf(context);
     return Container(
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+      padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
       decoration: BoxDecoration(
         color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -353,7 +359,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                 ),
             ],
           ),
-          const SizedBox(height: AppConstants.paddingMedium),
+          SizedBox(height: ts.scale(AppConstants.paddingMedium).clamp(0.0, 20.0)),
           ...prayerNames.map((prayerName) {
             final displayName = prayerDisplayNames[prayerName]!;
             final emoji = prayerEmojis[prayerName]!;
@@ -385,6 +391,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
     required bool isDark,
     required bool isArabic,
   }) {
+    final ts = MediaQuery.textScalerOf(context);
     final isCompleted = status == PrayerStatus.onTime || status == PrayerStatus.late;
     final isExplicitlyMissed = status == PrayerStatus.excused || status == PrayerStatus.missed;
 
@@ -394,12 +401,12 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
         : (status == PrayerStatus.late ? Colors.orange : Colors.green);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.symmetric(vertical: ts.scale(4.0)),
       child: InkWell(
         onTap: () => _togglePrayerStatus(prayerName, date, status, isArabic),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: EdgeInsets.symmetric(horizontal: ts.scale(12.0), vertical: ts.scale(10.0)),
           decoration: BoxDecoration(
             color: showBadge ? badgeColor.withOpacity(0.08) : Colors.transparent,
             borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -410,8 +417,8 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
           child: Row(
             children: [
               // Emoji
-              Text(emoji, style: const TextStyle(fontSize: 20)),
-              const SizedBox(width: 12),
+              Text(emoji, style: TextStyle(fontSize: ts.scale(20.0)), textScaler: TextScaler.noScaling),
+              SizedBox(width: ts.scale(12.0)),
 
               // Prayer name
               Expanded(
@@ -427,7 +434,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
               // Status badge
               if (showBadge)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: ts.scale(10.0), vertical: ts.scale(4.0)),
                   decoration: BoxDecoration(
                     color: badgeColor.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(12),
@@ -440,9 +447,9 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                             ? Icons.cancel
                             : (status == PrayerStatus.late ? Icons.schedule : Icons.check_circle),
                         color: badgeColor,
-                        size: 16,
+                        size: ts.scale(16.0),
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: ts.scale(4.0)),
                       Text(
                         isExplicitlyMissed
                             ? (isArabic ? 'لم أصلّ' : 'Missed')
@@ -459,7 +466,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                 )
               else
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: ts.scale(10.0), vertical: ts.scale(4.0)),
                   decoration: BoxDecoration(
                     color: Colors.grey.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -468,8 +475,8 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.radio_button_unchecked,
-                          color: AppConstants.textDisabled(isDark), size: 16),
-                      const SizedBox(width: 4),
+                          color: AppConstants.textDisabled(isDark), size: ts.scale(16.0)),
+                      SizedBox(width: ts.scale(4.0)),
                       Text(
                         isArabic ? 'غير مُصلّاة' : 'Not Prayed',
                         style: AppTypography.caption.copyWith(
@@ -701,8 +708,9 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     return Container(
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+      padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
       decoration: BoxDecoration(
         color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
@@ -712,8 +720,8 @@ class _StatCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(height: 8),
+          Icon(icon, color: color, size: ts.scale(28.0)),
+          SizedBox(height: ts.scale(8.0)),
           Text(
             value,
             style: AppTypography.headingM.copyWith(

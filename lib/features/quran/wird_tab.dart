@@ -52,6 +52,9 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
   final _streakKey = GlobalKey();
   final _progressKey = GlobalKey();
   final _actionsKey = GlobalKey();
+  final _statsKey = GlobalKey();
+  final _settingsKey = GlobalKey();
+  final _juzGridKey = GlobalKey();
   final _juzScrollController = ScrollController();
 
   @override
@@ -89,6 +92,24 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
           targetKey: _actionsKey,
           titleKey: isJuzMode ? 'tutorial_wird_juz_actions_title' : 'tutorial_wird_actions_title',
           bodyKey: isJuzMode ? 'tutorial_wird_juz_actions_body' : 'tutorial_wird_actions_body',
+        ),
+      if (isJuzMode && _juzGridKey.currentContext != null)
+        TutorialStep(
+          targetKey: _juzGridKey,
+          titleKey: 'tutorial_wird_juz_grid_title',
+          bodyKey: 'tutorial_wird_juz_grid_body',
+        ),
+      if (_statsKey.currentContext != null)
+        TutorialStep(
+          targetKey: _statsKey,
+          titleKey: 'tutorial_wird_stats_title',
+          bodyKey: 'tutorial_wird_stats_body',
+        ),
+      if (_settingsKey.currentContext != null)
+        TutorialStep(
+          targetKey: _settingsKey,
+          titleKey: 'tutorial_wird_settings_title',
+          bodyKey: 'tutorial_wird_settings_body',
         ),
     ];
     if (steps.isEmpty) return;
@@ -197,46 +218,50 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
     final juzReadToday = progress?.juzRead ?? 0;
     final dailyJuzGoal = state.settings.dailyJuzGoal;
 
+    final ts = MediaQuery.textScalerOf(context);
+    final gapS = ts.scale(10.0).clamp(0.0, 16.0);
+
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: ts.scale(16.0), vertical: ts.scale(12.0)),
       children: [
-        SizedBox(key: _streakKey, child: _buildStreakCard(state, primary, isDark)),
-        const SizedBox(height: 10),
+        SizedBox(key: _streakKey, child: _buildStreakCard(context, state, primary, isDark)),
+        SizedBox(height: gapS),
 
         if (isJuzMode) ...[
-          SizedBox(key: _progressKey, child: _buildJuzProgressCard(state, primary, isDark, allCompletedJuz, juzReadToday, dailyJuzGoal, isCompleted)),
-          const SizedBox(height: 10),
+          SizedBox(key: _progressKey, child: _buildJuzProgressCard(context, state, primary, isDark, allCompletedJuz, juzReadToday, dailyJuzGoal, isCompleted)),
+          SizedBox(height: gapS),
           if (isCompleted)
-            _buildCompletedBanner(primary, isDark)
+            _buildCompletedBanner(context, primary, isDark)
           else ...[
             SizedBox(key: _actionsKey, child: _buildJuzActions(context, state, primary)),
-            const SizedBox(height: 10),
+            SizedBox(height: gapS),
           ],
-          _buildJuzGrid(context, allCompletedJuz, primary, isDark),
+          SizedBox(key: _juzGridKey, child: _buildJuzGrid(context, allCompletedJuz, primary, isDark)),
         ] else ...[
           SizedBox(key: _progressKey, child: _buildProgressCard(context, state, primary, isDark, pagesRead, goal, isCompleted, progressRatio)),
-          const SizedBox(height: 10),
+          SizedBox(height: gapS),
           if (isCompleted)
-            _buildCompletedBanner(primary, isDark)
+            _buildCompletedBanner(context, primary, isDark)
           else ...[
             SizedBox(key: _actionsKey, child: _buildActionButtons(context, state, primary, progress)),
-            const SizedBox(height: 10),
+            SizedBox(height: gapS),
           ],
         ],
 
-        const SizedBox(height: 10),
-        _buildStatsRow(state, primary, isDark, isJuzMode, allCompletedJuz),
-        const SizedBox(height: 10),
-        _buildSettingsSection(context, state, primary, isDark),
+        SizedBox(height: gapS),
+        SizedBox(key: _statsKey, child: _buildStatsRow(context, state, primary, isDark, isJuzMode, allCompletedJuz)),
+        SizedBox(height: gapS),
+        SizedBox(key: _settingsKey, child: _buildSettingsSection(context, state, primary, isDark)),
       ],
     );
   }
 
   // ── Completed Banner ──────────────────────────────────────────────────────
 
-  Widget _buildCompletedBanner(Color primary, bool isDark) {
+  Widget _buildCompletedBanner(BuildContext context, Color primary, bool isDark) {
+    final ts = MediaQuery.textScalerOf(context);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(ts.scale(16.0)),
       decoration: BoxDecoration(
         color: Colors.green.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
@@ -244,7 +269,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
       child: Row(
         children: [
           const Icon(Icons.check_circle, color: Colors.green),
-          const SizedBox(width: 12),
+          SizedBox(width: ts.scale(12.0)),
           Expanded(
             child: Text(
               'wird_completed_today'.tr(),
@@ -259,7 +284,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
               },
               style: TextButton.styleFrom(
                 foregroundColor: Colors.orange,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: EdgeInsets.symmetric(horizontal: ts.scale(12.0)),
                 minimumSize: Size.zero,
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
@@ -273,9 +298,10 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
   // ── Juz Progress Card ─────────────────────────────────────────────────────
 
   Widget _buildJuzProgressCard(
-    WirdState state, Color primary, bool isDark,
+    BuildContext context, WirdState state, Color primary, bool isDark,
     List<int> allCompleted, int juzToday, int dailyGoal, bool isCompleted,
   ) {
+    final ts = MediaQuery.textScalerOf(context);
     final total = 30;
     final done = allCompleted.length;
     final remaining = total - done;
@@ -284,17 +310,18 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
         ? (remaining / dailyGoal).ceil()
         : 0;
     final secondaryColor = AppConstants.textSecondary(isDark);
+    final circleSz = ts.scale(88.0).clamp(88.0, 140.0);
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: EdgeInsets.symmetric(horizontal: ts.scale(16.0).clamp(16.0, 24.0), vertical: ts.scale(14.0).clamp(14.0, 20.0)),
         child: Row(
           children: [
             // Circle — on start side (left for LTR, right for RTL)
             SizedBox(
-              width: 88,
-              height: 88,
+              width: circleSz,
+              height: circleSz,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -305,24 +332,29 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                     valueColor: AlwaysStoppedAnimation<Color>(done == total ? Colors.green : primary),
                   ),
                   Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '${NumberFormatter.withArabicNumeralsByLanguage(done.toString(), widget.lang)}/30',
-                          style: AppTypography.bodyL.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          'wird_unit_juz'.tr(),
-                          style: AppTypography.caption.copyWith(fontSize: 10, color: secondaryColor),
-                        ),
-                      ],
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${NumberFormatter.withArabicNumeralsByLanguage(done.toString(), widget.lang)}/30',
+                            textScaler: TextScaler.noScaling,
+                            style: AppTypography.bodyL.copyWith(fontWeight: FontWeight.bold, fontSize: ts.scale(18.0).clamp(14.0, 26.0)),
+                          ),
+                          Text(
+                            'wird_unit_juz'.tr(),
+                            textScaler: TextScaler.noScaling,
+                            style: AppTypography.caption.copyWith(fontSize: ts.scale(9.0).clamp(8.0, 13.0), color: secondaryColor),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: ts.scale(16.0)),
             // Text — on end side
             Expanded(
               child: Column(
@@ -336,14 +368,14 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                           style: AppTypography.label,
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: ts.scale(4.0)),
                       const InfoTipIcon(
                         titleKey: 'tutorial_wird_juz_progress_title',
                         bodyKey: 'tutorial_wird_juz_progress_body',
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: ts.scale(6.0)),
                   if (done == total)
                     Text('wird_khatm_done'.tr(), style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.bold, color: Colors.green))
                   else
@@ -352,14 +384,14 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                       style: AppTypography.caption.copyWith(color: secondaryColor),
                     ),
                   if (daysEst > 0) ...[
-                    const SizedBox(height: 2),
+                    SizedBox(height: ts.scale(2.0)),
                     Text(
                       '~${NumberFormatter.withArabicNumeralsByLanguage(daysEst.toString(), widget.lang)} ${'wird_days_to_finish'.tr()}',
                       style: AppTypography.caption.copyWith(color: secondaryColor),
                     ),
                   ],
                   if (juzToday > 0) ...[
-                    const SizedBox(height: 4),
+                    SizedBox(height: ts.scale(4.0)),
                     Text(
                       '${NumberFormatter.withArabicNumeralsByLanguage(juzToday.toString(), widget.lang)}/${NumberFormatter.withArabicNumeralsByLanguage(dailyGoal.toString(), widget.lang)} ${'wird_juz_today'.tr()}',
                       style: AppTypography.caption.copyWith(color: primary, fontWeight: FontWeight.w500),
@@ -377,6 +409,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
   // ── Juz Actions Row ───────────────────────────────────────────────────────
 
   Widget _buildJuzActions(BuildContext context, WirdState state, Color primary) {
+    final ts = MediaQuery.textScalerOf(context);
     return Row(
       children: [
         Expanded(
@@ -385,12 +418,12 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
               ref.read(wirdStateProvider.notifier).markComplete();
               setState(() => _showUndo = true);
             },
-            icon: const Icon(Icons.check, size: 18),
+            icon: Icon(Icons.check, size: ts.scale(18.0)),
             label: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Flexible(child: Text('wird_mark_complete'.tr(), overflow: TextOverflow.ellipsis)),
-                const SizedBox(width: 4),
+                SizedBox(width: ts.scale(4.0)),
                 const InfoTipIcon(
                   titleKey: 'tutorial_wird_juz_actions_title',
                   bodyKey: 'tutorial_wird_juz_actions_body',
@@ -399,11 +432,11 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: ts.scale(8.0)),
         Expanded(
           child: OutlinedButton.icon(
             onPressed: () => _showBookmarkPagesSheetJuz(context, state),
-            icon: const Icon(Icons.bookmark_outline, size: 18),
+            icon: Icon(Icons.bookmark_outline, size: ts.scale(18.0)),
             label: Text('wird_add_from_bookmarks'.tr(), overflow: TextOverflow.ellipsis),
           ),
         ),
@@ -437,12 +470,13 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
           final msg = added > 0
               ? 'wird_bookmark_juz_marked'.tr().replaceAll('%d', added.toString())
               : 'wird_bookmark_no_new_juz'.tr();
+          final tsSnack = MediaQuery.textScalerOf(context);
           final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(msg),
               duration: const Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
-              margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
+              margin: EdgeInsets.only(bottom: tsSnack.scale(82.0), left: tsSnack.scale(16.0), right: tsSnack.scale(16.0)),
             ),
           );
           Future.delayed(const Duration(seconds: 2), snackCtrl.close);
@@ -486,24 +520,26 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
             final msg = added > 0
                 ? 'wird_bookmark_juz_marked'.tr().replaceAll('%d', added.toString())
                 : 'wird_bookmark_no_new_juz'.tr();
+            final tsSnack2 = MediaQuery.textScalerOf(context);
             final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text(msg),
                 duration: const Duration(seconds: 2),
                 behavior: SnackBarBehavior.floating,
-                margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
+                margin: EdgeInsets.only(bottom: tsSnack2.scale(82.0), left: tsSnack2.scale(16.0), right: tsSnack2.scale(16.0)),
               ),
             );
             Future.delayed(const Duration(seconds: 2), snackCtrl.close);
           } else {
             ref.read(wirdStateProvider.notifier).recordPagesRead(1, bm.page);
             ref.read(wirdStateProvider.notifier).setLinkedBookmarkColor(color.name, pages);
+            final tsSnack3 = MediaQuery.textScalerOf(context);
             final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('wird_bookmark_added'.tr().replaceAll('%d', '1')),
                 duration: const Duration(seconds: 2),
                 behavior: SnackBarBehavior.floating,
-                margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
+                margin: EdgeInsets.only(bottom: tsSnack3.scale(82.0), left: tsSnack3.scale(16.0), right: tsSnack3.scale(16.0)),
               ),
             );
             Future.delayed(const Duration(seconds: 2), snackCtrl.close);
@@ -516,25 +552,29 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
   // ── Juz Grid ──────────────────────────────────────────────────────────────
 
   Widget _buildJuzGrid(BuildContext context, List<int> allCompleted, Color primary, bool isDark) {
+    final ts = MediaQuery.textScalerOf(context);
     final secondaryColor = AppConstants.textSecondary(isDark);
+    final cellW = ts.scale(44.0);
+    final cellH = ts.scale(52.0);
+    final chevronSz = ts.scale(28.0);
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        padding: EdgeInsets.symmetric(horizontal: ts.scale(12.0), vertical: ts.scale(14.0)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Text('wird_juz_grid'.tr(), style: AppTypography.label),
-                const SizedBox(width: 4),
+                SizedBox(width: ts.scale(4.0)),
                 const InfoTipIcon(
                   titleKey: 'tutorial_wird_juz_grid_title',
                   bodyKey: 'tutorial_wird_juz_grid_body',
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: ts.scale(10.0)),
             Row(
               children: [
                 IconButton(
@@ -547,18 +587,18 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                   },
                   icon: Icon(Icons.chevron_left, color: primary),
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                  iconSize: 28,
+                  constraints: BoxConstraints(minWidth: chevronSz, minHeight: chevronSz),
+                  iconSize: chevronSz,
                 ),
                 Expanded(
                   child: SizedBox(
-                    height: 52,
+                    height: cellH,
                     child: ListView.separated(
                       controller: _juzScrollController,
                       scrollDirection: Axis.horizontal,
                       physics: const BouncingScrollPhysics(),
                       itemCount: 30,
-                      separatorBuilder: (_, __) => const SizedBox(width: 6),
+                      separatorBuilder: (_, __) => SizedBox(width: ts.scale(6.0)),
                       itemBuilder: (context, index) {
                         final juzNo = index + 1;
                         final done = allCompleted.contains(juzNo);
@@ -566,8 +606,8 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                           onTap: () => ref.read(wirdStateProvider.notifier).toggleJuzCompleted(juzNo),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
-                            width: 44,
-                            height: 52,
+                            width: cellW,
+                            height: cellH,
                             decoration: BoxDecoration(
                               color: done
                                   ? primary.withValues(alpha: 0.2)
@@ -582,16 +622,17 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 if (done)
-                                  Icon(Icons.check_circle, color: primary, size: 18)
+                                  Icon(Icons.check_circle, color: primary, size: ts.scale(18.0))
                                 else
                                   Text(
                                     NumberFormatter.withArabicNumeralsByLanguage(juzNo.toString(), widget.lang),
                                     style: AppTypography.label.copyWith(fontWeight: FontWeight.bold),
                                   ),
-                                const SizedBox(height: 2),
+                                SizedBox(height: ts.scale(2.0)),
                                 Text(
                                   'wird_unit_juz'.tr(),
-                                  style: AppTypography.caption.copyWith(fontSize: 9, color: secondaryColor),
+                                  textScaler: TextScaler.noScaling,
+                                  style: AppTypography.caption.copyWith(fontSize: ts.scale(9.0), color: secondaryColor),
                                 ),
                               ],
                             ),
@@ -611,8 +652,8 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                   },
                   icon: Icon(Icons.chevron_right, color: primary),
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
-                  iconSize: 28,
+                  constraints: BoxConstraints(minWidth: chevronSz, minHeight: chevronSz),
+                  iconSize: chevronSz,
                 ),
               ],
             ),
@@ -624,10 +665,11 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
 
   // ── Streak Card ───────────────────────────────────────────────────────────
 
-  Widget _buildStreakCard(WirdState state, Color primary, bool isDark) {
+  Widget _buildStreakCard(BuildContext context, WirdState state, Color primary, bool isDark) {
+    final ts = MediaQuery.textScalerOf(context);
     final streak = state.streakCount;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: EdgeInsets.symmetric(horizontal: ts.scale(20.0), vertical: ts.scale(16.0)),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -639,8 +681,8 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
       ),
       child: Row(
         children: [
-          Text(streak > 0 ? '🔥' : '📚', style: const TextStyle(fontSize: 32)),
-          const SizedBox(width: 16),
+          Text(streak > 0 ? '🔥' : '📚', style: TextStyle(fontSize: ts.scale(32.0)), textScaler: TextScaler.noScaling),
+          SizedBox(width: ts.scale(16.0)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -657,7 +699,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                       NumberFormatter.withArabicNumeralsByLanguage(streak.toString(), widget.lang),
                       style: AppTypography.headingL.copyWith(fontWeight: FontWeight.bold, color: primary),
                     ),
-                    const SizedBox(width: 6),
+                    SizedBox(width: ts.scale(6.0)),
                     Text(
                       'wird_streak_days'.tr(),
                       style: AppTypography.label.copyWith(
@@ -673,9 +715,9 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
             titleKey: 'tutorial_wird_streak_title',
             bodyKey: 'tutorial_wird_streak_body',
           ),
-          const SizedBox(width: 4),
+          SizedBox(width: ts.scale(4.0)),
           IconButton(
-            icon: Icon(Icons.bar_chart_rounded, color: primary, size: 22),
+            icon: Icon(Icons.bar_chart_rounded, color: primary, size: ts.scale(22.0)),
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(),
             tooltip: widget.lang == 'ar' ? 'إحصاءات القرآن' : 'Quran Stats',
@@ -692,19 +734,21 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
     BuildContext context, WirdState state, Color primary, bool isDark,
     int pagesRead, int goal, bool isCompleted, double progressRatio,
   ) {
+    final ts = MediaQuery.textScalerOf(context);
     final secondaryColor = AppConstants.textSecondary(isDark);
     final remaining = goal - pagesRead;
+    final circleSz = ts.scale(88.0).clamp(88.0, 140.0);
 
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        padding: EdgeInsets.symmetric(horizontal: ts.scale(16.0).clamp(16.0, 24.0), vertical: ts.scale(14.0).clamp(14.0, 20.0)),
         child: Row(
           children: [
             // Circle — start side (left LTR, right RTL)
             SizedBox(
-              width: 88,
-              height: 88,
+              width: circleSz,
+              height: circleSz,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -715,25 +759,30 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                     valueColor: AlwaysStoppedAnimation<Color>(isCompleted ? Colors.green : primary),
                   ),
                   Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          '${NumberFormatter.withArabicNumeralsByLanguage(pagesRead.toString(), widget.lang)}'
-                          '/${NumberFormatter.withArabicNumeralsByLanguage(goal.toString(), widget.lang)}',
-                          style: AppTypography.headingS.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          'page'.tr(),
-                          style: AppTypography.caption.copyWith(fontSize: 10, color: secondaryColor),
-                        ),
-                      ],
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '${NumberFormatter.withArabicNumeralsByLanguage(pagesRead.toString(), widget.lang)}'
+                            '/${NumberFormatter.withArabicNumeralsByLanguage(goal.toString(), widget.lang)}',
+                            textScaler: TextScaler.noScaling,
+                            style: AppTypography.headingS.copyWith(fontWeight: FontWeight.bold, fontSize: ts.scale(18.0).clamp(14.0, 26.0)),
+                          ),
+                          Text(
+                            'page'.tr(),
+                            textScaler: TextScaler.noScaling,
+                            style: AppTypography.caption.copyWith(fontSize: ts.scale(9.0).clamp(8.0, 13.0), color: secondaryColor),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            const SizedBox(width: 16),
+            SizedBox(width: ts.scale(16.0)),
             // Text — end side
             Expanded(
               child: Column(
@@ -747,14 +796,14 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                           style: AppTypography.label,
                         ),
                       ),
-                      const SizedBox(width: 4),
+                      SizedBox(width: ts.scale(4.0)),
                       const InfoTipIcon(
                         titleKey: 'tutorial_wird_progress_title',
                         bodyKey: 'tutorial_wird_progress_body',
                       ),
                     ],
                   ),
-                  const SizedBox(height: 6),
+                  SizedBox(height: ts.scale(6.0)),
                   if (isCompleted)
                     Text('wird_completed_today'.tr(), style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.bold, color: Colors.green))
                   else if (remaining > 0)
@@ -774,6 +823,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
   // ── Action Buttons ────────────────────────────────────────────────────────
 
   Widget _buildActionButtons(BuildContext context, WirdState state, Color primary, WirdProgress? progress) {
+    final ts = MediaQuery.textScalerOf(context);
     final goal = state.settings.dailyPageGoal;
     final startPage = progress?.startPage ?? 1;
     final currentPage = progress?.currentPage ?? startPage;
@@ -782,7 +832,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(ts.scale(12.0)),
           decoration: BoxDecoration(
             color: primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
@@ -796,7 +846,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                     .replaceAll('%e', NumberFormatter.withArabicNumeralsByLanguage(endPage.toString(), widget.lang)),
                 style: AppTypography.label.copyWith(color: primary),
               ),
-              const SizedBox(width: 4),
+              SizedBox(width: ts.scale(4.0)),
               InfoTipIcon(
                 titleKey: 'tutorial_wird_actions_title',
                 bodyKey: 'tutorial_wird_actions_body',
@@ -804,7 +854,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
             ],
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: ts.scale(12.0)),
         Row(
           children: [
             Expanded(
@@ -817,41 +867,41 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                     ),
                   );
                 },
-                icon: Icon(progress == null ? Icons.play_arrow : Icons.arrow_forward),
+                icon: Icon(progress == null ? Icons.play_arrow : Icons.arrow_forward, size: ts.scale(18.0)),
                 label: Text(progress == null ? 'wird_start_reading'.tr() : 'wird_continue_reading'.tr()),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: ts.scale(8.0)),
         Row(
           children: [
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: () => _showRecordPagesDialog(context, currentPage),
-                icon: const Icon(Icons.edit_note),
+                icon: Icon(Icons.edit_note, size: ts.scale(18.0)),
                 label: Text('wird_record_pages'.tr()),
               ),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: ts.scale(8.0)),
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: () {
                   ref.read(wirdStateProvider.notifier).markComplete();
                   setState(() => _showUndo = true);
                 },
-                icon: const Icon(Icons.check),
+                icon: Icon(Icons.check, size: ts.scale(18.0)),
                 label: Text('wird_mark_complete'.tr()),
               ),
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: ts.scale(8.0)),
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
             onPressed: () => _showBookmarkPagesSheet(context),
-            icon: const Icon(Icons.bookmark_outline),
+            icon: Icon(Icons.bookmark_outline, size: ts.scale(18.0)),
             label: Text('wird_add_from_bookmarks'.tr()),
           ),
         ),
@@ -873,12 +923,13 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
           ref.read(wirdStateProvider.notifier).recordPagesRead(pageCount, lastPage);
           ref.read(wirdStateProvider.notifier).setLinkedBookmarkColor(colorName, allPages);
           Navigator.pop(context);
+          final tsSnack4 = MediaQuery.textScalerOf(context);
           final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('wird_bookmark_added'.tr().replaceAll('%d', pageCount.toString())),
               duration: const Duration(seconds: 2),
               behavior: SnackBarBehavior.floating,
-              margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
+              margin: EdgeInsets.only(bottom: tsSnack4.scale(82.0), left: tsSnack4.scale(16.0), right: tsSnack4.scale(16.0)),
             ),
           );
           Future.delayed(const Duration(seconds: 2), snackCtrl.close);
@@ -918,7 +969,8 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
 
   // ── Stats Row ─────────────────────────────────────────────────────────────
 
-  Widget _buildStatsRow(WirdState state, Color primary, bool isDark, bool isJuzMode, List<int> allCompletedJuz) {
+  Widget _buildStatsRow(BuildContext context, WirdState state, Color primary, bool isDark, bool isJuzMode, List<int> allCompletedJuz) {
+    final ts = MediaQuery.textScalerOf(context);
     final secondary = AppConstants.textSecondary(isDark);
     return Row(
       children: [
@@ -926,7 +978,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
           child: Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(ts.scale(12.0)),
               child: Column(
                 children: [
                   Text(
@@ -945,12 +997,12 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
             ),
           ),
         ),
-        const SizedBox(width: 8),
+        SizedBox(width: ts.scale(8.0)),
         Expanded(
           child: Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: EdgeInsets.all(ts.scale(12.0)),
               child: Column(
                 children: [
                   Text(
@@ -974,19 +1026,20 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
   // ── Settings Section ──────────────────────────────────────────────────────
 
   Widget _buildSettingsSection(BuildContext context, WirdState state, Color primary, bool isDark) {
+    final ts = MediaQuery.textScalerOf(context);
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Column(
         children: [
           // ── Tracking Mode Toggle ──────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            padding: EdgeInsets.fromLTRB(ts.scale(16.0).clamp(16.0, 24.0), ts.scale(12.0).clamp(12.0, 18.0), ts.scale(16.0).clamp(16.0, 24.0), ts.scale(4.0).clamp(4.0, 8.0)),
             child: Row(
               children: [
-                Icon(Icons.tune, color: primary, size: 20),
-                const SizedBox(width: 12),
+                Icon(Icons.tune, color: primary, size: ts.scale(20.0).clamp(20.0, 28.0)),
+                SizedBox(width: ts.scale(12.0).clamp(12.0, 16.0)),
                 Text('wird_tracking_mode'.tr(), style: AppTypography.label),
-                const SizedBox(width: 4),
+                SizedBox(width: ts.scale(4.0)),
                 const InfoTipIcon(
                   titleKey: 'tutorial_wird_settings_title',
                   bodyKey: 'tutorial_wird_settings_body',
@@ -1000,7 +1053,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                   selected: {state.settings.wirdUnit},
                   onSelectionChanged: (sel) =>
                       ref.read(wirdStateProvider.notifier).setWirdUnit(sel.first),
-                  style: ButtonStyle(
+                  style: const ButtonStyle(
                     visualDensity: VisualDensity.compact,
                   ),
                 ),
@@ -1011,7 +1064,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
           // ── Daily Goal ────────────────────────────────────────────────────
           if (state.settings.wirdUnit == WirdUnit.page)
             ListTile(
-              leading: Icon(Icons.menu_book, color: primary),
+              leading: Icon(Icons.menu_book, color: primary, size: ts.scale(20.0)),
               title: Text('wird_daily_goal'.tr()),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -1021,7 +1074,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                       final current = state.settings.dailyPageGoal;
                       if (current > 1) ref.read(wirdStateProvider.notifier).setDailyPageGoal(current - 1);
                     },
-                    icon: const Icon(Icons.remove, size: 20),
+                    icon: Icon(Icons.remove, size: ts.scale(20.0)),
                   ),
                   Text(
                     NumberFormatter.withArabicNumeralsByLanguage(state.settings.dailyPageGoal.toString(), widget.lang),
@@ -1032,14 +1085,14 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                       final current = state.settings.dailyPageGoal;
                       if (current < 604) ref.read(wirdStateProvider.notifier).setDailyPageGoal(current + 1);
                     },
-                    icon: const Icon(Icons.add, size: 20),
+                    icon: Icon(Icons.add, size: ts.scale(20.0)),
                   ),
                 ],
               ),
             )
           else
             ListTile(
-              leading: Icon(Icons.layers, color: primary),
+              leading: Icon(Icons.layers, color: primary, size: ts.scale(20.0)),
               title: Text('wird_daily_juz_goal'.tr()),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -1049,7 +1102,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                       final current = state.settings.dailyJuzGoal;
                       if (current > 1) ref.read(wirdStateProvider.notifier).setDailyJuzGoal(current - 1);
                     },
-                    icon: const Icon(Icons.remove, size: 20),
+                    icon: Icon(Icons.remove, size: ts.scale(20.0)),
                   ),
                   Text(
                     NumberFormatter.withArabicNumeralsByLanguage(state.settings.dailyJuzGoal.toString(), widget.lang),
@@ -1060,14 +1113,14 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                       final current = state.settings.dailyJuzGoal;
                       if (current < 30) ref.read(wirdStateProvider.notifier).setDailyJuzGoal(current + 1);
                     },
-                    icon: const Icon(Icons.add, size: 20),
+                    icon: Icon(Icons.add, size: ts.scale(20.0)),
                   ),
                 ],
               ),
             ),
           const Divider(height: 1),
           SwitchListTile(
-            secondary: Icon(Icons.notifications_active, color: primary),
+            secondary: Icon(Icons.notifications_active, color: primary, size: ts.scale(20.0)),
             title: Text('wird_reminder_enabled'.tr()),
             subtitle: Text('wird_reminder_subtitle'.tr()),
             value: state.settings.remindersEnabled,
@@ -1076,7 +1129,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
           if (state.settings.remindersEnabled) ...[
             const Divider(height: 1),
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              padding: EdgeInsets.fromLTRB(ts.scale(16.0).clamp(16.0, 24.0), ts.scale(12.0).clamp(12.0, 18.0), ts.scale(16.0).clamp(16.0, 24.0), ts.scale(4.0).clamp(4.0, 8.0)),
               child: Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: Text('wird_reminders'.tr(), style: AppTypography.label),
@@ -1090,10 +1143,10 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
 
               return ListTile(
                 dense: true,
-                leading: const Icon(Icons.access_time, size: 20),
+                leading: Icon(Icons.access_time, size: ts.scale(20.0)),
                 title: Text(timeOfDay.format(context), style: AppTypography.label),
                 trailing: IconButton(
-                  icon: const Icon(Icons.close, size: 18),
+                  icon: Icon(Icons.close, size: ts.scale(18.0)),
                   onPressed: () => ref.read(wirdStateProvider.notifier).removeReminder(idx),
                 ),
                 onTap: () async {
@@ -1108,7 +1161,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
               );
             }),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: EdgeInsets.symmetric(horizontal: ts.scale(16.0), vertical: ts.scale(8.0)),
               child: OutlinedButton.icon(
                 onPressed: state.settings.reminderTimes.length >= 10
                     ? null
@@ -1163,6 +1216,8 @@ class _BookmarkPagesSheet extends ConsumerWidget {
     final bookmarksAsync = ref.watch(quranBookmarksProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
+    final ts = MediaQuery.textScalerOf(context);
+
     void showModeDialog(BookmarkColor color, Set<int> uniquePages, List<QuranBookmark> allBookmarks) {
       final displayColor = _bookmarkColors[color]!;
       showDialog(
@@ -1171,10 +1226,10 @@ class _BookmarkPagesSheet extends ConsumerWidget {
           title: Row(
             children: [
               Container(
-                width: 14, height: 14,
+                width: ts.scale(14.0), height: ts.scale(14.0),
                 decoration: BoxDecoration(color: displayColor, shape: BoxShape.circle),
               ),
-              const SizedBox(width: 8),
+              SizedBox(width: ts.scale(8.0)),
               Text(_colorNameKeys[color]!.tr()),
             ],
           ),
@@ -1206,27 +1261,27 @@ class _BookmarkPagesSheet extends ConsumerWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: EdgeInsets.fromLTRB(ts.scale(16.0), ts.scale(8.0), ts.scale(16.0), ts.scale(24.0)),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 40, height: 4,
+            width: ts.scale(40.0), height: 4,
             decoration: BoxDecoration(
               color: AppConstants.textDisabled(isDark),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: ts.scale(16.0)),
           Text('wird_bookmark_pages_title'.tr(), style: AppTypography.headingS),
-          const SizedBox(height: 16),
+          SizedBox(height: ts.scale(16.0)),
           bookmarksAsync.when(
-            loading: () => const Padding(
-              padding: EdgeInsets.all(24),
-              child: CircularProgressIndicator(),
+            loading: () => Padding(
+              padding: EdgeInsets.all(ts.scale(24.0)),
+              child: const CircularProgressIndicator(),
             ),
             error: (_, __) => Padding(
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(ts.scale(24.0)),
               child: Text('wird_bookmark_no_bookmarks'.tr()),
             ),
             data: (bookmarks) {
@@ -1241,14 +1296,14 @@ class _BookmarkPagesSheet extends ConsumerWidget {
                   final hasPages = count > 0;
 
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
+                    padding: EdgeInsets.only(bottom: ts.scale(8.0)),
                     child: Opacity(
                       opacity: hasPages ? 1.0 : 0.4,
                       child: InkWell(
                         onTap: hasPages ? () => showModeDialog(color, uniquePages, bookmarks) : null,
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
-                          padding: const EdgeInsets.all(12),
+                          padding: EdgeInsets.all(ts.scale(12.0)),
                           decoration: BoxDecoration(
                             border: Border.all(color: displayColor.withValues(alpha: 0.3)),
                             borderRadius: BorderRadius.circular(12),
@@ -1256,14 +1311,14 @@ class _BookmarkPagesSheet extends ConsumerWidget {
                           child: Row(
                             children: [
                               Container(
-                                width: 36, height: 36,
+                                width: ts.scale(36.0), height: ts.scale(36.0),
                                 decoration: BoxDecoration(
                                   color: displayColor.withValues(alpha: 0.2),
                                   shape: BoxShape.circle,
                                 ),
-                                child: Icon(Icons.bookmark, color: displayColor, size: 20),
+                                child: Icon(Icons.bookmark, color: displayColor, size: ts.scale(20.0)),
                               ),
-                              const SizedBox(width: 12),
+                              SizedBox(width: ts.scale(12.0)),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1327,6 +1382,7 @@ class _BookmarkListSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     final displayColor = _bookmarkColors[color]!;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final secondary = AppConstants.textSecondary(isDark);
@@ -1339,26 +1395,26 @@ class _BookmarkListSheet extends StatelessWidget {
       builder: (_, scrollController) => Column(
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            padding: EdgeInsets.fromLTRB(ts.scale(16.0), ts.scale(12.0), ts.scale(16.0), 0),
             child: Column(
               children: [
                 Center(
                   child: Container(
-                    width: 40, height: 4,
+                    width: ts.scale(40.0), height: 4,
                     decoration: BoxDecoration(
                       color: AppConstants.textDisabled(isDark),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: ts.scale(12.0)),
                 Row(
                   children: [
                     Container(
-                      width: 12, height: 12,
+                      width: ts.scale(12.0), height: ts.scale(12.0),
                       decoration: BoxDecoration(color: displayColor, shape: BoxShape.circle),
                     ),
-                    const SizedBox(width: 8),
+                    SizedBox(width: ts.scale(8.0)),
                     Text(
                       _colorNameKeys[color]!.tr(),
                       style: AppTypography.headingS,
@@ -1370,7 +1426,7 @@ class _BookmarkListSheet extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: ts.scale(10.0)),
                 const Divider(height: 1),
               ],
             ),
@@ -1384,7 +1440,7 @@ class _BookmarkListSheet extends StatelessWidget {
                 final name = lang == 'ar' ? bm.suraNameAr : bm.suraNameEn;
                 return ListTile(
                   leading: Container(
-                    width: 46, height: 46,
+                    width: ts.scale(46.0), height: ts.scale(46.0),
                     decoration: BoxDecoration(
                       color: displayColor.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
@@ -1468,6 +1524,7 @@ class _RecordPagesContentState extends State<_RecordPagesContent> {
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1479,7 +1536,7 @@ class _RecordPagesContentState extends State<_RecordPagesContent> {
               selected: !_isRangeMode,
               onSelected: (_) => setState(() { _isRangeMode = false; _error = null; }),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: ts.scale(8.0)),
             ChoiceChip(
               label: Text('wird_record_mode_range'.tr()),
               selected: _isRangeMode,
@@ -1487,7 +1544,7 @@ class _RecordPagesContentState extends State<_RecordPagesContent> {
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        SizedBox(height: ts.scale(16.0)),
 
         if (_isRangeMode) ...[
           Row(
@@ -1502,7 +1559,7 @@ class _RecordPagesContentState extends State<_RecordPagesContent> {
                   ),
                 ),
               ),
-              const SizedBox(width: 12),
+              SizedBox(width: ts.scale(12.0)),
               Expanded(
                 child: TextField(
                   controller: _toController,
@@ -1527,15 +1584,15 @@ class _RecordPagesContentState extends State<_RecordPagesContent> {
         ],
 
         if (_error != null) ...[
-          const SizedBox(height: 8),
+          SizedBox(height: ts.scale(8.0)),
           Text(_error!, style: AppTypography.caption.copyWith(color: Colors.red)),
         ],
-        const SizedBox(height: 4),
+        SizedBox(height: ts.scale(4.0)),
         Text(
           'wird_page_range_hint'.tr(),
           style: AppTypography.labelS.copyWith(color: Colors.grey.shade600),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: ts.scale(8.0)),
         Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
@@ -1543,7 +1600,7 @@ class _RecordPagesContentState extends State<_RecordPagesContent> {
               onPressed: () => Navigator.pop(context),
               child: Text('cancel'.tr()),
             ),
-            const SizedBox(width: 8),
+            SizedBox(width: ts.scale(8.0)),
             FilledButton(
               onPressed: _submit,
               child: Text('ok'.tr()),

@@ -53,8 +53,8 @@ class GreetingWidget extends ConsumerWidget {
           children: [
             // Avatar: user photo or app logo
             Container(
-              width: size.width > 600 ? 60 : 50,
-              height: size.width > 600 ? 60 : 50,
+              width: cappedScale * 50,
+              height: cappedScale * 50,
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(AppConstants.radiusMedium),

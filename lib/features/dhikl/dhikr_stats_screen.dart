@@ -86,6 +86,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final ts = MediaQuery.textScalerOf(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -97,7 +98,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
               onRefresh: _loadData,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(AppConstants.paddingMedium),
+                padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -113,7 +114,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
                             isDark: isDark,
                           ),
                         ),
-                        const SizedBox(width: AppConstants.paddingSmall),
+                        SizedBox(width: ts.scale(AppConstants.paddingSmall)),
                         Expanded(
                           child: _StatCard(
                             icon: Icons.pan_tool,
@@ -123,7 +124,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
                             isDark: isDark,
                           ),
                         ),
-                        const SizedBox(width: AppConstants.paddingSmall),
+                        SizedBox(width: ts.scale(AppConstants.paddingSmall)),
                         Expanded(
                           child: _StatCard(
                             icon: Icons.format_list_numbered,
@@ -136,7 +137,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
                       ],
                     ),
 
-                    const SizedBox(height: AppConstants.paddingLarge),
+                    SizedBox(height: ts.scale(AppConstants.paddingLarge)),
 
                     // Weekly activity chart
                     _buildSectionCard(
@@ -147,7 +148,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
                       isDark,
                     ),
 
-                    const SizedBox(height: AppConstants.paddingLarge),
+                    SizedBox(height: ts.scale(AppConstants.paddingLarge)),
 
                     // Recent sessions
                     _buildSectionCard(
@@ -182,20 +183,21 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
   }
 
   Widget _buildSessionRow(DhikrSession session, bool isDark, bool isArabic) {
+    final ts = MediaQuery.textScalerOf(context);
     final date = session.createdAt;
     final dateStr = '${date.day}/${date.month}/${date.year}';
     final completed = session.isCompleted;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: EdgeInsets.symmetric(vertical: ts.scale(6.0)),
       child: Row(
         children: [
           Icon(
             completed ? Icons.check_circle : Icons.radio_button_unchecked,
             color: completed ? Colors.green : Colors.orange,
-            size: 20,
+            size: ts.scale(20.0),
           ),
-          const SizedBox(width: 10),
+          SizedBox(width: ts.scale(10.0)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -235,8 +237,9 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
     Widget child,
     bool isDark,
   ) {
+    final ts = MediaQuery.textScalerOf(context);
     return Container(
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+      padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
       decoration: BoxDecoration(
         color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),

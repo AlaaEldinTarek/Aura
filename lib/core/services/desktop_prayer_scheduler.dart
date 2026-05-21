@@ -75,18 +75,15 @@ class DesktopPrayerScheduler {
       }));
     }
 
-    // Prayer time — play adhan + show in-app overlay toast + system notification
+    // Prayer time — play adhan + emit event (in-app overlay) + Windows toast
     final prayerDelay = prayer.time.difference(now);
     _timers.add(Timer(prayerDelay, () async {
       debugPrint('🕌 [DESKTOP] Prayer time: ${prayer.name}');
-      // Emit so MainWrapperScreen can show the in-app overlay toast
       _prayerTimeController.add(DesktopPrayerEvent(prayer.name, prayer.nameAr));
+      await DesktopNotificationService.instance
+          .showAdhanNotification(prayer.name, prayer.nameAr);
       await DesktopTrayService.instance.setAdhanPlaying(true);
-      await Future.wait([
-        DesktopAdhanService.instance.playAdhan(prayer.name),
-        DesktopNotificationService.instance
-            .showPrayerTimeNotification(prayer.name, prayer.nameAr),
-      ]);
+      await DesktopAdhanService.instance.playAdhan(prayer.name);
       await DesktopTrayService.instance.setAdhanPlaying(false);
     }));
 
@@ -102,6 +99,17 @@ class DesktopPrayerScheduler {
             .showPostPrayerCheck(prayer.name, prayer.nameAr);
       }));
     }
+  }
+
+  /// Fire a test adhan popup immediately — use via tray menu to verify notifications.
+  Future<void> fireTestAdhan() async {
+    if (!isDesktop) return;
+    _prayerTimeController.add(const DesktopPrayerEvent('Fajr', 'الفجر'));
+    await DesktopNotificationService.instance
+        .showAdhanNotification('Fajr', 'الفجر');
+    await DesktopTrayService.instance.setAdhanPlaying(true);
+    await DesktopAdhanService.instance.playAdhan('Fajr');
+    await DesktopTrayService.instance.setAdhanPlaying(false);
   }
 
   void cancelAll() {

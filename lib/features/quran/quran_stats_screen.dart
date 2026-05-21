@@ -54,11 +54,12 @@ class _StatsContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     final isJuz = stats.wirdUnit == WirdUnit.juz;
     final secondary = AppConstants.textSecondary(isDark);
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(AppConstants.paddingMedium),
+      padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -72,7 +73,7 @@ class _StatsContent extends StatelessWidget {
                 primary: primary,
                 isDark: isDark,
               )),
-              const SizedBox(width: 12),
+              SizedBox(width: ts.scale(12.0)),
               Expanded(child: _BadgeCard(
                 emoji: '🏆',
                 value: _n(stats.khatmCount),
@@ -82,7 +83,7 @@ class _StatsContent extends StatelessWidget {
               )),
             ],
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: ts.scale(16.0)),
 
           // ── Weekly bar chart ──────────────────────────────────────────────
           _SectionCard(
@@ -94,7 +95,7 @@ class _StatsContent extends StatelessWidget {
                   'quran_stats_weekly_chart'.tr(),
                   style: AppTypography.headingS.copyWith(fontWeight: FontWeight.w600),
                 ),
-                const SizedBox(height: 16),
+                SizedBox(height: ts.scale(16.0)),
                 _BarChart(
                   values: isJuz ? stats.weeklyJuz : stats.weeklyPages,
                   primary: primary,
@@ -105,7 +106,7 @@ class _StatsContent extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: ts.scale(16.0)),
 
           // ── Stats grid ────────────────────────────────────────────────────
           _SectionCard(
@@ -121,7 +122,7 @@ class _StatsContent extends StatelessWidget {
                       value: '${_n(stats.currentStreak)} ${'quran_stats_days'.tr()}',
                       secondary: secondary,
                     )),
-                    const SizedBox(width: 12),
+                    SizedBox(width: ts.scale(12.0)),
                     Expanded(child: _StatTile(
                       icon: Icons.emoji_events,
                       iconColor: const Color(0xFFFFB300),
@@ -131,7 +132,7 @@ class _StatsContent extends StatelessWidget {
                     )),
                   ],
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: ts.scale(12.0)),
                 Row(
                   children: [
                     Expanded(child: _StatTile(
@@ -143,7 +144,7 @@ class _StatsContent extends StatelessWidget {
                           : '${_n(stats.averageDaily.toStringAsFixed(1))} ${'quran_stats_pages'.tr()}',
                       secondary: secondary,
                     )),
-                    const SizedBox(width: 12),
+                    SizedBox(width: ts.scale(12.0)),
                     Expanded(child: _StatTile(
                       icon: Icons.calendar_today,
                       iconColor: Colors.teal,
@@ -156,7 +157,7 @@ class _StatsContent extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          SizedBox(height: ts.scale(16.0)),
 
           // ── Khatm progress ────────────────────────────────────────────────
           _SectionCard(
@@ -167,7 +168,7 @@ class _StatsContent extends StatelessWidget {
                   'quran_stats_khatm_progress'.tr(),
                   style: AppTypography.headingS.copyWith(fontWeight: FontWeight.w600),
                 ),
-                const SizedBox(height: 20),
+                SizedBox(height: ts.scale(20.0)),
                 _KhatmCircle(
                   done: stats.allCompletedJuz.length,
                   total: 30,
@@ -179,7 +180,7 @@ class _StatsContent extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 32),
+          SizedBox(height: ts.scale(32.0).clamp(0.0, 48.0)),
         ],
       ),
     );
@@ -205,8 +206,9 @@ class _BadgeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
+      padding: EdgeInsets.symmetric(vertical: ts.scale(20.0), horizontal: ts.scale(12.0)),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [primary.withOpacity(0.15), primary.withOpacity(0.05)],
@@ -218,13 +220,13 @@ class _BadgeCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 28)),
-          const SizedBox(height: 6),
+          Text(emoji, style: TextStyle(fontSize: ts.scale(28.0))),
+          SizedBox(height: ts.scale(6.0)),
           Text(
             value,
             style: AppTypography.headingM.copyWith(fontWeight: FontWeight.bold, color: primary),
           ),
-          const SizedBox(height: 2),
+          SizedBox(height: ts.scale(2.0)),
           Text(
             label,
             style: AppTypography.labelS.copyWith(
@@ -246,12 +248,13 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppConstants.paddingMedium),
+        padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
         child: child,
       ),
     );
@@ -275,8 +278,9 @@ class _StatTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     return Container(
-      padding: const EdgeInsets.all(12),
+      padding: EdgeInsets.all(ts.scale(12.0)),
       decoration: BoxDecoration(
         color: iconColor.withOpacity(0.08),
         borderRadius: BorderRadius.circular(AppConstants.radiusSmall),
@@ -284,13 +288,13 @@ class _StatTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: iconColor, size: 20),
-          const SizedBox(height: 8),
+          Icon(icon, color: iconColor, size: ts.scale(20.0)),
+          SizedBox(height: ts.scale(8.0)),
           Text(
             value,
             style: AppTypography.headingS.copyWith(fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 2),
+          SizedBox(height: ts.scale(2.0)),
           Text(label, style: AppTypography.labelS.copyWith(color: secondary)),
         ],
       ),
@@ -320,11 +324,13 @@ class _KhatmCircle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     final ratio = total > 0 ? done / total : 0.0;
     final isComplete = done >= total;
+    final sz = ts.scale(130.0);
     return SizedBox(
-      width: 130,
-      height: 130,
+      width: sz,
+      height: sz,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -335,18 +341,21 @@ class _KhatmCircle extends StatelessWidget {
             valueColor: AlwaysStoppedAnimation<Color>(isComplete ? Colors.green : primary),
           ),
           Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '${_n(done)}/${'${_n(total)}'}',
-                  style: AppTypography.headingM.copyWith(fontWeight: FontWeight.bold),
-                ),
-                Text(
-                  'wird_unit_juz'.tr(),
-                  style: AppTypography.caption.copyWith(color: secondary),
-                ),
-              ],
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${_n(done)}/${'${_n(total)}'}',
+                    style: AppTypography.headingM.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    'wird_unit_juz'.tr(),
+                    style: AppTypography.caption.copyWith(color: secondary),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -384,12 +393,13 @@ class _BarChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final ts = MediaQuery.textScalerOf(context);
     final maxVal = values.isEmpty ? 0 : values.reduce(max);
     final hasData = maxVal > 0;
 
     if (!hasData) {
       return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24),
+        padding: EdgeInsets.symmetric(vertical: ts.scale(24.0)),
         child: Center(
           child: Text(
             'quran_stats_no_data'.tr(),
@@ -402,7 +412,7 @@ class _BarChart extends StatelessWidget {
     return Column(
       children: [
         SizedBox(
-          height: 100,
+          height: ts.scale(100.0),
           child: CustomPaint(
             size: Size.infinite,
             painter: _BarChartPainter(
@@ -414,7 +424,7 @@ class _BarChart extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 6),
+        SizedBox(height: ts.scale(6.0)),
         Row(
           children: List.generate(7, (i) {
             final isToday = i == 6;

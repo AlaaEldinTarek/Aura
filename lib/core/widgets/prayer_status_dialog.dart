@@ -13,11 +13,12 @@ Future<PrayerStatus?> showPrayerStatusDialog({
     context: context,
     builder: (dialogContext) {
       final isDark = Theme.of(dialogContext).brightness == Brightness.dark;
+      final ts = MediaQuery.textScalerOf(dialogContext);
       return SimpleDialog(
       title: Row(
         children: [
           Icon(Icons.mosque, color: AppConstants.getPrimary(isDark)),
-          const SizedBox(width: 8),
+          SizedBox(width: ts.scale(8.0)),
           Expanded(
             child: Text(
               isArabic ? 'تسجيل $prayerName' : 'Record $prayerName',
@@ -31,7 +32,7 @@ Future<PrayerStatus?> showPrayerStatusDialog({
           child: Row(
             children: [
               const Icon(Icons.check_circle, color: Colors.green),
-              const SizedBox(width: 12),
+              SizedBox(width: ts.scale(12.0)),
               Text(
                 isArabic ? 'في الوقت' : 'On Time',
                 style: AppTypography.bodyL.copyWith(fontWeight: FontWeight.w600),
@@ -44,7 +45,7 @@ Future<PrayerStatus?> showPrayerStatusDialog({
           child: Row(
             children: [
               const Icon(Icons.schedule, color: Colors.orange),
-              const SizedBox(width: 12),
+              SizedBox(width: ts.scale(12.0)),
               Text(
                 isArabic ? 'متأخر' : 'Late',
                 style: AppTypography.bodyL.copyWith(fontWeight: FontWeight.w600),
@@ -57,7 +58,7 @@ Future<PrayerStatus?> showPrayerStatusDialog({
           child: Row(
             children: [
               const Icon(Icons.cancel, color: Colors.red),
-              const SizedBox(width: 12),
+              SizedBox(width: ts.scale(12.0)),
               Text(
                 isArabic ? 'لم أصلّ' : 'Missed',
                 style: AppTypography.bodyL.copyWith(fontWeight: FontWeight.w600),
