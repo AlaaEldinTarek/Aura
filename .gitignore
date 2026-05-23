@@ -74,3 +74,6 @@ android/*.jks
 android/*.keystore
 *.pfx
 aura_cert.cer
+
+# Desktop OAuth credentials
+lib/core/services/google_oauth_config.dart

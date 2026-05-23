@@ -372,10 +372,6 @@ class PrayerTrackingService {
         final records = entry.value;
 
         final Map<String, PrayerStatus> prayerStatuses = {};
-        for (final prayerName in _prayerNames) {
-          prayerStatuses[prayerName] = PrayerStatus.missed;
-        }
-
         for (final record in records) {
           prayerStatuses[record.prayerName] = record.status;
         }

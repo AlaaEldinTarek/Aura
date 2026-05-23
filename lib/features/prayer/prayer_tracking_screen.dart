@@ -75,10 +75,10 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
       if (!mounted) return;
       final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
       setState(() {
-        final todayPrayers = <String, PrayerStatus>{
-          for (final p in kPrayerNames) p: next.statuses[p] ?? PrayerStatus.missed,
-        };
-        _monthlyData[today] = DailyPrayerSummary(date: today, prayers: todayPrayers);
+        _monthlyData[today] = DailyPrayerSummary(
+          date: today,
+          prayers: Map<String, PrayerStatus>.from(next.statuses),
+        );
       });
     });
 
@@ -227,10 +227,14 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
               color: AppConstants.border(isDark),
             ),
           ),
-          child: TableCalendar(
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+            child: TableCalendar(
             firstDay: DateTime.utc(2020, 1, 1),
             lastDay: DateTime.utc(2030, 12, 31),
             focusedDay: _focusedDay,
+            daysOfWeekHeight: ts.scale(32.0).clamp(32.0, 56.0),
+            rowHeight: ts.scale(44.0).clamp(40.0, 70.0),
             selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
             calendarFormat: CalendarFormat.month,
             onDaySelected: (selectedDay, focusedDay) {
@@ -278,9 +282,11 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
             ),
             daysOfWeekStyle: DaysOfWeekStyle(
               weekdayStyle: AppTypography.caption.copyWith(
+                fontSize: 12,
                 color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
               ),
               weekendStyle: AppTypography.caption.copyWith(
+                fontSize: 12,
                 color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
               ),
             ),
@@ -289,6 +295,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
               final summary = _monthlyData[normalizedDay];
               return summary != null && summary.isComplete ? ['completed'] : [];
             },
+          ),
           ),
         ),
       ],
@@ -320,10 +327,10 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
       'Fajr': '🌙', 'Zuhr': '☀️', 'Asr': '🌤️', 'Maghrib': '🌇', 'Isha': '🌃',
     };
 
-    // Get existing statuses or default to missed
-    final Map<String, PrayerStatus> statuses = {};
+    // Get existing statuses — null means not yet tracked
+    final Map<String, PrayerStatus?> statuses = {};
     for (final name in prayerNames) {
-      statuses[name] = summary?.prayers[name] ?? PrayerStatus.missed;
+      statuses[name] = summary?.prayers[name];
     }
 
     final ts = MediaQuery.textScalerOf(context);
@@ -363,7 +370,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
           ...prayerNames.map((prayerName) {
             final displayName = prayerDisplayNames[prayerName]!;
             final emoji = prayerEmojis[prayerName]!;
-            final status = statuses[prayerName]!;
+            final status = statuses[prayerName];
 
             return _buildPrayerActionRow(
               context: context,
@@ -386,7 +393,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
     required String prayerName,
     required String displayName,
     required String emoji,
-    required PrayerStatus status,
+    required PrayerStatus? status,
     required DateTime date,
     required bool isDark,
     required bool isArabic,
@@ -497,25 +504,36 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
   Future<void> _togglePrayerStatus(
     String prayerName,
     DateTime date,
-    PrayerStatus currentStatus,
+    PrayerStatus? currentStatus,
     bool isArabic,
   ) async {
     final userId = getCurrentUserId();
-    final normalizedDate = DateTime(date.year, date.month, date.day);
+    final calendarDate = DateTime(date.year, date.month, date.day);
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
 
-    // For today: check 20-minute rule before allowing mark
-    if (normalizedDate == today && currentStatus == PrayerStatus.missed) {
-      final prayerState = ref.read(prayerTimesProvider);
-      final prayerTimes = prayerState?.prayerTimes ?? [];
+    // Read prayer times once for both effective-date check and 20-minute rule
+    final prayerState = ref.read(prayerTimesProvider);
+    final prayerTimes = prayerState?.prayerTimes ?? [];
+
+    // Between midnight and Fajr → record to previous day
+    DateTime effectiveDate = calendarDate;
+    if (calendarDate == today) {
+      final fajrMatches = prayerTimes.where((p) => p.name == 'Fajr');
+      if (fajrMatches.isNotEmpty && now.isBefore(fajrMatches.first.time)) {
+        effectiveDate = today.subtract(const Duration(days: 1));
+      }
+    }
+
+    // 20-minute rule: only when recording for actual today (not post-midnight for yesterday)
+    if (calendarDate == today && effectiveDate == today && currentStatus == null) {
       if (!canMarkPrayer(context: context, prayerName: prayerName, prayerTimes: prayerTimes, isArabic: isArabic)) {
         return;
       }
     }
 
     try {
-      if (currentStatus == PrayerStatus.onTime || currentStatus == PrayerStatus.late || currentStatus == PrayerStatus.excused || currentStatus == PrayerStatus.missed) {
+      if (currentStatus != null) {
         // Show confirmation dialog before unmarking
         final confirmed = await showUnmarkConfirmDialog(
           context: context,
@@ -529,7 +547,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
         final deleted = await _trackingService.deletePrayerRecord(
           userId: userId,
           prayerName: prayerName,
-          date: normalizedDate,
+          date: effectiveDate,
         );
 
         if (!deleted) {
@@ -556,20 +574,20 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
         // Immediately update local data
         haptic.HapticFeedback.light();
         setState(() {
-          final dayKey = normalizedDate;
+          final dayKey = effectiveDate;
           final existing = _monthlyData[dayKey];
           if (existing != null) {
             final updatedPrayers = Map<String, PrayerStatus>.from(existing.prayers);
-            updatedPrayers[prayerName] = PrayerStatus.missed;
+            updatedPrayers.remove(prayerName);
             _monthlyData[dayKey] = DailyPrayerSummary(
-              date: normalizedDate,
+              date: effectiveDate,
               prayers: updatedPrayers,
             );
           }
         });
 
         // Refresh prayer cards on prayer screen and home screen
-        if (normalizedDate == today) {
+        if (effectiveDate == today) {
           _trackingService.clearCache();
           ref.read(dailyPrayerStatusProvider.notifier).load(forceRefresh: true);
         }
@@ -601,7 +619,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
         final success = await _trackingService.recordPrayer(
           userId: userId,
           prayerName: prayerName,
-          date: normalizedDate,
+          date: effectiveDate,
           prayedAt: DateTime.now(),
           status: chosenStatus,
           method: PrayerMethod.congregation,
@@ -631,28 +649,25 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
         // Immediately update local data
         haptic.HapticFeedback.success();
         setState(() {
-          final dayKey = normalizedDate;
+          final dayKey = effectiveDate;
           final existing = _monthlyData[dayKey];
           if (existing != null) {
             final updatedPrayers = Map<String, PrayerStatus>.from(existing.prayers);
             updatedPrayers[prayerName] = chosenStatus;
             _monthlyData[dayKey] = DailyPrayerSummary(
-              date: normalizedDate,
+              date: effectiveDate,
               prayers: updatedPrayers,
             );
           } else {
-            // Create new entry for this day
-            final newPrayers = {for (final p in kPrayerNames) p: PrayerStatus.missed};
-            newPrayers[prayerName] = chosenStatus;
             _monthlyData[dayKey] = DailyPrayerSummary(
-              date: normalizedDate,
-              prayers: newPrayers,
+              date: effectiveDate,
+              prayers: {prayerName: chosenStatus},
             );
           }
         });
 
         // Refresh prayer cards on prayer screen and home screen
-        if (normalizedDate == today) {
+        if (effectiveDate == today) {
           _trackingService.clearCache();
           ref.read(dailyPrayerStatusProvider.notifier).load(forceRefresh: true);
         }
@@ -661,7 +676,9 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
           final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                isArabic ? 'تم تسجيل $prayerName' : 'Recorded $prayerName',
+                effectiveDate == today
+                    ? (isArabic ? 'تم تسجيل $prayerName' : 'Recorded $prayerName')
+                    : (isArabic ? 'تم تسجيل $prayerName ليوم أمس' : 'Recorded $prayerName for yesterday'),
               ),
               backgroundColor: Colors.green,
               duration: const Duration(milliseconds: 800),

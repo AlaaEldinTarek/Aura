@@ -88,6 +88,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
   bool _popupWasVisible = false;
   Timer? _autoDismissTimer;
   AnimationController? _popupAnimCtrl;
+  Timer? _prayerSyncTimer;
 
   // PageController for smooth page transitions
   final PageController _pageController = PageController();
@@ -107,6 +108,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       _checkUntrackedPrayers();
       ref.invalidate(prayerTimesProvider);
       ref.invalidate(tasksProvider(const TaskFilterParams()));
+      ref.invalidate(allTasksProvider);
       ref.read(dailyPrayerStatusProvider.notifier).load(forceRefresh: true);
       _handleWidgetIntent();
       _syncNativePrayerStatuses();
@@ -121,6 +123,13 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     _tabController = TabController(length: 5, vsync: this);
     _tabController.index = _currentIndex;
     _updateCurrentRoute();
+
+    // Mobile: periodic prayer status sync so cross-device changes appear within 30s
+    if (!_isDesktop) {
+      _prayerSyncTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+        if (mounted) ref.read(dailyPrayerStatusProvider.notifier).load();
+      });
+    }
 
     // Desktop: show in-app banners for reminders/tasks/wird (not adhan — that uses Windows toast).
     if (_isDesktop) {
@@ -198,6 +207,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
   @override
   void dispose() {
     _autoDismissTimer?.cancel();
+    _prayerSyncTimer?.cancel();
     _popupAnimCtrl?.dispose();
     _achievementSub?.cancel();
     _desktopNotifSub?.cancel();

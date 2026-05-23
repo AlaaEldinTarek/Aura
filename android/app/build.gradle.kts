@@ -73,6 +73,9 @@ dependencies {
     // AndroidX AppCompat for AppCompatActivity
     implementation("androidx.appcompat:appcompat:1.6.1")
 
+    // enableEdgeToEdge() for Android 15+
+    implementation("androidx.activity:activity-ktx:1.9.3")
+
     // Media session for catching volume keys on lock screen
     implementation("androidx.media:media:1.7.0")
 

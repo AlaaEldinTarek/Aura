@@ -633,32 +633,42 @@ class _TaskStatsScreenState extends ConsumerState<TaskStatsScreen>
               child: Row(
                 children: [
                   // Donut indicator
-                  SizedBox(
-                    width: ts.scale(44.0),
-                    height: ts.scale(44.0),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        CircularProgressIndicator(
-                          value: s.total > 0 ? s.completed / s.total : 0,
-                          backgroundColor: isDark
-                              ? Colors.grey.shade800
-                              : Colors.grey.shade200,
-                          color: color,
-                          strokeWidth: 4,
-                        ),
-                        Text(
-                          '${s.total > 0 ? (s.completed / s.total * 100).round() : 0}%',
-                          style: AppTypography.caption.copyWith(
-                            fontSize: ts.scale(9.0),
-                            fontWeight: FontWeight.bold,
-                            color: isDark ? Colors.white70 : Colors.black87,
+                  Builder(builder: (ctx) {
+                    final ringSize = ts.scale(44.0).clamp(44.0, 72.0);
+                    return SizedBox(
+                      width: ringSize,
+                      height: ringSize,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          CircularProgressIndicator(
+                            value: s.total > 0 ? s.completed / s.total : 0,
+                            backgroundColor: isDark
+                                ? Colors.grey.shade800
+                                : Colors.grey.shade200,
+                            color: color,
+                            strokeWidth: 4,
                           ),
-                          textScaler: TextScaler.noScaling,
-                        ),
-                      ],
-                    ),
-                  ),
+                          Padding(
+                            padding: EdgeInsets.all(ringSize * 0.14),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '${s.total > 0 ? (s.completed / s.total * 100).round() : 0}%',
+                                maxLines: 1,
+                                style: AppTypography.caption.copyWith(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white70 : Colors.black87,
+                                ),
+                                textScaler: TextScaler.noScaling,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
                   SizedBox(width: ts.scale(12.0)),
                   Expanded(
                     child: Column(

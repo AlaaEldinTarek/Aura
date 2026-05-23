@@ -523,10 +523,16 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                   ),
                 ],
               ),
-              child: TableCalendar(
+              child: Builder(builder: (ctx) {
+                final ts = MediaQuery.textScalerOf(ctx);
+                return MediaQuery(
+                  data: MediaQuery.of(ctx).copyWith(textScaler: TextScaler.noScaling),
+                  child: TableCalendar(
                 firstDay: DateTime.now().subtract(const Duration(days: 365)),
                 lastDay: DateTime.now().add(const Duration(days: 365)),
                 focusedDay: _calendarFocusDay,
+                daysOfWeekHeight: ts.scale(32.0).clamp(32.0, 56.0),
+                rowHeight: ts.scale(44.0).clamp(40.0, 70.0),
                 selectedDayPredicate: (day) => isSameDay(_calendarSelectedDay, day),
                 onDaySelected: (selected, focused) {
                   setState(() {
@@ -613,6 +619,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                   },
                 ),
               ),
+              );
+              }),
             ),
 
             // Selected day header
@@ -820,12 +828,12 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
 
     final ts = MediaQuery.textScalerOf(context);
     final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
-    final chipHeight = ts.scale(38.0);
-    final iconSize = ts.scale(14.0);
+    final chipHeight = isDesktop ? 34.0 : ts.scale(38.0);
+    final iconSize = isDesktop ? 14.0 : ts.scale(14.0);
     const fontSize = 12.0;
-    final hPad = ts.scale(12.0);
-    final vPad = ts.scale(6.0);
-    final gap = ts.scale(8.0);
+    final hPad = isDesktop ? 10.0 : ts.scale(12.0);
+    final vPad = isDesktop ? 4.0 : ts.scale(6.0);
+    final gap = isDesktop ? 6.0 : ts.scale(8.0);
 
     final chips = SizedBox(
       height: chipHeight,
@@ -1080,18 +1088,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
   }
 
   Widget _buildTaskGrid(List<Task> tasks) {
-    final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
-    if (!isDesktop || tasks.length <= 1) {
-      return Column(children: tasks.map(_buildTaskCard).toList());
-    }
-    return LayoutBuilder(builder: (_, constraints) {
-      const spacing = 12.0;
-      final itemWidth = (constraints.maxWidth - spacing) / 2;
-      return Wrap(
-        spacing: spacing,
-        children: tasks.map((t) => SizedBox(width: itemWidth, child: _buildTaskCard(t))).toList(),
-      );
-    });
+    return Column(children: tasks.map(_buildTaskCard).toList());
   }
 
   Widget _buildSections(List<Task> allTasks, bool isDark, bool isArabic) {

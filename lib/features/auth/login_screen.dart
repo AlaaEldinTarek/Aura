@@ -82,6 +82,130 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
+  void _showDesktopGoogleDialog() {
+    final emailController = TextEditingController();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    bool sending = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          backgroundColor: AppConstants.card(isDark),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
+          ),
+          title: Text(
+            'Sign in with Google',
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: AppConstants.textPrimary(isDark)),
+          ),
+          content: SizedBox(
+            width: 420,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Google Sign-In is not available on Windows. Follow these steps to access your account:',
+                  style: TextStyle(color: AppConstants.textSecondary(isDark)),
+                ),
+                const SizedBox(height: 16),
+                _step(isDark, '1', 'Enter your Google email below and tap Send Email.'),
+                const SizedBox(height: 8),
+                _step(isDark, '2', 'Open the email and click the password reset link.'),
+                const SizedBox(height: 8),
+                _step(isDark, '3', 'Set a new password, then come back and log in.'),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  style: TextStyle(color: AppConstants.textPrimary(isDark)),
+                  decoration: InputDecoration(
+                    labelText: 'Your Google Email',
+                    border: const OutlineInputBorder(),
+                    labelStyle: TextStyle(color: AppConstants.textMuted(isDark)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text('Cancel',
+                  style: TextStyle(color: AppConstants.textMuted(isDark))),
+            ),
+            TextButton(
+              onPressed: sending
+                  ? null
+                  : () async {
+                      final email = emailController.text.trim();
+                      if (email.isEmpty) return;
+                      setS(() => sending = true);
+                      try {
+                        await ref
+                            .read(authStateNotifierProvider.notifier)
+                            .sendPasswordResetEmail(email);
+                        if (ctx.mounted) Navigator.of(ctx).pop();
+                        // Pre-fill email so user can log in immediately after
+                        _emailController.text = email;
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: const Text(
+                                  '✅ Reset email sent! Set your password then log in here.'),
+                              backgroundColor: Colors.green.shade700,
+                              duration: const Duration(seconds: 6),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (ctx.mounted) Navigator.of(ctx).pop();
+                        _showErrorSnackBar(e.toString());
+                      }
+                    },
+              child: sending
+                  ? const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : Text('Send Email',
+                      style:
+                          TextStyle(color: AppConstants.getPrimary(isDark))),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _step(bool isDark, String num, String text) => Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppConstants.getPrimary(isDark),
+              shape: BoxShape.circle,
+            ),
+            child: Text(num,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold)),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(text,
+                style: TextStyle(color: AppConstants.textSecondary(isDark))),
+          ),
+        ],
+      );
+
   Future<void> _continueAsGuest() async {
     setState(() => _isLoading = true);
 
@@ -502,7 +626,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Widget _buildSocialLoginSection(
       BuildContext context, bool isRTL, bool isDark) {
-    if (_isDesktop) return const SizedBox.shrink();
     return Column(
       children: [
         // Divider

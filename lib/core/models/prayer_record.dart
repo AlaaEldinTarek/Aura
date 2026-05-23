@@ -149,7 +149,9 @@ class DailyPrayerSummary {
   int get totalCount => prayers.length;
   double get completionRate => totalCount > 0 ? completedCount / totalCount : 0;
 
-  bool get isComplete => completionRate == 1.0;
+  bool get isComplete =>
+      prayers.length >= kPrayerNames.length &&
+      prayers.values.every((s) => s != PrayerStatus.missed);
 }
 
 /// Prayer statistics for a period

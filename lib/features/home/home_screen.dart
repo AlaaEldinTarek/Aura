@@ -995,7 +995,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             ),
           ),
 
-          SizedBox(height: ts.scale(AppConstants.paddingSmall).clamp(0.0, 12.0)),
+          SizedBox(height: ts.scale(AppConstants.paddingSmall).clamp(0.0, 20.0)),
 
           // Prayer status row
           Row(
@@ -1108,7 +1108,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               Builder(builder: (ctx) {
                 final ts = MediaQuery.textScalerOf(ctx);
                 final ringSize = ts.scale(64.0).clamp(64.0, 108.0);
-                final pctFontSz = ts.scale(15.0);
                 return SizedBox(
                   width: ringSize,
                   height: ringSize,
@@ -1123,13 +1122,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                           progress >= 1.0 ? Colors.green : AppConstants.getPrimary(isDark),
                         ),
                       ),
-                      Center(
-                        child: MediaQuery(
-                          data: MediaQuery.of(ctx).copyWith(textScaler: TextScaler.noScaling),
+                      Padding(
+                        padding: EdgeInsets.all(ringSize * 0.14),
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
                           child: Text(
                             '$percentage%',
+                            maxLines: 1,
                             style: TextStyle(
-                              fontSize: pctFontSz,
+                              fontSize: 15,
                               fontWeight: FontWeight.bold,
                               color: AppConstants.textPrimary(isDark),
                             ),

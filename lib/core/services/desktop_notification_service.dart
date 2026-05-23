@@ -95,7 +95,6 @@ class DesktopNotificationService {
 
   void _emit(String title, {String? body, String emoji = '🔔', String? identifier}) {
     if (!isDesktop) return;
-    _notifController.add(DesktopInAppNotif(title: title, body: body, emoji: emoji));
     _showSystemToast(title, body, identifier: identifier);
     debugPrint('DesktopNotificationService: notif "$title"');
   }
@@ -205,7 +204,6 @@ class DesktopNotificationService {
         : 'Prayer in $minutesBefore minutes';
     final id = 'reminder_${prayerName.toLowerCase()}';
     if (!isDesktop) return;
-    _notifController.add(DesktopInAppNotif(title: title, body: body, emoji: '🕌'));
     await _showSystemToast(title, body, identifier: id, isArabic: isArabic);
   }
 
@@ -226,7 +224,6 @@ class DesktopNotificationService {
     final lateLabel = isArabic ? 'متأخر ⏰' : 'Late ⏰';
     final missedLabel = isArabic ? 'فاتت ✗' : 'Missed ✗';
 
-    _notifController.add(DesktopInAppNotif(title: title, body: body, emoji: '🕌'));
     await _showSystemToast(
       title, body,
       identifier: id,
@@ -283,8 +280,6 @@ class DesktopNotificationService {
     required String body,
   }) async {
     if (!isDesktop) return;
-    _notifController.add(DesktopInAppNotif(title: title, body: body, emoji: '📋'));
-
     final prefs = await SharedPreferences.getInstance();
     final isArabic = (prefs.getString('language') ?? 'en') == 'ar';
     final doneLabel = isArabic ? 'تم ✓' : 'Mark Done ✓';

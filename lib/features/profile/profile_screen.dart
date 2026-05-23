@@ -134,7 +134,7 @@ class ProfileScreen extends ConsumerWidget {
             SizedBox(height: ts.scale(AppConstants.paddingXLarge)),
             AuraButton(
               label: 'login'.tr(),
-              onPressed: () => Navigator.of(ctx).pushReplacementNamed('/login'),
+              onPressed: () => Navigator.of(ctx, rootNavigator: true).pushReplacementNamed('/login'),
               icon: const Icon(Icons.login),
             ),
           ],

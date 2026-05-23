@@ -458,10 +458,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       verticalPadding: 10,
                     ).animate().fadeIn(delay: 600.ms, duration: 400.ms),
 
-                    if (!_isDesktopSignup) ...[
                     const SizedBox(height: AppConstants.paddingLarge),
 
-                    // Google Sign-In Button (mobile only)
+                    // Google Sign-In Button
                     AuraButton.secondary(
                       label: 'auth_signup_with_google'.tr(),
                       onPressed: _isLoading ? null : _signUpWithGoogle,
@@ -469,7 +468,6 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
                       expanded: true,
                       verticalPadding: 10,
                     ).animate().fadeIn(delay: 700.ms, duration: 400.ms),
-                    ],
 
                     const SizedBox(height: AppConstants.paddingMedium),
 

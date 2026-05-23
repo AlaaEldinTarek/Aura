@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Aura (هالة)** is a 2-in-1 productivity and spiritual app combining **Islamic Prayer System** and **Task Management**. Built with Flutter and Firebase. Version **1.0.0+4**, package `com.aura.hala`.
+**Aura (هالة)** is a 2-in-1 productivity and spiritual app combining **Islamic Prayer System** and **Task Management**. Built with Flutter and Firebase. Version **1.0.0+24** (Play Store build code), package `com.aura.hala`.
 
 **Key Features:**
 - 9 prayer calculation methods (MWL, ISNA, Egyptian, Makkah, Karachi, Tehran, Kuwait, FixedAngle, Proportional)
@@ -291,7 +291,7 @@ final gapM = ts.scale(AppConstants.paddingMedium).clamp(0.0, 18.0);
 
 **Islamic Events screen** — always single-column `ListView` (no desktop 2-column layout). Cards scale via `ts.scale()` on padding and chip sizes.
 
-**MSIX versioning** — every Windows build that replaces an installed package needs a strictly higher `msix_version` in `pubspec.yaml` (format `major.minor.patch.build`). Increment the last segment for each reinstall during development. Current series: `1.0.2.x`.
+**MSIX versioning** — every Windows build that replaces an installed package needs a strictly higher `msix_version` in `pubspec.yaml` (format `major.minor.patch.build`). Increment the last segment for each reinstall during development. Current series: `1.0.3.x` (last used: `1.0.3.64`).
 
 **Build command:**
 ```powershell
@@ -326,6 +326,9 @@ Add-AppxPackage -Path "build\windows\x64\runner\Release\aura_app.msix" -ForceApp
 - **Quran reader wakelock**: `WakelockPlus.enable()` in `initState`, `WakelockPlus.disable()` in `dispose` — keeps screen on while reading, no button needed.
 - **Quran reader back button**: `PopScope(canPop: false, onPopInvokedWithResult: ...)` wraps the `Scaffold`. Shows `AlertDialog` ("Keep Reading" / "Close"). Progress is always auto-saved so the dialog message says "Your progress is saved."
 - **Prayer tracking sync (home ↔ prayer screen)**: Both screens share `dailyPrayerStatusProvider`. In `PrayerScreen._loadCompletedPrayers()`, the `_explicitlyMarked` set must include ALL prayers with records — including `PrayerStatus.missed`. Do not filter out `missed` from `_explicitlyMarked`, or cards on the Prayer Times page won't show the "Missed" badge when the user marks a prayer as missed from the home screen. `PrayerCard._buildCompletedIndicator` treats both `PrayerStatus.excused` and `PrayerStatus.missed` as the red "Missed" badge.
+- **Prayer tracking null = untracked**: In `prayer_tracking_screen.dart`, a prayer with no Firestore record has status `null` (shown as grey "Not Prayed") — NOT `PrayerStatus.missed`. Never default `summary?.prayers[name] ?? PrayerStatus.missed`. The map uses `Map<String, PrayerStatus?>`. `_buildPrayerActionRow` accepts `PrayerStatus?`. `getMonthData` in `prayer_tracking_service.dart` must NOT pre-fill unrecorded prayers as missed — only add prayers that have actual records. `DailyPrayerSummary.isComplete` requires `prayers.length >= kPrayerNames.length` (all 5 prayers present) AND none missed.
+- **After-midnight prayer recording**: In `_togglePrayerStatus`, if the current time is between midnight (00:00) and today's Fajr time, `effectiveDate` is set to yesterday. The prayer is recorded to `effectiveDate`, `_monthlyData[effectiveDate]` is updated (not today's), and the snackbar says "Recorded [Prayer] for yesterday". The 20-minute rule is skipped in this window. This means users who open the app after midnight (before Fajr) record to the previous day; to see those marks they go to the calendar and select yesterday.
+- **Task cross-device sync**: `allTasksProvider` (used by `TasksScreen`) was not invalidated on app resume — only `tasksProvider(const TaskFilterParams())` was. Both must be invalidated in `MainWrapperScreen.didChangeAppLifecycleState` so the phone picks up tasks completed on desktop. `allTasksProvider` is `autoDispose` and uses `query.snapshots()` on Android (real-time) but still needs explicit invalidation on resume to bust stale in-memory state.
 
 ---
 

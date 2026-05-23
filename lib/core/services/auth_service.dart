@@ -1,7 +1,15 @@
+import 'dart:convert';
 import 'dart:developer' as developer;
+import 'dart:io' show HttpServer, InternetAddress, Platform;
+import 'dart:math';
+import 'google_oauth_config.dart';
 
+import 'package:crypto/crypto.dart';
+import 'package:dio/dio.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AuthService {
   AuthService._();
@@ -76,8 +84,11 @@ class AuthService {
 
   // Sign In with Google
   Future<UserCredential> signInWithGoogle() async {
+    final isDesktop = !kIsWeb &&
+        (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
+    if (isDesktop) return _signInWithGoogleDesktop();
+
     try {
-      // Trigger the authentication flow
       developer.log('🔐 [GOOGLE_SIGN_IN] Starting Google Sign-In flow...', name: 'AuthService');
 
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
@@ -89,7 +100,6 @@ class AuthService {
 
       developer.log('🔐 [GOOGLE_SIGN_IN] Got Google account: ${googleUser.email}', name: 'AuthService');
 
-      // Obtain the auth details from the request
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
@@ -100,13 +110,11 @@ class AuthService {
         throw Exception('Failed to get Google authentication tokens. Please check your internet connection and try again.');
       }
 
-      // Create a new credential
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      // Sign in with credential
       final userCredential = await _auth.signInWithCredential(credential);
 
       developer.log('🔐 [GOOGLE_SIGN_IN] Firebase sign-in successful: ${userCredential.user?.uid}', name: 'AuthService');
@@ -118,6 +126,118 @@ class AuthService {
       developer.log('🔐 [GOOGLE_SIGN_IN] Error: $e\n$st', name: 'AuthService');
       rethrow;
     }
+  }
+
+  // ─── Desktop Google OAuth (PKCE + local server) ───────────────────────────
+
+  static const _googleClientId = kGoogleDesktopClientId;
+  static const _googleClientSecret = kGoogleDesktopClientSecret;
+
+  Future<UserCredential> _signInWithGoogleDesktop() async {
+    developer.log('🔐 [GOOGLE_DESKTOP] Starting PKCE OAuth flow', name: 'AuthService');
+
+    final verifier = _generateCodeVerifier();
+    final challenge = _computeCodeChallenge(verifier);
+    final port = await _findFreePort();
+    final redirectUri = 'http://127.0.0.1:$port';
+
+    final authUri = Uri.https('accounts.google.com', '/o/oauth2/v2/auth', {
+      'client_id': _googleClientId,
+      'redirect_uri': redirectUri,
+      'response_type': 'code',
+      'scope': 'openid email profile',
+      'code_challenge': challenge,
+      'code_challenge_method': 'S256',
+      'access_type': 'offline',
+      'prompt': 'select_account',
+    });
+
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, port);
+    developer.log('🔐 [GOOGLE_DESKTOP] Listening on $redirectUri', name: 'AuthService');
+
+    await launchUrl(authUri, mode: LaunchMode.externalApplication);
+    developer.log('🔐 [GOOGLE_DESKTOP] Browser opened', name: 'AuthService');
+
+    String? code;
+    String? oauthError;
+    await for (final request in server) {
+      code = request.uri.queryParameters['code'];
+      oauthError = request.uri.queryParameters['error'];
+      final success = code != null;
+      final html = success
+          ? '<html><body style="font-family:sans-serif;text-align:center;padding:60px">'
+              '<h2 style="color:#4CAF50">✅ Signed in successfully!</h2>'
+              '<p>You can close this tab and return to Aura.</p></body></html>'
+          : '<html><body style="font-family:sans-serif;text-align:center;padding:60px">'
+              '<h2 style="color:#F44336">❌ Sign-in failed</h2>'
+              '<p>$oauthError</p></body></html>';
+      request.response
+        ..statusCode = 200
+        ..headers.set('Content-Type', 'text/html; charset=utf-8')
+        ..write(html);
+      await request.response.close();
+      break;
+    }
+    await server.close();
+
+    if (code == null) {
+      throw Exception('Google sign-in was cancelled or failed: $oauthError');
+    }
+
+    developer.log('🔐 [GOOGLE_DESKTOP] Got auth code, exchanging for tokens', name: 'AuthService');
+
+    final tokenResponse = await Dio().post<Map<String, dynamic>>(
+      'https://oauth2.googleapis.com/token',
+      options: Options(
+        contentType: 'application/x-www-form-urlencoded',
+        responseType: ResponseType.json,
+      ),
+      data: {
+        'code': code,
+        'client_id': _googleClientId,
+        'client_secret': _googleClientSecret,
+        'redirect_uri': redirectUri,
+        'grant_type': 'authorization_code',
+        'code_verifier': verifier,
+      },
+    );
+
+    final idToken = tokenResponse.data?['id_token'] as String?;
+    final accessToken = tokenResponse.data?['access_token'] as String?;
+
+    if (idToken == null) {
+      throw Exception('Failed to get ID token from Google');
+    }
+
+    developer.log('🔐 [GOOGLE_DESKTOP] Got tokens, signing into Firebase', name: 'AuthService');
+
+    final credential = GoogleAuthProvider.credential(
+      idToken: idToken,
+      accessToken: accessToken,
+    );
+
+    final userCredential = await _auth.signInWithCredential(credential);
+    developer.log('🔐 [GOOGLE_DESKTOP] Firebase sign-in successful: ${userCredential.user?.uid}', name: 'AuthService');
+    return userCredential;
+  }
+
+  String _generateCodeVerifier() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(32, (_) => random.nextInt(256));
+    return base64UrlEncode(bytes).replaceAll('=', '');
+  }
+
+  String _computeCodeChallenge(String verifier) {
+    final bytes = utf8.encode(verifier);
+    final digest = sha256.convert(bytes);
+    return base64UrlEncode(digest.bytes).replaceAll('=', '');
+  }
+
+  Future<int> _findFreePort() async {
+    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+    final port = server.port;
+    await server.close();
+    return port;
   }
 
   // Sign Out

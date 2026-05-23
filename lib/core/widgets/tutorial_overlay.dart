@@ -297,7 +297,10 @@ void showTutorial({
               final screenSize = MediaQuery.sizeOf(nextContext);
               final targetRect = offset & renderBox.size;
               final screenRect = Offset.zero & screenSize;
-              alreadyVisible = screenRect.overlaps(targetRect);
+              alreadyVisible = targetRect.top >= screenRect.top &&
+                  targetRect.bottom <= screenRect.bottom &&
+                  targetRect.left >= screenRect.left &&
+                  targetRect.right <= screenRect.right;
             }
             if (!alreadyVisible) {
               await Scrollable.ensureVisible(

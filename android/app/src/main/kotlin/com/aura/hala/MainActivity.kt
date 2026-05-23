@@ -14,12 +14,13 @@ import android.app.AlertDialog
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.graphics.Color
+import androidx.activity.enableEdgeToEdge
 import androidx.core.app.NotificationCompat
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
-class MainActivity : FlutterActivity() {
+class MainActivity : FlutterFragmentActivity() {
     private val RINGER_CHANNEL = "com.aura.hala/ringer_mode"
     private val APP_CHANNEL = "com.aura.hala/app_control"
     private val NAVIGATION_CHANNEL = "com.aura.hala/navigation"
@@ -33,6 +34,7 @@ class MainActivity : FlutterActivity() {
     private var navigationChannel: MethodChannel? = null
 
     override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         // Create notification channel early to ensure it exists before alarms fire
         createNotificationChannel()
