@@ -34,7 +34,16 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
   void initState() {
     super.initState();
     final now = DateTime.now();
-    _selectedDay = DateTime(now.year, now.month, now.day);
+    final today = DateTime(now.year, now.month, now.day);
+
+    // Between midnight and Fajr → treat yesterday as the active day
+    final prayerState = ref.read(prayerTimesProvider);
+    final fajrMatches = (prayerState?.prayerTimes ?? []).where((p) => p.name == 'Fajr');
+    if (fajrMatches.isNotEmpty && now.isBefore(fajrMatches.first.time)) {
+      _selectedDay = today.subtract(const Duration(days: 1));
+    } else {
+      _selectedDay = today;
+    }
     _focusedDay = _selectedDay!;
     _loadMonthData();
   }
@@ -73,10 +82,16 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
     // Keep today's calendar data in sync when the shared provider changes
     ref.listen<DailyPrayerStatus>(dailyPrayerStatusProvider, (_, next) {
       if (!mounted) return;
-      final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final prayerState = ref.read(prayerTimesProvider);
+      final fajrMatches = (prayerState?.prayerTimes ?? []).where((p) => p.name == 'Fajr');
+      final targetDate = (fajrMatches.isNotEmpty && now.isBefore(fajrMatches.first.time))
+          ? today.subtract(const Duration(days: 1))
+          : today;
       setState(() {
-        _monthlyData[today] = DailyPrayerSummary(
-          date: today,
+        _monthlyData[targetDate] = DailyPrayerSummary(
+          date: targetDate,
           prayers: Map<String, PrayerStatus>.from(next.statuses),
         );
       });

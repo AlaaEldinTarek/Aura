@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 class AppConstants {
   AppConstants._();
 
+  // App version — keep desktopVersion in sync with msix_version in pubspec.yaml
+  static const String desktopVersion = '1.0.3.71';
+
   // Brand Colors
   static const Color primaryColor = Color(0xFFF5B301);
   static const Color primaryDark = Color(0xFFD4890A);

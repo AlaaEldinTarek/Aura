@@ -174,6 +174,12 @@ class DesktopNotificationService {
     }
   }
 
+  // ─── Public prayer recording ──────────────────────────────────────────────
+
+  /// Record a prayer as prayed on-time (called from in-app adhan popup button).
+  Future<void> recordPrayerOnTime(String prayerName) =>
+      _recordPrayerStatus(prayerName, PrayerStatus.onTime);
+
   // ─── Public show methods ──────────────────────────────────────────────────
 
   /// Show an immediate in-app banner (generic entry point).

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
@@ -17,6 +18,8 @@ import '../../core/models/prayer_record.dart';
 import '../../core/providers/task_provider.dart';
 import '../../core/providers/guest_migration_provider.dart';
 
+import 'dart:io' show Platform;
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../core/widgets/setting_tile.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/services/notification_service.dart';
@@ -304,11 +307,28 @@ class ProfileScreen extends ConsumerWidget {
             ),
             SettingsCard(
               children: [
-                SettingTile(
-                  icon: Icons.info_outline,
-                  title: isArabic ? 'الإصدار' : 'Version',
-                  subtitle: '1.0.0',
-                ),
+                Builder(builder: (ctx) {
+                  if (!kIsWeb && Platform.isWindows) {
+                    return SettingTile(
+                      icon: Icons.info_outline,
+                      title: isArabic ? 'الإصدار' : 'Version',
+                      subtitle: AppConstants.desktopVersion,
+                    );
+                  }
+                  return FutureBuilder<PackageInfo>(
+                    future: PackageInfo.fromPlatform(),
+                    builder: (context, snap) {
+                      final version = snap.hasData
+                          ? '${snap.data!.version}+${snap.data!.buildNumber}'
+                          : '—';
+                      return SettingTile(
+                        icon: Icons.info_outline,
+                        title: isArabic ? 'الإصدار' : 'Version',
+                        subtitle: version,
+                      );
+                    },
+                  );
+                }),
                 SettingTile(
                   icon: Icons.code,
                   title: isArabic ? 'المطور' : 'Developer',

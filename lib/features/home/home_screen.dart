@@ -308,7 +308,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       child: Padding(
         padding: EdgeInsets.only(top: ts.scale(AppSpacing.xl), bottom: ts.scale(AppSpacing.sm)),
         child: Text(
-          '${'version'.tr()} 1.0.2',
+          'app_tagline'.tr(),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: AppConstants.textDisabled(isDark),
           ),
@@ -1303,12 +1303,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             ],
           ),
 
-          // Progress bar
-          statsAsync.when(
-            data: (stats) {
-              if (stats.dueToday == 0) return SizedBox(height: ts.scale(8.0));
-              final done = (stats.completed).clamp(0, stats.dueToday);
-              final progress = stats.dueToday > 0 ? done / stats.dueToday : 0.0;
+          // Progress bar — computed from allTasksAsync so recurring tasks count correctly
+          allTasksAsync.when(
+            data: (allTasks) {
+              final todayTasks = allTasks.where((t) => t.isDueToday || t.dueDate == null).toList();
+              final total = todayTasks.length;
+              if (total == 0) return SizedBox(height: ts.scale(8.0));
+              final done = todayTasks.where((t) => t.isCompleted).length;
+              final progress = done / total;
               return Padding(
                 padding: EdgeInsets.only(top: ts.scale(10.0), bottom: ts.scale(4.0)),
                 child: Column(
@@ -1329,8 +1331,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     SizedBox(height: ts.scale(4.0)),
                     Text(
                       isArabic
-                          ? '${NumberFormatter.withArabicNumerals('$done')} من ${NumberFormatter.withArabicNumerals('${stats.dueToday}')} مكتملة'
-                          : '$done of ${stats.dueToday} completed',
+                          ? '${NumberFormatter.withArabicNumerals('$done')} من ${NumberFormatter.withArabicNumerals('$total')} مكتملة'
+                          : '$done of $total completed',
                       style: AppTypography.caption.copyWith(
                         color: AppConstants.textMuted(isDark),
                       ),
