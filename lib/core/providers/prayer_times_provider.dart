@@ -313,6 +313,20 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
           debugPrint('PrayerTimesNotifier: Error saving to widget service - $e');
         }
 
+        // Remove any prayer records created before the prayer's Adhan+20-min window.
+        // These can only exist due to bugs — the 20-min rule blocks legitimate early marking.
+        try {
+          final userId = getCurrentUserId();
+          if (userId.isNotEmpty) {
+            await PrayerTrackingService.instance.cleanupFuturePrayerRecords(
+              userId: userId,
+              prayerTimes: updatedPrayerTimes,
+            );
+          }
+        } catch (e) {
+          debugPrint('PrayerTimesNotifier: Error in prayer record cleanup - $e');
+        }
+
         // Update foreground service notification with fresh prayer times
         try {
           final language = await _prefs?.getString('language') ?? 'en';
@@ -327,6 +341,10 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
             nextPrayerNameAr: nextPrayer?.nameAr,
             nextPrayerTime: nextPrayer?.time.millisecondsSinceEpoch,
             language: language,
+            latitude: locationData.latitude,
+            longitude: locationData.longitude,
+            calculationMethod: method.name,
+            asrMadhab: madhab.name,
           );
         } catch (e) {
           debugPrint('PrayerTimesNotifier: Error updating foreground service - $e');

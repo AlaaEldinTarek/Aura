@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/prayer_record.dart';
+import '../models/prayer_time.dart';
 import '../models/achievement.dart';
 import 'achievement_service.dart';
 import 'notification_service.dart';
@@ -273,24 +274,34 @@ class PrayerTrackingService {
 
       final records = snapshot.docs.map((doc) => PrayerRecord.fromFirestore(doc)).toList();
 
+      // Deduplicate: keep last recorded status per prayer per day (same as getMonthData).
+      // recordPrayer() uses .doc() (auto-ID), so re-recordings create new docs instead of
+      // updating existing ones — without dedup the count inflates beyond 5×days.
+      final Map<String, Map<String, PrayerStatus>> deduped = {};
+      for (final record in records) {
+        final dateKey = record.date.toIso8601String();
+        deduped.putIfAbsent(dateKey, () => <String, PrayerStatus>{})[record.prayerName] = record.status;
+      }
+
       int completedOnTime = 0;
       int completedLate = 0;
       int missed = 0;
 
-      for (final record in records) {
-        switch (record.status) {
-          case PrayerStatus.onTime:
-            completedOnTime++;
-            break;
-          case PrayerStatus.late:
-            completedLate++;
-            break;
-          case PrayerStatus.missed:
-            missed++;
-            break;
-          case PrayerStatus.excused:
-            // Don't count as missed
-            break;
+      for (final dayStatuses in deduped.values) {
+        for (final status in dayStatuses.values) {
+          switch (status) {
+            case PrayerStatus.onTime:
+              completedOnTime++;
+              break;
+            case PrayerStatus.late:
+              completedLate++;
+              break;
+            case PrayerStatus.missed:
+              missed++;
+              break;
+            case PrayerStatus.excused:
+              break;
+          }
         }
       }
 
@@ -626,6 +637,39 @@ class PrayerTrackingService {
       }
 
       return false;
+    }
+  }
+
+  /// Delete prayer records for today where the record was created before
+  /// the prayer's Adhan + 20-min window — i.e. impossible to have been created
+  /// by a legitimate user action (canMarkPrayer blocks early marking).
+  /// Called once per day from the prayer times side-effects block to clean up
+  /// any records produced by historical bugs.
+  Future<void> cleanupFuturePrayerRecords({
+    required String userId,
+    required List<PrayerTime> prayerTimes,
+  }) async {
+    if (_isGuest(userId)) return;
+    try {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final records = await getPrayersForDate(userId: userId, date: today);
+      for (final record in records) {
+        final prayer = prayerTimes.where((p) => p.name == record.prayerName).firstOrNull;
+        if (prayer == null) continue;
+        final windowEnd = prayer.time.add(const Duration(minutes: 20));
+        // prayedAt before the window = physically impossible legitimate record
+        if (record.prayedAt.isBefore(windowEnd)) {
+          await deletePrayerRecord(
+            userId: userId,
+            prayerName: record.prayerName,
+            date: today,
+          );
+          debugPrint('🧹 Removed invalid prayer record: ${record.prayerName} (prayedAt=${record.prayedAt}, windowEnd=$windowEnd)');
+        }
+      }
+    } catch (e) {
+      debugPrint('PrayerTrackingService: cleanupFuturePrayerRecords error - $e');
     }
   }
 
