@@ -201,13 +201,17 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
   Future<void> _loadCompletedPrayers() async {
     try {
       final notifier = ref.read(dailyPrayerStatusProvider.notifier);
-      await notifier.load();
+      final prayerTimes = ref.read(prayerTimesProvider)?.prayerTimes ?? [];
+      final fajrTime = prayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
+      await notifier.load(fajrTime: fajrTime);
 
       final statuses = ref.read(dailyPrayerStatusProvider).statuses;
       setState(() {
         _prayerStatuses.clear();
         _explicitlyMarked.clear();
         for (final entry in statuses.entries) {
+          // Apply 20-min rule: don't show a prayer as checked before its window
+          if (!isPrayerTimeReached(entry.key, prayerTimes)) continue;
           _prayerStatuses[entry.key] = entry.value;
           // All prayers with a record are explicitly marked (including missed)
           _explicitlyMarked.add(entry.key);
@@ -405,10 +409,12 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     // Keep prayer cards in sync whenever the shared provider changes (e.g. home screen or notification marks a prayer)
     ref.listen<DailyPrayerStatus>(dailyPrayerStatusProvider, (_, next) {
       if (!mounted) return;
+      final currentPrayerTimes = ref.read(prayerTimesProvider).prayerTimes;
       setState(() {
         _prayerStatuses.clear();
         _explicitlyMarked.clear();
         for (final entry in next.statuses.entries) {
+          if (!isPrayerTimeReached(entry.key, currentPrayerTimes)) continue;
           _prayerStatuses[entry.key] = entry.value;
           _explicitlyMarked.add(entry.key);
         }
@@ -781,7 +787,11 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
       final prayer = entry.value;
       final isNext = state.nextPrayer?.name == prayer.name;
       final isCurrent = state.currentPrayer?.name == prayer.name;
-      final status = _prayerStatuses[prayer.name] ?? PrayerStatus.missed;
+      // Apply 20-min rule at render time: hide status for prayers whose
+      // Adhan + 20 min window hasn't opened yet (guards against stale data).
+      final timeReached = isPrayerTimeReached(prayer.name, state.prayerTimes);
+      final rawStatus = timeReached ? _prayerStatuses[prayer.name] : null;
+      final status = rawStatus ?? PrayerStatus.missed;
       final isCompleted = status != PrayerStatus.missed;
 
       // Don't show mark button for Sunrise
@@ -797,7 +807,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
           isCurrent: isCurrent,
           isCompleted: isCompleted,
           prayerStatus: status,
-          wasExplicitlyMarked: _explicitlyMarked.contains(prayer.name),
+          wasExplicitlyMarked: timeReached && _explicitlyMarked.contains(prayer.name),
           onMarkPrayed: canMark
               ? () => _explicitlyMarked.contains(prayer.name) ? _unmarkPrayerDirect(prayer.name) : _markPrayerAsCompleted(prayer.name)
               : null,

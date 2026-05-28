@@ -108,10 +108,13 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     if (state == AppLifecycleState.resumed) {
       // Check untracked prayers BEFORE invalidating provider (would clear prayer times)
       _checkUntrackedPrayers();
+      // Read fajr time before invalidating, so after-midnight detection still works
+      final resumePrayerTimes = ref.read(prayerTimesProvider)?.prayerTimes ?? [];
+      final resumeFajrTime = resumePrayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
       ref.invalidate(prayerTimesProvider);
       ref.invalidate(tasksProvider(const TaskFilterParams()));
       ref.invalidate(allTasksProvider);
-      ref.read(dailyPrayerStatusProvider.notifier).load(forceRefresh: true);
+      ref.read(dailyPrayerStatusProvider.notifier).load(forceRefresh: true, fajrTime: resumeFajrTime);
       _handleWidgetIntent();
       _syncNativePrayerStatuses();
     }
@@ -129,7 +132,11 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     // Mobile: periodic prayer status sync so cross-device changes appear within 30s
     if (!_isDesktop) {
       _prayerSyncTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-        if (mounted) ref.read(dailyPrayerStatusProvider.notifier).load();
+        if (mounted) {
+          final timerPrayerTimes = ref.read(prayerTimesProvider)?.prayerTimes ?? [];
+          final timerFajrTime = timerPrayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
+          ref.read(dailyPrayerStatusProvider.notifier).load(fajrTime: timerFajrTime);
+        }
       });
     }
 

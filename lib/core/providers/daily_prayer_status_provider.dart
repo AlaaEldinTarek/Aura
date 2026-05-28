@@ -36,7 +36,7 @@ class DailyPrayerStatusNotifier extends StateNotifier<DailyPrayerStatus> {
   DailyPrayerStatusNotifier()
       : super(DailyPrayerStatus(loadedAt: DateTime.fromMillisecondsSinceEpoch(0)));
 
-  Future<void> load({bool forceRefresh = false}) async {
+  Future<void> load({bool forceRefresh = false, DateTime? fajrTime}) async {
     // Always retry if statuses are empty (handles first-load timing race with Firebase)
     final isEmpty = state.statuses.isEmpty;
     if (!forceRefresh && !isEmpty && !state.isStale) return;
@@ -44,9 +44,18 @@ class DailyPrayerStatusNotifier extends StateNotifier<DailyPrayerStatus> {
     try {
       await _trackingService.initialize();
       final userId = getCurrentUserId();
+
+      // Use after-midnight-aware effective date: between midnight and Fajr,
+      // the Islamic day is still yesterday.
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final effectiveDate = (fajrTime != null && now.isBefore(fajrTime))
+          ? today.subtract(const Duration(days: 1))
+          : today;
+
       final summary = await _trackingService.getDailySummary(
         userId: userId,
-        date: DateTime.now(),
+        date: effectiveDate,
       );
 
       state = DailyPrayerStatus(

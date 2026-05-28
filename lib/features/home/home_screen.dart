@@ -63,7 +63,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     // Load prayer statuses via shared provider (cached, won't hit Firestore if fresh)
-    Future.microtask(() => ref.read(dailyPrayerStatusProvider.notifier).load());
+    Future.microtask(() {
+      final prayerTimes = ref.read(prayerTimesProvider)?.prayerTimes ?? [];
+      final fajrTime = prayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
+      ref.read(dailyPrayerStatusProvider.notifier).load(fajrTime: fajrTime);
+    });
     _startCountdownTimer();
   }
 
@@ -246,7 +250,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final showTasks = appMode != AppMode.prayerOnly;
 
     // Calculate prayer progress from shared provider
-    final prayerStatuses = ref.watch(dailyPrayerStatusProvider.select((s) => s.statuses));
+    // Filter: only show prayers that have reached Adhan + 20 min — same rule
+    // as canMarkPrayer — so a future prayer can never appear as already done.
+    final rawPrayerStatuses = ref.watch(dailyPrayerStatusProvider.select((s) => s.statuses));
+    final todayPrayerTimes = ref.watch(prayerTimesProvider.select((s) => s.prayerTimes));
+    final prayerStatuses = Map<String, PrayerStatus>.fromEntries(
+      rawPrayerStatuses.entries.where((e) => isPrayerTimeReached(e.key, todayPrayerTimes)),
+    );
     final trackablePrayers = kPrayerNames;
     final completedCount = trackablePrayers.where((p) {
       final status = prayerStatuses[p];

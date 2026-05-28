@@ -26,6 +26,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
   final PrayerTrackingService _trackingService = PrayerTrackingService.instance;
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
+  late DateTime _effectiveToday;
   Map<DateTime, DailyPrayerSummary> _monthlyData = {};
   bool _isLoading = false;
   int _currentStreak = 0;
@@ -44,6 +45,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
     } else {
       _selectedDay = today;
     }
+    _effectiveToday = _selectedDay!;
     _focusedDay = _selectedDay!;
     _loadMonthData();
   }
@@ -79,19 +81,19 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    // Keep today's calendar data in sync when the shared provider changes
+    // Sync real-time prayer marks from home/prayer screen into the calendar.
+    // Uses _effectiveToday (computed once in initState) to avoid a race where
+    // prayerTimesProvider hasn't loaded yet and the target date defaults to the
+    // wrong calendar date.  Also guards against the provider reloading for the
+    // calendar date (e.g. May 28) while the effective day is still yesterday
+    // (May 27) — an empty reload must not overwrite correctly-loaded data.
     ref.listen<DailyPrayerStatus>(dailyPrayerStatusProvider, (_, next) {
       if (!mounted) return;
-      final now = DateTime.now();
-      final today = DateTime(now.year, now.month, now.day);
-      final prayerState = ref.read(prayerTimesProvider);
-      final fajrMatches = (prayerState?.prayerTimes ?? []).where((p) => p.name == 'Fajr');
-      final targetDate = (fajrMatches.isNotEmpty && now.isBefore(fajrMatches.first.time))
-          ? today.subtract(const Duration(days: 1))
-          : today;
+      final existing = _monthlyData[_effectiveToday];
+      if (next.statuses.isEmpty && existing != null && existing.prayers.isNotEmpty) return;
       setState(() {
-        _monthlyData[targetDate] = DailyPrayerSummary(
-          date: targetDate,
+        _monthlyData[_effectiveToday] = DailyPrayerSummary(
+          date: _effectiveToday,
           prayers: Map<String, PrayerStatus>.from(next.statuses),
         );
       });
@@ -132,7 +134,8 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
 
               // Selected day details
               if (_selectedDay != null)
-                _buildDayDetails(context, _selectedDay!, isDark, isArabic),
+                _buildDayDetails(context, _selectedDay!, isDark, isArabic,
+                    ref.watch(prayerTimesProvider.select((s) => s.prayerTimes))),
 
               SizedBox(height: ts.scale(80.0)),
             ],
@@ -322,6 +325,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
     DateTime day,
     bool isDark,
     bool isArabic,
+    List<PrayerTime> todayPrayerTimes,
   ) {
     final normalizedDay = DateTime(day.year, day.month, day.day);
     final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
@@ -329,7 +333,6 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
     final isToday = normalizedDay == today;
 
     final summary = _monthlyData[normalizedDay];
-    // Build prayer statuses from summary or default to missed
     final prayerNames = kPrayerNames;
     final prayerDisplayNames = {
       'Fajr': isArabic ? 'الفجر' : 'Fajr',
@@ -342,10 +345,14 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
       'Fajr': '🌙', 'Zuhr': '☀️', 'Asr': '🌤️', 'Maghrib': '🌇', 'Isha': '🌃',
     };
 
-    // Get existing statuses — null means not yet tracked
+    // For today: hide any stored status for prayers whose Adhan + 20 min hasn't
+    // passed yet — same rule as canMarkPrayer.  Past days are shown as-is.
     final Map<String, PrayerStatus?> statuses = {};
     for (final name in prayerNames) {
-      statuses[name] = summary?.prayers[name];
+      final stored = summary?.prayers[name];
+      statuses[name] = (isToday && stored != null && !isPrayerTimeReached(name, todayPrayerTimes))
+          ? null
+          : stored;
     }
 
     final ts = MediaQuery.textScalerOf(context);

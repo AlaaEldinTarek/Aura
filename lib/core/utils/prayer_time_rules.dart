@@ -16,6 +16,16 @@ DateTime getPrayerDate(DateTime now, {DateTime? fajrTime}) {
   return DateTime(now.year, now.month, now.day);
 }
 
+/// Returns true if the prayer's Adhan has fired AND 20 minutes have passed.
+/// Used to guard today's display: a prayer can only show as checked if it was
+/// physically possible to have prayed it (same threshold as canMarkPrayer).
+bool isPrayerTimeReached(String prayerName, List<PrayerTime> prayerTimes) {
+  final now = DateTime.now();
+  final prayer = prayerTimes.where((p) => p.name == prayerName).firstOrNull;
+  if (prayer == null) return true; // unknown prayer → don't block
+  return !now.isBefore(prayer.time.add(const Duration(minutes: 20)));
+}
+
 /// Checks the 20-minute rule: user can only mark a prayer 20 minutes after adhan.
 /// Returns true if allowed, false if denied (and shows a snackbar).
 bool canMarkPrayer({
