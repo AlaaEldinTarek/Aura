@@ -334,6 +334,14 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
           for (final p in updatedPrayerTimes) {
             final key = '${p.name.toLowerCase()}_time';
             prayerTimesMap[key] = p.time.millisecondsSinceEpoch.toString();
+            // Include iqama time so PrayerAlarmReceiver can show the countdown.
+            // Key must match what PrayerAlarmReceiver reads: dhuhr_iqama_time for Zuhr.
+            if (p.iqamaTime != null && p.name != 'Sunrise') {
+              final iqamaKey = p.name == 'Zuhr'
+                  ? 'dhuhr_iqama_time'
+                  : '${p.name.toLowerCase()}_iqama_time';
+              prayerTimesMap[iqamaKey] = p.iqamaTime!.millisecondsSinceEpoch.toString();
+            }
           }
           await BackgroundServiceManager.instance.updatePrayerTimes(
             prayerTimes: prayerTimesMap,
