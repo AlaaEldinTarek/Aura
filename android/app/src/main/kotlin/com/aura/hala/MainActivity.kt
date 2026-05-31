@@ -287,6 +287,12 @@ class MainActivity : FlutterFragmentActivity() {
                         editor.putString(key, value)
                     }
 
+                    // Save location + method for native prayer time recalculation
+                    call.argument<Double>("latitude")?.let { editor.putFloat("prayer_latitude", it.toFloat()) }
+                    call.argument<Double>("longitude")?.let { editor.putFloat("prayer_longitude", it.toFloat()) }
+                    call.argument<String>("calculationMethod")?.let { editor.putString("prayer_calc_method", it) }
+                    call.argument<String>("asrMadhab")?.let { editor.putString("prayer_asr_madhab", it) }
+
                     editor.apply()
 
                     // Update widgets

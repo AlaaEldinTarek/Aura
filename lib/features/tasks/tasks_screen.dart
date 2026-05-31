@@ -53,6 +53,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
   // GlobalKeys for tutorial
   final _taskListKey = GlobalKey();
   final _fabKey = GlobalKey();
+  final _settingsKey = GlobalKey();
 
   @override
   void initState() {
@@ -86,6 +87,12 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
           targetKey: _fabKey,
           titleKey: 'tutorial_tasks_add_title',
           bodyKey: 'tutorial_tasks_add_body',
+        ),
+      if (_settingsKey.currentContext != null)
+        TutorialStep(
+          targetKey: _settingsKey,
+          titleKey: 'tutorial_tasks_settings_title',
+          bodyKey: 'tutorial_tasks_settings_body',
         ),
     ];
     if (steps.isEmpty) return;
@@ -272,6 +279,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
           ),
           // Task settings
           IconButton(
+            key: _settingsKey,
             icon: const Icon(Icons.tune),
             tooltip: isArabic ? 'إعدادات المهام' : 'Task settings',
             onPressed: () => _showTaskSettings(context, isArabic, isDark),
@@ -2514,7 +2522,7 @@ class _CelebrationOverlayState extends State<_CelebrationOverlay>
                                 style: AppTypography.headingL.copyWith(
                                   fontSize: 26,
                                   fontWeight: FontWeight.bold,
-                                  color: widget.isDark ? Colors.white : const Color(0xFF1A1A1A),
+                                  color: widget.isDark ? Colors.white : const Color(0xFF2A2418),
                                   letterSpacing: -0.3,
                                 ),
                               ),
@@ -2768,7 +2776,7 @@ class _QuickAddSheetState extends State<_QuickAddSheet> {
               decoration: InputDecoration(
                 hintText: isArabic ? 'عنوان المهمة...' : 'Task title...',
                 filled: true,
-                fillColor: isDark ? AppConstants.darkCard : const Color(0xFFF5F7FA),
+                fillColor: AppConstants.card(isDark),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,

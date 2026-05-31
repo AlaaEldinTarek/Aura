@@ -324,7 +324,7 @@ class AllPrayersWidget : AppWidgetProvider() {
         val dotFuture = if (isDark) R.drawable.widget_timeline_dot_future_dark else R.drawable.widget_timeline_dot_future
 
         val nameColorNow = if (isDark) 0xFFF4F5F7.toInt() else 0xFF2A2418.toInt()
-        val nameColorNext = if (isDark) 0xFFFFD37A.toInt() else 0xFF8A6110.toInt()
+        val nameColorNext = if (isDark) 0xFFF5B301.toInt() else 0xFFB5821B.toInt()
         val nameColorPast = if (isDark) 0xFF6B7180.toInt() else 0xFF9A8F78.toInt()
         val nameColorFuture = if (isDark) 0xFF6B7180.toInt() else 0xFF9A8F78.toInt()
 

@@ -208,6 +208,20 @@ class WirdService {
     _pushToCloud().ignore();
   }
 
+  /// Resets ALL Wird progress to zero. Keeps user settings (goal, reminders, linked color).
+  Future<void> resetAllProgress() async {
+    final prefs = await _prefs;
+    await prefs.setInt(_streakCountKey, 0);
+    await prefs.remove(_streakDateKey);
+    await prefs.setInt(_totalPagesKey, 0);
+    await prefs.setInt(_totalDaysKey, 0);
+    await prefs.setString(_historyKey, jsonEncode([]));
+    await prefs.setString(_completedJuzKey, jsonEncode([]));
+    await prefs.setInt(_khatmCountKey, 0);
+    await prefs.setString(_khatmDatesKey, jsonEncode([]));
+    _pushToCloud().ignore();
+  }
+
   // ── Juz Tracking ────────────────────────────────────────────────────────
 
   Future<List<int>> getCompletedJuz() async {

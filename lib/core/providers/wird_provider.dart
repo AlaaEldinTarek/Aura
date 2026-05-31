@@ -186,6 +186,13 @@ class WirdNotifier extends StateNotifier<AsyncValue<WirdState>> {
     return added;
   }
 
+  Future<void> resetAllProgress() async {
+    await WirdService.instance.resetAllProgress();
+    final updatedState = await WirdService.instance.getFullState();
+    if (!mounted) return;
+    state = AsyncValue.data(updatedState);
+  }
+
   /// Records a khatma, resets the juz grid for a new cycle. Returns the new khatm count.
   Future<int> resetJuzForKhatma() async {
     final count = await WirdService.instance.recordKhatma();

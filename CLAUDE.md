@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Aura (هالة)** is a 2-in-1 productivity and spiritual app combining **Islamic Prayer System** and **Task Management**. Built with Flutter and Firebase. Version **1.0.0+36** (Play Store build code), package `com.aura.hala`.
+**Aura (هالة)** is a 2-in-1 productivity and spiritual app combining **Islamic Prayer System** and **Task Management**. Built with Flutter and Firebase. Version **1.0.0+39** (Play Store build code), package `com.aura.hala`.
 
 **Key Features:**
 - 9 prayer calculation methods (MWL, ISNA, Egyptian, Makkah, Karachi, Tehran, Kuwait, FixedAngle, Proportional)
@@ -96,9 +96,10 @@ lib/
 | `JumuahReminderReceiver.kt` | Every Friday 30 min before Zuhr, bilingual notification (ID 8001, channel `jumuah_reminder`), weekly auto-reschedule |
 | `AdhanPlayer.kt` | Singleton MediaPlayer, per-prayer audio, vibration, thread-safe |
 | `SilentModeAutomation.kt` | AudioManager silent mode with configurable duration |
-| `PrayerForegroundService.kt` | START_STICKY, next prayer countdown every second. Channel deletion guarded — catches `SecurityException` when active |
-| `PrayerWidgets.kt` | CombinedPrayerWidget (AllPrayersWidget) with ViewFlipper tabs (Next Prayer + Timeline), 4 layout variants |
-| `TasksWidget.kt` / `WidgetUpdateService.kt` / `DailyContentWidget.kt` | Home screen widgets |
+| `PrayerForegroundService.kt` | START_STICKY, next prayer countdown every second. Channel deletion guarded — catches `SecurityException` when active. On stale times: calls `NativePrayerCalculator.calculateAndSave()` — does NOT launch MainActivity |
+| `NativePrayerCalculator.kt` | Pure-Kotlin prayer time calculator (no external libs). Reads lat/lng + method from `aura_prayer_times`, calculates via Julian Day → solar position → hour angles, saves results and reschedules alarms. Called by `PrayerForegroundService` and `PrayerAlarmReceiver` after Fajr/Isha |
+| `PrayerWidgets.kt` | CombinedPrayerWidget (AllPrayersWidget) with ViewFlipper tabs (Next Prayer + Timeline), 4 layout variants. Colors: active gold `#F5B301`/`#B5821B`, bg from `widget_v3_bg_dark/light` (`#111317→#1A1B1E` / `#FFF8EB→#FFF3D6`) |
+| `TasksWidget.kt` / `WidgetUpdateService.kt` / `DailyContentWidget.kt` | Home screen widgets. `TasksWidget` celebration state (all done): label turns gold (`#F5B301` dark / `#B5821B` light) — NOT green |
 | `AdhanFullScreenActivity.kt` | Full-screen intent over lock screen. During adhan: pulse animation. After audio ends: live iqama countdown (polls `AdhanPlayer.isPlaying()` every 500 ms via `Handler`, reads `adhan_iqama_time` from `aura_prayer_times`). Top-right ✕ (only way to dismiss). Bottom "Stop Vibrate"/"Keep Vibrate" pair shown only when silent mode active — "Keep Vibrate" is a no-op (screen stays open, vibration continues). |
 | `FocusModeService.kt` | START_STICKY, system overlay (TYPE_APPLICATION_OVERLAY), blocks notification shade, countdown timer, restores sound on end |
 | `FocusModeActivity.kt` | `startLockTask()` for complete lockdown; no `stopLockTask()` at timer end; DND restored unconditionally |
@@ -107,6 +108,8 @@ lib/
 | `FocusModeReceiver.kt` / `StopAdhanReceiver.kt` / `ToggleSilentModeReceiver.kt` / `SilentOffReceiver.kt` | Broadcast receivers |
 
 **AndroidManifest.xml**: 18 permissions, 11 receivers, 3 services, 3 activities. Backup layouts at `android/app/src/main/layout-backup/` (outside `res/` — inside `res/` breaks Android resource merger).
+
+**NEVER launch MainActivity from native code** (`PrayerForegroundService`, `PrayerAlarmReceiver`, etc.) when azan fires or prayer times are stale. Use `NativePrayerCalculator.calculateAndSave()` instead. `AdhanFullScreenActivity` is NOT "the app" — it is a native notification UI and must keep launching at azan time.
 
 ---
 
@@ -122,14 +125,14 @@ lib/
 1. `LocationService.getBestLocation()` — GPS or manual location, **cached 15 min** (`_locationCacheTTL`)
 2. `PrayerTimesService.getPrayerTimes()` — 6 prayer times via Adhan library + selected method + Asr madhab
 3. `PrayerTimesNotifier.loadPrayerTimes()` — **side effects run once per day** (guarded by `_lastSideEffectsDate`, set synchronously before async block)
-4. Side effects: `schedulePostPrayerCheck()`, `scheduleDailyTaskDigest()`, `scheduleDailyPrayerAlarms()`, `savePrayerTimes()`, `updatePrayerTimes()`
+4. Side effects: `schedulePostPrayerCheck()`, `scheduleDailyTaskDigest()`, `scheduleDailyPrayerAlarms()`, `savePrayerTimes()`, `updatePrayerTimes()` — the `updatePrayerTimes()` call now also passes `latitude`, `longitude`, `calculationMethod`, `asrMadhab` so `NativePrayerCalculator` can recalculate without the app being open
 
 **Critical next-prayer logic**: `getNextPrayer()` checks `prayer.time.isAfter(now)` for each prayer in order — only returns tomorrow's Fajr if ALL today's prayers have passed.
 
 ### Notification Architecture (Three-Layer System)
 1. **Flutter NotificationService** — 10-min pre-prayer reminders via `flutter_local_notifications` + "Remind Me Again" (5 min before) + daily 8 AM task digest + achievement unlock notifications (channel `achievement_unlocked`, IDs 7100–8099, hash-based per achievement ID)
 2. **Native PrayerAlarmReceiver** — exact AlarmManager at prayer time → adhan audio + **minimal** notification (no action buttons, `setTimeoutAfter(3000)` auto-dismisses from shade) + `setFullScreenIntent` launches `AdhanFullScreenActivity`. The notification is kept only because Android requires a posted notification to trigger `setFullScreenIntent` on locked/doze screens.
-3. **Post-prayer + daily summary** — 30 min after adhan: Done/Late/Missed/Later actions write `prayer_status_{name}_{date}` to `aura_prayer_times` prefs. `DailySummaryReceiver` fires at configurable time (default 21:00). On app resume: `_syncNativePrayerStatuses()` syncs to Firestore and clears native keys. Navigation channel receives `openPostPrayerPicker`/`openReminderPicker`/`updatePrayerStatus` callbacks.
+3. **Post-prayer + daily summary** — 30 min after adhan: Done/Late/Missed/Later actions write `prayer_status_{name}_{date}` to `aura_prayer_times` prefs. `DailySummaryReceiver` fires at configurable time (default 21:00). On app resume: `_syncNativePrayerStatuses()` syncs to Firestore, clears native keys, then reloads `dailyPrayerStatusProvider` so the UI reflects notification-pressed statuses immediately. Navigation channel receives `openPostPrayerPicker`/`openReminderPicker`/`updatePrayerStatus` callbacks. **Critical order**: sync runs AFTER `dailyPrayerStatusProvider.load()` at line 117 — but `syncNativePrayerStatuses()` returns `bool` and triggers a second `load()` only if something was synced.
 
 **Achievement notifications**: `AchievementService._award()` emits to `newAchievements` stream → `MainWrapperScreen` listener calls both `_showAchievementToast()` (in-app overlay) and `NotificationService.instance.showAchievementNotification()` (system notification).
 
@@ -183,7 +186,7 @@ This was the root cause of Arabic text not showing in full-screen azan and silen
 - **TasksScreen sections**: Overdue/Today/Upcoming/All Tasks/Completed (collapsible). Midnight timer at 00:00 refreshes sections.
 - **Sort**: dateDesc/dateAsc/priority/title — persisted via SharedPreferences (`task_sort_order`). **Filter chips**: category (`task_category_filter`) + auto-generated tag chips
 - **Context menu**: ⋮ → Edit/Duplicate/Change Priority/Pin/Toggle Complete/Delete (`onMenuTap` callback, separate from `onLongPress` for drag-to-reorder)
-- **Task notifications**: `scheduleTaskReminder()` — with-time tasks get 30-min-before reminder; without-time get 9 AM. Controlled by `task_notifications_enabled` pref via `_TaskSettingsSheet` (gear in TasksScreen AppBar)
+- **Task notifications**: `scheduleTaskReminder()` — with-time tasks get X-min-before reminder (configurable 5/10/15/30/45/60 min via `task_reminder_minutes`, default 30); without-time get 9 AM. Controlled by `task_notifications_enabled` pref via `_TaskSettingsSheet` (tune icon ⊞ in TasksScreen AppBar). The tune icon is highlighted in the Tasks tutorial (3rd step, `_settingsKey`).
 - **Focus Mode**: alarm fires → `FocusModeReceiver` → `FocusModeService` (overlay) → `FocusModeActivity` (`startLockTask()`). `AuraAccessibilityService` auto-clicks "Screen pinned" OK. After timer: DND restored, shows "Did you complete?" Yes → marks done via `getFocusCompletedTaskId` MethodChannel. `focus_a11y_ever_enabled` flag prevents re-asking on Huawei EMUI. Fields: `focusMode` (bool), `focusDurationMinutes` (int, default 25)
 - **App resume** (`MainWrapperScreen.didChangeAppLifecycleState`): `_checkUntrackedPrayers()`, `ref.invalidate(prayerTimesProvider)`, `ref.invalidate(tasksProvider)`, `_handleWidgetIntent()`, `_syncNativePrayerStatuses()`
 - **Celebration overlay**: `AnimationController` (NOT flutter_animate). **Task streak**: `task_streak_count`/`task_streak_date` in SharedPreferences

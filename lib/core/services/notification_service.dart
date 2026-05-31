@@ -60,7 +60,7 @@ class NotificationService {
   static const String _achievementChannelDescription = 'Notifications when you earn a new achievement';
 
   // Post-prayer check channel (asks did you pray after prayer time)
-  static const String _postCheckChannelId = 'post_prayer_check';
+  static const String _postCheckChannelId = 'prayer_check';
   static const String _postCheckChannelName = 'Prayer Check';
 
   // Notification IDs
@@ -157,8 +157,8 @@ class NotificationService {
     );
 
     const AndroidNotificationChannel prayerCheckChannel = AndroidNotificationChannel(
-      'prayer_check',
-      'Prayer Check',
+      _postCheckChannelId,
+      _postCheckChannelName,
       description: 'Reminders to check if you prayed',
       importance: Importance.high,
       enableVibration: true,
@@ -432,8 +432,8 @@ class NotificationService {
       final notificationId = 3000 + _getNotificationId(currentPrayer.name);
 
       final androidDetails = AndroidNotificationDetails(
-        'prayer_check',
-        'Prayer Check',
+        _postCheckChannelId,
+        _postCheckChannelName,
         channelDescription: 'Reminders to check if you prayed',
         importance: Importance.high,
         priority: Priority.high,

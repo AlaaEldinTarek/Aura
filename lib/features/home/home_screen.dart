@@ -1860,7 +1860,7 @@ class _HomeCelebrationOverlayState extends State<_HomeCelebrationOverlay>
                                   style: AppTypography.headingL.copyWith(
                                     fontSize: ts.scale(26.0),
                                     fontWeight: FontWeight.bold,
-                                    color: widget.isDark ? Colors.white : const Color(0xFF1A1A1A),
+                                    color: widget.isDark ? Colors.white : const Color(0xFF2A2418),
                                     letterSpacing: -0.3,
                                   ),
                                   textScaler: TextScaler.noScaling,

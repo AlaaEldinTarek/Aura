@@ -189,18 +189,25 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
     }
 
     // Detect when all 30 juz are completed — trigger khatma celebration
+    // Also scroll to first uncompleted juz whenever completed list changes
     ref.listen<AsyncValue<WirdState>>(wirdStateProvider, (previous, next) {
       if (!isJuzMode) return;
-      final prevLen = previous?.valueOrNull?.allCompletedJuz.length ?? 0;
-      final nextLen = next.valueOrNull?.allCompletedJuz.length ?? 0;
-      if (prevLen < 30 && nextLen == 30 && !_khatmaHandled) {
+      final prevCompleted = previous?.valueOrNull?.allCompletedJuz ?? [];
+      final nextCompleted = next.valueOrNull?.allCompletedJuz ?? [];
+      final nextLen = nextCompleted.length;
+      if (prevCompleted.length < 30 && nextLen == 30 && !_khatmaHandled) {
         _khatmaHandled = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) _handleJuzKhatma();
         });
       }
-      // Reset flag when juz resets to 0 (after a new khatma cycle starts)
       if (nextLen == 0) _khatmaHandled = false;
+      // Scroll to first uncompleted juz after state update
+      if (prevCompleted != nextCompleted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _scrollToFirstUnmarkedJuz(nextCompleted);
+        });
+      }
     });
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -215,6 +222,13 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
 
     // Juz mode vars
     final allCompletedJuz = state.allCompletedJuz;
+
+    // On first render in juz mode, scroll to first uncompleted juz
+    if (isJuzMode) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _scrollToFirstUnmarkedJuz(allCompletedJuz);
+      });
+    }
     final juzReadToday = progress?.juzRead ?? 0;
     final dailyJuzGoal = state.settings.dailyJuzGoal;
 
@@ -410,38 +424,131 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
 
   Widget _buildJuzActions(BuildContext context, WirdState state, Color primary) {
     final ts = MediaQuery.textScalerOf(context);
-    return Row(
+    final readingProgress = ref.watch(quranReadingProgressProvider).valueOrNull;
+    final juzList = ref.watch(juzListProvider).valueOrNull ?? [];
+
+    // Determine the juz to open: use current reading position, else next uncompleted juz
+    int startJuz = 1;
+    if (juzList.isNotEmpty) {
+      if (readingProgress != null) {
+        startJuz = juzList
+            .lastWhere((j) => j.startPage <= readingProgress.page, orElse: () => juzList.first)
+            .juzNo;
+      } else {
+        final completed = state.allCompletedJuz.toSet();
+        startJuz = Iterable.generate(30, (i) => i + 1).firstWhere((j) => !completed.contains(j), orElse: () => 1);
+      }
+    }
+    final startPage = juzList.isNotEmpty
+        ? juzList.firstWhere((j) => j.juzNo == startJuz, orElse: () => juzList.first).startPage
+        : 1;
+
+    return Column(
       children: [
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () {
-              ref.read(wirdStateProvider.notifier).markComplete();
-              setState(() => _showUndo = true);
-            },
-            icon: Icon(Icons.check, size: ts.scale(18.0)),
-            label: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(child: Text('wird_mark_complete'.tr(), overflow: TextOverflow.ellipsis)),
-                SizedBox(width: ts.scale(4.0)),
-                const InfoTipIcon(
-                  titleKey: 'tutorial_wird_juz_actions_title',
-                  bodyKey: 'tutorial_wird_juz_actions_body',
-                ),
-              ],
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => QuranReaderScreen(suraNo: 1, initialPage: startPage),
+              ),
             ),
+            icon: Icon(Icons.menu_book, size: ts.scale(18.0)),
+            label: Text('wird_start_reading'.tr()),
           ),
         ),
-        SizedBox(width: ts.scale(8.0)),
-        Expanded(
-          child: OutlinedButton.icon(
-            onPressed: () => _showBookmarkPagesSheetJuz(context, state),
-            icon: Icon(Icons.bookmark_outline, size: ts.scale(18.0)),
-            label: Text('wird_add_from_bookmarks'.tr(), overflow: TextOverflow.ellipsis),
+        SizedBox(height: ts.scale(8.0)),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  ref.read(wirdStateProvider.notifier).markComplete();
+                  setState(() => _showUndo = true);
+                },
+                icon: Icon(Icons.check, size: ts.scale(18.0)),
+                label: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(child: Text('wird_mark_complete'.tr(), overflow: TextOverflow.ellipsis)),
+                    SizedBox(width: ts.scale(4.0)),
+                    const InfoTipIcon(
+                      titleKey: 'tutorial_wird_juz_actions_title',
+                      bodyKey: 'tutorial_wird_juz_actions_body',
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(width: ts.scale(8.0)),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () => _showBookmarkPagesSheetJuz(context, state),
+                icon: Icon(Icons.bookmark_outline, size: ts.scale(18.0)),
+                label: Text('wird_add_from_bookmarks'.tr(), overflow: TextOverflow.ellipsis),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: ts.scale(4.0)),
+        SizedBox(
+          width: double.infinity,
+          child: TextButton.icon(
+            onPressed: () => _confirmReset(context),
+            icon: Icon(Icons.refresh, size: ts.scale(16.0), color: Colors.red.shade400),
+            label: Text('wird_reset_today'.tr(),
+                style: TextStyle(color: Colors.red.shade400)),
           ),
         ),
       ],
     );
+  }
+
+  void _scrollToFirstUnmarkedJuz(List<int> allCompleted) {
+    if (!_juzScrollController.hasClients) return;
+    final completedSet = allCompleted.toSet();
+    // Find first juz (1-30) not yet completed
+    int firstUnmarked = -1;
+    for (int j = 1; j <= 30; j++) {
+      if (!completedSet.contains(j)) { firstUnmarked = j; break; }
+    }
+    if (firstUnmarked == -1) return; // all done
+    final index = firstUnmarked - 1;
+    // Each cell: scale(44) wide + scale(6) separator ≈ scale(50) per item
+    final ts = MediaQuery.textScalerOf(context);
+    final itemWidth = ts.scale(50.0);
+    final targetOffset = (index * itemWidth)
+        .clamp(0.0, _juzScrollController.position.maxScrollExtent);
+    _juzScrollController.animateTo(
+      targetOffset,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  Future<void> _confirmReset(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('wird_reset_confirm_title'.tr()),
+        content: Text('wird_reset_confirm_body'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('cancel'.tr()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text('wird_reset_today'.tr()),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await ref.read(wirdStateProvider.notifier).resetAllProgress();
+    setState(() => _showUndo = false);
   }
 
   // ── Bookmark Pages Sheet (Juz mode) ───────────────────────────────────────
@@ -903,6 +1010,16 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
             onPressed: () => _showBookmarkPagesSheet(context),
             icon: Icon(Icons.bookmark_outline, size: ts.scale(18.0)),
             label: Text('wird_add_from_bookmarks'.tr()),
+          ),
+        ),
+        SizedBox(height: ts.scale(4.0)),
+        SizedBox(
+          width: double.infinity,
+          child: TextButton.icon(
+            onPressed: () => _confirmReset(context),
+            icon: Icon(Icons.refresh, size: ts.scale(16.0), color: Colors.red.shade400),
+            label: Text('wird_reset_today'.tr(),
+                style: TextStyle(color: Colors.red.shade400)),
           ),
         ),
       ],

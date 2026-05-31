@@ -304,12 +304,12 @@ class PrayerAlarmService {
     }
   }
 
-  /// Sync native prayer statuses to Firestore
-  /// Called on app resume to pick up any statuses saved while app was in background
-  Future<void> syncNativePrayerStatuses(String userId) async {
+  /// Sync native prayer statuses to Firestore.
+  /// Returns true if at least one status was synced (caller should reload UI).
+  Future<bool> syncNativePrayerStatuses(String userId) async {
     try {
       final statuses = await getNativePrayerStatuses();
-      if (statuses.isEmpty) return;
+      if (statuses.isEmpty) return false;
 
       debugPrint('🔄 [SYNC] Found ${statuses.length} native prayer statuses to sync');
 
@@ -348,8 +348,10 @@ class PrayerAlarmService {
       }
 
       debugPrint('✅ [SYNC] Native prayer statuses synced to Firestore');
+      return true;
     } catch (e) {
       debugPrint('❌ [SYNC] Error syncing native prayer statuses - $e');
+      return false;
     }
   }
 

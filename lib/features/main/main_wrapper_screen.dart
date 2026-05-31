@@ -421,7 +421,13 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     try {
       final userId = ref.read(currentUserIdProvider);
       if (userId != null && userId.isNotEmpty) {
-        await PrayerAlarmService.instance.syncNativePrayerStatuses(userId);
+        final synced = await PrayerAlarmService.instance.syncNativePrayerStatuses(userId);
+        if (synced && mounted) {
+          // Reload so UI reflects statuses pressed in notification while app was closed
+          final prayerTimes = ref.read(prayerTimesProvider)?.prayerTimes ?? [];
+          final fajrTime = prayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
+          ref.read(dailyPrayerStatusProvider.notifier).load(forceRefresh: true, fajrTime: fajrTime);
+        }
       }
     } catch (e) {
       debugPrint('Error syncing native prayer statuses: $e');
@@ -691,7 +697,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
                 Navigator.of(ctx).pop();
                 _scheduleRemindLater(prayerName, prayerNameAr, prayerTime, minutes);
               },
-              backgroundColor: isDark ? const Color(0xFF2A2B2E) : const Color(0xFFFFEACC),
+              backgroundColor: isDark ? const Color(0xFF1A1B1E) : const Color(0xFFFFF3D6),
               selectedColor: AppConstants.primaryColor,
               labelStyle: AppTypography.bodyM.copyWith(
                 color: isDark ? Colors.white : const Color(0xFF2A2418),
@@ -849,7 +855,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
                     Navigator.of(ctx).pop();
                     _schedulePostPrayerRemindLater(prayerName, prayerNameAr, prayerTime, minutes);
                   },
-                  backgroundColor: isDark ? const Color(0xFF2A2B2E) : const Color(0xFFFFEACC),
+                  backgroundColor: isDark ? const Color(0xFF1A1B1E) : const Color(0xFFFFF3D6),
                   selectedColor: AppConstants.primaryColor,
                   labelStyle: AppTypography.bodyM.copyWith(
                     color: isDark ? Colors.white : const Color(0xFF2A2418),

@@ -95,11 +95,10 @@ class TasksWidget : AppWidgetProvider() {
 
         // Celebration state
         if (allDone) {
-            val celebColor = Color.parseColor("#4CAF50")
-            views.setInt(R.id.widget_root, "setBackgroundColor", celebColor)
+            val celebColor = if (isDark) Color.parseColor("#F5B301") else Color.parseColor("#B5821B")
             views.setTextViewText(R.id.widget_tasks_label,
                 if (isArabic) "\uD83C\uDF89 تم الكل!" else "\uD83C\uDF89 All done!")
-            views.setTextColor(R.id.widget_tasks_label, Color.WHITE)
+            views.setTextColor(R.id.widget_tasks_label, celebColor)
         } else {
             views.setTextViewText(R.id.widget_tasks_label,
                 if (isArabic) "مهام اليوم" else "Today's Tasks")

@@ -65,18 +65,10 @@ class PrayerForegroundService : Service() {
             context.stopService(intent)
         }
 
-        // Callable from any context (e.g. PrayerAlarmReceiver) to trigger Flutter refresh
         fun requestFlutterUpdateStatic(context: Context) {
-            try {
-                val intent = Intent(context, MainActivity::class.java).apply {
-                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                    putExtra("refresh_prayer_times", true)
-                }
-                context.startActivity(intent)
-                Log.d(TAG, "✅ [REFRESH] Static: Launched MainActivity to refresh prayer times")
-            } catch (e: Exception) {
-                Log.e(TAG, "❌ [REFRESH] Static: Failed to launch MainActivity: ${e.message}")
-            }
+            Log.d(TAG, "🔄 [REFRESH] Recalculating prayer times natively...")
+            val ok = NativePrayerCalculator.calculateAndSave(context)
+            if (!ok) Log.w(TAG, "⚠️ [REFRESH] Native recalc skipped — will refresh on next app open")
         }
 
         // Update prayer times from Flutter (called via MethodChannel)
@@ -745,15 +737,13 @@ class PrayerForegroundService : Service() {
     }
 
     private fun requestFlutterUpdate() {
-        try {
-            val intent = Intent(this, MainActivity::class.java).apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-                putExtra("refresh_prayer_times", true)
-            }
-            startActivity(intent)
-            Log.d(TAG, "✅ [REFRESH] Launched MainActivity to refresh prayer times")
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ [REFRESH] Failed to launch MainActivity: ${e.message}")
+        Log.d(TAG, "🔄 [REFRESH] Recalculating prayer times natively...")
+        val ok = NativePrayerCalculator.calculateAndSave(this)
+        if (ok) {
+            // Reload the freshly written times into the service's own cache
+            loadPrayerTimes()
+        } else {
+            Log.w(TAG, "⚠️ [REFRESH] Native recalc skipped — will refresh on next app open")
         }
     }
 
