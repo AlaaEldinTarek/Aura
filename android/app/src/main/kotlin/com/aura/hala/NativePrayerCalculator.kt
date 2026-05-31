@@ -107,15 +107,22 @@ object NativePrayerCalculator {
         // Fajr / Isha angles by method
         val (fajrAngle, ishaAngle, ishaIsFixed) = methodAngles(methodName)
 
+        // High-latitude fallback: when sun doesn't rise/set, hourAngle returns 0.
+        // Use 1/7 of the half-day as a minimum offset so Fajr/Isha are never at solar noon.
+        val fallback = if (halfDay > 0.0) halfDay / 7.0 else 1.0
+
         val fajrH: Double
         val ishaH: Double
         if (ishaIsFixed) {
             // Isha = Maghrib + fixed offset (UmmAlQura: 90 min)
             ishaH  = maghribH + ishaAngle / 60.0
-            fajrH  = dhuhrH - hourAngle(lat, decl, fajrAngle)
+            val fajrHA = hourAngle(lat, decl, fajrAngle).let { if (it == 0.0) fallback else it }
+            fajrH  = dhuhrH - fajrHA
         } else {
-            fajrH  = dhuhrH - hourAngle(lat, decl, fajrAngle)
-            ishaH  = dhuhrH + hourAngle(lat, decl, ishaAngle)
+            val fajrHA = hourAngle(lat, decl, fajrAngle).let { if (it == 0.0) fallback else it }
+            val ishaHA = hourAngle(lat, decl, ishaAngle).let { if (it == 0.0) fallback else it }
+            fajrH  = dhuhrH - fajrHA
+            ishaH  = dhuhrH + ishaHA
         }
 
         // Asr (shadow ratio: Shafi = 1, Hanafi = 2)

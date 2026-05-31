@@ -291,10 +291,14 @@ class Task {
       case RecurrenceType.weekly:
         return dueDate!.add(Duration(days: 7 * recurrenceInterval));
       case RecurrenceType.monthly:
+        final rawMonth = dueDate!.month + recurrenceInterval;
+        final targetYear = dueDate!.year + (rawMonth - 1) ~/ 12;
+        final targetMonth = ((rawMonth - 1) % 12) + 1;
+        final daysInMonth = DateTime(targetYear, targetMonth + 1, 0).day;
         return DateTime(
-          dueDate!.year,
-          dueDate!.month + recurrenceInterval,
-          dueDate!.day,
+          targetYear,
+          targetMonth,
+          dueDate!.day.clamp(1, daysInMonth),
           dueDate!.hour,
           dueDate!.minute,
         );

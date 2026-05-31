@@ -281,7 +281,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
           IconButton(
             key: _settingsKey,
             icon: const Icon(Icons.tune),
-            tooltip: isArabic ? 'إعدادات المهام' : 'Task settings',
+            tooltip: isArabic ? 'إعدادات المهام والتذكيرات' : 'Task settings & reminders',
             onPressed: () => _showTaskSettings(context, isArabic, isDark),
           ),
           // Sort menu

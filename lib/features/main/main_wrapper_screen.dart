@@ -114,9 +114,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       ref.invalidate(prayerTimesProvider);
       ref.invalidate(tasksProvider(const TaskFilterParams()));
       ref.invalidate(allTasksProvider);
-      ref.read(dailyPrayerStatusProvider.notifier).load(forceRefresh: true, fajrTime: resumeFajrTime);
       _handleWidgetIntent();
-      _syncNativePrayerStatuses();
+      _syncThenLoadPrayerStatus(resumeFajrTime);
     }
   }
 
@@ -417,20 +416,20 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     }
   }
 
-  Future<void> _syncNativePrayerStatuses() async {
+  // Sync notification-pressed statuses to Firestore first, then load provider once —
+  // eliminates the flash where prayers appear untracked between load and sync.
+  Future<void> _syncThenLoadPrayerStatus(DateTime? fajrTime) async {
     try {
       final userId = ref.read(currentUserIdProvider);
       if (userId != null && userId.isNotEmpty) {
-        final synced = await PrayerAlarmService.instance.syncNativePrayerStatuses(userId);
-        if (synced && mounted) {
-          // Reload so UI reflects statuses pressed in notification while app was closed
-          final prayerTimes = ref.read(prayerTimesProvider)?.prayerTimes ?? [];
-          final fajrTime = prayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
-          ref.read(dailyPrayerStatusProvider.notifier).load(forceRefresh: true, fajrTime: fajrTime);
-        }
+        await PrayerAlarmService.instance.syncNativePrayerStatuses(userId);
       }
     } catch (e) {
       debugPrint('Error syncing native prayer statuses: $e');
+    } finally {
+      if (mounted) {
+        ref.read(dailyPrayerStatusProvider.notifier).load(forceRefresh: true, fajrTime: fajrTime);
+      }
     }
   }
 

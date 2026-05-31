@@ -481,7 +481,7 @@ class AllPrayersWidget : AppWidgetProvider() {
         val intent = Intent(context, AllPrayersWidgetReceiver::class.java)
         val pendingIntent = PendingIntent.getBroadcast(context, 0, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 30000L, pendingIntent)
+        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 60000L, pendingIntent)
     }
 
     private fun cancelWidgetUpdate(context: Context) {

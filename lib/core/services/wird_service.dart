@@ -43,7 +43,7 @@ class WirdService {
     } else {
       await cancelAllReminders();
     }
-    _pushToCloud().ignore();
+    _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
   }
 
   // ── Daily Progress ───────────────────────────────────────────────────────
@@ -111,7 +111,7 @@ class WirdService {
       await prefs.setInt(_totalPagesKey, totalPages);
     }
 
-    _pushToCloud().ignore();
+    _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
     return todayProgress;
   }
 
@@ -156,7 +156,7 @@ class WirdService {
       _totalDaysKey,
       (prefs.getInt(_totalDaysKey) ?? 0) + 1,
     );
-    _pushToCloud().ignore();
+    _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
   }
 
   Future<void> undoComplete() async {
@@ -205,7 +205,7 @@ class WirdService {
     await prefs.setInt(_totalPagesKey, totalPages < 0 ? 0 : totalPages);
     final totalDays = (prefs.getInt(_totalDaysKey) ?? 0) - 1;
     await prefs.setInt(_totalDaysKey, totalDays < 0 ? 0 : totalDays);
-    _pushToCloud().ignore();
+    _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
   }
 
   /// Resets ALL Wird progress to zero. Keeps user settings (goal, reminders, linked color).
@@ -219,7 +219,7 @@ class WirdService {
     await prefs.setString(_completedJuzKey, jsonEncode([]));
     await prefs.setInt(_khatmCountKey, 0);
     await prefs.setString(_khatmDatesKey, jsonEncode([]));
-    _pushToCloud().ignore();
+    _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
   }
 
   // ── Juz Tracking ────────────────────────────────────────────────────────
@@ -295,7 +295,7 @@ class WirdService {
       await prefs.setInt(_totalDaysKey, totalDays < 0 ? 0 : totalDays);
     }
 
-    _pushToCloud().ignore();
+    _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
   }
 
   // ── Khatma ──────────────────────────────────────────────────────────────
@@ -320,7 +320,7 @@ class WirdService {
     final dates = await getKhatmDates();
     dates.add(_todayKey());
     await prefs.setString(_khatmDatesKey, jsonEncode(dates));
-    _pushToCloud().ignore();
+    _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
     return newCount;
   }
 
@@ -328,7 +328,7 @@ class WirdService {
   Future<void> resetAllJuz() async {
     final prefs = await _prefs;
     await prefs.setString(_completedJuzKey, jsonEncode([]));
-    _pushToCloud().ignore();
+    _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
   }
 
   // ── Bookmark Sync ───────────────────────────────────────────────────────
