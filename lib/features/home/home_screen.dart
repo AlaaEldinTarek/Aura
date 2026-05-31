@@ -58,6 +58,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   final _taskProgressKey = GlobalKey();
   final _todayTasksKey = GlobalKey();
 
+  // Set when permissions are done but tutorial hasn't launched yet.
+  // Survives provider rebuilds; cleared only when tutorial actually starts.
+  bool _pendingTutorialLaunch = false;
+
   @override
   void initState() {
     super.initState();
@@ -74,22 +78,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   void _onPermissionsDone() {
     if (!mounted) return;
     if (!SharedPreferencesService.instance.isTutorialCompleted()) {
+      _pendingTutorialLaunch = true;
       _launchTutorialWhenActive();
     }
   }
 
   void _launchTutorialWhenActive() {
-    if (!mounted) return;
-    // Only launch when home screen is the topmost route (permissions page fully gone)
+    if (!_pendingTutorialLaunch) return;
+    if (!mounted) {
+      // Widget temporarily unmounted during rebuild — retry shortly
+      Future.delayed(const Duration(milliseconds: 300), _launchTutorialWhenActive);
+      return;
+    }
+    if (SharedPreferencesService.instance.isTutorialCompleted()) {
+      _pendingTutorialLaunch = false;
+      return;
+    }
     if (ModalRoute.of(context)?.isCurrent == true) {
-      Future.delayed(const Duration(milliseconds: 600), () {
-        if (mounted && ModalRoute.of(context)?.isCurrent == true) {
+      Future.delayed(const Duration(milliseconds: 800), () {
+        if (!_pendingTutorialLaunch) return;
+        if (!mounted) {
+          Future.delayed(const Duration(milliseconds: 300), _launchTutorialWhenActive);
+          return;
+        }
+        if (ModalRoute.of(context)?.isCurrent == true) {
+          _pendingTutorialLaunch = false;
           _launchTutorial();
+        } else {
+          // Something appeared during the 800ms window — retry
+          Future.delayed(const Duration(milliseconds: 400), _launchTutorialWhenActive);
         }
       });
     } else {
-      // Another route is still on top — retry every 300ms
-      Future.delayed(const Duration(milliseconds: 300), _launchTutorialWhenActive);
+      // Another route is still on top — retry every 400ms
+      Future.delayed(const Duration(milliseconds: 400), _launchTutorialWhenActive);
     }
   }
 

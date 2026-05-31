@@ -207,8 +207,10 @@ class TasksWidget : AppWidgetProvider() {
             context, appWidgetId + 5000, addIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
 
-        // Root click → open app
+        // Root click → open Tasks tab (index 3)
         context.packageManager.getLaunchIntentForPackage(context.packageName)?.let {
+            it.putExtra("widget_target_tab", 3)
+            it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
             views.setOnClickPendingIntent(R.id.widget_root, PendingIntent.getActivity(
                 context, appWidgetId, it, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
         }
@@ -374,8 +376,10 @@ class NextTaskWidget : AppWidgetProvider() {
                 if (isDark) Color.parseColor("#E0E0E0") else Color.parseColor("#333333"))
             views.setViewVisibility(R.id.widget_task_time, View.GONE)
 
-            // Fallback click → open app
+            // Fallback click → open Tasks tab (index 3)
             context.packageManager.getLaunchIntentForPackage(context.packageName)?.let {
+                it.putExtra("widget_target_tab", 3)
+                it.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 views.setOnClickPendingIntent(R.id.widget_root, PendingIntent.getActivity(
                     context, appWidgetId + 1000, it, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
             }

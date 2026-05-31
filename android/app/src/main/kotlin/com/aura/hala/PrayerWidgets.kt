@@ -419,8 +419,10 @@ class AllPrayersWidget : AppWidgetProvider() {
         // ── ViewFlipper ──
         views.setDisplayedChild(R.id.view_flipper, currentTab)
 
-        // ── Root click → open app ──
+        // ── Root click → open Prayer tab (index 1) ──
         val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
+        launchIntent?.putExtra("widget_target_tab", 1)
+        launchIntent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         launchIntent?.let {
             views.setOnClickPendingIntent(R.id.view_flipper,
                 PendingIntent.getActivity(context, appWidgetId * 10 + 5, it,

@@ -38,6 +38,7 @@ class MainActivity : FlutterFragmentActivity() {
         super.onCreate(savedInstanceState)
         // Create notification channel early to ensure it exists before alarms fire
         createNotificationChannel()
+        intent?.let { handleWidgetTabIntent(it) }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -47,6 +48,16 @@ class MainActivity : FlutterFragmentActivity() {
         handleReminderPickerIntent(intent)
         handlePostPrayerPickerIntent(intent)
         handlePrayerStatusUpdateIntent(intent)
+        handleWidgetTabIntent(intent)
+    }
+
+    private fun handleWidgetTabIntent(intent: Intent) {
+        val tabIndex = intent.getIntExtra("widget_target_tab", -1)
+        if (tabIndex >= 0) {
+            val prefs = getSharedPreferences("${packageName}_preferences", android.content.Context.MODE_PRIVATE)
+            prefs.edit().putInt("widget_navigate_to_tab", tabIndex).apply()
+            Log.d("MainActivity", "🗂️ [WIDGET] Queued tab navigation → $tabIndex")
+        }
     }
 
     private fun handleShortcutIntent(intent: Intent) {

@@ -111,7 +111,7 @@
                 android:paddingTop="7dp"
                 android:paddingBottom="7dp">
                 <TextView android:id="@+id/task_check_0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="○" android:textSize="13sp" android:textColor="#B5821B" />
-                <TextView android:id="@+id/task_title_0" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:text="Task title" android:textSize="12sp" android:textColor="#2A2418" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:fontFamily="sans-serif-medium" />
+                <TextView android:id="@+id/task_title_0" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textAlignment="viewStart" android:layout_marginStart="6dp" android:text="Task title" android:textSize="12sp" android:textColor="#2A2418" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:fontFamily="sans-serif-medium" />
                 <TextView android:id="@+id/task_time_0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textSize="9sp" android:textColor="#B5821B" android:fontFamily="monospace" android:visibility="gone" />
                 <TextView android:id="@+id/task_subtask_0" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4dp" android:text="" android:textSize="9sp" android:textColor="#B5821B" android:fontFamily="sans-serif" android:visibility="gone" />
             </LinearLayout>
@@ -119,9 +119,9 @@
 
         <!-- Task 1 -->
         <FrameLayout android:id="@+id/task_row_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="4dp" android:background="@drawable/widget_task_card" android:visibility="gone">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="7dp" android:paddingBottom="7dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layoutDirection="ltr" android:gravity="center_vertical" android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="7dp" android:paddingBottom="7dp">
                 <TextView android:id="@+id/task_check_1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="○" android:textSize="13sp" android:textColor="#B5821B" />
-                <TextView android:id="@+id/task_title_1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:text="" android:textSize="12sp" android:textColor="#2A2418" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:fontFamily="sans-serif-medium" />
+                <TextView android:id="@+id/task_title_1" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textAlignment="viewStart" android:layout_marginStart="6dp" android:text="" android:textSize="12sp" android:textColor="#2A2418" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:fontFamily="sans-serif-medium" />
                 <TextView android:id="@+id/task_time_1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textSize="9sp" android:textColor="#B5821B" android:fontFamily="monospace" android:visibility="gone" />
                 <TextView android:id="@+id/task_subtask_1" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4dp" android:text="" android:textSize="9sp" android:textColor="#B5821B" android:fontFamily="sans-serif" android:visibility="gone" />
             </LinearLayout>
@@ -129,9 +129,9 @@
 
         <!-- Task 2 -->
         <FrameLayout android:id="@+id/task_row_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="4dp" android:background="@drawable/widget_task_card" android:visibility="gone">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="7dp" android:paddingBottom="7dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layoutDirection="ltr" android:gravity="center_vertical" android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="7dp" android:paddingBottom="7dp">
                 <TextView android:id="@+id/task_check_2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="○" android:textSize="13sp" android:textColor="#B5821B" />
-                <TextView android:id="@+id/task_title_2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:text="" android:textSize="12sp" android:textColor="#2A2418" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:fontFamily="sans-serif-medium" />
+                <TextView android:id="@+id/task_title_2" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textAlignment="viewStart" android:layout_marginStart="6dp" android:text="" android:textSize="12sp" android:textColor="#2A2418" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:fontFamily="sans-serif-medium" />
                 <TextView android:id="@+id/task_time_2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textSize="9sp" android:textColor="#B5821B" android:fontFamily="monospace" android:visibility="gone" />
                 <TextView android:id="@+id/task_subtask_2" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4dp" android:text="" android:textSize="9sp" android:textColor="#B5821B" android:fontFamily="sans-serif" android:visibility="gone" />
             </LinearLayout>
@@ -139,9 +139,9 @@
 
         <!-- Task 3 -->
         <FrameLayout android:id="@+id/task_row_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="4dp" android:background="@drawable/widget_task_card" android:visibility="gone">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="7dp" android:paddingBottom="7dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layoutDirection="ltr" android:gravity="center_vertical" android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="7dp" android:paddingBottom="7dp">
                 <TextView android:id="@+id/task_check_3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="○" android:textSize="13sp" android:textColor="#B5821B" />
-                <TextView android:id="@+id/task_title_3" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:text="" android:textSize="12sp" android:textColor="#2A2418" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:fontFamily="sans-serif-medium" />
+                <TextView android:id="@+id/task_title_3" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textAlignment="viewStart" android:layout_marginStart="6dp" android:text="" android:textSize="12sp" android:textColor="#2A2418" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:fontFamily="sans-serif-medium" />
                 <TextView android:id="@+id/task_time_3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textSize="9sp" android:textColor="#B5821B" android:fontFamily="monospace" android:visibility="gone" />
                 <TextView android:id="@+id/task_subtask_3" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4dp" android:text="" android:textSize="9sp" android:textColor="#B5821B" android:fontFamily="sans-serif" android:visibility="gone" />
             </LinearLayout>
@@ -149,9 +149,9 @@
 
         <!-- Task 4 -->
         <FrameLayout android:id="@+id/task_row_4" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="4dp" android:background="@drawable/widget_task_card" android:visibility="gone">
-            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="7dp" android:paddingBottom="7dp">
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layoutDirection="ltr" android:gravity="center_vertical" android:paddingStart="8dp" android:paddingEnd="8dp" android:paddingTop="7dp" android:paddingBottom="7dp">
                 <TextView android:id="@+id/task_check_4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="○" android:textSize="13sp" android:textColor="#B5821B" />
-                <TextView android:id="@+id/task_title_4" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="6dp" android:text="" android:textSize="12sp" android:textColor="#2A2418" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:fontFamily="sans-serif-medium" />
+                <TextView android:id="@+id/task_title_4" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:textAlignment="viewStart" android:layout_marginStart="6dp" android:text="" android:textSize="12sp" android:textColor="#2A2418" android:textStyle="bold" android:maxLines="1" android:ellipsize="end" android:fontFamily="sans-serif-medium" />
                 <TextView android:id="@+id/task_time_4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="" android:textSize="9sp" android:textColor="#B5821B" android:fontFamily="monospace" android:visibility="gone" />
                 <TextView android:id="@+id/task_subtask_4" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="4dp" android:text="" android:textSize="9sp" android:textColor="#B5821B" android:fontFamily="sans-serif" android:visibility="gone" />
             </LinearLayout>

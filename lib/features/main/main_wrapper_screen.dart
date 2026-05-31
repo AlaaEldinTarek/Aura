@@ -411,6 +411,15 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
           Navigator.of(context).pushNamed('/task_form');
         }
       }
+
+      // Handle widget root tap → navigate to correct tab (Prayer=1, Tasks=3)
+      final targetTab = prefs.getInt('widget_navigate_to_tab') ?? -1;
+      if (targetTab >= 0) {
+        prefs.remove('widget_navigate_to_tab');
+        if (mounted) {
+          _handleTabTap(targetTab);
+        }
+      }
     } catch (e) {
       debugPrint('Widget intent error: $e');
     }
