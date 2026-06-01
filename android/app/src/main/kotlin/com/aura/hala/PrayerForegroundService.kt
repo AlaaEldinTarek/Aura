@@ -30,7 +30,7 @@ class PrayerForegroundService : Service() {
     private val CHANNEL_ID = "prayer_foreground_channel_v4"
     // Use 9999 to avoid conflict with prayer alarm notifications (1001-1006)
     private val NOTIFICATION_ID = 9999
-    private val UPDATE_INTERVAL = 1000L
+    private val UPDATE_INTERVAL = 60_000L // 60s — notification shows HH:MM, no need for per-second updates
 
     private var handler: Handler? = null
     private var updateRunnable: Runnable? = null
@@ -677,6 +677,30 @@ class PrayerForegroundService : Service() {
         }
 
         return Pair(remaining, timeString)
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        Log.d(TAG, "🔄 [TASK_REMOVED] App removed from recents — scheduling service restart in 5s")
+        val restartIntent = Intent(applicationContext, PrayerForegroundService::class.java)
+        val pendingIntent = PendingIntent.getService(
+            applicationContext, 1, restartIntent,
+            PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val alarmManager = getSystemService(ALARM_SERVICE) as android.app.AlarmManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setExactAndAllowWhileIdle(
+                android.app.AlarmManager.RTC_WAKEUP,
+                System.currentTimeMillis() + 5_000L,
+                pendingIntent
+            )
+        } else {
+            alarmManager.setExact(
+                android.app.AlarmManager.RTC_WAKEUP,
+                System.currentTimeMillis() + 5_000L,
+                pendingIntent
+            )
+        }
     }
 
     override fun onDestroy() {

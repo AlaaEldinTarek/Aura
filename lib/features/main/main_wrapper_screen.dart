@@ -128,16 +128,14 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     _tabController.index = _currentIndex;
     _updateCurrentRoute();
 
-    // Mobile: periodic prayer status sync so cross-device changes appear within 30s
-    if (!_isDesktop) {
-      _prayerSyncTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-        if (mounted) {
-          final timerPrayerTimes = ref.read(prayerTimesProvider)?.prayerTimes ?? [];
-          final timerFajrTime = timerPrayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
-          ref.read(dailyPrayerStatusProvider.notifier).load(fajrTime: timerFajrTime);
-        }
-      });
-    }
+    // Periodic prayer status sync so cross-device changes appear within 30s (all platforms)
+    _prayerSyncTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) {
+        final timerPrayerTimes = ref.read(prayerTimesProvider)?.prayerTimes ?? [];
+        final timerFajrTime = timerPrayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
+        ref.read(dailyPrayerStatusProvider.notifier).load(fajrTime: timerFajrTime);
+      }
+    });
 
     // Desktop: show in-app banners for reminders/tasks/wird.
     if (_isDesktop) {

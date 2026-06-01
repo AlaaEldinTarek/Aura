@@ -41,6 +41,7 @@ class PrayerBootReceiver : BroadcastReceiver() {
                     reschedulePrayerAlarms(context)
                     rescheduleDailySummary(context)
                     rescheduleJumuahReminder(context)
+                    restartForegroundService(context)
                 }, 30000) // 30 seconds delay
             }
         }
@@ -79,6 +80,15 @@ class PrayerBootReceiver : BroadcastReceiver() {
     private fun rescheduleJumuahReminder(context: Context) {
         JumuahReminderReceiver.schedule(context)
         Log.d(TAG, "Jumu'ah reminder rescheduled after boot")
+    }
+
+    private fun restartForegroundService(context: Context) {
+        try {
+            PrayerForegroundService.startService(context)
+            Log.d(TAG, "✅ Prayer foreground service restarted after boot")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Failed to restart prayer foreground service: ${e.message}")
+        }
     }
 
     private fun rescheduleDailySummary(context: Context) {
