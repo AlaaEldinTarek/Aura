@@ -18,6 +18,7 @@ import '../../core/services/task_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/shared_preferences_service.dart';
 import '../../core/widgets/tutorial_overlay.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/utils/haptic_feedback.dart' as app_haptic;
 import '../../core/utils/number_formatter.dart';
 
@@ -2144,35 +2145,14 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
   }
 
   Widget _buildEmptyState(bool isDark, bool isArabic) {
-    final ts = MediaQuery.textScalerOf(context);
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: ts.scale(64.0), horizontal: ts.scale(32.0)),
-      child: Column(
-        children: [
-          Icon(
-            Icons.task_alt_outlined,
-            size: ts.scale(72.0),
-            color: isDark ? Colors.grey.shade700 : Colors.grey.shade300,
-          ),
-          SizedBox(height: ts.scale(16.0)),
-          Text(
-            isArabic ? 'لا توجد مهام' : 'No tasks yet',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: isDark ? Colors.white70 : Colors.black54,
-                ),
-          ),
-          SizedBox(height: ts.scale(8.0)),
-          Text(
-            isArabic
-                ? 'اضغط + لإضافة مهمتك الأولى'
-                : 'Tap + to add your first task',
-            textAlign: TextAlign.center,
-            style: AppTypography.bodyM.copyWith(
-              color: AppConstants.textMuted(isDark),
-            ),
-          ),
-        ],
-      ),
+    return EmptyState(
+      iconEmoji: '✅',
+      title: isArabic ? 'لا توجد مهام بعد' : 'No tasks yet',
+      subtitle: isArabic
+          ? 'اضغط + لإضافة مهمتك الأولى وابدأ يومك بإنتاجية'
+          : 'Tap + to add your first task and start a productive day',
+      actionLabel: isArabic ? 'إضافة مهمة' : 'Add Task',
+      onAction: () => _showQuickAdd(context, isArabic, isDark),
     );
   }
 

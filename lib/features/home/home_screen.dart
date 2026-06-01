@@ -32,6 +32,7 @@ import '../../core/models/daily_content.dart';
 import '../../core/services/daily_content_service.dart';
 import '../../core/widgets/prayer_status_dialog.dart';
 import '../../core/services/prayer_tracking_service.dart' show PrayerTrackingService;
+import '../../core/services/rating_service.dart';
 import '../../core/utils/prayer_time_rules.dart';
 import '../../core/providers/islamic_events_provider.dart';
 import '../../core/models/islamic_event.dart';
@@ -73,6 +74,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       ref.read(dailyPrayerStatusProvider.notifier).load(fajrTime: fajrTime);
     });
     _startCountdownTimer();
+    // Try rating prompt after 5s — silently skipped if <7 days since install
+    Future.delayed(const Duration(seconds: 5), () {
+      if (mounted) RatingService.instance.maybeRequest();
+    });
   }
 
   void _onPermissionsDone() {

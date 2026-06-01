@@ -10,6 +10,7 @@ import 'package:aura_app/core/providers/quran_provider.dart';
 import 'package:aura_app/core/utils/number_formatter.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/tutorial_overlay.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/bottom_nav_bar.dart';
 import '../../core/services/shared_preferences_service.dart';
 import 'quran_reader_screen.dart';
@@ -389,15 +390,10 @@ class _BookmarksTab extends ConsumerWidget {
       error: (e, _) => Center(child: Text('Error: $e')),
       data: (bookmarks) {
         if (bookmarks.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.bookmark_outline, size: ts.scale(64.0), color: Colors.grey[400]),
-                SizedBox(height: ts.scale(16.0)),
-                Text('no_bookmarks'.tr(), style: AppTypography.bodyL.copyWith(color: Colors.grey[500])),
-              ],
-            ),
+          return EmptyState(
+            iconEmoji: '🔖',
+            title: 'empty_bookmarks_title'.tr(),
+            subtitle: 'empty_bookmarks_subtitle'.tr(),
           );
         }
 

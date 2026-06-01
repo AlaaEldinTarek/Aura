@@ -57,6 +57,8 @@ class AppConstants {
   static const String keyDynamicColor = 'dynamic_color';
   static const String keyLanguage = 'language';
   static const String keyFirstLaunch = 'first_launch';
+  static const String keyRatingShown = 'rating_prompt_shown';
+  static const String keyInstallDate = 'app_install_date';
   static const String keyIsGuest = 'is_guest';
   static const String keyCalculationMethod = 'calculation_method';
   static const String keyAsrMadhab = 'asr_madhab';

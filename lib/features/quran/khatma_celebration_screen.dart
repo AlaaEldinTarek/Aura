@@ -6,8 +6,9 @@ import 'package:aura_app/core/theme/app_typography.dart';
 import 'package:aura_app/core/widgets/aura_button.dart';
 import 'package:aura_app/core/utils/number_formatter.dart';
 import 'khatma_dua_screen.dart';
+import 'package:aura_app/core/services/rating_service.dart';
 
-class KhatmaCelebrationScreen extends StatelessWidget {
+class KhatmaCelebrationScreen extends StatefulWidget {
   final int khatmCount;
   final DateTime date;
 
@@ -16,6 +17,23 @@ class KhatmaCelebrationScreen extends StatelessWidget {
     required this.khatmCount,
     required this.date,
   });
+
+  @override
+  State<KhatmaCelebrationScreen> createState() => _KhatmaCelebrationScreenState();
+}
+
+class _KhatmaCelebrationScreenState extends State<KhatmaCelebrationScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Khatm is a strong signal of genuine engagement — prompt for rating
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) RatingService.instance.maybeRequest();
+    });
+  }
+
+  int get khatmCount => widget.khatmCount;
+  DateTime get date => widget.date;
 
   static const _starPositions = [
     (0.05, 0.08, 14.0),

@@ -5,6 +5,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/aura_button.dart';
+import '../../core/services/rating_service.dart';
 
 class PreferenceScreen extends ConsumerStatefulWidget {
   const PreferenceScreen({super.key});
@@ -233,6 +234,7 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
         await ref.read(themeModeProvider.notifier).setThemeMode(_theme);
         await ref.read(appModeProvider.notifier).setMode(_mode);
         await ref.read(firstLaunchProvider.notifier).setFirstLaunch(false);
+        await RatingService.instance.recordInstallDateIfNeeded();
         if (mounted) Navigator.of(context).pushReplacementNamed('/home');
       }
     } catch (_) {

@@ -807,6 +807,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
           isCurrent: isCurrent,
           isCompleted: isCompleted,
           prayerStatus: status,
+          isWindowOpen: timeReached,
           wasExplicitlyMarked: timeReached && _explicitlyMarked.contains(prayer.name),
           onMarkPrayed: canMark
               ? () => _explicitlyMarked.contains(prayer.name) ? _unmarkPrayerDirect(prayer.name) : _markPrayerAsCompleted(prayer.name)

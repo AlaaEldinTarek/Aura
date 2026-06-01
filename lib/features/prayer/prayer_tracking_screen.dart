@@ -10,6 +10,7 @@ import '../../core/providers/prayer_times_provider.dart';
 import '../../core/providers/daily_prayer_status_provider.dart';
 import '../../core/utils/haptic_feedback.dart' as haptic;
 import '../../core/widgets/prayer_status_dialog.dart';
+import '../../core/widgets/empty_state.dart';
 import '../../core/utils/prayer_time_rules.dart';
 import '../../core/utils/number_formatter.dart';
 import '../../core/theme/app_typography.dart';
@@ -131,6 +132,16 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
               _buildCalendar(context, isDark, isArabic),
 
               SizedBox(height: ts.scale(AppConstants.paddingLarge).clamp(0.0, 28.0)),
+
+              // Empty state when no records exist for this month
+              if (!_isLoading && _monthlyData.isEmpty)
+                EmptyState(
+                  iconEmoji: '🕌',
+                  title: isArabic ? 'لا توجد سجلات هذا الشهر' : 'No prayer records this month',
+                  subtitle: isArabic
+                      ? 'ابدأ بتسجيل صلواتك لبناء سلسلتك'
+                      : 'Start marking your prayers to build your streak',
+                ),
 
               // Selected day details
               if (_selectedDay != null)

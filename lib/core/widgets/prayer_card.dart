@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../constants/app_constants.dart';
 import '../models/prayer_time.dart';
 import '../models/prayer_record.dart';
 import '../utils/number_formatter.dart';
 import '../utils/date_formatter.dart';
 import '../theme/app_typography.dart';
+import 'info_tip_icon.dart';
 
 /// A beautiful prayer time card with countdown indicator
 class PrayerCard extends StatelessWidget {
@@ -18,6 +20,7 @@ class PrayerCard extends StatelessWidget {
   final PrayerStatus? prayerStatus; // Actual status (onTime/late/missed)
   final bool wasExplicitlyMarked; // True if user actively chose a status (including missed)
   final VoidCallback? onMarkPrayed; // Callback for marking as prayed
+  final bool isWindowOpen; // True when 20-min window has passed and prayer can be marked
 
   const PrayerCard({
     super.key,
@@ -31,6 +34,7 @@ class PrayerCard extends StatelessWidget {
     this.prayerStatus,
     this.wasExplicitlyMarked = false,
     this.onMarkPrayed,
+    this.isWindowOpen = true,
   });
 
   @override
@@ -133,6 +137,13 @@ class PrayerCard extends StatelessWidget {
                           if (isCurrent) ...[
                             SizedBox(width: ts.scale(AppConstants.paddingSmall)),
                             _buildCurrentBadge(context, isArabic),
+                          ],
+                          if (!isWindowOpen && !isCompleted && !wasExplicitlyMarked) ...[
+                            SizedBox(width: ts.scale(4.0)),
+                            InfoTipIcon(
+                              titleKey: 'twenty_min_rule_title',
+                              bodyKey: 'twenty_min_rule_body',
+                            ),
                           ],
                         ],
                       ),
