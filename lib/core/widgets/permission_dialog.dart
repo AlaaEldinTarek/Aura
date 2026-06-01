@@ -72,39 +72,10 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
 
     final missing = <_PermInfo>[];
 
-    // 1. Location — prayer only
-    if (needsPrayer) {
-      final locationStatus = await Permission.location.status;
-      if (!locationStatus.isGranted) {
-        missing.add(_PermInfo(
-          icon: Icons.location_on,
-          title: 'location_permission_title',
-          desc: 'location_permission_desc',
-          color: Colors.blue,
-          group: _PermGroup.prayer,
-          action: () => Permission.location.request(),
-          openSettings: () => openAppSettings(),
-        ));
-      }
-    }
+    // Location and notifications are requested contextually (prayer screen + alarm scheduling)
+    // Only show the truly critical permissions upfront that block core functionality
 
-    // 2. Notifications (Android 13+)
-    if (Platform.isAndroid) {
-      final notifStatus = await Permission.notification.status;
-      if (!notifStatus.isGranted) {
-        missing.add(_PermInfo(
-          icon: Icons.notifications_active,
-          title: 'notification_permission_title',
-          desc: 'notification_permission_desc',
-          color: Colors.orange,
-          group: _PermGroup.prayer,
-          action: () => Permission.notification.request(),
-          openSettings: () => openAppSettings(),
-        ));
-      }
-    }
-
-    // 3. Exact Alarms (Android 12+)
+    // 1. Exact Alarms (Android 12+)
     final canSchedule = await PlatformChannelService.canScheduleExactAlarms();
     if (!canSchedule) {
       missing.add(_PermInfo(
@@ -118,7 +89,7 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
       ));
     }
 
-    // 4. Battery Optimization
+    // 2. Battery Optimization
     final isIgnoring = await PlatformChannelService.isIgnoringBatteryOptimizations();
     if (!isIgnoring) {
       missing.add(_PermInfo(
@@ -132,7 +103,7 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
       ));
     }
 
-    // 5. Do Not Disturb — dual purpose:
+    // 3. Do Not Disturb — dual purpose:
     // - Prayer silent mode (if prayer enabled)
     // - Focus mode silence (if tasks enabled)
     final dndStatus = await Permission.accessNotificationPolicy.status;
@@ -150,7 +121,7 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
       ));
     }
 
-    // 6. Overlay — only needed for Focus Mode (tasks)
+    // 4. Overlay — only needed for Focus Mode (tasks)
     if (Platform.isAndroid && needsTasks) {
       final canOverlay = await NotificationService.instance.canDrawOverlays();
       if (!canOverlay) {

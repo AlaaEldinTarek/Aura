@@ -22,8 +22,10 @@ import 'dart:io' show Platform;
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../core/widgets/setting_tile.dart';
 import '../../core/widgets/shimmer_loading.dart';
+import '../../core/widgets/share_card.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/shared_preferences_service.dart';
+import '../../core/utils/share_util.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -668,7 +670,22 @@ class ProfileScreen extends ConsumerWidget {
 
         final ts = MediaQuery.textScalerOf(context);
         final gap = SizedBox(width: ts.scale(8.0));
-        return Padding(
+        return Column(
+          children: [
+          if (streak > 0)
+            Padding(
+              padding: EdgeInsets.only(right: ts.scale(AppConstants.paddingMedium), bottom: ts.scale(4.0)),
+              child: Align(
+                alignment: AlignmentDirectional.centerEnd,
+                child: TextButton.icon(
+                  onPressed: () => _showShareDialog(context, isArabic, ShareCardType.prayerStreak, streak),
+                  icon: const Icon(Icons.share_outlined, size: 16),
+                  label: Text(isArabic ? 'مشاركة' : 'Share', style: AppTypography.caption),
+                  style: TextButton.styleFrom(foregroundColor: AppConstants.getPrimary(isDark)),
+                ),
+              ),
+            ),
+          Padding(
           padding: EdgeInsets.symmetric(horizontal: ts.scale(AppConstants.paddingMedium)),
           child: Row(
             children: [
@@ -713,8 +730,46 @@ class ProfileScreen extends ConsumerWidget {
               ),
             ],
           ),
+          ),
+          ],
         );
       },
+    );
+  }
+
+  void _showShareDialog(BuildContext context, bool isArabic, ShareCardType type, int count) {
+    final lang = isArabic ? 'ar' : 'en';
+    final cardKey = GlobalKey();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        contentPadding: const EdgeInsets.all(16),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ShareCard(repaintKey: cardKey, type: type, count: count, lang: lang),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: Text(isArabic ? 'إلغاء' : 'Cancel'),
+                ),
+                const SizedBox(width: 8),
+                FilledButton.icon(
+                  onPressed: () async {
+                    Navigator.pop(ctx);
+                    await captureAndShare(cardKey, 'aura_share.png');
+                  },
+                  icon: const Icon(Icons.share_outlined, size: 16),
+                  label: Text(isArabic ? 'مشاركة' : 'Share'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -7,6 +7,8 @@ import 'package:aura_app/core/widgets/aura_button.dart';
 import 'package:aura_app/core/utils/number_formatter.dart';
 import 'khatma_dua_screen.dart';
 import 'package:aura_app/core/services/rating_service.dart';
+import 'package:aura_app/core/widgets/share_card.dart';
+import 'package:aura_app/core/utils/share_util.dart';
 
 class KhatmaCelebrationScreen extends StatefulWidget {
   final int khatmCount;
@@ -23,10 +25,11 @@ class KhatmaCelebrationScreen extends StatefulWidget {
 }
 
 class _KhatmaCelebrationScreenState extends State<KhatmaCelebrationScreen> {
+  final _shareKey = GlobalKey();
+
   @override
   void initState() {
     super.initState();
-    // Khatm is a strong signal of genuine engagement — prompt for rating
     Future.delayed(const Duration(seconds: 3), () {
       if (mounted) RatingService.instance.maybeRequest();
     });
@@ -201,25 +204,52 @@ class _KhatmaCelebrationScreenState extends State<KhatmaCelebrationScreen> {
 
                           const SizedBox(height: 40),
 
-                          SizedBox(
-                            width: double.infinity,
-                            child: FilledButton.icon(
-                              onPressed: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const KhatmaDuaScreen()),
-                              ),
-                              icon: const Icon(Icons.menu_book_rounded),
-                              label: Text(
-                                'khatma_read_dua_btn'.tr(),
-                                style: AppTypography.bodyL.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              style: FilledButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(vertical: 14),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(14),
+                          // Hidden share card for capture
+                          Opacity(
+                            opacity: 0,
+                            child: ShareCard(
+                              repaintKey: _shareKey,
+                              type: ShareCardType.khatm,
+                              count: khatmCount,
+                              lang: lang,
+                            ),
+                          ),
+
+                          Row(
+                            children: [
+                              Expanded(
+                                child: FilledButton.icon(
+                                  onPressed: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const KhatmaDuaScreen()),
+                                  ),
+                                  icon: const Icon(Icons.menu_book_rounded),
+                                  label: Text(
+                                    'khatma_read_dua_btn'.tr(),
+                                    style: AppTypography.bodyL.copyWith(fontWeight: FontWeight.bold),
+                                  ),
+                                  style: FilledButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
+                              const SizedBox(width: 8),
+                              FilledButton(
+                                onPressed: () => captureAndShare(_shareKey, 'aura_khatm.png'),
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: primary.withOpacity(0.15),
+                                  foregroundColor: primary,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                ),
+                                child: const Icon(Icons.share_outlined),
+                              ),
+                            ],
                           )
                               .animate()
                               .fadeIn(duration: 500.ms, delay: 800.ms)

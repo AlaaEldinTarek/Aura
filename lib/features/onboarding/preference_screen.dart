@@ -1,6 +1,9 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/theme/app_typography.dart';
@@ -235,6 +238,10 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
         await ref.read(appModeProvider.notifier).setMode(_mode);
         await ref.read(firstLaunchProvider.notifier).setFirstLaunch(false);
         await RatingService.instance.recordInstallDateIfNeeded();
+        // Request notification permission now — user has context after onboarding
+        if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+          await Permission.notification.request();
+        }
         if (mounted) Navigator.of(context).pushReplacementNamed('/home');
       }
     } catch (_) {
@@ -341,8 +348,18 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
                       label: _isAr ? 'رجوع' : 'Back',
                       onPressed: _back,
                     ),
-                  ] else
-                    const SizedBox(height: 36),
+                  ] else ...[
+                    const SizedBox(height: 4),
+                    TextButton(
+                      onPressed: _saving ? null : _finish,
+                      child: Text(
+                        _isAr ? 'تخطي' : 'Skip',
+                        style: AppTypography.bodyM.copyWith(
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
