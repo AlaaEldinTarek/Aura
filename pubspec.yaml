@@ -113,7 +113,7 @@ msix_config:
   display_name: Aura | هالة
   publisher_display_name: Alaa Eldin Tarek
   identity_name: com.aura.hala
-  msix_version: 1.0.3.98
+  msix_version: 1.0.3.99
   logo_path: assets\images\logo_padded.png
   store: false
   publisher: CN=Alaa Eldin Tarek

@@ -653,28 +653,32 @@ class ProfileScreen extends ConsumerWidget {
           children: [
           Padding(
             padding: EdgeInsets.symmetric(horizontal: ts.scale(AppConstants.paddingMedium)),
-            child: Text(
-              isArabic ? 'الصلاة' : 'Prayer',
-              style: AppTypography.bodyS.copyWith(
-                fontWeight: FontWeight.w600,
-                color: AppConstants.textMuted(isDark),
-              ),
+            child: Row(
+              children: [
+                Text(
+                  isArabic ? 'الصلاة' : 'Prayer',
+                  style: AppTypography.bodyS.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppConstants.textMuted(isDark),
+                  ),
+                ),
+                const Spacer(),
+                if (streak > 0)
+                  TextButton.icon(
+                    onPressed: () => _showShareDialog(context, isArabic, ShareCardType.prayerStreak, streak),
+                    icon: const Icon(Icons.share_outlined, size: 16),
+                    label: Text(isArabic ? 'مشاركة' : 'Share', style: AppTypography.caption),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppConstants.getPrimary(isDark),
+                      padding: EdgeInsets.zero,
+                      minimumSize: const Size(0, 0),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+              ],
             ),
           ),
           SizedBox(height: ts.scale(8.0)),
-          if (streak > 0)
-            Padding(
-              padding: EdgeInsets.only(right: ts.scale(AppConstants.paddingMedium), bottom: ts.scale(4.0)),
-              child: Align(
-                alignment: AlignmentDirectional.centerEnd,
-                child: TextButton.icon(
-                  onPressed: () => _showShareDialog(context, isArabic, ShareCardType.prayerStreak, streak),
-                  icon: const Icon(Icons.share_outlined, size: 16),
-                  label: Text(isArabic ? 'مشاركة' : 'Share', style: AppTypography.caption),
-                  style: TextButton.styleFrom(foregroundColor: AppConstants.getPrimary(isDark)),
-                ),
-              ),
-            ),
           Padding(
           padding: EdgeInsets.symmetric(horizontal: ts.scale(AppConstants.paddingMedium)),
           child: Row(
