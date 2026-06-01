@@ -129,12 +129,14 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     _tabController.index = _currentIndex;
     _updateCurrentRoute();
 
-    // Periodic prayer status sync so cross-device changes appear within 30s (all platforms)
+    // Periodic prayer status sync so cross-device changes appear within 30s (all platforms).
+    // forceRefresh bypasses the tracking-service cache so a prayer marked on another
+    // device (phone ↔ desktop) is actually re-fetched from Firestore.
     _prayerSyncTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (mounted) {
         final timerPrayerTimes = ref.read(prayerTimesProvider)?.prayerTimes ?? [];
         final timerFajrTime = timerPrayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
-        ref.read(dailyPrayerStatusProvider.notifier).load(fajrTime: timerFajrTime);
+        ref.read(dailyPrayerStatusProvider.notifier).load(forceRefresh: true, fajrTime: timerFajrTime);
       }
     });
 

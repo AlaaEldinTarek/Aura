@@ -56,6 +56,7 @@ class DailyPrayerStatusNotifier extends StateNotifier<DailyPrayerStatus> {
       final summary = await _trackingService.getDailySummary(
         userId: userId,
         date: effectiveDate,
+        forceRefresh: forceRefresh,
       );
 
       state = DailyPrayerStatus(

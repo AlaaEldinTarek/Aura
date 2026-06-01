@@ -162,24 +162,27 @@ class PrayerTrackingService {
     }
   }
 
-  /// Get prayer records for a specific date
+  /// Get prayer records for a specific date.
+  /// [forceRefresh] bypasses the in-memory cache and queries Firestore directly —
+  /// required for cross-device sync (e.g. desktop picking up a prayer marked on phone).
   Future<List<PrayerRecord>> getPrayersForDate({
     required String userId,
     required DateTime date,
+    bool forceRefresh = false,
   }) async {
     final normalizedDate = DateTime(date.year, date.month, date.day);
     final dayKey = _getDayKey(userId, date);
 
     if (_isGuest(userId)) {
-      if (_dailyCache.containsKey(dayKey)) return _dailyCache[dayKey]!;
+      if (!forceRefresh && _dailyCache.containsKey(dayKey)) return _dailyCache[dayKey]!;
       final all = await _getLocalRecords();
       final records = all.where((r) => r.date == normalizedDate).toList();
       if (records.isNotEmpty) _dailyCache[dayKey] = records;
       return records;
     }
 
-    // Check cache first
-    if (_dailyCache.containsKey(dayKey)) {
+    // Check cache first (unless a fresh read is forced)
+    if (!forceRefresh && _dailyCache.containsKey(dayKey)) {
       return _dailyCache[dayKey]!;
     }
 
@@ -187,23 +190,30 @@ class PrayerTrackingService {
       final startOfDay = normalizedDate;
       final endOfDay = startOfDay.add(const Duration(days: 1));
 
+      // forceRefresh → server-first so changes made on another device are picked up
+      final source = forceRefresh ? Source.server : Source.serverAndCache;
       final snapshot = await _firestore
           .collection('users')
           .doc(userId)
           .collection('prayer_records')
           .where('date', isGreaterThanOrEqualTo: startOfDay.toIso8601String())
           .where('date', isLessThan: endOfDay.toIso8601String())
-          .get(const GetOptions(source: Source.serverAndCache));
+          .get(GetOptions(source: source));
 
       final records = snapshot.docs.map((doc) => PrayerRecord.fromFirestore(doc)).toList();
 
-      // Only cache non-empty results — empty may be a timing issue on first load
-      if (records.isNotEmpty) _dailyCache[dayKey] = records;
+      if (records.isNotEmpty) {
+        _dailyCache[dayKey] = records;
+      } else if (forceRefresh) {
+        // Empty on a forced read = another device unmarked everything; clear stale cache
+        _dailyCache.remove(dayKey);
+      }
 
       return records;
     } catch (e) {
       debugPrint('PrayerTrackingService: Error getting prayers for date - $e');
-      return [];
+      // Fall back to cache if the forced server read failed (e.g. offline)
+      return _dailyCache[dayKey] ?? [];
     }
   }
 
@@ -237,8 +247,9 @@ class PrayerTrackingService {
   Future<DailyPrayerSummary> getDailySummary({
     required String userId,
     required DateTime date,
+    bool forceRefresh = false,
   }) async {
-    final records = await getPrayersForDate(userId: userId, date: date);
+    final records = await getPrayersForDate(userId: userId, date: date, forceRefresh: forceRefresh);
 
     final Map<String, PrayerStatus> prayerStatuses = {};
 
