@@ -177,15 +177,17 @@ class ProfileScreen extends ConsumerWidget {
 
             SizedBox(height: gapM),
 
-            // Prayer Stats Summary
-            _buildPrayerStatsSummary(context, isDark, isArabic),
+            // Prayer Stats Summary — hidden in tasks-only mode
+            if (appMode != AppMode.tasksOnly) ...[
+              _buildPrayerStatsSummary(context, isDark, isArabic),
+              SizedBox(height: gapM),
+            ],
 
-            SizedBox(height: gapM),
-
-            // Task Stats Summary
-            _buildTaskStatsSummary(context, ref, isDark, isArabic),
-
-            SizedBox(height: gapM),
+            // Task Stats Summary — hidden in prayer-only mode
+            if (appMode != AppMode.prayerOnly) ...[
+              _buildTaskStatsSummary(context, ref, isDark, isArabic),
+              SizedBox(height: gapM),
+            ],
 
             // Account Section
             SettingsSectionHeader(
@@ -647,7 +649,19 @@ class ProfileScreen extends ConsumerWidget {
         final ts = MediaQuery.textScalerOf(context);
         final gap = SizedBox(width: ts.scale(8.0));
         return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: ts.scale(AppConstants.paddingMedium)),
+            child: Text(
+              isArabic ? 'الصلاة' : 'Prayer',
+              style: AppTypography.bodyS.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppConstants.textMuted(isDark),
+              ),
+            ),
+          ),
+          SizedBox(height: ts.scale(8.0)),
           if (streak > 0)
             Padding(
               padding: EdgeInsets.only(right: ts.scale(AppConstants.paddingMedium), bottom: ts.scale(4.0)),
