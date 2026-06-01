@@ -177,9 +177,9 @@ class SettingTileSwitch extends StatelessWidget {
         child: InkWell(
           onTap: onChanged != null ? () => onChanged!(!value) : null,
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppConstants.paddingMedium,
-              vertical: AppConstants.paddingMedium,
+            padding: EdgeInsets.symmetric(
+              horizontal: ts.scale(AppConstants.paddingMedium),
+              vertical: ts.scale(AppConstants.paddingMedium),
             ),
             child: Row(
               children: [
@@ -213,7 +213,7 @@ class SettingTileSwitch extends StatelessWidget {
                       ),
                     ),
                   ),
-                const SizedBox(width: AppConstants.paddingMedium),
+                SizedBox(width: ts.scale(AppConstants.paddingMedium)),
 
                 // Title and Subtitle
                 Expanded(

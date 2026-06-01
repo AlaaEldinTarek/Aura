@@ -6,6 +6,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/preferences_provider.dart';
+import '../../core/providers/prayer_times_provider.dart';
 import '../../core/services/shared_preferences_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/prayer_alarm_service.dart';
@@ -99,11 +100,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           setState(() => _calculationMethod = v);
                           final sp = await SharedPreferences.getInstance();
                           await sp.setString(AppConstants.keyCalculationMethod, v);
+                          await _recalculatePrayerTimes();
                         },
                         onMadhabChanged: (v) async {
                           setState(() => _asrMadhab = v);
                           final sp = await SharedPreferences.getInstance();
                           await sp.setString(AppConstants.keyAsrMadhab, v);
+                          await _recalculatePrayerTimes();
                         },
                       ),
                     ),
@@ -257,6 +260,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
             ),
     );
+  }
+
+  /// Recalculate prayer times after method/madhab change so the change
+  /// takes effect immediately (provider re-reads the saved prefs).
+  Future<void> _recalculatePrayerTimes() async {
+    try {
+      await ref.read(prayerTimesProvider.notifier).loadPrayerTimes(DateTime.now());
+    } catch (e) {
+      debugPrint('Settings: prayer recalc failed — $e');
+    }
   }
 
   String _themeName(String mode, bool isArabic) {

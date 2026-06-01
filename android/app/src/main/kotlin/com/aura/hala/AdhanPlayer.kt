@@ -9,7 +9,10 @@ import android.media.MediaPlayer
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.Settings
+import android.support.v4.media.session.MediaSessionCompat
+import android.support.v4.media.session.PlaybackStateCompat
 import android.util.Log
+import androidx.media.VolumeProviderCompat
 import java.io.IOException
 
 /**
@@ -23,6 +26,7 @@ object AdhanPlayer {
     private var currentPrayer: String? = null
     private var volumeReceiver: BroadcastReceiver? = null
     private var lastVolumeIndex: Int = -1
+    private var mediaSession: MediaSessionCompat? = null
 
     // Synchronization lock to prevent double adhan playback
     private val playbackLock = Any()
@@ -91,6 +95,61 @@ object AdhanPlayer {
     }
 
     /**
+     * Set up a MediaSession with a remote VolumeProvider so hardware volume keys
+     * stop the adhan regardless of audio output (speaker, wired, Bluetooth, AirPods).
+     * Unlike the VOLUME_CHANGED_ACTION receiver (which only sees STREAM_MUSIC and
+     * misses Bluetooth absolute-volume changes), the VolumeProvider receives the raw
+     * key press through the active media session — works for every output device.
+     */
+    private fun setupMediaSession(context: Context) {
+        releaseMediaSession()
+        try {
+            val session = MediaSessionCompat(context.applicationContext, "AuraAdhan")
+
+            // Mark the session as actively playing so it owns the volume keys
+            val state = PlaybackStateCompat.Builder()
+                .setState(PlaybackStateCompat.STATE_PLAYING, 0, 1.0f)
+                .build()
+            session.setPlaybackState(state)
+
+            // Remote volume control → volume key presses come here instead of
+            // changing stream volume. Any press stops the adhan.
+            val volumeProvider = object : VolumeProviderCompat(
+                VOLUME_CONTROL_RELATIVE, 100, 50
+            ) {
+                override fun onAdjustVolume(direction: Int) {
+                    if (direction != 0) {
+                        Log.d(TAG, "🔊 [MEDIA_SESSION] Volume key pressed (dir=$direction) — stopping adhan")
+                        stop()
+                    }
+                }
+
+                override fun onSetVolumeTo(volume: Int) {
+                    Log.d(TAG, "🔊 [MEDIA_SESSION] Volume set absolute — stopping adhan")
+                    stop()
+                }
+            }
+            session.setPlaybackToRemote(volumeProvider)
+            session.isActive = true
+
+            mediaSession = session
+            Log.d(TAG, "✅ [MEDIA_SESSION] Active — volume keys stop adhan on any output device")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [MEDIA_SESSION] Setup failed: ${e.message}")
+        }
+    }
+
+    private fun releaseMediaSession() {
+        try {
+            mediaSession?.isActive = false
+            mediaSession?.release()
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [MEDIA_SESSION] Release error: ${e.message}")
+        }
+        mediaSession = null
+    }
+
+    /**
      * Unregister volume change receiver
      */
     private fun unregisterVolumeReceiver() {
@@ -133,8 +192,10 @@ object AdhanPlayer {
         // Save context for cleanup
         appContext = context.applicationContext
 
-        // Register volume receiver to catch volume button presses
+        // Register volume receiver to catch volume button presses (speaker fallback)
         registerVolumeReceiver(context.applicationContext)
+        // Media session intercepts volume keys on ALL outputs (Bluetooth/AirPods/wired)
+        setupMediaSession(context.applicationContext)
 
         // Check for custom adhan
         if (customAdhanPath != null) {
@@ -303,6 +364,9 @@ object AdhanPlayer {
         }
         volumeReceiver = null
         appContext = null
+
+        // Release media session
+        releaseMediaSession()
     }
 
     /**

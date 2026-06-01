@@ -42,6 +42,7 @@ import '../tasks/task_form_screen.dart';
 import '../tasks/task_stats_screen.dart';
 import '../settings/iqama_settings_screen.dart';
 import '../settings/adhan_downloads_screen.dart';
+import '../settings/settings_screen.dart';
 import '../qibla/qibla_screen.dart';
 import '../daily_content/daily_content_screen.dart';
 import '../azkar/azkar_screen.dart';
@@ -1254,7 +1255,12 @@ class _DesktopShellState extends ConsumerState<_DesktopShell> {
                   final isCollapsed = constraints.maxWidth < 166;
                   return _DesktopSidebar(
                     currentIndex: widget.currentIndex,
-                    onTap: widget.onTap,
+                    onTap: (index) {
+                      // Pop any pushed route (e.g. /settings) so the tab's
+                      // PageView at the navigator root becomes visible again
+                      _contentNavKey.currentState?.popUntil((r) => r.isFirst);
+                      widget.onTap(index);
+                    },
                     collapsed: isCollapsed,
                     onToggle: () => setState(() => _sidebarCollapsed = !_sidebarCollapsed),
                   );
@@ -1339,6 +1345,9 @@ class _DesktopShellState extends ConsumerState<_DesktopShell> {
         break;
       case '/task_stats':
         page = const TaskStatsScreen();
+        break;
+      case '/settings':
+        page = const SettingsScreen();
         break;
       case '/iqama_settings':
         page = const IqamaSettingsScreen();
@@ -1479,7 +1488,7 @@ class _DesktopSidebar extends ConsumerWidget {
           // ── Nav items ─────────────────────────────────────────────────────
           _sidebarItem(context, isDark, primary, Icons.home_outlined, Icons.home, 'home'.tr(), 0),
           if (showPrayer)
-            _sidebarItem(context, isDark, primary, Icons.mosque_outlined, Icons.mosque, 'prayer_times_title'.tr(), 1),
+            _sidebarItem(context, isDark, primary, Icons.mosque_outlined, Icons.mosque, 'nav_prayer'.tr(), 1),
           if (showQuran)
             _sidebarItem(context, isDark, primary, Icons.menu_book_outlined, Icons.menu_book, 'quran'.tr(), 2),
           if (showTasks)

@@ -66,7 +66,7 @@ class AuraBottomNavBar extends ConsumerWidget {
                 _buildNavItem(
                   context: context,
                   icon: Icons.mosque_outlined,
-                  label: 'prayer_times_title'.tr(),
+                  label: 'nav_prayer'.tr(),
                   isSelected: currentIndex == 1,
                   onTap: () => onTap(1),
                 ),
