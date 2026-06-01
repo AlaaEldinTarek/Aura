@@ -243,19 +243,23 @@ class ProfileScreen extends ConsumerWidget {
             _AchievementsBadgeGrid(isDark: isDark, isArabic: isArabic, appMode: appMode),
             SizedBox(height: gapL),
 
-            // App Settings Section
+            // Settings & App Tour Section
             SettingsSectionHeader(
-              icon: Icons.tune_outlined,
-              title: isArabic ? 'إعدادات التطبيق' : 'App Settings',
+              icon: Icons.settings_outlined,
+              title: isArabic ? 'الإعدادات' : 'Settings',
             ),
             SettingsCard(
               children: [
-                // App Tour
+                SettingTile(
+                  icon: Icons.settings_outlined,
+                  title: isArabic ? 'جميع الإعدادات' : 'All Settings',
+                  subtitle: isArabic ? 'الصلاة، المهام، الإشعارات، المظهر' : 'Prayer, tasks, notifications, appearance',
+                  onTap: () => Navigator.of(context).pushNamed('/settings'),
+                ),
                 SettingTile(
                   icon: Icons.tour_outlined,
                   title: isArabic ? 'جولة التطبيق' : 'App Tour',
                   subtitle: isArabic ? 'أعد مشاهدة دليل التطبيق' : 'Replay the interactive walkthrough',
-                  trailing: Icon(Icons.chevron_right, size: 20, color: isDark ? Colors.white60 : Colors.black54),
                   onTap: () async {
                     final prefs = SharedPreferencesService.instance;
                     await prefs.setTutorialCompleted(false);
@@ -270,34 +274,6 @@ class ProfileScreen extends ConsumerWidget {
                     ref.read(showTutorialProvider.notifier).state = true;
                   },
                 ),
-                // Language Setting
-                SettingTile(
-                  icon: Icons.language_outlined,
-                  title: isArabic ? 'اللغة' : 'Language',
-                  subtitle: isArabic ? 'العربية' : 'English',
-                  trailing: Icon(Icons.chevron_right, size: 20, color: isDark ? Colors.white60 : Colors.black54),
-                  onTap: () => _showLanguageDialog(context, ref, isArabic),
-                ),
-                // Theme Setting
-                SettingTile(
-                  icon: Icons.dark_mode_outlined,
-                  title: isArabic ? 'المظهر' : 'Theme',
-                  subtitle: _getThemeModeText(themeModeAsync, isArabic),
-                  trailing: Icon(Icons.chevron_right, size: 20, color: isDark ? Colors.white60 : Colors.black54),
-                  onTap: () => _showThemeDialog(context, ref, isArabic),
-                ),
-              ],
-            ),
-            SizedBox(height: gapL),
-
-            // Prayer Notifications Section
-            SettingsSectionHeader(
-              icon: Icons.notifications_outlined,
-              title: isArabic ? 'الإشعارات' : 'Notifications',
-            ),
-            SettingsCard(
-              children: [
-                _JumuahReminderTile(isDark: isDark, isArabic: isArabic),
               ],
             ),
             SizedBox(height: gapL),

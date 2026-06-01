@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Aura (هالة)** is a 2-in-1 productivity and spiritual app combining **Islamic Prayer System** and **Task Management**. Built with Flutter and Firebase. Version **1.0.0+41** (Play Store build code), package `com.aura.hala`.
+**Aura (هالة)** is a 2-in-1 productivity and spiritual app combining **Islamic Prayer System** and **Task Management**. Built with Flutter and Firebase. Version **1.0.0+42** (Play Store build code), package `com.aura.hala`.
 
 **Key Features:**
 - 9 prayer calculation methods (MWL, ISNA, Egyptian, Makkah, Karachi, Tehran, Kuwait, FixedAngle, Proportional)
@@ -72,7 +72,9 @@ lib/
     └── quran/                    # QuranScreen (4 tabs: Surahs, Juz, Bookmarks, Wird), QuranReaderScreen (604 SVG pages, CDN + local cache), QuranSearchScreen
 ```
 
-**Routes (20):** `/` splash, `/login`, `/signup`, `/onboarding`, `/mode_selection`, `/home`, `/prayer`, `/prayer_tracking`, `/prayer_report`, `/dhikr`, `/dhikr_stats`, `/achievements`, `/task_form`, `/task_stats`, `/profile`, `/iqama_settings`, `/adhan_downloads`, `/qibla`, `/daily_content`, `/quran`
+**Routes (21):** `/` splash, `/login`, `/signup`, `/onboarding`, `/mode_selection`, `/home`, `/prayer`, `/prayer_tracking`, `/prayer_report`, `/dhikr`, `/dhikr_stats`, `/achievements`, `/task_form`, `/task_stats`, `/profile`, `/settings`, `/iqama_settings`, `/adhan_downloads`, `/qibla`, `/daily_content`, `/quran`
+
+**`/settings` — Central Settings Screen** (`lib/features/settings/settings_screen.dart`): 5 sections — Prayer (calc method + madhab, silent mode, iqama, adhan), Tasks (reminders, minutes), Appearance (language, theme), Notifications (Jumu'ah, prayer tracking, daily summary time), Background & Battery (exact alarm, battery optimization). Accessible from Profile → "All Settings" tile. Replaces scattered settings from prayer screen, tasks tune icon, and profile.
 
 ### Platform Channel Architecture (7 MethodChannels)
 

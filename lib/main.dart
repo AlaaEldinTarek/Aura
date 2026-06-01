@@ -43,6 +43,7 @@ import 'core/models/task.dart';
 import 'features/profile/profile_screen.dart';
 import 'features/settings/iqama_settings_screen.dart';
 import 'features/settings/adhan_downloads_screen.dart';
+import 'features/settings/settings_screen.dart';
 import 'features/qibla/qibla_screen.dart';
 import 'features/daily_content/daily_content_screen.dart';
 import 'features/quran/quran_screen.dart';
@@ -507,6 +508,11 @@ class AuraAppMaterial extends ConsumerWidget {
       case '/profile':
         return MaterialPageRoute(
           builder: (_) => const ProfileScreen(),
+          settings: settings,
+        );
+      case '/settings':
+        return MaterialPageRoute(
+          builder: (_) => const SettingsScreen(),
           settings: settings,
         );
       case '/iqama_settings':
