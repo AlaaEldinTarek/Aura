@@ -151,14 +151,23 @@ class TaskService {
     if (completedFilter != null) query = query.where('isCompleted', isEqualTo: completedFilter);
 
     // Firestore snapshots() crashes on Windows (plugin sends callbacks on non-platform thread).
-    // Use a one-shot get() wrapped as a stream on desktop instead.
+    // Self-refreshing poll on desktop: fetch immediately, then re-fetch every 15s so
+    // edits made on another device (phone ↔ desktop) appear without a manual refresh.
+    // The stream stays alive and just emits new data — no provider reload / UI flicker.
     if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
-      return Stream.fromFuture(query.get()).map((snapshot) {
+      List<Task> mapSnapshot(QuerySnapshot snapshot) {
         final tasks = snapshot.docs.map((doc) => Task.fromFirestore(doc)).toList();
         for (final task in tasks) {
           _taskCache[task.id] = task;
         }
         return tasks;
+      }
+
+      return Stream.fromFuture(query.get()).asyncExpand((first) async* {
+        yield mapSnapshot(first);
+        yield* Stream.periodic(const Duration(seconds: 15))
+            .asyncMap((_) => query.get())
+            .map(mapSnapshot);
       });
     }
 
