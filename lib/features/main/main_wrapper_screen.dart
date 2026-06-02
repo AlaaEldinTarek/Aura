@@ -187,6 +187,16 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       Future.delayed(const Duration(seconds: 3), _checkUntrackedPrayers);
 
       Future.delayed(const Duration(seconds: 1), _checkGuestMigration);
+
+      // Cold start: didChangeAppLifecycleState(resumed) doesn't fire, so sync
+      // notification-marked prayer statuses (Done/Late/Missed) here too.
+      // Small delay lets prayerTimesProvider load so fajr time is available.
+      Future.delayed(const Duration(seconds: 2), () {
+        if (!mounted) return;
+        final pt = ref.read(prayerTimesProvider)?.prayerTimes ?? [];
+        final fajr = pt.where((p) => p.name == 'Fajr').firstOrNull?.time;
+        _syncThenLoadPrayerStatus(fajr);
+      });
     });
 
     // Listen for app shortcut navigation from native side (Android only)
