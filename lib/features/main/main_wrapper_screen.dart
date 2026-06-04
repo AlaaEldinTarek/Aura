@@ -104,8 +104,13 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
   // Platform channel for navigation communication
   static const _navigationChannel = MethodChannel('com.aura.hala/navigation');
 
+  // Tracks whether the app is currently in the foreground — drives the "smart"
+  // achievement notification (in-app toast when open, system notification when backgrounded).
+  AppLifecycleState _lifecycleState = AppLifecycleState.resumed;
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    _lifecycleState = state;
     if (state == AppLifecycleState.resumed) {
       // Check untracked prayers BEFORE invalidating provider (would clear prayer times)
       _checkUntrackedPrayers();
@@ -160,16 +165,24 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       });
     }
 
-    // Listen for newly earned achievements and show a toast
+    // Listen for newly earned achievements
     _achievementSub = AchievementService.instance.newAchievements.listen((achievement) {
       if (!mounted) return;
       final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-      _showAchievementToast(achievement, isArabic);
       if (DesktopNotificationService.isDesktop) {
+        // Desktop: keep both (in-app toast + popup banner)
+        _showAchievementToast(achievement, isArabic);
         DesktopNotificationService.instance.showAchievementNotification(
           achievement.nameEn, achievement.nameAr, achievement.iconEmoji, isArabic);
       } else {
-        NotificationService.instance.showAchievementNotification(achievement, isArabic);
+        // Phone (smart): in-app toast when the app is in the foreground,
+        // Android system notification only when it's in the background.
+        final inForeground = _lifecycleState == AppLifecycleState.resumed;
+        if (inForeground) {
+          _showAchievementToast(achievement, isArabic);
+        } else {
+          NotificationService.instance.showAchievementNotification(achievement, isArabic);
+        }
       }
     });
 
