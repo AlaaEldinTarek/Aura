@@ -42,12 +42,18 @@ object NativePrayerCalculator {
 
         return try {
             val now = System.currentTimeMillis()
-            // If Isha has already passed today, calculate for tomorrow
-            val ishaToday = prefs.getString("isha_time", null)?.toLongOrNull()
-            val targetMs = if (ishaToday != null && ishaToday < now) now + 86_400_000L else now
 
-            val cal = Calendar.getInstance().apply { timeInMillis = targetMs }
-            val times = calculate(lat, lng, cal, methodName, madhabName)
+            // Compute TODAY's times first, then decide if we need tomorrow's.
+            // (Don't trust the stored isha_time — in the morning it's still yesterday's,
+            // which would wrongly push the calculation to tomorrow.)
+            val todayCal = Calendar.getInstance()
+            var times = calculate(lat, lng, todayCal, methodName, madhabName)
+
+            // If today's Isha has already passed (late night), calculate for tomorrow
+            if (times.isha < now) {
+                val tomorrowCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1) }
+                times = calculate(lat, lng, tomorrowCal, methodName, madhabName)
+            }
 
             val editor = prefs.edit()
             editor.putString("fajr_time",    times.fajr.toString())

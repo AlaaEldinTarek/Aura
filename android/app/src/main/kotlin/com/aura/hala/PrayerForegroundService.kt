@@ -40,6 +40,7 @@ class PrayerForegroundService : Service() {
     private var nextPrayerTime: Long? = null
     private var currentLanguage: String = "en"
     private var isPrayerDataLoaded: Boolean = false
+    private var isRecalculating: Boolean = false  // re-entrancy guard for native recalc
 
     // Store all prayer times to automatically move to next prayer
     private var prayerTimes: MutableMap<String, Long> = mutableMapOf()
@@ -185,13 +186,18 @@ class PrayerForegroundService : Service() {
             }
         }
 
-        // If we have old prayer times, clear them and trigger a reload from Flutter
+        // Recalculate natively when times are stale (old day) OR missing entirely
+        // (e.g. first morning after install) — so the notification never sits on
+        // "Loading prayer times..." waiting for the user to open the app.
         if (hasOldPrayerTimes) {
-            Log.w(TAG, "Detected old prayer times, clearing cache and requesting Flutter update")
+            Log.w(TAG, "Detected old prayer times — recalculating natively")
             prayerTimes.clear()
             isPrayerDataLoaded = false
-            // Request Flutter to recalculate prayer times by launching MainActivity
+        }
+        if ((hasOldPrayerTimes || !isPrayerDataLoaded) && !isRecalculating) {
+            isRecalculating = true
             requestFlutterUpdate()
+            isRecalculating = false
         }
 
         Log.d(TAG, "Loaded prayer times: ${prayerTimes.size} prayers")
