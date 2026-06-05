@@ -42,6 +42,7 @@ class PrayerBootReceiver : BroadcastReceiver() {
                     rescheduleDailySummary(context)
                     rescheduleJumuahReminder(context)
                     restartForegroundService(context)
+                    DailyRecalcReceiver.schedule(context)
                 }, 30000) // 30 seconds delay
             }
         }

@@ -210,6 +210,16 @@
             </intent-filter>
         </receiver>
 
+        <!-- Daily Recalc Receiver - Fires at 00:05 to compute the new day's prayer times natively -->
+        <receiver
+            android:name=".DailyRecalcReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.aura.hala.DAILY_RECALC"/>
+            </intent-filter>
+        </receiver>
+
         <!-- Focus Mode Receiver - Triggers focus mode at task time -->
         <receiver
             android:name=".FocusModeReceiver"

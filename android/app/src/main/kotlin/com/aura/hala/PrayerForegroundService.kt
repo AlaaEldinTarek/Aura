@@ -108,6 +108,8 @@ class PrayerForegroundService : Service() {
         loadPrayerTimes()
         startForeground(NOTIFICATION_ID, createNotification())
         startCountdownUpdate()
+        // Ensure the new-day prayer times are computed proactively at 00:05
+        DailyRecalcReceiver.schedule(this)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
