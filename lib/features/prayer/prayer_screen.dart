@@ -29,7 +29,6 @@ import '../../core/services/background_service_manager.dart';
 import '../../core/services/location_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/prayer_alarm_service.dart';
-import '../../core/services/prayer_tracking_service.dart';
 import '../../core/widgets/desktop_location_dialog.dart';
 import '../settings/prayer_calculation_settings_dialog.dart';
 import '../settings/adhan_calculation_method.dart';
@@ -61,8 +60,8 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
 
   // Prayer tracking state
   final Map<String, PrayerStatus> _prayerStatuses = {}; // prayer name -> status
-  final Set<String> _explicitlyMarked = {}; // prayers the user actively marked (including missed)
-  final PrayerTrackingService _trackingService = PrayerTrackingService.instance;
+  final Set<String> _explicitlyMarked =
+      {}; // prayers the user actively marked (including missed)
 
   // Prayer calculation settings
   String _calculationMethod = 'MuslimWorldLeague';
@@ -202,7 +201,8 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     try {
       final notifier = ref.read(dailyPrayerStatusProvider.notifier);
       final prayerTimes = ref.read(prayerTimesProvider)?.prayerTimes ?? [];
-      final fajrTime = prayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
+      final fajrTime =
+          prayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
       await notifier.load(fajrTime: fajrTime);
 
       final statuses = ref.read(dailyPrayerStatusProvider).statuses;
@@ -227,14 +227,13 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     // Check 20-minute rule: must be at least 20 minutes past prayer time
-    if (!canMarkPrayer(context: context, prayerName: prayerName, prayerTimes: _prayerTimes, isArabic: isArabic)) {
+    if (!canMarkPrayer(
+        context: context,
+        prayerName: prayerName,
+        prayerTimes: _prayerTimes,
+        isArabic: isArabic)) {
       return;
     }
-
-    await _trackingService.initialize();
-
-    // Get user ID from auth
-    final userId = getCurrentUserId();
 
     // Show dialog to choose: On Time, Late, or Missed
     final chosenStatus = await showPrayerStatusDialog(
@@ -246,19 +245,13 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     if (chosenStatus == null || !mounted) return;
 
     try {
-      final success = await _trackingService.recordPrayer(
-        userId: userId,
-        prayerName: prayerName,
-        date: getPrayerDate(DateTime.now(), fajrTime: _prayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time),
-        prayedAt: DateTime.now(),
-        status: chosenStatus,
-        method: PrayerMethod.congregation,
-      );
+      // Single shared write path — persists and updates every surface at once.
+      final success = await ref
+          .read(dailyPrayerStatusProvider.notifier)
+          .markToday(prayerName, chosenStatus);
 
       if (success && mounted) {
         haptic.HapticFeedback.success();
-        // Update shared provider so home screen also gets the change
-        ref.read(dailyPrayerStatusProvider.notifier).updatePrayer(prayerName, chosenStatus);
         setState(() {
           _prayerStatuses[prayerName] = chosenStatus;
           _explicitlyMarked.add(prayerName);
@@ -312,22 +305,13 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
 
     if (confirmed != true || !mounted) return;
 
-    await _trackingService.initialize();
-
-    // Get user ID from auth
-    final userId = getCurrentUserId();
-
     try {
-      final today = DateTime.now();
-      final normalizedDate = DateTime(today.year, today.month, today.day);
+      debugPrint('🔄 [UNMARK] Unmarking $prayerName');
 
-      debugPrint('🔄 [UNMARK] Unmarking $prayerName for $normalizedDate');
-
-      final deleted = await _trackingService.deletePrayerRecord(
-        userId: userId,
-        prayerName: prayerName,
-        date: normalizedDate,
-      );
+      // Single shared delete path — removes the record and updates every surface.
+      final deleted = await ref
+          .read(dailyPrayerStatusProvider.notifier)
+          .unmarkToday(prayerName);
 
       debugPrint('🔄 [UNMARK] Delete result: $deleted');
 
@@ -355,10 +339,8 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
 
       if (mounted) {
         haptic.HapticFeedback.light();
-        // Update shared provider so home screen also gets the change
-        ref.read(dailyPrayerStatusProvider.notifier).removePrayer(prayerName);
         setState(() {
-          _prayerStatuses[prayerName] = PrayerStatus.missed;
+          _prayerStatuses.remove(prayerName);
           _explicitlyMarked.remove(prayerName);
         });
 
@@ -382,7 +364,8 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
   /// Save calculation settings to SharedPreferences
   Future<void> _saveCalculationSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(AppConstants.keyCalculationMethod, _calculationMethod);
+    await prefs.setString(
+        AppConstants.keyCalculationMethod, _calculationMethod);
     await prefs.setString(AppConstants.keyAsrMadhab, _asrMadhab);
     debugPrint('Saved calculation settings: $_calculationMethod, $_asrMadhab');
   }
@@ -390,7 +373,8 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
   /// Load calculation settings from SharedPreferences
   Future<void> _loadCalculationSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    final method = prefs.getString(AppConstants.keyCalculationMethod) ?? 'MuslimWorldLeague';
+    final method = prefs.getString(AppConstants.keyCalculationMethod) ??
+        'MuslimWorldLeague';
     final madhab = prefs.getString(AppConstants.keyAsrMadhab) ?? 'Shafi';
 
     setState(() {
@@ -580,7 +564,8 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
         ),
         if (isDesktop) ...[
           SizedBox(width: ts.scale(6.0)),
-          Icon(Icons.edit_location_alt_outlined, color: primary, size: ts.scale(17.0)),
+          Icon(Icons.edit_location_alt_outlined,
+              color: primary, size: ts.scale(17.0)),
         ],
       ],
     );
@@ -674,8 +659,8 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
             Padding(
               padding: EdgeInsets.symmetric(horizontal: _dts.scale(8.0)),
               child: Container(
-                padding:
-                    EdgeInsets.symmetric(horizontal: _dts.scale(10.0), vertical: _dts.scale(4.0)),
+                padding: EdgeInsets.symmetric(
+                    horizontal: _dts.scale(10.0), vertical: _dts.scale(4.0)),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.25),
                   borderRadius: BorderRadius.circular(AppConstants.radiusSmall),
@@ -738,13 +723,15 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
         CircularCountdownTimer(
           targetTime: nextPrayer.time,
           prayerName: isArabic ? nextPrayer.nameAr : nextPrayer.name,
-          prayerTime: DateFormatter.formatTime(nextPrayer.time, languageCode: isArabic ? 'ar' : 'en'),
+          prayerTime: DateFormatter.formatTime(nextPrayer.time,
+              languageCode: isArabic ? 'ar' : 'en'),
           size: ts.scale(180.0),
           onComplete: () {
             // Refresh when prayer time is reached - wrap in microtask to avoid modifying during build
             Future.microtask(() async {
               if (mounted) {
-                debugPrint('🔔 [COUNTDOWN] Prayer time reached! Refreshing prayer times...');
+                debugPrint(
+                    '🔔 [COUNTDOWN] Prayer time reached! Refreshing prayer times...');
                 // Do a full refresh to ensure next day's prayers are loaded if needed
                 await ref
                     .read(prayerTimesProvider.notifier)
@@ -800,23 +787,26 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
       return Builder(builder: (ctx) {
         final cardTs = MediaQuery.textScalerOf(ctx);
         return Padding(
-        padding: EdgeInsets.only(bottom: cardTs.scale(AppSpacing.sm)),
-        child: PrayerCard(
-          prayer: prayer,
-          isNext: isNext,
-          isCurrent: isCurrent,
-          isCompleted: isCompleted,
-          prayerStatus: status,
-          isWindowOpen: timeReached,
-          wasExplicitlyMarked: timeReached && _explicitlyMarked.contains(prayer.name),
-          onMarkPrayed: canMark
-              ? () => _explicitlyMarked.contains(prayer.name) ? _unmarkPrayerDirect(prayer.name) : _markPrayerAsCompleted(prayer.name)
-              : null,
-        ),
-      ).animate().fadeIn(
-            delay: Duration(milliseconds: 250 + (index * 50)),
-            duration: 400.ms,
-          );
+          padding: EdgeInsets.only(bottom: cardTs.scale(AppSpacing.sm)),
+          child: PrayerCard(
+            prayer: prayer,
+            isNext: isNext,
+            isCurrent: isCurrent,
+            isCompleted: isCompleted,
+            prayerStatus: status,
+            isWindowOpen: timeReached,
+            wasExplicitlyMarked:
+                timeReached && _explicitlyMarked.contains(prayer.name),
+            onMarkPrayed: canMark
+                ? () => _explicitlyMarked.contains(prayer.name)
+                    ? _unmarkPrayerDirect(prayer.name)
+                    : _markPrayerAsCompleted(prayer.name)
+                : null,
+          ),
+        ).animate().fadeIn(
+              delay: Duration(milliseconds: 250 + (index * 50)),
+              duration: 400.ms,
+            );
       });
     }).toList();
   }
@@ -828,10 +818,26 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
   ) {
     final primary = AppConstants.getPrimary(isDark);
     final actions = [
-      _ToolkitAction(icon: Icons.explore, label: isArabic ? 'القبلة' : 'Qibla', route: '/qibla', color: primary),
-      _ToolkitAction(icon: Icons.menu_book_outlined, label: isArabic ? 'الأذكار' : 'Azkar', route: '/azkar', color: primary),
-      _ToolkitAction(icon: Icons.pan_tool, label: isArabic ? 'تسبيح' : 'Tasbeeh', route: '/dhikr', color: primary),
-      _ToolkitAction(icon: Icons.bar_chart, label: isArabic ? 'التقرير' : 'Report', route: '/prayer_report', color: primary),
+      _ToolkitAction(
+          icon: Icons.explore,
+          label: isArabic ? 'القبلة' : 'Qibla',
+          route: '/qibla',
+          color: primary),
+      _ToolkitAction(
+          icon: Icons.menu_book_outlined,
+          label: isArabic ? 'الأذكار' : 'Azkar',
+          route: '/azkar',
+          color: primary),
+      _ToolkitAction(
+          icon: Icons.pan_tool,
+          label: isArabic ? 'تسبيح' : 'Tasbeeh',
+          route: '/dhikr',
+          color: primary),
+      _ToolkitAction(
+          icon: Icons.bar_chart,
+          label: isArabic ? 'التقرير' : 'Report',
+          route: '/prayer_report',
+          color: primary),
     ];
 
     final tkTs = MediaQuery.textScalerOf(context);
@@ -861,7 +867,9 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
               ),
             ],
           ),
-          Builder(builder: (ctx) => SizedBox(height: MediaQuery.textScalerOf(ctx).scale(AppSpacing.base))),
+          Builder(
+              builder: (ctx) => SizedBox(
+                  height: MediaQuery.textScalerOf(ctx).scale(AppSpacing.base))),
           Row(
             children: actions.map((action) {
               final ts = MediaQuery.textScalerOf(context);
@@ -876,17 +884,21 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
                           Navigator.of(context).pushNamed(action.route!);
                         }
                       },
-                      borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+                      borderRadius:
+                          BorderRadius.circular(AppConstants.radiusMedium),
                       child: Container(
                         padding: EdgeInsets.symmetric(vertical: ts.scale(14.0)),
                         decoration: BoxDecoration(
                           color: action.color.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-                          border: Border.all(color: action.color.withOpacity(0.2)),
+                          borderRadius:
+                              BorderRadius.circular(AppConstants.radiusMedium),
+                          border:
+                              Border.all(color: action.color.withOpacity(0.2)),
                         ),
                         child: Column(
                           children: [
-                            Icon(action.icon, color: action.color, size: ts.scale(24.0)),
+                            Icon(action.icon,
+                                color: action.color, size: ts.scale(24.0)),
                             SizedBox(height: ts.scale(6.0)),
                             Text(
                               action.label,
@@ -908,7 +920,6 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
       ),
     );
   }
-
 
   Widget _buildLoadingState(BuildContext context, bool isDark) {
     final ts = MediaQuery.textScalerOf(context);
@@ -1102,14 +1113,19 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
     final enabled = AdhanPlayerService.instance.isEnabled;
 
     // Load calculation settings
-    final method = prefs.getString(AppConstants.keyCalculationMethod) ?? 'MuslimWorldLeague';
+    final method = prefs.getString(AppConstants.keyCalculationMethod) ??
+        'MuslimWorldLeague';
     final madhab = prefs.getString(AppConstants.keyAsrMadhab) ?? 'Shafi';
 
     // Load settings from shared prefs
-    final notificationsEnabled = prefs.getBool(AppConstants.keyPrayerNotificationsEnabled) ?? true;
-    final backgroundNotificationEnabled = prefs.getBool(AppConstants.keyBackgroundNotificationEnabled) ?? true;
-    final silentModeEnabled = prefs.getBool(AppConstants.keySilentModeEnabled) ?? true;
-    final silentModeDuration = prefs.getInt(AppConstants.keySilentModeDuration) ?? 20;
+    final notificationsEnabled =
+        prefs.getBool(AppConstants.keyPrayerNotificationsEnabled) ?? true;
+    final backgroundNotificationEnabled =
+        prefs.getBool(AppConstants.keyBackgroundNotificationEnabled) ?? true;
+    final silentModeEnabled =
+        prefs.getBool(AppConstants.keySilentModeEnabled) ?? true;
+    final silentModeDuration =
+        prefs.getInt(AppConstants.keySilentModeDuration) ?? 20;
 
     if (mounted) {
       setState(() {
@@ -1159,14 +1175,15 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title:
-            Text(isArabic ? 'مدة الوضع الصامت' : 'Silent Mode Duration'),
+        title: Text(isArabic ? 'مدة الوضع الصامت' : 'Silent Mode Duration'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: durations.map((duration) {
             return ListTile(
               title: Text(
-                isArabic ? '${NumberFormatter.withArabicNumerals('$duration')} دقيقة' : '$duration minutes',
+                isArabic
+                    ? '${NumberFormatter.withArabicNumerals('$duration')} دقيقة'
+                    : '$duration minutes',
               ),
               trailing: _silentModeDuration == duration
                   ? Icon(Icons.check, color: AppConstants.getPrimary(isDark))
@@ -1176,7 +1193,8 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
                   _silentModeDuration = duration;
                 });
                 final prefs = await SharedPreferences.getInstance();
-                await prefs.setInt(AppConstants.keySilentModeDuration, duration);
+                await prefs.setInt(
+                    AppConstants.keySilentModeDuration, duration);
                 if (context.mounted) {
                   Navigator.of(context).pop();
                 }
@@ -1234,7 +1252,8 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
               });
               // Save to shared preferences
               final prefs = await SharedPreferences.getInstance();
-              await prefs.setBool(AppConstants.keyPrayerNotificationsEnabled, value);
+              await prefs.setBool(
+                  AppConstants.keyPrayerNotificationsEnabled, value);
             },
           ),
           // Background Notification Toggle
@@ -1252,11 +1271,13 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
               });
               // Save to shared preferences
               final prefs = await SharedPreferences.getInstance();
-              await prefs.setBool(AppConstants.keyBackgroundNotificationEnabled, value);
+              await prefs.setBool(
+                  AppConstants.keyBackgroundNotificationEnabled, value);
 
               // Start or stop foreground service based on toggle
               if (value) {
-                await BackgroundServiceManager.instance.startForegroundService();
+                await BackgroundServiceManager.instance
+                    .startForegroundService();
               } else {
                 await BackgroundServiceManager.instance.stopForegroundService();
               }
@@ -1268,24 +1289,32 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
             final timeStr = ref.watch(dailySummaryTimeProvider);
             final timeParts = timeStr.split(':');
             final hour = int.tryParse(timeParts[0]) ?? 21;
-            final minute = int.tryParse(timeParts.length > 1 ? timeParts[1] : '0') ?? 0;
+            final minute =
+                int.tryParse(timeParts.length > 1 ? timeParts[1] : '0') ?? 0;
             return Column(
               children: [
                 SwitchListTile(
-                  secondary: Icon(Icons.track_changes, color: AppConstants.getPrimary(isDark)),
-                  title: Text(isArabic ? 'تذكير تسجيل الصلاة' : 'Prayer Tracking Reminders'),
+                  secondary: Icon(Icons.track_changes,
+                      color: AppConstants.getPrimary(isDark)),
+                  title: Text(isArabic
+                      ? 'تذكير تسجيل الصلاة'
+                      : 'Prayer Tracking Reminders'),
                   subtitle: Text(isArabic
                       ? 'إشعار بعد الصلاة وملخص يومي'
                       : 'Post-prayer check & daily summary'),
                   value: enabled,
                   onChanged: (value) {
-                    ref.read(prayerTrackingEnabledProvider.notifier).setEnabled(value);
+                    ref
+                        .read(prayerTrackingEnabledProvider.notifier)
+                        .setEnabled(value);
                   },
                 ),
                 if (enabled)
                   ListTile(
-                    leading: Icon(Icons.schedule, color: AppConstants.getPrimary(isDark)),
-                    title: Text(isArabic ? 'وقت الملخص اليومي' : 'Daily Summary Time'),
+                    leading: Icon(Icons.schedule,
+                        color: AppConstants.getPrimary(isDark)),
+                    title: Text(
+                        isArabic ? 'وقت الملخص اليومي' : 'Daily Summary Time'),
                     subtitle: Text(isArabic
                         ? '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}'
                         : '${hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour)}:${minute.toString().padLeft(2, '0')} ${hour >= 12 ? 'PM' : 'AM'}'),
@@ -1296,8 +1325,11 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
                         initialTime: TimeOfDay(hour: hour, minute: minute),
                       );
                       if (picked != null) {
-                        final newTime = '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
-                        await ref.read(dailySummaryTimeProvider.notifier).setTime(newTime);
+                        final newTime =
+                            '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+                        await ref
+                            .read(dailySummaryTimeProvider.notifier)
+                            .setTime(newTime);
                       }
                     },
                   ),
@@ -1343,9 +1375,8 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
           ListTile(
             leading: Icon(Icons.download_for_offline_outlined,
                 color: AppConstants.getPrimary(isDark)),
-            title: Text(isArabic
-                ? 'تحميل أصوات الأذان'
-                : 'Download Adhan Sounds'),
+            title:
+                Text(isArabic ? 'تحميل أصوات الأذان' : 'Download Adhan Sounds'),
             subtitle: Text(isArabic
                 ? 'تصفح وتحميل أصوات مؤذنين مختلفين'
                 : 'Browse and download different adhan reciters'),
@@ -1360,9 +1391,8 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
           SwitchListTile(
             secondary: Icon(Icons.phone_paused,
                 color: AppConstants.getPrimary(isDark)),
-            title: Text(isArabic
-                ? 'الوضع الصامت التلقائي'
-                : 'Auto Silent Mode'),
+            title:
+                Text(isArabic ? 'الوضع الصامت التلقائي' : 'Auto Silent Mode'),
             subtitle: Text(
               isArabic
                   ? 'تشغيل الوضع الصامت تلقائياً عند الأذان لمدة ${NumberFormatter.withArabicNumerals('$_silentModeDuration')} دقيقة'
@@ -1382,16 +1412,15 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
             ListTile(
               leading: Icon(Icons.timer_outlined,
                   color: AppConstants.getPrimary(isDark)),
-              title: Text(isArabic
-                  ? 'مدة الوضع الصامت'
-                  : 'Silent Mode Duration'),
+              title:
+                  Text(isArabic ? 'مدة الوضع الصامت' : 'Silent Mode Duration'),
               subtitle: Text(
                 isArabic
                     ? '${NumberFormatter.withArabicNumerals('$_silentModeDuration')} دقيقة'
                     : '$_silentModeDuration minutes',
               ),
-              trailing:
-                  Icon(Icons.chevron_right, color: AppConstants.getPrimary(isDark)),
+              trailing: Icon(Icons.chevron_right,
+                  color: AppConstants.getPrimary(isDark)),
               onTap: () => _showDurationDialog(context),
             ),
 
@@ -1492,15 +1521,16 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
           ),
 
           const SizedBox(height: AppSpacing.base),
-          ],
-        ),
-      );
+        ],
+      ),
+    );
   }
 
   /// Save calculation settings
   Future<void> _saveCalculationSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(AppConstants.keyCalculationMethod, _calculationMethod);
+    await prefs.setString(
+        AppConstants.keyCalculationMethod, _calculationMethod);
     await prefs.setString(AppConstants.keyAsrMadhab, _asrMadhab);
     debugPrint('Saved calculation settings: $_calculationMethod, $_asrMadhab');
 

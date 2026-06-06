@@ -21,7 +21,6 @@ import '../../core/services/desktop_adhan_service.dart';
 import '../../core/services/desktop_prayer_scheduler.dart';
 import '../../core/services/prayer_alarm_service.dart';
 import '../../core/services/prayer_tracking_service.dart';
-import '../../core/utils/prayer_time_rules.dart';
 import '../../core/models/prayer_record.dart';
 import '../../core/models/prayer_time.dart';
 import '../../core/models/achievement.dart';
@@ -60,7 +59,7 @@ final desktopSidebarVisibleProvider = StateProvider<bool>((ref) => true);
 /// Tuned so 900×1400 → 1.8×, scales smoothly for any window size.
 double _desktopTextScale(double windowWidth, double windowHeight) {
   // Width drives ~70% of scale, height ~30% — matches vertical-scroll app layout
-  final sw = windowWidth / 500.0;   // 900px → 1.80
+  final sw = windowWidth / 500.0; // 900px → 1.80
   final sh = windowHeight / 1556.0; // 1400px → 0.90
   return (sw * 0.7 + sh * 0.3).clamp(0.9, 3.0);
 }
@@ -115,8 +114,10 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       // Check untracked prayers BEFORE invalidating provider (would clear prayer times)
       _checkUntrackedPrayers();
       // Read fajr time before invalidating, so after-midnight detection still works
-      final resumePrayerTimes = ref.read(prayerTimesProvider)?.prayerTimes ?? [];
-      final resumeFajrTime = resumePrayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
+      final resumePrayerTimes =
+          ref.read(prayerTimesProvider)?.prayerTimes ?? [];
+      final resumeFajrTime =
+          resumePrayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
       ref.invalidate(prayerTimesProvider);
       ref.invalidate(tasksProvider(const TaskFilterParams()));
       ref.invalidate(allTasksProvider);
@@ -139,16 +140,20 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     // device (phone ↔ desktop) is actually re-fetched from Firestore.
     _prayerSyncTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       if (mounted) {
-        final timerPrayerTimes = ref.read(prayerTimesProvider)?.prayerTimes ?? [];
-        final timerFajrTime = timerPrayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
-        ref.read(dailyPrayerStatusProvider.notifier).load(forceRefresh: true, fajrTime: timerFajrTime);
+        final timerPrayerTimes =
+            ref.read(prayerTimesProvider)?.prayerTimes ?? [];
+        final timerFajrTime =
+            timerPrayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
+        ref
+            .read(dailyPrayerStatusProvider.notifier)
+            .load(forceRefresh: true, fajrTime: timerFajrTime);
       }
     });
 
     // Desktop: show in-app banners for reminders/tasks/wird.
     if (_isDesktop) {
-      _desktopNotifSub =
-          DesktopNotificationService.instance.notificationStream.listen((notif) {
+      _desktopNotifSub = DesktopNotificationService.instance.notificationStream
+          .listen((notif) {
         if (!mounted) return;
         _enqueuePopup(_NotifPopup(
           emoji: notif.emoji,
@@ -166,14 +171,18 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     }
 
     // Listen for newly earned achievements
-    _achievementSub = AchievementService.instance.newAchievements.listen((achievement) {
+    _achievementSub =
+        AchievementService.instance.newAchievements.listen((achievement) {
       if (!mounted) return;
       final isArabic = Localizations.localeOf(context).languageCode == 'ar';
       if (DesktopNotificationService.isDesktop) {
         // Desktop: keep both (in-app toast + popup banner)
         _showAchievementToast(achievement, isArabic);
         DesktopNotificationService.instance.showAchievementNotification(
-          achievement.nameEn, achievement.nameAr, achievement.iconEmoji, isArabic);
+            achievement.nameEn,
+            achievement.nameAr,
+            achievement.iconEmoji,
+            isArabic);
       } else {
         // Phone (smart): in-app toast when the app is in the foreground,
         // Android system notification only when it's in the background.
@@ -181,7 +190,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
         if (inForeground) {
           _showAchievementToast(achievement, isArabic);
         } else {
-          NotificationService.instance.showAchievementNotification(achievement, isArabic);
+          NotificationService.instance
+              .showAchievementNotification(achievement, isArabic);
         }
       }
     });
@@ -213,34 +223,39 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     });
 
     // Listen for app shortcut navigation from native side (Android only)
-    if (!kIsWeb && Platform.isAndroid) _navigationChannel.setMethodCallHandler((call) async {
-      if (call.method == 'navigateToRoute') {
-        final route = call.arguments['route'] as String?;
-        if (route != null && mounted) {
-          Navigator.of(context).pushNamed(route);
+    if (!kIsWeb && Platform.isAndroid)
+      _navigationChannel.setMethodCallHandler((call) async {
+        if (call.method == 'navigateToRoute') {
+          final route = call.arguments['route'] as String?;
+          if (route != null && mounted) {
+            Navigator.of(context).pushNamed(route);
+          }
+        } else if (call.method == 'openReminderPicker') {
+          final prayerName = call.arguments['prayerName'] as String? ?? '';
+          final prayerNameAr =
+              call.arguments['prayerNameAr'] as String? ?? prayerName;
+          final prayerTime =
+              (call.arguments['prayerTime'] as num?)?.toInt() ?? 0;
+          if (mounted) {
+            _showReminderPicker(prayerName, prayerNameAr, prayerTime);
+          }
+        } else if (call.method == 'openPostPrayerPicker') {
+          final prayerName = call.arguments['prayerName'] as String? ?? '';
+          final prayerNameAr =
+              call.arguments['prayerNameAr'] as String? ?? prayerName;
+          final prayerTime =
+              (call.arguments['prayerTime'] as num?)?.toInt() ?? 0;
+          if (mounted) {
+            _showPostPrayerReminderPicker(prayerName, prayerNameAr, prayerTime);
+          }
+        } else if (call.method == 'updatePrayerStatus') {
+          final prayerName = call.arguments['prayerName'] as String? ?? '';
+          final statusStr = call.arguments['status'] as String? ?? '';
+          if (prayerName.isNotEmpty && statusStr.isNotEmpty) {
+            await _recordPrayerStatusFromNotification(prayerName, statusStr);
+          }
         }
-      } else if (call.method == 'openReminderPicker') {
-        final prayerName = call.arguments['prayerName'] as String? ?? '';
-        final prayerNameAr = call.arguments['prayerNameAr'] as String? ?? prayerName;
-        final prayerTime = (call.arguments['prayerTime'] as num?)?.toInt() ?? 0;
-        if (mounted) {
-          _showReminderPicker(prayerName, prayerNameAr, prayerTime);
-        }
-      } else if (call.method == 'openPostPrayerPicker') {
-        final prayerName = call.arguments['prayerName'] as String? ?? '';
-        final prayerNameAr = call.arguments['prayerNameAr'] as String? ?? prayerName;
-        final prayerTime = (call.arguments['prayerTime'] as num?)?.toInt() ?? 0;
-        if (mounted) {
-          _showPostPrayerReminderPicker(prayerName, prayerNameAr, prayerTime);
-        }
-      } else if (call.method == 'updatePrayerStatus') {
-        final prayerName = call.arguments['prayerName'] as String? ?? '';
-        final statusStr = call.arguments['status'] as String? ?? '';
-        if (prayerName.isNotEmpty && statusStr.isNotEmpty) {
-          await _recordPrayerStatusFromNotification(prayerName, statusStr);
-        }
-      }
-    });
+      });
   }
 
   @override
@@ -272,7 +287,9 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
 
   void _showAdhanOverlay(String prayerName, String prayerNameAr) {
     // Make window visible first (it may be hidden in tray)
-    try { windowManager.show(); } catch (_) {}
+    try {
+      windowManager.show();
+    } catch (_) {}
 
     final overlay = Overlay.of(context);
     late OverlayEntry entry;
@@ -316,7 +333,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     _popupWasVisible = await windowManager.isVisible();
 
     const windowW = 360.0;
-    final windowH = popup.isAdhan ? 190.0 : (popup.body != null ? 155.0 : 120.0);
+    final windowH =
+        popup.isAdhan ? 190.0 : (popup.body != null ? 155.0 : 120.0);
 
     try {
       double screenW = 1920, screenH = 1080;
@@ -330,8 +348,10 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       const taskbarH = 52.0;
       const margin = 12.0;
 
-      await windowManager.setTitleBarStyle(TitleBarStyle.hidden); // remove title bar
-      await windowManager.setMinimumSize(const Size(1, 1));       // allow small resize
+      await windowManager
+          .setTitleBarStyle(TitleBarStyle.hidden); // remove title bar
+      await windowManager
+          .setMinimumSize(const Size(1, 1)); // allow small resize
       await windowManager.setAlwaysOnTop(true);
       await windowManager.setSize(Size(windowW, windowH));
       await windowManager.setPosition(Offset(
@@ -369,7 +389,9 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     _autoDismissTimer?.cancel();
     _autoDismissTimer = Timer(
       popup.isAdhan ? const Duration(minutes: 5) : const Duration(seconds: 8),
-      () { if (mounted && _activePopup == popup) _dismissCurrentPopup(); },
+      () {
+        if (mounted && _activePopup == popup) _dismissCurrentPopup();
+      },
     );
   }
 
@@ -423,7 +445,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       if (taskId != null && taskId.isNotEmpty) {
         prefs.remove('pending_complete_task_id');
         final userId = ref.read(currentUserIdProvider);
-        await TaskService.instance.toggleTaskCompletion(userId: userId, taskId: taskId);
+        await TaskService.instance
+            .toggleTaskCompletion(userId: userId, taskId: taskId);
         debugPrint('✅ Widget tap-to-complete: toggled task $taskId');
       }
 
@@ -461,7 +484,9 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       debugPrint('Error syncing native prayer statuses: $e');
     } finally {
       if (mounted) {
-        ref.read(dailyPrayerStatusProvider.notifier).load(forceRefresh: true, fajrTime: fajrTime);
+        ref
+            .read(dailyPrayerStatusProvider.notifier)
+            .load(forceRefresh: true, fajrTime: fajrTime);
       }
     }
   }
@@ -544,7 +569,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
         userId: userId,
         date: today,
       );
-      final trackedNames = tracked.map((r) => r.prayerName.toLowerCase()).toSet();
+      final trackedNames =
+          tracked.map((r) => r.prayerName.toLowerCase()).toSet();
 
       final List<PrayerTime> untracked = pastPrayers
           .where((p) => !trackedNames.contains(p.name.toLowerCase()))
@@ -572,7 +598,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: isDark ? const Color(0xFF1A1B1E) : const Color(0xFFFFF8EB),
+      backgroundColor:
+          isDark ? const Color(0xFF1A1B1E) : const Color(0xFFFFF8EB),
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -582,7 +609,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: isArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  isArabic ? CrossAxisAlignment.end : CrossAxisAlignment.start,
               children: [
                 Center(
                   child: Container(
@@ -597,11 +625,14 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
                 const SizedBox(height: 16),
                 Text(
                   isArabic ? 'صلوات لم تُسجَّل' : 'Untracked Prayers',
-                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.bold),
                   textAlign: isArabic ? TextAlign.right : TextAlign.left,
                 ),
                 Text(
-                  isArabic ? 'كيف أدّيت هذه الصلوات؟' : 'How did you perform these prayers?',
+                  isArabic
+                      ? 'كيف أدّيت هذه الصلوات؟'
+                      : 'How did you perform these prayers?',
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: isDark ? Colors.grey[400] : Colors.grey[600],
                   ),
@@ -615,11 +646,16 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
                       children: [
                         Text(
                           isArabic ? prayer.nameAr : prayer.name,
-                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                          style: theme.textTheme.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                         const Spacer(),
                         ...[
-                          ('on_time', isArabic ? 'في وقتها' : 'On Time', AppConstants.primaryColor),
+                          (
+                            'on_time',
+                            isArabic ? 'في وقتها' : 'On Time',
+                            AppConstants.primaryColor
+                          ),
                           ('late', isArabic ? 'متأخر' : 'Late', Colors.orange),
                           ('missed', isArabic ? 'فاتت' : 'Missed', Colors.red),
                         ].map((option) {
@@ -629,13 +665,17 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
                             child: TextButton(
                               onPressed: () async {
                                 setSheetState(() => remaining.remove(prayer));
-                                await _recordPrayerStatusFromNotification(prayer.name, statusStr);
+                                await _recordPrayerStatusFromNotification(
+                                    prayer.name, statusStr);
                                 // Auto-close when all prayers are handled
                                 if (remaining.isEmpty && ctx.mounted) {
                                   Navigator.of(ctx).pop();
                                   if (mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                      content: Text(isArabic ? '✅ أحسنت! جميع الصلوات مسجّلة' : '✅ All caught up!'),
+                                    ScaffoldMessenger.of(context)
+                                        .showSnackBar(SnackBar(
+                                      content: Text(isArabic
+                                          ? '✅ أحسنت! جميع الصلوات مسجّلة'
+                                          : '✅ All caught up!'),
                                       duration: const Duration(seconds: 2),
                                       behavior: SnackBarBehavior.floating,
                                     ));
@@ -644,11 +684,14 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
                               },
                               style: TextButton.styleFrom(
                                 foregroundColor: color,
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 10, vertical: 6),
                                 minimumSize: Size.zero,
                                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               ),
-                              child: Text(label, style: AppTypography.caption.copyWith(fontWeight: FontWeight.w600)),
+                              child: Text(label,
+                                  style: AppTypography.caption
+                                      .copyWith(fontWeight: FontWeight.w600)),
                             ),
                           );
                         }),
@@ -658,12 +701,14 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
                 }),
                 const SizedBox(height: 8),
                 Align(
-                  alignment: isArabic ? Alignment.centerLeft : Alignment.centerRight,
+                  alignment:
+                      isArabic ? Alignment.centerLeft : Alignment.centerRight,
                   child: TextButton(
                     onPressed: () => Navigator.of(ctx).pop(),
                     child: Text(
                       isArabic ? 'لاحقاً' : 'Later',
-                      style: AppTypography.bodyM.copyWith(color: Colors.grey[600]),
+                      style:
+                          AppTypography.bodyM.copyWith(color: Colors.grey[600]),
                     ),
                   ),
                 ),
@@ -680,15 +725,15 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     _navigationChannel.invokeMethod('setCurrentRoute', {'route': route});
   }
 
-  void _showReminderPicker(String prayerName, String prayerNameAr, int prayerTime) {
+  void _showReminderPicker(
+      String prayerName, String prayerNameAr, int prayerTime) {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final now = DateTime.now();
     final prayerDate = DateTime.fromMillisecondsSinceEpoch(prayerTime);
     final minutesUntilAzan = prayerDate.difference(now).inMinutes;
 
-    final options = [5, 10, 15, 20, 25, 30]
-        .where((m) => m < minutesUntilAzan)
-        .toList();
+    final options =
+        [5, 10, 15, 20, 25, 30].where((m) => m < minutesUntilAzan).toList();
 
     if (options.isEmpty) {
       // Too close to azan, no remind-later options
@@ -701,7 +746,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1A1B1E) : const Color(0xFFFFF3D6),
+        backgroundColor:
+            isDark ? const Color(0xFF1A1B1E) : const Color(0xFFFFF3D6),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         ),
@@ -727,9 +773,11 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
               selected: false,
               onSelected: (_) {
                 Navigator.of(ctx).pop();
-                _scheduleRemindLater(prayerName, prayerNameAr, prayerTime, minutes);
+                _scheduleRemindLater(
+                    prayerName, prayerNameAr, prayerTime, minutes);
               },
-              backgroundColor: isDark ? const Color(0xFF1A1B1E) : const Color(0xFFFFF3D6),
+              backgroundColor:
+                  isDark ? const Color(0xFF1A1B1E) : const Color(0xFFFFF3D6),
               selectedColor: AppConstants.primaryColor,
               labelStyle: AppTypography.bodyM.copyWith(
                 color: isDark ? Colors.white : const Color(0xFF2A2418),
@@ -743,7 +791,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text(
               isArabic ? 'إلغاء' : 'Cancel',
-              style: AppTypography.label.copyWith(color: AppConstants.primaryColor),
+              style: AppTypography.label
+                  .copyWith(color: AppConstants.primaryColor),
             ),
           ),
         ],
@@ -766,7 +815,9 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       final prefs = await SharedPreferences.getInstance();
       // We can't directly write native prefs, so schedule a new alarm
       // that will re-activate reminder mode after delayMinutes
-      final newTriggerTime = DateTime.now().add(Duration(minutes: delayMinutes)).millisecondsSinceEpoch;
+      final newTriggerTime = DateTime.now()
+          .add(Duration(minutes: delayMinutes))
+          .millisecondsSinceEpoch;
 
       // 2. Schedule a re-reminder alarm
       await alarmChannel.invokeMethod('scheduleReminderAlarm', {
@@ -811,7 +862,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     }).join('');
   }
 
-  void _showPostPrayerReminderPicker(String prayerName, String prayerNameAr, int prayerTime) {
+  void _showPostPrayerReminderPicker(
+      String prayerName, String prayerNameAr, int prayerTime) {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final prayerState = ref.read(prayerTimesProvider);
     final now = DateTime.now();
@@ -856,7 +908,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: isDark ? const Color(0xFF1A1B1E) : const Color(0xFFFFF3D6),
+        backgroundColor:
+            isDark ? const Color(0xFF1A1B1E) : const Color(0xFFFFF3D6),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         ),
@@ -885,9 +938,12 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
                   selected: false,
                   onSelected: (_) {
                     Navigator.of(ctx).pop();
-                    _schedulePostPrayerRemindLater(prayerName, prayerNameAr, prayerTime, minutes);
+                    _schedulePostPrayerRemindLater(
+                        prayerName, prayerNameAr, prayerTime, minutes);
                   },
-                  backgroundColor: isDark ? const Color(0xFF1A1B1E) : const Color(0xFFFFF3D6),
+                  backgroundColor: isDark
+                      ? const Color(0xFF1A1B1E)
+                      : const Color(0xFFFFF3D6),
                   selectedColor: AppConstants.primaryColor,
                   labelStyle: AppTypography.bodyM.copyWith(
                     color: isDark ? Colors.white : const Color(0xFF2A2418),
@@ -913,7 +969,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
             onPressed: () => Navigator.of(ctx).pop(),
             child: Text(
               isArabic ? 'إلغاء' : 'Cancel',
-              style: AppTypography.label.copyWith(color: AppConstants.primaryColor),
+              style: AppTypography.label
+                  .copyWith(color: AppConstants.primaryColor),
             ),
           ),
         ],
@@ -921,7 +978,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     );
   }
 
-  Future<void> _recordPrayerStatusFromNotification(String prayerName, String statusStr) async {
+  Future<void> _recordPrayerStatusFromNotification(
+      String prayerName, String statusStr) async {
     final status = switch (statusStr) {
       'on_time' => PrayerStatus.onTime,
       'late' => PrayerStatus.late,
@@ -933,20 +991,11 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     final userId = ref.read(currentUserProvider)?.uid;
     if (userId == null) return;
     try {
-      final now = DateTime.now();
-      final prayerState = ref.read(prayerTimesProvider);
-      final fajrTime = prayerState.prayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
-      await PrayerTrackingService.instance.recordPrayer(
-        userId: userId,
-        prayerName: prayerName,
-        date: getPrayerDate(now, fajrTime: fajrTime),
-        prayedAt: now,
-        status: status,
-      );
-      if (mounted) {
-        ref.invalidate(dailyPrayerStatusProvider);
-        await ref.read(dailyPrayerStatusProvider.notifier).load();
-      }
+      // Route through the one shared write path so the home card, Prayer Times
+      // page, and Prayer Tracking calendar all reflect this at once.
+      await ref
+          .read(dailyPrayerStatusProvider.notifier)
+          .markToday(prayerName, status);
     } catch (e) {
       debugPrint('Error recording prayer from notification: $e');
     }
@@ -963,7 +1012,9 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       await alarmChannel.invokeMethod('schedulePostPrayerCheck', {
         'prayerName': prayerName,
         'prayerNameAr': prayerNameAr,
-        'prayerTime': DateTime.now().add(Duration(minutes: delayMinutes)).millisecondsSinceEpoch,
+        'prayerTime': DateTime.now()
+            .add(Duration(minutes: delayMinutes))
+            .millisecondsSinceEpoch,
         'requestCode': 9000 + delayMinutes,
       });
 
@@ -1080,7 +1131,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       final popup = _activePopup!;
       final isArabic = Localizations.localeOf(context).languageCode == 'ar';
       final isDark = Theme.of(context).brightness == Brightness.dark;
-      final primary = isDark ? const Color(0xFFF5B301) : const Color(0xFFB5821B);
+      final primary =
+          isDark ? const Color(0xFFF5B301) : const Color(0xFFB5821B);
       final bgColor = isDark ? const Color(0xFF1A1B1E) : Colors.white;
 
       final title = popup.isAdhan
@@ -1093,7 +1145,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
           : popup.body;
 
       final slideAnim = Tween<Offset>(
-        begin: const Offset(0, 1),  // starts below (from taskbar)
+        begin: const Offset(0, 1), // starts below (from taskbar)
         end: Offset.zero,
       ).animate(CurvedAnimation(
         parent: _popupAnimCtrl!,
@@ -1129,7 +1181,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
                       ),
                       GestureDetector(
                         onTap: _dismissCurrentPopup,
-                        child: Icon(Icons.close, size: 18,
+                        child: Icon(Icons.close,
+                            size: 18,
                             color: isDark ? Colors.white54 : Colors.black45),
                       ),
                     ],
@@ -1151,8 +1204,10 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
                         TextButton(
                           onPressed: _dismissCurrentPopup,
                           style: TextButton.styleFrom(
-                            foregroundColor: isDark ? Colors.white54 : Colors.black45,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            foregroundColor:
+                                isDark ? Colors.white54 : Colors.black45,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
                           ),
                           child: Text(isArabic ? 'إغلاق' : 'Dismiss'),
                         ),
@@ -1163,8 +1218,10 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
                             _dismissCurrentPopup();
                           },
                           style: TextButton.styleFrom(
-                            foregroundColor: isDark ? Colors.white54 : Colors.black45,
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            foregroundColor:
+                                isDark ? Colors.white54 : Colors.black45,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
                           ),
                           child: Text(isArabic ? 'إيقاف الأذان' : 'Stop Adhan'),
                         ),
@@ -1287,12 +1344,14 @@ class _DesktopShellState extends ConsumerState<_DesktopShell> {
                       widget.onTap(index);
                     },
                     collapsed: isCollapsed,
-                    onToggle: () => setState(() => _sidebarCollapsed = !_sidebarCollapsed),
+                    onToggle: () =>
+                        setState(() => _sidebarCollapsed = !_sidebarCollapsed),
                   );
                 },
               ),
             ),
-            Container(width: 1, color: isDark ? Colors.white10 : Colors.black12),
+            Container(
+                width: 1, color: isDark ? Colors.white10 : Colors.black12),
           ],
           Expanded(
             child: LayoutBuilder(
@@ -1434,8 +1493,10 @@ class _DesktopSidebar extends ConsumerWidget {
     final showTasks = appMode != AppMode.prayerOnly;
 
     final overdueCount = ref.watch(allTasksProvider).whenOrNull(
-          data: (tasks) => tasks.where((t) => !t.isCompleted && t.isOverdue).length,
-        ) ?? 0;
+              data: (tasks) =>
+                  tasks.where((t) => !t.isCompleted && t.isOverdue).length,
+            ) ??
+        0;
 
     final bgColor = AppConstants.surface(isDark);
 
@@ -1475,8 +1536,11 @@ class _DesktopSidebar extends ConsumerWidget {
                           errorBuilder: (_, __, ___) => Container(
                             width: 32,
                             height: 32,
-                            decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(8)),
-                            child: const Icon(Icons.mosque, color: Colors.white, size: 18),
+                            decoration: BoxDecoration(
+                                color: primary,
+                                borderRadius: BorderRadius.circular(8)),
+                            child: const Icon(Icons.mosque,
+                                color: Colors.white, size: 18),
                           ),
                         ),
                         const SizedBox(width: 10),
@@ -1499,7 +1563,10 @@ class _DesktopSidebar extends ConsumerWidget {
                             onTap: onToggle,
                             child: Padding(
                               padding: const EdgeInsets.all(6),
-                              child: Icon(Icons.menu_open, size: 22, color: isDark ? Colors.white54 : Colors.black45),
+                              child: Icon(Icons.menu_open,
+                                  size: 22,
+                                  color:
+                                      isDark ? Colors.white54 : Colors.black45),
                             ),
                           ),
                         ),
@@ -1511,15 +1578,20 @@ class _DesktopSidebar extends ConsumerWidget {
           const SizedBox(height: 10),
 
           // ── Nav items ─────────────────────────────────────────────────────
-          _sidebarItem(context, isDark, primary, Icons.home_outlined, Icons.home, 'home'.tr(), 0),
+          _sidebarItem(context, isDark, primary, Icons.home_outlined,
+              Icons.home, 'home'.tr(), 0),
           if (showPrayer)
-            _sidebarItem(context, isDark, primary, Icons.mosque_outlined, Icons.mosque, 'nav_prayer'.tr(), 1),
+            _sidebarItem(context, isDark, primary, Icons.mosque_outlined,
+                Icons.mosque, 'nav_prayer'.tr(), 1),
           if (showQuran)
-            _sidebarItem(context, isDark, primary, Icons.menu_book_outlined, Icons.menu_book, 'quran'.tr(), 2),
+            _sidebarItem(context, isDark, primary, Icons.menu_book_outlined,
+                Icons.menu_book, 'quran'.tr(), 2),
           if (showTasks)
-            _sidebarItem(context, isDark, primary, Icons.task_alt_outlined, Icons.task_alt, 'tasks_nav'.tr(), 3,
+            _sidebarItem(context, isDark, primary, Icons.task_alt_outlined,
+                Icons.task_alt, 'tasks_nav'.tr(), 3,
                 badge: overdueCount),
-          _sidebarItem(context, isDark, primary, Icons.person_outline, Icons.person, 'profile'.tr(), 4),
+          _sidebarItem(context, isDark, primary, Icons.person_outline,
+              Icons.person, 'profile'.tr(), 4),
 
           const Spacer(),
           Container(height: 1, color: isDark ? Colors.white10 : Colors.black12),
@@ -1540,7 +1612,8 @@ class _DesktopSidebar extends ConsumerWidget {
     int badge = 0,
   }) {
     final isSelected = currentIndex == index;
-    final textColor = isSelected ? primary : (AppConstants.textSecondary(isDark));
+    final textColor =
+        isSelected ? primary : (AppConstants.textSecondary(isDark));
     final itemBg = isSelected ? primary.withOpacity(0.13) : Colors.transparent;
     final icon = isSelected ? iconFilled : iconOutlined;
 
@@ -1563,16 +1636,24 @@ class _DesktopSidebar extends ConsumerWidget {
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      Icon(icon, size: 28, color: isSelected ? primary : textColor),
+                      Icon(icon,
+                          size: 28, color: isSelected ? primary : textColor),
                       if (badge > 0)
                         Positioned(
                           right: -6,
                           top: -4,
                           child: Container(
                             padding: const EdgeInsets.symmetric(horizontal: 4),
-                            constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                            decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(8)),
-                            child: Text('$badge', style: AppTypography.caption.copyWith(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+                            constraints: const BoxConstraints(
+                                minWidth: 16, minHeight: 16),
+                            decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius: BorderRadius.circular(8)),
+                            child: Text('$badge',
+                                style: AppTypography.caption.copyWith(
+                                    fontSize: 9,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold)),
                           ),
                         ),
                     ],
@@ -1601,16 +1682,24 @@ class _DesktopSidebar extends ConsumerWidget {
                 Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    Icon(icon, size: 28, color: isSelected ? primary : textColor),
+                    Icon(icon,
+                        size: 28, color: isSelected ? primary : textColor),
                     if (badge > 0)
                       Positioned(
                         right: -6,
                         top: -4,
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 4),
-                          constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
-                          decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(8)),
-                          child: Text('$badge', style: AppTypography.caption.copyWith(fontSize: 9, color: Colors.white, fontWeight: FontWeight.bold)),
+                          constraints:
+                              const BoxConstraints(minWidth: 16, minHeight: 16),
+                          decoration: BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.circular(8)),
+                          child: Text('$badge',
+                              style: AppTypography.caption.copyWith(
+                                  fontSize: 9,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold)),
                         ),
                       ),
                   ],
@@ -1621,7 +1710,8 @@ class _DesktopSidebar extends ConsumerWidget {
                     label,
                     style: AppTypography.headingS.copyWith(
                       fontSize: 15,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w400,
                       color: textColor,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -1744,7 +1834,8 @@ class _AdhanOverlayState extends State<_AdhanOverlay>
                     ),
                     GestureDetector(
                       onTap: _dismiss,
-                      child: Icon(Icons.close, size: 16,
+                      child: Icon(Icons.close,
+                          size: 16,
                           color: isDark ? Colors.white38 : Colors.black38),
                     ),
                   ],
@@ -1762,20 +1853,29 @@ class _AdhanOverlayState extends State<_AdhanOverlay>
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     TextButton(
-                      onPressed: () { _timer?.cancel(); widget.onStopAdhan(); },
+                      onPressed: () {
+                        _timer?.cancel();
+                        widget.onStopAdhan();
+                      },
                       style: TextButton.styleFrom(
-                        foregroundColor: isDark ? Colors.white54 : Colors.black45,
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        foregroundColor:
+                            isDark ? Colors.white54 : Colors.black45,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
                         textStyle: const TextStyle(fontSize: 12),
                       ),
                       child: Text(isArabic ? 'إيقاف الأذان' : 'Stop Adhan'),
                     ),
                     const SizedBox(width: 6),
                     FilledButton(
-                      onPressed: () { _timer?.cancel(); widget.onPrayed(); },
+                      onPressed: () {
+                        _timer?.cancel();
+                        widget.onPrayed();
+                      },
                       style: FilledButton.styleFrom(
                         backgroundColor: primary,
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
                         textStyle: const TextStyle(fontSize: 12),
                       ),
                       child: Text(
@@ -1881,17 +1981,22 @@ class _AchievementToastState extends State<_AchievementToast>
               child: Opacity(
                 opacity: _opacityAnim.value,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [AppConstants.getPrimary(isDark), AppConstants.accentCyan],
+                      colors: [
+                        AppConstants.getPrimary(isDark),
+                        AppConstants.accentCyan
+                      ],
                       begin: Alignment.centerLeft,
                       end: Alignment.centerRight,
                     ),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: AppConstants.getPrimary(isDark).withValues(alpha: 0.35),
+                        color: AppConstants.getPrimary(isDark)
+                            .withValues(alpha: 0.35),
                         blurRadius: 16,
                         offset: const Offset(0, 6),
                       ),
@@ -1920,7 +2025,9 @@ class _AchievementToastState extends State<_AchievementToast>
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Text(
-                              widget.isArabic ? '🏆 إنجاز جديد!' : '🏆 Achievement Unlocked!',
+                              widget.isArabic
+                                  ? '🏆 إنجاز جديد!'
+                                  : '🏆 Achievement Unlocked!',
                               style: AppTypography.labelS.copyWith(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600,
@@ -1959,4 +2066,3 @@ class _AchievementToastState extends State<_AchievementToast>
     );
   }
 }
-

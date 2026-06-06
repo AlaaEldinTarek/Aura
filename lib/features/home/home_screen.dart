@@ -31,7 +31,8 @@ import '../../core/models/prayer_record.dart';
 import '../../core/models/daily_content.dart';
 import '../../core/services/daily_content_service.dart';
 import '../../core/widgets/prayer_status_dialog.dart';
-import '../../core/services/prayer_tracking_service.dart' show PrayerTrackingService;
+import '../../core/services/prayer_tracking_service.dart'
+    show PrayerTrackingService;
 import '../../core/services/rating_service.dart';
 import '../../core/utils/prayer_time_rules.dart';
 import '../../core/providers/islamic_events_provider.dart';
@@ -45,11 +46,13 @@ class HomeScreen extends ConsumerStatefulWidget {
   ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObserver {
+class _HomeScreenState extends ConsumerState<HomeScreen>
+    with WidgetsBindingObserver {
   Timer? _countdownTimer;
 
   // ValueNotifier for countdown - only rebuilds the countdown widget, not entire screen
-  final ValueNotifier<Duration> _countdownNotifier = ValueNotifier(Duration.zero);
+  final ValueNotifier<Duration> _countdownNotifier =
+      ValueNotifier(Duration.zero);
 
   // GlobalKeys for tutorial overlay targeting
   final _greetingKey = GlobalKey();
@@ -70,7 +73,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     // Load prayer statuses via shared provider (cached, won't hit Firestore if fresh)
     Future.microtask(() {
       final prayerTimes = ref.read(prayerTimesProvider)?.prayerTimes ?? [];
-      final fajrTime = prayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
+      final fajrTime =
+          prayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
       ref.read(dailyPrayerStatusProvider.notifier).load(fajrTime: fajrTime);
     });
     _startCountdownTimer();
@@ -92,7 +96,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     if (!_pendingTutorialLaunch) return;
     if (!mounted) {
       // Widget temporarily unmounted during rebuild — retry shortly
-      Future.delayed(const Duration(milliseconds: 300), _launchTutorialWhenActive);
+      Future.delayed(
+          const Duration(milliseconds: 300), _launchTutorialWhenActive);
       return;
     }
     if (SharedPreferencesService.instance.isTutorialCompleted()) {
@@ -103,7 +108,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
       Future.delayed(const Duration(milliseconds: 800), () {
         if (!_pendingTutorialLaunch) return;
         if (!mounted) {
-          Future.delayed(const Duration(milliseconds: 300), _launchTutorialWhenActive);
+          Future.delayed(
+              const Duration(milliseconds: 300), _launchTutorialWhenActive);
           return;
         }
         if (ModalRoute.of(context)?.isCurrent == true) {
@@ -111,12 +117,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           _launchTutorial();
         } else {
           // Something appeared during the 800ms window — retry
-          Future.delayed(const Duration(milliseconds: 400), _launchTutorialWhenActive);
+          Future.delayed(
+              const Duration(milliseconds: 400), _launchTutorialWhenActive);
         }
       });
     } else {
       // Another route is still on top — retry every 400ms
-      Future.delayed(const Duration(milliseconds: 400), _launchTutorialWhenActive);
+      Future.delayed(
+          const Duration(milliseconds: 400), _launchTutorialWhenActive);
     }
   }
 
@@ -176,7 +184,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     showTutorial(
       context: context,
       steps: steps,
-      onDone: () => SharedPreferencesService.instance.setTutorialCompleted(true),
+      onDone: () =>
+          SharedPreferencesService.instance.setTutorialCompleted(true),
     );
   }
 
@@ -193,7 +202,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       _countdownTimer?.cancel();
     } else if (state == AppLifecycleState.resumed) {
       _startCountdownTimer();
@@ -225,20 +235,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     } else {
       text = isArabic ? '$s ث' : '${s}s';
     }
-    if (isArabic) text = NumberFormatter.withArabicNumeralsByLanguage(text, 'ar');
+    if (isArabic)
+      text = NumberFormatter.withArabicNumeralsByLanguage(text, 'ar');
     return text;
   }
 
   String _getPrayerEmoji(String name) {
     switch (name.toLowerCase()) {
-      case 'fajr': return '🌙';
-      case 'sunrise': return '🌅';
+      case 'fajr':
+        return '🌙';
+      case 'sunrise':
+        return '🌅';
       case 'dhuhr':
-      case 'zuhr': return '☀️';
-      case 'asr': return '🌤️';
-      case 'maghrib': return '🌇';
-      case 'isha': return '🌃';
-      default: return '🕌';
+      case 'zuhr':
+        return '☀️';
+      case 'asr':
+        return '🌤️';
+      case 'maghrib':
+        return '🌇';
+      case 'isha':
+        return '🌃';
+      default:
+        return '🕌';
     }
   }
 
@@ -266,12 +284,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     // select() ensures rebuild only when the specific field changes, not the entire provider state
-    final nextPrayer = ref.watch(prayerTimesProvider.select((s) => s.nextPrayer));
+    final nextPrayer =
+        ref.watch(prayerTimesProvider.select((s) => s.nextPrayer));
     final _firebaseUser = ref.watch(currentUserProvider);
     final userName = _firebaseUser?.displayName?.isNotEmpty == true
         ? _firebaseUser!.displayName!
         : (_firebaseUser?.email?.split('@').first ?? '');
-    final isGuest = ref.watch(guestModeProvider.select((async) => async.value ?? false));
+    final isGuest =
+        ref.watch(guestModeProvider.select((async) => async.value ?? false));
     final appMode = ref.watch(appModeProvider.select((m) => m));
     final showPrayer = appMode != AppMode.tasksOnly;
     final showTasks = appMode != AppMode.prayerOnly;
@@ -279,10 +299,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     // Calculate prayer progress from shared provider
     // Filter: only show prayers that have reached Adhan + 20 min — same rule
     // as canMarkPrayer — so a future prayer can never appear as already done.
-    final rawPrayerStatuses = ref.watch(dailyPrayerStatusProvider.select((s) => s.statuses));
-    final todayPrayerTimes = ref.watch(prayerTimesProvider.select((s) => s.prayerTimes));
+    final rawPrayerStatuses =
+        ref.watch(dailyPrayerStatusProvider.select((s) => s.statuses));
+    final todayPrayerTimes =
+        ref.watch(prayerTimesProvider.select((s) => s.prayerTimes));
     final prayerStatuses = Map<String, PrayerStatus>.fromEntries(
-      rawPrayerStatuses.entries.where((e) => isPrayerTimeReached(e.key, todayPrayerTimes)),
+      rawPrayerStatuses.entries
+          .where((e) => isPrayerTimeReached(e.key, todayPrayerTimes)),
     );
     final trackablePrayers = kPrayerNames;
     final completedCount = trackablePrayers.where((p) {
@@ -308,10 +331,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           ConnectivityWrapper(
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppSpacing.base).clamp(0, 16.0)),
+              padding: EdgeInsets.all(MediaQuery.textScalerOf(context)
+                  .scale(AppSpacing.base)
+                  .clamp(0, 16.0)),
               child: _buildHomeBody(
-                context, isDark, isArabic, showPrayer, showTasks,
-                nextPrayer, completedCount, totalPrayers, prayerStatuses,
+                context,
+                isDark,
+                isArabic,
+                showPrayer,
+                showTasks,
+                nextPrayer,
+                completedCount,
+                totalPrayers,
+                prayerStatuses,
                 userName: isGuest ? '' : userName,
                 isGuest: isGuest,
               ),
@@ -343,12 +375,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final ts = MediaQuery.textScalerOf(context);
     final footer = Center(
       child: Padding(
-        padding: EdgeInsets.only(top: ts.scale(AppSpacing.xl), bottom: ts.scale(AppSpacing.sm)),
+        padding: EdgeInsets.only(
+            top: ts.scale(AppSpacing.xl), bottom: ts.scale(AppSpacing.sm)),
         child: Text(
           'app_tagline'.tr(),
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
-            color: AppConstants.textDisabled(isDark),
-          ),
+                color: AppConstants.textDisabled(isDark),
+              ),
         ),
       ),
     );
@@ -364,7 +397,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           SizedBox(
             key: _greetingKey,
             child: GreetingWidget(
-              userName: isGuest ? null : (userName.isNotEmpty ? userName : null),
+              userName:
+                  isGuest ? null : (userName.isNotEmpty ? userName : null),
               onTap: () => Navigator.of(context).pushNamed('/prayer'),
             ).animate().fadeIn(duration: 400.ms),
           ),
@@ -379,29 +413,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             SizedBox(height: gapL),
             _buildJumuahBanner(context, isDark, isArabic),
           ],
-          if (showPrayer) Builder(builder: (ctx) {
-            final events = ref.watch(islamicEventsProvider);
-            if (events.isEmpty || events.first.daysUntil > 30) return const SizedBox.shrink();
-            return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              SizedBox(height: gapL),
-              _buildIslamicEventCard(context, events.first, isDark, isArabic),
-            ]);
-          }),
+          if (showPrayer)
+            Builder(builder: (ctx) {
+              final events = ref.watch(islamicEventsProvider);
+              if (events.isEmpty || events.first.daysUntil > 30)
+                return const SizedBox.shrink();
+              return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(height: gapL),
+                    _buildIslamicEventCard(
+                        context, events.first, isDark, isArabic),
+                  ]);
+            }),
           if (showPrayer) ...[
             SizedBox(height: gapL),
-            SizedBox(key: _nextPrayerKey,
-              child: _buildNextPrayerCard(context, nextPrayer, isDark, isArabic, completedCount, totalPrayers)),
+            SizedBox(
+                key: _nextPrayerKey,
+                child: _buildNextPrayerCard(context, nextPrayer, isDark,
+                    isArabic, completedCount, totalPrayers)),
             SizedBox(height: gapM),
-            SizedBox(key: _prayerProgressKey,
-              child: _buildPrayerProgress(context, isDark, isArabic, completedCount, totalPrayers, prayerStatuses)),
+            SizedBox(
+                key: _prayerProgressKey,
+                child: _buildPrayerProgress(context, isDark, isArabic,
+                    completedCount, totalPrayers, prayerStatuses)),
           ],
           if (showTasks) ...[
             SizedBox(height: gapL),
-            SizedBox(key: _taskProgressKey,
-              child: _buildTaskProgress(context, isDark, isArabic)),
+            SizedBox(
+                key: _taskProgressKey,
+                child: _buildTaskProgress(context, isDark, isArabic)),
             SizedBox(height: gapL),
-            SizedBox(key: _todayTasksKey,
-              child: _buildTodayTasksPreview(context, isDark, isArabic)),
+            SizedBox(
+                key: _todayTasksKey,
+                child: _buildTodayTasksPreview(context, isDark, isArabic)),
           ],
           footer,
         ],
@@ -412,75 +457,95 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     return ConstrainedBox(
       constraints: const BoxConstraints(maxWidth: 800),
       child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        SizedBox(
-          key: _greetingKey,
-          child: GreetingWidget(
-            userName: isGuest ? null : (userName.isNotEmpty ? userName : null),
-            onTap: () => Navigator.of(context).pushNamed('/prayer'),
-          ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
-        ),
-        if (showPrayer) ...[
-          SizedBox(height: ts.scale(12.0).clamp(0.0, 18.0)),
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
           SizedBox(
-            key: _dailyContentKey,
-            child: _buildDailyContentCard(context, isDark, isArabic)
-                .animate().fadeIn(delay: 50.ms, duration: 400.ms).slideY(begin: 0.08),
+            key: _greetingKey,
+            child: GreetingWidget(
+              userName:
+                  isGuest ? null : (userName.isNotEmpty ? userName : null),
+              onTap: () => Navigator.of(context).pushNamed('/prayer'),
+            ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
           ),
+          if (showPrayer) ...[
+            SizedBox(height: ts.scale(12.0).clamp(0.0, 18.0)),
+            SizedBox(
+              key: _dailyContentKey,
+              child: _buildDailyContentCard(context, isDark, isArabic)
+                  .animate()
+                  .fadeIn(delay: 50.ms, duration: 400.ms)
+                  .slideY(begin: 0.08),
+            ),
+          ],
+          if (showPrayer && DateTime.now().weekday == DateTime.friday) ...[
+            SizedBox(height: ts.scale(12.0).clamp(0.0, 18.0)),
+            _buildJumuahBanner(context, isDark, isArabic)
+                .animate()
+                .fadeIn(delay: 80.ms, duration: 500.ms)
+                .slideY(begin: 0.08),
+          ],
+          if (showPrayer)
+            Builder(builder: (ctx) {
+              final events = ref.watch(islamicEventsProvider);
+              if (events.isEmpty || events.first.daysUntil > 30)
+                return const SizedBox.shrink();
+              final innerTs = MediaQuery.textScalerOf(ctx);
+              return Column(children: [
+                SizedBox(height: innerTs.scale(12.0).clamp(0.0, 18.0)),
+                _buildIslamicEventCard(context, events.first, isDark, isArabic)
+                    .animate()
+                    .fadeIn(delay: 90.ms, duration: 400.ms)
+                    .slideY(begin: 0.08),
+              ]);
+            }),
+          SizedBox(height: ts.scale(12.0).clamp(0.0, 18.0)),
+          if (showPrayer) ...[
+            SizedBox(
+              key: _nextPrayerKey,
+              child: _buildNextPrayerCard(context, nextPrayer, isDark, isArabic,
+                      completedCount, totalPrayers)
+                  .animate()
+                  .fadeIn(delay: 100.ms, duration: 400.ms)
+                  .slideY(begin: 0.1),
+            ),
+            SizedBox(height: ts.scale(8.0).clamp(0.0, 12.0)),
+            SizedBox(
+              key: _prayerProgressKey,
+              child: _buildPrayerProgress(context, isDark, isArabic,
+                      completedCount, totalPrayers, prayerStatuses)
+                  .animate()
+                  .fadeIn(delay: 200.ms, duration: 400.ms)
+                  .slideY(begin: 0.1),
+            ),
+            SizedBox(height: ts.scale(12.0).clamp(0.0, 18.0)),
+          ],
+          if (showTasks) ...[
+            SizedBox(
+              key: _taskProgressKey,
+              child: _buildTaskProgress(context, isDark, isArabic)
+                  .animate()
+                  .fadeIn(delay: 250.ms, duration: 400.ms)
+                  .slideY(begin: 0.1),
+            ),
+            SizedBox(height: ts.scale(12.0).clamp(0.0, 18.0)),
+            SizedBox(
+              key: _todayTasksKey,
+              child: _buildTodayTasksPreview(context, isDark, isArabic)
+                  .animate()
+                  .fadeIn(delay: 350.ms, duration: 400.ms)
+                  .slideY(begin: 0.1),
+            ),
+            SizedBox(height: ts.scale(12.0).clamp(0.0, 18.0)),
+          ],
+          footer,
+          SizedBox(height: ts.scale(80.0)),
         ],
-        if (showPrayer && DateTime.now().weekday == DateTime.friday) ...[
-          SizedBox(height: ts.scale(12.0).clamp(0.0, 18.0)),
-          _buildJumuahBanner(context, isDark, isArabic)
-              .animate().fadeIn(delay: 80.ms, duration: 500.ms).slideY(begin: 0.08),
-        ],
-        if (showPrayer) Builder(builder: (ctx) {
-          final events = ref.watch(islamicEventsProvider);
-          if (events.isEmpty || events.first.daysUntil > 30) return const SizedBox.shrink();
-          final innerTs = MediaQuery.textScalerOf(ctx);
-          return Column(children: [
-            SizedBox(height: innerTs.scale(12.0).clamp(0.0, 18.0)),
-            _buildIslamicEventCard(context, events.first, isDark, isArabic)
-                .animate().fadeIn(delay: 90.ms, duration: 400.ms).slideY(begin: 0.08),
-          ]);
-        }),
-        SizedBox(height: ts.scale(12.0).clamp(0.0, 18.0)),
-        if (showPrayer) ...[
-          SizedBox(
-            key: _nextPrayerKey,
-            child: _buildNextPrayerCard(context, nextPrayer, isDark, isArabic, completedCount, totalPrayers)
-                .animate().fadeIn(delay: 100.ms, duration: 400.ms).slideY(begin: 0.1),
-          ),
-          SizedBox(height: ts.scale(8.0).clamp(0.0, 12.0)),
-          SizedBox(
-            key: _prayerProgressKey,
-            child: _buildPrayerProgress(context, isDark, isArabic, completedCount, totalPrayers, prayerStatuses)
-                .animate().fadeIn(delay: 200.ms, duration: 400.ms).slideY(begin: 0.1),
-          ),
-          SizedBox(height: ts.scale(12.0).clamp(0.0, 18.0)),
-        ],
-        if (showTasks) ...[
-          SizedBox(
-            key: _taskProgressKey,
-            child: _buildTaskProgress(context, isDark, isArabic)
-                .animate().fadeIn(delay: 250.ms, duration: 400.ms).slideY(begin: 0.1),
-          ),
-          SizedBox(height: ts.scale(12.0).clamp(0.0, 18.0)),
-          SizedBox(
-            key: _todayTasksKey,
-            child: _buildTodayTasksPreview(context, isDark, isArabic)
-                .animate().fadeIn(delay: 350.ms, duration: 400.ms).slideY(begin: 0.1),
-          ),
-          SizedBox(height: ts.scale(12.0).clamp(0.0, 18.0)),
-        ],
-        footer,
-        SizedBox(height: ts.scale(80.0)),
-      ],
       ),
     );
   }
 
-  Widget _buildDailyContentCard(BuildContext context, bool isDark, bool isArabic) {
+  Widget _buildDailyContentCard(
+      BuildContext context, bool isDark, bool isArabic) {
     final ts = MediaQuery.textScalerOf(context);
     final content = DailyContentService.instance.getToday();
     final isAyah = content.type == DailyContentType.ayah;
@@ -526,7 +591,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                 ),
                 const Spacer(),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: ts.scale(8.0), vertical: ts.scale(2.0)),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: ts.scale(8.0), vertical: ts.scale(2.0)),
                   decoration: BoxDecoration(
                     color: primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
@@ -534,7 +600,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   ),
                   child: Text(
                     content.source,
-                    style: AppTypography.caption.copyWith(color: primary, fontWeight: FontWeight.w500),
+                    style: AppTypography.caption
+                        .copyWith(color: primary, fontWeight: FontWeight.w500),
                   ),
                 ),
               ],
@@ -570,7 +637,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               content.translation,
               style: AppTypography.caption.copyWith(
                 fontStyle: FontStyle.italic,
-                color: isDark ? Colors.white60 : AppConstants.lightTextSecondary,
+                color:
+                    isDark ? Colors.white60 : AppConstants.lightTextSecondary,
               ),
               textAlign: TextAlign.center,
             ),
@@ -587,7 +655,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final ts = MediaQuery.textScalerOf(context);
     return Container(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: ts.scale(AppSpacing.xl), vertical: ts.scale(AppSpacing.base)),
+      padding: EdgeInsets.symmetric(
+          horizontal: ts.scale(AppSpacing.xl),
+          vertical: ts.scale(AppSpacing.base)),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: isDark
@@ -620,10 +690,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                 color: const Color(0xFFD4A017).withOpacity(0.2),
                 borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
               ),
-              child: const Center(child: FittedBox(fit: BoxFit.scaleDown, child: Text('🕌', style: TextStyle(fontSize: 26)))),
+              child: const Center(
+                  child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text('🕌', style: TextStyle(fontSize: 26)))),
             );
           }),
-          Builder(builder: (ctx) => SizedBox(width: MediaQuery.textScalerOf(ctx).scale(12.0))),
+          Builder(
+              builder: (ctx) =>
+                  SizedBox(width: MediaQuery.textScalerOf(ctx).scale(12.0))),
           Expanded(
             child: Builder(builder: (ctx) {
               final mq = MediaQuery.of(ctx);
@@ -641,7 +716,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                               : AppTypography.bodyL)
                           .copyWith(
                         fontWeight: FontWeight.bold,
-                        color: isDark ? const Color(0xFFFFD966) : const Color(0xFF7A5700),
+                        color: isDark
+                            ? const Color(0xFFFFD966)
+                            : const Color(0xFF7A5700),
                       ),
                     ),
                     SizedBox(height: innerTs.scale(AppSpacing.xs)),
@@ -699,7 +776,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final h = HijriDate.toHijri(item.date);
     final hijriLabel = isArabic ? HijriDate.formatAr(h) : HijriDate.formatEn(h);
 
-    final tsPad = MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium);
+    final tsPad =
+        MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium);
     return GestureDetector(
       onTap: () => Navigator.of(context).pushNamed('/islamic_events'),
       child: Container(
@@ -714,78 +792,88 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
           border: Border.all(color: accent.withOpacity(0.35), width: 1.5),
           boxShadow: [
-            BoxShadow(color: accent.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 3)),
+            BoxShadow(
+                color: accent.withOpacity(0.1),
+                blurRadius: 10,
+                offset: const Offset(0, 3)),
           ],
         ),
         child: Builder(builder: (ctx2) {
           final ets = MediaQuery.textScalerOf(ctx2);
           final eContSz = ets.scale(48.0).clamp(0.0, 72.0);
           return Row(
-          children: [
-            Container(
-              width: eContSz,
-              height: eContSz,
-              decoration: BoxDecoration(
-                color: accent.withOpacity(0.18),
-                borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
-              ),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: MediaQuery(
-                  data: MediaQuery.of(ctx2).copyWith(textScaler: TextScaler.noScaling),
-                  child: Text(item.event.emoji, style: TextStyle(fontSize: eContSz * 0.55)),
+            children: [
+              Container(
+                width: eContSz,
+                height: eContSz,
+                decoration: BoxDecoration(
+                  color: accent.withOpacity(0.18),
+                  borderRadius:
+                      BorderRadius.circular(AppConstants.radiusMedium),
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: MediaQuery(
+                    data: MediaQuery.of(ctx2)
+                        .copyWith(textScaler: TextScaler.noScaling),
+                    child: Text(item.event.emoji,
+                        style: TextStyle(fontSize: eContSz * 0.55)),
+                  ),
                 ),
               ),
-            ),
-            SizedBox(width: ets.scale(12.0).clamp(0, 16.0)),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isArabic ? item.event.nameAr : item.event.nameEn,
-                    style: (isArabic
-                            ? AppTypography.ar(AppTypography.bodyM)
-                            : AppTypography.bodyM)
-                        .copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppConstants.textPrimary(isDark),
+              SizedBox(width: ets.scale(12.0).clamp(0, 16.0)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isArabic ? item.event.nameAr : item.event.nameEn,
+                      style: (isArabic
+                              ? AppTypography.ar(AppTypography.bodyM)
+                              : AppTypography.bodyM)
+                          .copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppConstants.textPrimary(isDark),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    hijriLabel,
-                    style: AppTypography.caption.copyWith(
-                      color: isDark ? Colors.white54 : Colors.black45,
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      hijriLabel,
+                      style: AppTypography.caption.copyWith(
+                        color: isDark ? Colors.white54 : Colors.black45,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            Builder(builder: (ctx2b) {
-              final bts = MediaQuery.textScalerOf(ctx2b);
-              return Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: bts.scale(10.0), vertical: bts.scale(4.0)),
-                  decoration: BoxDecoration(
-                    color: accent.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: accent.withOpacity(0.4)),
-                  ),
-                  child: Text(
-                    countdown,
-                    style: AppTypography.caption.copyWith(fontWeight: FontWeight.bold, color: accent),
-                  ),
+                  ],
                 ),
-                SizedBox(height: bts.scale(4.0)),
-                Icon(Icons.chevron_right, size: bts.scale(16.0), color: accent.withOpacity(0.6)),
-              ],
-            );
-            }),
-          ],
-        );
+              ),
+              Builder(builder: (ctx2b) {
+                final bts = MediaQuery.textScalerOf(ctx2b);
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: bts.scale(10.0),
+                          vertical: bts.scale(4.0)),
+                      decoration: BoxDecoration(
+                        color: accent.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: accent.withOpacity(0.4)),
+                      ),
+                      child: Text(
+                        countdown,
+                        style: AppTypography.caption.copyWith(
+                            fontWeight: FontWeight.bold, color: accent),
+                      ),
+                    ),
+                    SizedBox(height: bts.scale(4.0)),
+                    Icon(Icons.chevron_right,
+                        size: bts.scale(16.0), color: accent.withOpacity(0.6)),
+                  ],
+                );
+              }),
+            ],
+          );
         }),
       ),
     );
@@ -832,7 +920,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     height: iconContSz,
                     decoration: BoxDecoration(
                       color: AppConstants.getPrimary(isDark).withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
+                      borderRadius:
+                          BorderRadius.circular(AppConstants.radiusMedium),
                     ),
                     child: Center(
                       child: Image.asset(
@@ -863,9 +952,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                           hasData
                               ? _getDisplayPrayerName(nextPrayer.name, isArabic)
                               : (isArabic ? 'جاري التحميل...' : 'Loading...'),
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                       ],
                     ),
@@ -876,9 +966,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     valueListenable: _countdownNotifier,
                     builder: (context, remaining, _) {
                       final mq = MediaQuery.of(context);
-                      final cappedScale = mq.textScaler.scale(1.0).clamp(0.9, 1.5);
+                      final cappedScale =
+                          mq.textScaler.scale(1.0).clamp(0.9, 1.5);
                       return MediaQuery(
-                        data: mq.copyWith(textScaler: TextScaler.linear(cappedScale)),
+                        data: mq.copyWith(
+                            textScaler: TextScaler.linear(cappedScale)),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
@@ -889,7 +981,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            SizedBox(height: mq.textScaler.scale(AppSpacing.xs)),
+                            SizedBox(
+                                height: mq.textScaler.scale(AppSpacing.xs)),
                             Text(
                               isArabic ? 'حتى الأذان' : 'Until Adhan',
                               style: AppTypography.caption.copyWith(
@@ -909,22 +1002,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               // Prayer time
               if (hasData) ...[
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: ts.scale(12.0), vertical: ts.scale(6.0)),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: ts.scale(12.0), vertical: ts.scale(6.0)),
                   decoration: BoxDecoration(
                     color: AppConstants.getPrimary(isDark).withOpacity(0.08),
-                    borderRadius: BorderRadius.circular(AppConstants.radiusSmall),
+                    borderRadius:
+                        BorderRadius.circular(AppConstants.radiusSmall),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(
                         children: [
-                          Icon(Icons.access_time, color: AppConstants.getPrimary(isDark).withOpacity(0.7), size: ts.scale(14.0)),
+                          Icon(Icons.access_time,
+                              color: AppConstants.getPrimary(isDark)
+                                  .withOpacity(0.7),
+                              size: ts.scale(14.0)),
                           SizedBox(width: ts.scale(4.0)),
                           Text(
                             isArabic
                                 ? NumberFormatter.withArabicNumeralsByLanguage(
-                                    nextPrayer.time12h.replaceAll('AM', 'ص').replaceAll('PM', 'م'), 'ar')
+                                    nextPrayer.time12h
+                                        .replaceAll('AM', 'ص')
+                                        .replaceAll('PM', 'م'),
+                                    'ar')
                                 : nextPrayer.time12h,
                             style: AppTypography.bodyS.copyWith(
                               color: isDark ? Colors.white70 : Colors.black54,
@@ -934,7 +1035,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       ),
                       Row(
                         children: [
-                          Icon(Icons.check_circle_outline, color: AppConstants.getPrimary(isDark).withOpacity(0.7), size: ts.scale(14.0)),
+                          Icon(Icons.check_circle_outline,
+                              color: AppConstants.getPrimary(isDark)
+                                  .withOpacity(0.7),
+                              size: ts.scale(14.0)),
                           SizedBox(width: ts.scale(AppSpacing.xs)),
                           Text(
                             isArabic
@@ -978,7 +1082,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final trackablePrayers = kPrayerNames;
 
     return Container(
-      padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium)),
+      padding: EdgeInsets.all(
+          MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium)),
       decoration: BoxDecoration(
         color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
@@ -1009,7 +1114,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               ),
               Text(
                 isArabic
-                    ? NumberFormatter.withArabicNumeralsByLanguage('$completedCount/${kPrayerNames.length}', 'ar')
+                    ? NumberFormatter.withArabicNumeralsByLanguage(
+                        '$completedCount/${kPrayerNames.length}', 'ar')
                     : '$completedCount/${kPrayerNames.length}',
                 style: AppTypography.label.copyWith(
                   color: AppConstants.getPrimary(isDark),
@@ -1018,7 +1124,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               ),
             ],
           ),
-          SizedBox(height: ts.scale(AppConstants.paddingSmall).clamp(0.0, 12.0)),
+          SizedBox(
+              height: ts.scale(AppConstants.paddingSmall).clamp(0.0, 12.0)),
           // Progress bar
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
@@ -1027,12 +1134,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               minHeight: 6,
               backgroundColor: AppConstants.border(isDark),
               valueColor: AlwaysStoppedAnimation<Color>(
-                progress >= 1.0 ? Colors.green : AppConstants.getPrimary(isDark),
+                progress >= 1.0
+                    ? Colors.green
+                    : AppConstants.getPrimary(isDark),
               ),
             ),
           ),
 
-          SizedBox(height: ts.scale(AppConstants.paddingSmall).clamp(0.0, 20.0)),
+          SizedBox(
+              height: ts.scale(AppConstants.paddingSmall).clamp(0.0, 20.0)),
 
           // Prayer status row
           Row(
@@ -1064,7 +1174,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               }
 
               return GestureDetector(
-                onTap: () => _markPrayerFromHome(context, trackablePrayers[i], isArabic),
+                onTap: () =>
+                    _markPrayerFromHome(context, trackablePrayers[i], isArabic),
                 child: Column(
                   children: [
                     Container(
@@ -1074,33 +1185,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                         shape: BoxShape.circle,
                         color: isTracked
                             ? color.withValues(alpha: 0.15)
-                            : (isDark ? AppConstants.darkSurface : Colors.grey[100]),
+                            : (isDark
+                                ? AppConstants.darkSurface
+                                : Colors.grey[100]),
                         border: Border.all(
-                          color: isTracked ? color : (AppConstants.border(isDark)),
+                          color:
+                              isTracked ? color : (AppConstants.border(isDark)),
                           width: 1.5,
                         ),
                       ),
                       child: Center(
                         child: isTracked
                             ? Icon(icon, color: color, size: iconSize)
-                            : Image.asset(prayerIconAssets[i], width: imgSize, height: imgSize),
+                            : Image.asset(prayerIconAssets[i],
+                                width: imgSize, height: imgSize),
                       ),
                     ),
                     SizedBox(height: ts.scale(4.0)),
                     Builder(builder: (ctx) {
                       final mq = MediaQuery.of(ctx);
-                      final cappedScale = mq.textScaler.scale(1.0).clamp(0.9, 1.3);
+                      final cappedScale =
+                          mq.textScaler.scale(1.0).clamp(0.9, 1.3);
                       final prayerLabelFs = ts.scale(9.0);
                       return MediaQuery(
-                        data: mq.copyWith(textScaler: TextScaler.linear(cappedScale)),
+                        data: mq.copyWith(
+                            textScaler: TextScaler.linear(cappedScale)),
                         child: Text(
                           isArabic
-                              ? ['الفجر', 'الظهر', 'العصر', 'المغرب', 'العشاء'][i]
+                              ? [
+                                  'الفجر',
+                                  'الظهر',
+                                  'العصر',
+                                  'المغرب',
+                                  'العشاء'
+                                ][i]
                               : kPrayerNames[i],
                           style: AppTypography.caption.copyWith(
                             fontSize: prayerLabelFs,
-                            color: isTracked ? color : (isDark ? Colors.white54 : Colors.black54),
-                            fontWeight: isTracked ? FontWeight.bold : FontWeight.normal,
+                            color: isTracked
+                                ? color
+                                : (isDark ? Colors.white54 : Colors.black54),
+                            fontWeight:
+                                isTracked ? FontWeight.bold : FontWeight.normal,
                           ),
                           textScaler: TextScaler.noScaling,
                         ),
@@ -1126,132 +1252,155 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         final allTasksAsync = ref.watch(allTasksProvider);
         return allTasksAsync.when(
           data: (allTasks) {
-            final todayTasks = allTasks.where((t) => t.isDueToday || t.dueDate == null).toList();
+            final todayTasks = allTasks
+                .where((t) => t.isDueToday || t.dueDate == null)
+                .toList();
             final todayDone = todayTasks.where((t) => t.isCompleted).length;
             final todayTotal = todayTasks.length;
             final progress = todayTotal > 0 ? todayDone / todayTotal : 0.0;
             final percentage = (progress * 100).round();
 
-        return Container(
-          padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium)),
-          decoration: BoxDecoration(
-            color: AppConstants.card(isDark),
-            borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
-            border: Border.all(color: AppConstants.border(isDark)),
-          ),
-          child: Row(
-            children: [
-              // Progress ring
-              Builder(builder: (ctx) {
-                final ts = MediaQuery.textScalerOf(ctx);
-                final ringSize = ts.scale(64.0).clamp(64.0, 108.0);
-                return SizedBox(
-                  width: ringSize,
-                  height: ringSize,
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      CircularProgressIndicator(
-                        value: progress,
-                        strokeWidth: 5,
-                        backgroundColor: AppConstants.divider(isDark),
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          progress >= 1.0 ? Colors.green : AppConstants.getPrimary(isDark),
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.all(ringSize * 0.14),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            '$percentage%',
-                            maxLines: 1,
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: AppConstants.textPrimary(isDark),
+            return Container(
+              padding: EdgeInsets.all(MediaQuery.textScalerOf(context)
+                  .scale(AppConstants.paddingMedium)),
+              decoration: BoxDecoration(
+                color: AppConstants.card(isDark),
+                borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
+                border: Border.all(color: AppConstants.border(isDark)),
+              ),
+              child: Row(
+                children: [
+                  // Progress ring
+                  Builder(builder: (ctx) {
+                    final ts = MediaQuery.textScalerOf(ctx);
+                    final ringSize = ts.scale(64.0).clamp(64.0, 108.0);
+                    return SizedBox(
+                      width: ringSize,
+                      height: ringSize,
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          CircularProgressIndicator(
+                            value: progress,
+                            strokeWidth: 5,
+                            backgroundColor: AppConstants.divider(isDark),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              progress >= 1.0
+                                  ? Colors.green
+                                  : AppConstants.getPrimary(isDark),
                             ),
                           ),
-                        ),
+                          Padding(
+                            padding: EdgeInsets.all(ringSize * 0.14),
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '$percentage%',
+                                maxLines: 1,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppConstants.textPrimary(isDark),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                );
-              }),
-              SizedBox(width: ts.scale(AppSpacing.base)),
-              // Stats
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    );
+                  }),
+                  SizedBox(width: ts.scale(AppSpacing.base)),
+                  // Stats
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              isArabic ? 'تقدم المهام' : 'Task Progress',
-                              style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  isArabic ? 'تقدم المهام' : 'Task Progress',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleSmall
+                                      ?.copyWith(fontWeight: FontWeight.bold),
+                                ),
+                                const InfoTipIcon(
+                                  titleKey: 'info_tip_task_progress_title',
+                                  bodyKey: 'info_tip_task_progress_body',
+                                ),
+                              ],
                             ),
-                            const InfoTipIcon(
-                              titleKey: 'info_tip_task_progress_title',
-                              bodyKey: 'info_tip_task_progress_body',
+                            Text(
+                              todayTotal > 0
+                                  ? (isArabic
+                                      ? '${NumberFormatter.withArabicNumerals('$todayDone')} من ${NumberFormatter.withArabicNumerals('$todayTotal')}'
+                                      : '$todayDone of $todayTotal')
+                                  : (isArabic ? 'لا مهام' : 'No tasks'),
+                              style: AppTypography.caption.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: progress >= 1.0
+                                    ? Colors.green
+                                    : AppConstants.getPrimary(isDark),
+                              ),
                             ),
                           ],
                         ),
-                        Text(
-                          todayTotal > 0
-                              ? (isArabic ? '${NumberFormatter.withArabicNumerals('$todayDone')} من ${NumberFormatter.withArabicNumerals('$todayTotal')}' : '$todayDone of $todayTotal')
-                              : (isArabic ? 'لا مهام' : 'No tasks'),
-                          style: AppTypography.caption.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: progress >= 1.0 ? Colors.green : AppConstants.getPrimary(isDark),
+                        SizedBox(height: ts.scale(6.0)),
+                        if (todayTotal > 0) ...[
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: progress,
+                              minHeight: 5,
+                              backgroundColor: AppConstants.divider(isDark),
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                progress >= 1.0
+                                    ? Colors.green
+                                    : AppConstants.getPrimary(isDark),
+                              ),
+                            ),
                           ),
+                          SizedBox(height: ts.scale(8.0).clamp(0.0, 12.0)),
+                        ],
+                        Row(
+                          children: [
+                            _buildMiniStat(
+                                Icons.today,
+                                '$todayTotal',
+                                isArabic ? 'اليوم' : 'Today',
+                                AppConstants.getPrimary(isDark)),
+                            SizedBox(width: ts.scale(16.0).clamp(0.0, 22.0)),
+                            _buildMiniStat(Icons.check_circle, '$todayDone',
+                                isArabic ? 'مكتمل' : 'Done', Colors.green),
+                            SizedBox(width: ts.scale(16.0).clamp(0.0, 22.0)),
+                            _buildMiniStat(
+                                Icons.warning_amber_rounded,
+                                '${stats.overdue}',
+                                isArabic ? 'متأخرة' : 'Late',
+                                stats.overdue > 0 ? Colors.red : Colors.grey),
+                            SizedBox(width: ts.scale(16.0).clamp(0.0, 22.0)),
+                            FutureBuilder<int>(
+                              future: _getStreak(),
+                              builder: (_, snap) => _buildMiniStat(
+                                  Icons.local_fire_department,
+                                  '${snap.data ?? 0}',
+                                  isArabic ? 'سلسلة' : 'Streak',
+                                  (snap.data ?? 0) > 0
+                                      ? Colors.orange
+                                      : Colors.grey),
+                            ),
+                          ],
                         ),
                       ],
                     ),
-                    SizedBox(height: ts.scale(6.0)),
-                    if (todayTotal > 0) ...[
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
-                        child: LinearProgressIndicator(
-                          value: progress,
-                          minHeight: 5,
-                          backgroundColor: AppConstants.divider(isDark),
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            progress >= 1.0 ? Colors.green : AppConstants.getPrimary(isDark),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: ts.scale(8.0).clamp(0.0, 12.0)),
-                    ],
-                    Row(
-                      children: [
-                        _buildMiniStat(Icons.today, '$todayTotal',
-                            isArabic ? 'اليوم' : 'Today', AppConstants.getPrimary(isDark)),
-                        SizedBox(width: ts.scale(16.0).clamp(0.0, 22.0)),
-                        _buildMiniStat(Icons.check_circle, '$todayDone',
-                            isArabic ? 'مكتمل' : 'Done', Colors.green),
-                        SizedBox(width: ts.scale(16.0).clamp(0.0, 22.0)),
-                        _buildMiniStat(Icons.warning_amber_rounded, '${stats.overdue}',
-                            isArabic ? 'متأخرة' : 'Late', stats.overdue > 0 ? Colors.red : Colors.grey),
-                        SizedBox(width: ts.scale(16.0).clamp(0.0, 22.0)),
-                        FutureBuilder<int>(
-                          future: _getStreak(),
-                          builder: (_, snap) => _buildMiniStat(Icons.local_fire_department,
-                              '${snap.data ?? 0}',
-                              isArabic ? 'سلسلة' : 'Streak',
-                              (snap.data ?? 0) > 0 ? Colors.orange : Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        );
+            );
           },
           loading: () => const SizedBox.shrink(),
           error: (_, __) => const SizedBox.shrink(),
@@ -1262,7 +1411,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     );
   }
 
-  Widget _buildMiniStat(IconData icon, String value, String label, Color color) {
+  Widget _buildMiniStat(
+      IconData icon, String value, String label, Color color) {
     return Builder(builder: (ctx) {
       final ts = MediaQuery.textScalerOf(ctx);
       final iconSz = ts.scale(13.0);
@@ -1278,23 +1428,31 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
               children: [
                 Icon(icon, size: iconSz, color: color),
                 SizedBox(width: ts.scale(3.0)),
-                Text(value, style: TextStyle(fontWeight: FontWeight.bold, fontSize: textSz, color: color)),
+                Text(value,
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: textSz,
+                        color: color)),
               ],
             ),
-            Text(label, style: TextStyle(fontSize: labelSz, color: color.withOpacity(0.7))),
+            Text(label,
+                style: TextStyle(
+                    fontSize: labelSz, color: color.withOpacity(0.7))),
           ],
         ),
       );
     });
   }
 
-  Widget _buildTodayTasksPreview(BuildContext context, bool isDark, bool isArabic) {
+  Widget _buildTodayTasksPreview(
+      BuildContext context, bool isDark, bool isArabic) {
     final ts = MediaQuery.textScalerOf(context);
     final allTasksAsync = ref.watch(allTasksProvider);
     final statsAsync = ref.watch(taskStatisticsProvider);
 
     return Container(
-      padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium)),
+      padding: EdgeInsets.all(
+          MediaQuery.textScalerOf(context).scale(AppConstants.paddingMedium)),
       decoration: BoxDecoration(
         color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
@@ -1343,13 +1501,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           // Progress bar — computed from allTasksAsync so recurring tasks count correctly
           allTasksAsync.when(
             data: (allTasks) {
-              final todayTasks = allTasks.where((t) => t.isDueToday || t.dueDate == null).toList();
+              final todayTasks = allTasks
+                  .where((t) => t.isDueToday || t.dueDate == null)
+                  .toList();
               final total = todayTasks.length;
               if (total == 0) return SizedBox(height: ts.scale(8.0));
               final done = todayTasks.where((t) => t.isCompleted).length;
               final progress = done / total;
               return Padding(
-                padding: EdgeInsets.only(top: ts.scale(10.0), bottom: ts.scale(4.0)),
+                padding:
+                    EdgeInsets.only(top: ts.scale(10.0), bottom: ts.scale(4.0)),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1358,10 +1519,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       child: LinearProgressIndicator(
                         value: progress,
                         minHeight: 6,
-                        backgroundColor:
-                            isDark ? Colors.grey.shade800 : Colors.grey.shade200,
+                        backgroundColor: isDark
+                            ? Colors.grey.shade800
+                            : Colors.grey.shade200,
                         valueColor: AlwaysStoppedAnimation<Color>(
-                          progress >= 1.0 ? Colors.green : AppConstants.getPrimary(isDark),
+                          progress >= 1.0
+                              ? Colors.green
+                              : AppConstants.getPrimary(isDark),
                         ),
                       ),
                     ),
@@ -1387,10 +1551,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
           // Task list
           allTasksAsync.when(
             data: (allTasks) {
-              final todayTasks =
-                  allTasks.where((t) => !t.isCompleted && (t.isDueToday || t.dueDate == null)).toList();
-              final upcomingTasks =
-                  allTasks.where((t) => !t.isCompleted && t.isUpcoming).toList();
+              final todayTasks = allTasks
+                  .where((t) =>
+                      !t.isCompleted && (t.isDueToday || t.dueDate == null))
+                  .toList();
+              final upcomingTasks = allTasks
+                  .where((t) => !t.isCompleted && t.isUpcoming)
+                  .toList();
               final toShow = todayTasks.isNotEmpty ? todayTasks : upcomingTasks;
 
               if (toShow.isEmpty) {
@@ -1403,7 +1570,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                           size: ts.scale(22.0), color: Colors.green.shade400),
                       SizedBox(width: ts.scale(8.0)),
                       Text(
-                        isArabic ? 'أنجزت كل مهام اليوم!' : 'All done for today!',
+                        isArabic
+                            ? 'أنجزت كل مهام اليوم!'
+                            : 'All done for today!',
                         style: AppTypography.bodyS.copyWith(
                           color: AppConstants.textMuted(isDark),
                         ),
@@ -1415,7 +1584,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
               return AnimatedSwitcher(
                 duration: const Duration(milliseconds: 280),
-                transitionBuilder: (child, anim) => FadeTransition(opacity: anim, child: child),
+                transitionBuilder: (child, anim) =>
+                    FadeTransition(opacity: anim, child: child),
                 child: Column(
                   key: ValueKey(toShow.take(3).map((t) => t.id).join()),
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1446,7 +1616,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             },
             loading: () => Padding(
               padding: EdgeInsets.symmetric(vertical: ts.scale(16.0)),
-              child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              child: const Center(
+                  child: CircularProgressIndicator(strokeWidth: 2)),
             ),
             error: (_, __) => const SizedBox.shrink(),
           ),
@@ -1455,7 +1626,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     );
   }
 
-  Future<void> _markPrayerFromHome(BuildContext context, String prayerName, bool isArabic) async {
+  Future<void> _markPrayerFromHome(
+      BuildContext context, String prayerName, bool isArabic) async {
     // Use the same 20-min rule as the prayer screen
     final prayerTimes = ref.read(prayerTimesProvider).prayerTimes;
     if (!canMarkPrayer(
@@ -1472,19 +1644,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     );
     if (chosenStatus == null || !mounted) return;
 
-    // Optimistic update: UI reflects change instantly before Firestore write
-    ref.read(dailyPrayerStatusProvider.notifier).updatePrayer(prayerName, chosenStatus);
-
-    final userId = getCurrentUserId();
-    final now = DateTime.now();
-    final fajrTime = prayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
-    await PrayerTrackingService.instance.recordPrayer(
-      userId: userId,
-      prayerName: prayerName,
-      date: getPrayerDate(now, fajrTime: fajrTime),
-      prayedAt: now,
-      status: chosenStatus,
-    );
+    // Single write path — persists to Firestore and updates the shared store,
+    // so the home card, Prayer Times page, and Prayer Tracking calendar all
+    // reflect this mark at once.
+    await ref
+        .read(dailyPrayerStatusProvider.notifier)
+        .markToday(prayerName, chosenStatus);
   }
 
   Future<void> _toggleTask(String taskId) async {
@@ -1492,8 +1657,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     try {
       // Check if this is the last today task before toggling
       final tasks = ref.read(allTasksProvider).valueOrNull ?? [];
-      final todayIncomplete = tasks.where((t) => (t.isDueToday || t.dueDate == null) && !t.isCompleted);
-      final wasLastTask = todayIncomplete.length == 1 && todayIncomplete.first.id == taskId;
+      final todayIncomplete = tasks
+          .where((t) => (t.isDueToday || t.dueDate == null) && !t.isCompleted);
+      final wasLastTask =
+          todayIncomplete.length == 1 && todayIncomplete.first.id == taskId;
 
       await TaskService.instance.toggleTaskCompletion(
         userId: userId,
@@ -1521,7 +1688,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final overlay = OverlayEntry(
-      builder: (_) => _HomeCelebrationOverlay(isDark: isDark, isArabic: isArabic),
+      builder: (_) =>
+          _HomeCelebrationOverlay(isDark: isDark, isArabic: isArabic),
     );
     Overlay.of(context).insert(overlay);
     Future.delayed(const Duration(seconds: 3), () => overlay.remove());
@@ -1551,9 +1719,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
 
     // If last date is not today or yesterday, streak is broken
     final now = DateTime.now();
-    final today = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final today =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     final yesterday = now.subtract(const Duration(days: 1));
-    final yesterdayStr = '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
+    final yesterdayStr =
+        '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
 
     if (lastDate != today && lastDate != yesterdayStr) {
       // Streak broken
@@ -1566,21 +1736,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
   Future<void> _incrementStreak() async {
     final prefs = await SharedPreferences.getInstance();
     final now = DateTime.now();
-    final today = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final today =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     final lastDate = prefs.getString(_streakDateKey);
 
     if (lastDate == today) return; // Already counted today
 
     final count = prefs.getInt(_streakKey) ?? 0;
     final yesterday = now.subtract(const Duration(days: 1));
-    final yesterdayStr = '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
+    final yesterdayStr =
+        '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
 
     final newCount = (lastDate == yesterdayStr) ? count + 1 : 1;
     await prefs.setInt(_streakKey, newCount);
     await prefs.setString(_streakDateKey, today);
   }
 
-  Widget _buildDailyProgressRing(BuildContext context, bool isDark, bool isArabic, int completed, int total) {
+  Widget _buildDailyProgressRing(BuildContext context, bool isDark,
+      bool isArabic, int completed, int total) {
     final ts = MediaQuery.textScalerOf(context);
     final progress = total > 0 ? completed / total : 0.0;
     final percentage = (progress * 100).round();
@@ -1600,7 +1773,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         children: [
           Text(
             isArabic ? 'تقدم اليوم' : "Today's Progress",
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+            style: Theme.of(context)
+                .textTheme
+                .titleMedium
+                ?.copyWith(fontWeight: FontWeight.bold),
           ),
           SizedBox(height: ts.scale(AppConstants.paddingMedium)),
           Row(
@@ -1617,7 +1793,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                       strokeWidth: 6,
                       backgroundColor: AppConstants.divider(isDark),
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        progress >= 1.0 ? Colors.green : AppConstants.getPrimary(isDark),
+                        progress >= 1.0
+                            ? Colors.green
+                            : AppConstants.getPrimary(isDark),
                       ),
                     ),
                     Center(
@@ -1639,16 +1817,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: kPrayerNames.map((name) {
                     final prayerNamesAr = {
-                      'Fajr': 'الفجر', 'Zuhr': 'الظهر', 'Asr': 'العصر', 'Maghrib': 'المغرب', 'Isha': 'العشاء',
+                      'Fajr': 'الفجر',
+                      'Zuhr': 'الظهر',
+                      'Asr': 'العصر',
+                      'Maghrib': 'المغرب',
+                      'Isha': 'العشاء',
                     };
-                    final displayName = isArabic ? (prayerNamesAr[name] ?? name) : name;
+                    final displayName =
+                        isArabic ? (prayerNamesAr[name] ?? name) : name;
                     return Padding(
                       padding: EdgeInsets.symmetric(vertical: ts.scale(2.0)),
                       child: Row(
                         children: [
-                          Image.asset(_getPrayerIconAsset(name), width: ts.scale(16.0), height: ts.scale(16.0)),
+                          Image.asset(_getPrayerIconAsset(name),
+                              width: ts.scale(16.0), height: ts.scale(16.0)),
                           SizedBox(width: ts.scale(6.0)),
-                          Text(displayName, style: AppTypography.caption.copyWith(color: isDark ? Colors.white70 : Colors.black54)),
+                          Text(displayName,
+                              style: AppTypography.caption.copyWith(
+                                  color: isDark
+                                      ? Colors.white70
+                                      : Colors.black54)),
                         ],
                       ),
                     );
@@ -1662,7 +1850,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
     );
   }
 
-  Widget _buildRecentActivity(BuildContext context, bool isDark, bool isArabic) {
+  Widget _buildRecentActivity(
+      BuildContext context, bool isDark, bool isArabic) {
     final ts = MediaQuery.textScalerOf(context);
     return FutureBuilder<List<PrayerRecord>>(
       future: _getRecentRecords(),
@@ -1674,7 +1863,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
         final records = snapshot.data!.take(3).toList();
 
         return Container(
-          padding: EdgeInsets.all(MediaQuery.textScalerOf(context).scale(AppSpacing.base)),
+          padding: EdgeInsets.all(
+              MediaQuery.textScalerOf(context).scale(AppSpacing.base)),
           decoration: BoxDecoration(
             color: AppConstants.card(isDark),
             borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
@@ -1685,7 +1875,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
             children: [
               Text(
                 isArabic ? 'النشاط الأخير' : 'Recent Activity',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
               SizedBox(height: ts.scale(AppSpacing.sm)),
               ...records.map((record) {
@@ -1704,36 +1897,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with WidgetsBindingObse
                     : record.status == PrayerStatus.late
                         ? (isArabic ? 'متأخر' : 'Late')
                         : (isArabic ? 'معذور' : 'Excused');
-                final timeStr = '${record.prayedAt.hour}:${record.prayedAt.minute.toString().padLeft(2, '0')}';
-                final displayTime = isArabic ? NumberFormatter.withArabicNumerals(timeStr) : timeStr;
+                final timeStr =
+                    '${record.prayedAt.hour}:${record.prayedAt.minute.toString().padLeft(2, '0')}';
+                final displayTime = isArabic
+                    ? NumberFormatter.withArabicNumerals(timeStr)
+                    : timeStr;
 
                 return Padding(
                   padding: EdgeInsets.symmetric(vertical: ts.scale(4.0)),
                   child: Row(
                     children: [
-                      Image.asset(_getPrayerIconAsset(record.prayerName), width: ts.scale(20.0), height: ts.scale(20.0)),
+                      Image.asset(_getPrayerIconAsset(record.prayerName),
+                          width: ts.scale(20.0), height: ts.scale(20.0)),
                       SizedBox(width: ts.scale(8.0)),
                       Expanded(
                         child: Text(
                           isArabic ? record.prayerName : record.prayerName,
-                          style: AppTypography.bodyS.copyWith(fontWeight: FontWeight.w500, color: AppConstants.textPrimary(isDark)),
+                          style: AppTypography.bodyS.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: AppConstants.textPrimary(isDark)),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       SizedBox(width: ts.scale(4.0)),
-                      Icon(statusIcon, color: statusColor, size: ts.scale(16.0)),
+                      Icon(statusIcon,
+                          color: statusColor, size: ts.scale(16.0)),
                       SizedBox(width: ts.scale(4.0)),
                       Flexible(
                         child: Text(
                           statusText,
-                          style: AppTypography.caption.copyWith(color: statusColor, fontWeight: FontWeight.w600),
+                          style: AppTypography.caption.copyWith(
+                              color: statusColor, fontWeight: FontWeight.w600),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       SizedBox(width: ts.scale(6.0)),
                       Text(
                         displayTime,
-                        style: AppTypography.caption.copyWith(color: AppConstants.textDisabled(isDark)),
+                        style: AppTypography.caption
+                            .copyWith(color: AppConstants.textDisabled(isDark)),
                       ),
                     ],
                   ),
@@ -1768,7 +1970,8 @@ class _HomeCelebrationOverlay extends StatefulWidget {
   const _HomeCelebrationOverlay({required this.isDark, required this.isArabic});
 
   @override
-  State<_HomeCelebrationOverlay> createState() => _HomeCelebrationOverlayState();
+  State<_HomeCelebrationOverlay> createState() =>
+      _HomeCelebrationOverlayState();
 }
 
 class _HomeCelebrationOverlayState extends State<_HomeCelebrationOverlay>
@@ -1780,7 +1983,8 @@ class _HomeCelebrationOverlayState extends State<_HomeCelebrationOverlay>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 2800));
+    _controller = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 2800));
     _scaleAnim = Tween<double>(begin: 0.8, end: 1.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
@@ -1810,7 +2014,8 @@ class _HomeCelebrationOverlayState extends State<_HomeCelebrationOverlay>
             animation: _controller,
             builder: (context, _) {
               return Container(
-                color: AppConstants.getPrimary(isDark).withValues(alpha: 0.12 * _opacityAnim.value),
+                color: AppConstants.getPrimary(isDark)
+                    .withValues(alpha: 0.12 * _opacityAnim.value),
                 alignment: Alignment.center,
                 child: Opacity(
                   opacity: _opacityAnim.value,
@@ -1822,12 +2027,14 @@ class _HomeCelebrationOverlayState extends State<_HomeCelebrationOverlay>
                         color: AppConstants.surface(isDark),
                         borderRadius: BorderRadius.circular(28),
                         border: Border.all(
-                          color: AppConstants.getPrimary(isDark).withValues(alpha: 0.25),
+                          color: AppConstants.getPrimary(isDark)
+                              .withValues(alpha: 0.25),
                           width: 1.5,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppConstants.getPrimary(isDark).withValues(alpha: 0.22),
+                            color: AppConstants.getPrimary(isDark)
+                                .withValues(alpha: 0.22),
                             blurRadius: 36,
                             offset: const Offset(0, 10),
                             spreadRadius: 2,
@@ -1842,11 +2049,15 @@ class _HomeCelebrationOverlayState extends State<_HomeCelebrationOverlay>
                             padding: const EdgeInsets.symmetric(vertical: 28),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
-                                colors: [AppConstants.getPrimary(isDark), AppConstants.accentCyan],
+                                colors: [
+                                  AppConstants.getPrimary(isDark),
+                                  AppConstants.accentCyan
+                                ],
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                               ),
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                              borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(28)),
                             ),
                             child: Column(
                               children: [
@@ -1856,38 +2067,52 @@ class _HomeCelebrationOverlayState extends State<_HomeCelebrationOverlay>
                                   decoration: BoxDecoration(
                                     color: Colors.white.withValues(alpha: 0.2),
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2),
+                                    border: Border.all(
+                                        color:
+                                            Colors.white.withValues(alpha: 0.4),
+                                        width: 2),
                                   ),
                                   child: Center(
-                                    child: Icon(Icons.check_rounded, size: ts.scale(42.0), color: Colors.white),
+                                    child: Icon(Icons.check_rounded,
+                                        size: ts.scale(42.0),
+                                        color: Colors.white),
                                   ),
                                 ),
                                 SizedBox(height: ts.scale(12.0)),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
-                                  children: List.generate(3, (i) => Container(
-                                    width: ts.scale(6.0),
-                                    height: ts.scale(6.0),
-                                    margin: EdgeInsets.symmetric(horizontal: ts.scale(3.0)),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: i == 1 ? 0.9 : 0.4),
-                                      shape: BoxShape.circle,
-                                    ),
-                                  )),
+                                  children: List.generate(
+                                      3,
+                                      (i) => Container(
+                                            width: ts.scale(6.0),
+                                            height: ts.scale(6.0),
+                                            margin: EdgeInsets.symmetric(
+                                                horizontal: ts.scale(3.0)),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withValues(
+                                                  alpha: i == 1 ? 0.9 : 0.4),
+                                              shape: BoxShape.circle,
+                                            ),
+                                          )),
                                 ),
                               ],
                             ),
                           ),
                           Padding(
-                            padding: EdgeInsets.fromLTRB(ts.scale(28.0), ts.scale(22.0), ts.scale(28.0), ts.scale(26.0)),
+                            padding: EdgeInsets.fromLTRB(ts.scale(28.0),
+                                ts.scale(22.0), ts.scale(28.0), ts.scale(26.0)),
                             child: Column(
                               children: [
                                 Text(
-                                  widget.isArabic ? 'أُنجز الكل! ✨' : 'All Done! ✨',
+                                  widget.isArabic
+                                      ? 'أُنجز الكل! ✨'
+                                      : 'All Done! ✨',
                                   style: AppTypography.headingL.copyWith(
                                     fontSize: ts.scale(26.0),
                                     fontWeight: FontWeight.bold,
-                                    color: widget.isDark ? Colors.white : const Color(0xFF2A2418),
+                                    color: widget.isDark
+                                        ? Colors.white
+                                        : const Color(0xFF2A2418),
                                     letterSpacing: -0.3,
                                   ),
                                   textScaler: TextScaler.noScaling,
@@ -1899,22 +2124,30 @@ class _HomeCelebrationOverlayState extends State<_HomeCelebrationOverlay>
                                       : 'You crushed every task today!',
                                   style: AppTypography.label.copyWith(
                                     height: 1.5,
-                                    color: widget.isDark ? Colors.white60 : Colors.black45,
+                                    color: widget.isDark
+                                        ? Colors.white60
+                                        : Colors.black45,
                                   ),
                                   textAlign: TextAlign.center,
                                 ),
                                 SizedBox(height: ts.scale(18.0)),
                                 Container(
-                                  padding: EdgeInsets.symmetric(horizontal: ts.scale(18.0), vertical: ts.scale(7.0)),
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: ts.scale(18.0),
+                                      vertical: ts.scale(7.0)),
                                   decoration: BoxDecoration(
-                                    color: AppConstants.getPrimary(isDark).withValues(alpha: 0.1),
+                                    color: AppConstants.getPrimary(isDark)
+                                        .withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(30),
                                     border: Border.all(
-                                      color: AppConstants.getPrimary(isDark).withValues(alpha: 0.25),
+                                      color: AppConstants.getPrimary(isDark)
+                                          .withValues(alpha: 0.25),
                                     ),
                                   ),
                                   child: Text(
-                                    widget.isArabic ? '🎯  يوم منتج!' : '🎯  Productive day!',
+                                    widget.isArabic
+                                        ? '🎯  يوم منتج!'
+                                        : '🎯  Productive day!',
                                     style: AppTypography.bodyS.copyWith(
                                       fontWeight: FontWeight.w600,
                                       color: AppConstants.getPrimary(isDark),

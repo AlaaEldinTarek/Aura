@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:easy_localization/easy_localization.dart';
 import 'package:table_calendar/table_calendar.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/models/prayer_record.dart';
@@ -15,12 +14,21 @@ import '../../core/utils/prayer_time_rules.dart';
 import '../../core/utils/number_formatter.dart';
 import '../../core/theme/app_typography.dart';
 
-/// Prayer Tracking Screen - Shows prayer history and statistics
+DateTime _d(DateTime x) => DateTime(x.year, x.month, x.day);
+
+/// Prayer Tracking Screen - Shows prayer history and statistics.
+///
+/// Reads and writes exclusively through [dailyPrayerStatusProvider] — the one
+/// shared, date-keyed source of truth. It owns no prayer state of its own, so a
+/// mark made here (or on the home card, Prayer Times page, or via a
+/// notification button) is reflected everywhere immediately, and editing a past
+/// day can never alter today.
 class PrayerTrackingScreen extends ConsumerStatefulWidget {
   const PrayerTrackingScreen({super.key});
 
   @override
-  ConsumerState<PrayerTrackingScreen> createState() => _PrayerTrackingScreenState();
+  ConsumerState<PrayerTrackingScreen> createState() =>
+      _PrayerTrackingScreenState();
 }
 
 class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
@@ -28,53 +36,60 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
   late DateTime _effectiveToday;
-  Map<DateTime, DailyPrayerSummary> _monthlyData = {};
   bool _isLoading = false;
   int _currentStreak = 0;
 
   @override
   void initState() {
     super.initState();
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-
-    // Between midnight and Fajr → treat yesterday as the active day
-    final prayerState = ref.read(prayerTimesProvider);
-    final fajrMatches = (prayerState?.prayerTimes ?? []).where((p) => p.name == 'Fajr');
-    if (fajrMatches.isNotEmpty && now.isBefore(fajrMatches.first.time)) {
-      _selectedDay = today.subtract(const Duration(days: 1));
-    } else {
-      _selectedDay = today;
-    }
-    _effectiveToday = _selectedDay!;
-    _focusedDay = _selectedDay!;
-    _loadMonthData();
+    // Effective Islamic day comes from the single source of truth.
+    _effectiveToday =
+        ref.read(dailyPrayerStatusProvider.notifier).computeEffectiveToday();
+    _selectedDay = _effectiveToday;
+    _focusedDay = _effectiveToday;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
   }
 
-  Future<void> _loadMonthData() async {
+  Future<void> _loadData() async {
     setState(() => _isLoading = true);
-
-    // Get user ID from auth
-    final userId = getCurrentUserId();
-
-    // Clear cache to ensure fresh data from Firestore
-    _trackingService.clearCache();
-
-    final data = await _trackingService.getMonthData(
-      userId: userId,
-      month: _focusedDay,
-    );
-
-    // Calculate streak using service (handles cross-month correctly)
-    final streak = await _trackingService.calculateCurrentStreak(userId: userId);
-
+    await ref
+        .read(dailyPrayerStatusProvider.notifier)
+        .loadMonth(_focusedDay, forceRefresh: true);
+    final streak = await _trackingService.calculateCurrentStreak(
+        userId: getCurrentUserId());
     if (mounted) {
       setState(() {
-        _monthlyData = data;
         _currentStreak = streak;
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _refreshStreak() async {
+    final streak = await _trackingService.calculateCurrentStreak(
+        userId: getCurrentUserId());
+    if (mounted) setState(() => _currentStreak = streak);
+  }
+
+  /// Display-filtered statuses for [day]. For the actual calendar today, a
+  /// prayer is hidden until its Adhan + 20 min has passed (same rule as
+  /// canMarkPrayer); past days are shown as-is.
+  Map<String, PrayerStatus> _displayStatuses(
+      DateTime day, DailyPrayerStatus tracking, List<PrayerTime> times) {
+    final raw = tracking.statusesFor(day);
+    if (day != _d(DateTime.now())) return raw;
+    final out = <String, PrayerStatus>{};
+    raw.forEach((name, status) {
+      if (isPrayerTimeReached(name, times)) out[name] = status;
+    });
+    return out;
+  }
+
+  bool _isDayComplete(
+      DateTime day, DailyPrayerStatus tracking, List<PrayerTime> times) {
+    final s = _displayStatuses(day, tracking, times);
+    if (s.length < kPrayerNames.length) return false;
+    return s.values.every((st) => st != PrayerStatus.missed);
   }
 
   @override
@@ -82,23 +97,11 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    // Sync real-time prayer marks from home/prayer screen into the calendar.
-    // Uses _effectiveToday (computed once in initState) to avoid a race where
-    // prayerTimesProvider hasn't loaded yet and the target date defaults to the
-    // wrong calendar date.  Also guards against the provider reloading for the
-    // calendar date (e.g. May 28) while the effective day is still yesterday
-    // (May 27) — an empty reload must not overwrite correctly-loaded data.
-    ref.listen<DailyPrayerStatus>(dailyPrayerStatusProvider, (_, next) {
-      if (!mounted) return;
-      final existing = _monthlyData[_effectiveToday];
-      if (next.statuses.isEmpty && existing != null && existing.prayers.isNotEmpty) return;
-      setState(() {
-        _monthlyData[_effectiveToday] = DailyPrayerSummary(
-          date: _effectiveToday,
-          prayers: Map<String, PrayerStatus>.from(next.statuses),
-        );
-      });
-    });
+    final tracking = ref.watch(dailyPrayerStatusProvider);
+    final prayerTimes =
+        ref.watch(prayerTimesProvider.select((s) => s.prayerTimes));
+    final hasAnyData = tracking.byDate.keys
+        .any((d) => d.year == _focusedDay.year && d.month == _focusedDay.month);
 
     return Scaffold(
       appBar: AppBar(
@@ -116,64 +119,63 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
       body: Builder(builder: (ctx) {
         final ts = MediaQuery.textScalerOf(ctx);
         return RefreshIndicator(
-        onRefresh: _loadMonthData,
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Statistics cards
-              _buildStatisticsCards(context, isDark, isArabic),
-
-              SizedBox(height: ts.scale(AppConstants.paddingLarge).clamp(0.0, 28.0)),
-
-              // Calendar
-              _buildCalendar(context, isDark, isArabic),
-
-              SizedBox(height: ts.scale(AppConstants.paddingLarge).clamp(0.0, 28.0)),
-
-              // Empty state when no records exist for this month
-              if (!_isLoading && _monthlyData.isEmpty)
-                EmptyState(
-                  iconEmoji: '🕌',
-                  title: isArabic ? 'لا توجد سجلات هذا الشهر' : 'No prayer records this month',
-                  subtitle: isArabic
-                      ? 'ابدأ بتسجيل صلواتك لبناء سلسلتك'
-                      : 'Start marking your prayers to build your streak',
-                ),
-
-              // Selected day details
-              if (_selectedDay != null)
-                _buildDayDetails(context, _selectedDay!, isDark, isArabic,
-                    ref.watch(prayerTimesProvider.select((s) => s.prayerTimes))),
-
-              SizedBox(height: ts.scale(80.0)),
-            ],
+          onRefresh: _loadData,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: EdgeInsets.all(ts.scale(AppConstants.paddingMedium)),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _buildStatisticsCards(
+                    context, isDark, isArabic, tracking, prayerTimes),
+                SizedBox(
+                    height:
+                        ts.scale(AppConstants.paddingLarge).clamp(0.0, 28.0)),
+                _buildCalendar(
+                    context, isDark, isArabic, tracking, prayerTimes),
+                SizedBox(
+                    height:
+                        ts.scale(AppConstants.paddingLarge).clamp(0.0, 28.0)),
+                if (!_isLoading && !hasAnyData)
+                  EmptyState(
+                    iconEmoji: '🕌',
+                    title: isArabic
+                        ? 'لا توجد سجلات هذا الشهر'
+                        : 'No prayer records this month',
+                    subtitle: isArabic
+                        ? 'ابدأ بتسجيل صلواتك لبناء سلسلتك'
+                        : 'Start marking your prayers to build your streak',
+                  ),
+                if (_selectedDay != null)
+                  _buildDayDetails(context, _selectedDay!, isDark, isArabic,
+                      tracking, prayerTimes),
+                SizedBox(height: ts.scale(80.0)),
+              ],
+            ),
           ),
-        ),
-      );
+        );
       }),
     );
   }
 
-  Widget _buildStatisticsCards(BuildContext context, bool isDark, bool isArabic) {
+  Widget _buildStatisticsCards(BuildContext context, bool isDark, bool isArabic,
+      DailyPrayerStatus tracking, List<PrayerTime> prayerTimes) {
     final ts = MediaQuery.textScalerOf(context);
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-
-    // Calculate stats from start of month to today
+    final today = _d(now);
     final startOfMonth = DateTime(now.year, now.month, 1);
+
     int totalPrayers = 0;
     int completedPrayers = 0;
     int onTimePrayers = 0;
 
-    // Count all days from start of month to today (5 prayers each)
-    for (DateTime day = startOfMonth; !day.isAfter(today); day = day.add(const Duration(days: 1))) {
-      final summary = _monthlyData[day];
+    for (DateTime day = startOfMonth;
+        !day.isAfter(today);
+        day = day.add(const Duration(days: 1))) {
+      final statuses = _displayStatuses(day, tracking, prayerTimes);
       for (final prayerName in kPrayerNames) {
         totalPrayers++;
-        final status = summary?.prayers[prayerName];
+        final status = statuses[prayerName];
         if (status == PrayerStatus.onTime || status == PrayerStatus.late) {
           completedPrayers++;
         }
@@ -183,10 +185,10 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
       }
     }
 
-    final completionRate = totalPrayers > 0 ? (completedPrayers / totalPrayers * 100).round() : 0;
-    final onTimeRate = totalPrayers > 0 ? (onTimePrayers / totalPrayers * 100).round() : 0;
-
-    // Use service-calculated streak (handles cross-month correctly)
+    final completionRate =
+        totalPrayers > 0 ? (completedPrayers / totalPrayers * 100).round() : 0;
+    final onTimeRate =
+        totalPrayers > 0 ? (onTimePrayers / totalPrayers * 100).round() : 0;
     final streak = _currentStreak;
 
     return Column(
@@ -205,27 +207,32 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
               child: _StatCard(
                 icon: Icons.local_fire_department,
                 label: isArabic ? 'التتابع' : 'Streak',
-                value: NumberFormatter.withArabicNumeralsByLanguage('$streak', isArabic ? 'ar' : 'en'),
+                value: NumberFormatter.withArabicNumeralsByLanguage(
+                    '$streak', isArabic ? 'ar' : 'en'),
                 color: Colors.orange,
                 isDark: isDark,
               ),
             ),
-            SizedBox(width: ts.scale(AppConstants.paddingMedium).clamp(0.0, 20.0)),
+            SizedBox(
+                width: ts.scale(AppConstants.paddingMedium).clamp(0.0, 20.0)),
             Expanded(
               child: _StatCard(
                 icon: Icons.check_circle,
                 label: isArabic ? 'إتمام' : 'Complete',
-                value: NumberFormatter.withArabicNumeralsByLanguage('$completionRate%', isArabic ? 'ar' : 'en'),
+                value: NumberFormatter.withArabicNumeralsByLanguage(
+                    '$completionRate%', isArabic ? 'ar' : 'en'),
                 color: Colors.green,
                 isDark: isDark,
               ),
             ),
-            SizedBox(width: ts.scale(AppConstants.paddingMedium).clamp(0.0, 20.0)),
+            SizedBox(
+                width: ts.scale(AppConstants.paddingMedium).clamp(0.0, 20.0)),
             Expanded(
               child: _StatCard(
                 icon: Icons.schedule,
                 label: isArabic ? 'في الوقت' : 'On Time',
-                value: NumberFormatter.withArabicNumeralsByLanguage('$onTimeRate%', isArabic ? 'ar' : 'en'),
+                value: NumberFormatter.withArabicNumeralsByLanguage(
+                    '$onTimeRate%', isArabic ? 'ar' : 'en'),
                 color: AppConstants.getPrimary(isDark),
                 isDark: isDark,
               ),
@@ -236,7 +243,8 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
     );
   }
 
-  Widget _buildCalendar(BuildContext context, bool isDark, bool isArabic) {
+  Widget _buildCalendar(BuildContext context, bool isDark, bool isArabic,
+      DailyPrayerStatus tracking, List<PrayerTime> prayerTimes) {
     final ts = MediaQuery.textScalerOf(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -257,74 +265,75 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
             ),
           ),
           child: MediaQuery(
-            data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: TextScaler.noScaling),
             child: TableCalendar(
-            firstDay: DateTime.utc(2020, 1, 1),
-            lastDay: DateTime.utc(2030, 12, 31),
-            focusedDay: _focusedDay,
-            daysOfWeekHeight: ts.scale(32.0).clamp(32.0, 56.0),
-            rowHeight: ts.scale(44.0).clamp(40.0, 70.0),
-            selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
-            calendarFormat: CalendarFormat.month,
-            onDaySelected: (selectedDay, focusedDay) {
-              setState(() {
-                _selectedDay = DateTime(selectedDay.year, selectedDay.month, selectedDay.day);
-                _focusedDay = DateTime(focusedDay.year, focusedDay.month, focusedDay.day);
-              });
-            },
-            onPageChanged: (focusedDay) {
-              _focusedDay = focusedDay;
-              _loadMonthData();
-            },
-            calendarStyle: CalendarStyle(
-              todayDecoration: BoxDecoration(
-                color: AppConstants.getPrimary(isDark).withOpacity(0.3),
-                shape: BoxShape.circle,
+              firstDay: DateTime.utc(2020, 1, 1),
+              lastDay: DateTime.utc(2030, 12, 31),
+              focusedDay: _focusedDay,
+              daysOfWeekHeight: ts.scale(32.0).clamp(32.0, 56.0),
+              rowHeight: ts.scale(44.0).clamp(40.0, 70.0),
+              selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+              calendarFormat: CalendarFormat.month,
+              onDaySelected: (selectedDay, focusedDay) {
+                setState(() {
+                  _selectedDay = _d(selectedDay);
+                  _focusedDay = _d(focusedDay);
+                });
+              },
+              onPageChanged: (focusedDay) {
+                _focusedDay = focusedDay;
+                _loadData();
+              },
+              calendarStyle: CalendarStyle(
+                todayDecoration: BoxDecoration(
+                  color: AppConstants.getPrimary(isDark).withOpacity(0.3),
+                  shape: BoxShape.circle,
+                ),
+                selectedDecoration: BoxDecoration(
+                  color: AppConstants.getPrimary(isDark),
+                  shape: BoxShape.circle,
+                ),
+                markerDecoration: BoxDecoration(
+                  color: Colors.green,
+                  shape: BoxShape.circle,
+                ),
+                weekendTextStyle: AppTypography.caption.copyWith(
+                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+                ),
               ),
-              selectedDecoration: BoxDecoration(
-                color: AppConstants.getPrimary(isDark),
-                shape: BoxShape.circle,
+              headerStyle: HeaderStyle(
+                formatButtonVisible: false,
+                titleCentered: true,
+                titleTextStyle: AppTypography.bodyL.copyWith(
+                  color: AppConstants.textPrimary(isDark),
+                  fontWeight: FontWeight.bold,
+                ),
+                leftChevronIcon: Icon(
+                  Icons.chevron_left,
+                  color: AppConstants.textPrimary(isDark),
+                ),
+                rightChevronIcon: Icon(
+                  Icons.chevron_right,
+                  color: AppConstants.textPrimary(isDark),
+                ),
               ),
-              markerDecoration: BoxDecoration(
-                color: Colors.green,
-                shape: BoxShape.circle,
+              daysOfWeekStyle: DaysOfWeekStyle(
+                weekdayStyle: AppTypography.caption.copyWith(
+                  fontSize: 12,
+                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+                ),
+                weekendStyle: AppTypography.caption.copyWith(
+                  fontSize: 12,
+                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
+                ),
               ),
-              weekendTextStyle: AppTypography.caption.copyWith(
-                color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
-              ),
+              eventLoader: (day) {
+                return _isDayComplete(_d(day), tracking, prayerTimes)
+                    ? ['completed']
+                    : [];
+              },
             ),
-            headerStyle: HeaderStyle(
-              formatButtonVisible: false,
-              titleCentered: true,
-              titleTextStyle: AppTypography.bodyL.copyWith(
-                color: AppConstants.textPrimary(isDark),
-                fontWeight: FontWeight.bold,
-              ),
-              leftChevronIcon: Icon(
-                Icons.chevron_left,
-                color: AppConstants.textPrimary(isDark),
-              ),
-              rightChevronIcon: Icon(
-                Icons.chevron_right,
-                color: AppConstants.textPrimary(isDark),
-              ),
-            ),
-            daysOfWeekStyle: DaysOfWeekStyle(
-              weekdayStyle: AppTypography.caption.copyWith(
-                fontSize: 12,
-                color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
-              ),
-              weekendStyle: AppTypography.caption.copyWith(
-                fontSize: 12,
-                color: isDark ? Colors.grey.shade400 : Colors.grey.shade700,
-              ),
-            ),
-            eventLoader: (day) {
-              final normalizedDay = DateTime(day.year, day.month, day.day);
-              final summary = _monthlyData[normalizedDay];
-              return summary != null && summary.isComplete ? ['completed'] : [];
-            },
-          ),
           ),
         ),
       ],
@@ -336,14 +345,14 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
     DateTime day,
     bool isDark,
     bool isArabic,
+    DailyPrayerStatus tracking,
     List<PrayerTime> todayPrayerTimes,
   ) {
-    final normalizedDay = DateTime(day.year, day.month, day.day);
-    final today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final normalizedDay = _d(day);
+    final today = _d(DateTime.now());
     final isPastDay = normalizedDay.isBefore(today);
     final isToday = normalizedDay == today;
 
-    final summary = _monthlyData[normalizedDay];
     final prayerNames = kPrayerNames;
     final prayerDisplayNames = {
       'Fajr': isArabic ? 'الفجر' : 'Fajr',
@@ -353,18 +362,15 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
       'Isha': isArabic ? 'العشاء' : 'Isha',
     };
     final prayerEmojis = {
-      'Fajr': '🌙', 'Zuhr': '☀️', 'Asr': '🌤️', 'Maghrib': '🌇', 'Isha': '🌃',
+      'Fajr': '🌙',
+      'Zuhr': '☀️',
+      'Asr': '🌤️',
+      'Maghrib': '🌇',
+      'Isha': '🌃',
     };
 
-    // For today: hide any stored status for prayers whose Adhan + 20 min hasn't
-    // passed yet — same rule as canMarkPrayer.  Past days are shown as-is.
-    final Map<String, PrayerStatus?> statuses = {};
-    for (final name in prayerNames) {
-      final stored = summary?.prayers[name];
-      statuses[name] = (isToday && stored != null && !isPrayerTimeReached(name, todayPrayerTimes))
-          ? null
-          : stored;
-    }
+    final displayed =
+        _displayStatuses(normalizedDay, tracking, todayPrayerTimes);
 
     final ts = MediaQuery.textScalerOf(context);
     return Container(
@@ -399,11 +405,12 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                 ),
             ],
           ),
-          SizedBox(height: ts.scale(AppConstants.paddingMedium).clamp(0.0, 20.0)),
+          SizedBox(
+              height: ts.scale(AppConstants.paddingMedium).clamp(0.0, 20.0)),
           ...prayerNames.map((prayerName) {
             final displayName = prayerDisplayNames[prayerName]!;
             final emoji = prayerEmojis[prayerName]!;
-            final status = statuses[prayerName];
+            final status = displayed[prayerName];
 
             return _buildPrayerActionRow(
               context: context,
@@ -432,8 +439,10 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
     required bool isArabic,
   }) {
     final ts = MediaQuery.textScalerOf(context);
-    final isCompleted = status == PrayerStatus.onTime || status == PrayerStatus.late;
-    final isExplicitlyMissed = status == PrayerStatus.excused || status == PrayerStatus.missed;
+    final isCompleted =
+        status == PrayerStatus.onTime || status == PrayerStatus.late;
+    final isExplicitlyMissed =
+        status == PrayerStatus.excused || status == PrayerStatus.missed;
 
     final showBadge = isCompleted || isExplicitlyMissed;
     final badgeColor = isExplicitlyMissed
@@ -446,9 +455,11 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
         onTap: () => _togglePrayerStatus(prayerName, date, status, isArabic),
         borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
         child: Container(
-          padding: EdgeInsets.symmetric(horizontal: ts.scale(12.0), vertical: ts.scale(10.0)),
+          padding: EdgeInsets.symmetric(
+              horizontal: ts.scale(12.0), vertical: ts.scale(10.0)),
           decoration: BoxDecoration(
-            color: showBadge ? badgeColor.withOpacity(0.08) : Colors.transparent,
+            color:
+                showBadge ? badgeColor.withOpacity(0.08) : Colors.transparent,
             borderRadius: BorderRadius.circular(AppConstants.radiusMedium),
             border: showBadge
                 ? Border.all(color: badgeColor.withOpacity(0.3), width: 1)
@@ -456,11 +467,10 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
           ),
           child: Row(
             children: [
-              // Emoji
-              Text(emoji, style: TextStyle(fontSize: ts.scale(20.0)), textScaler: TextScaler.noScaling),
+              Text(emoji,
+                  style: TextStyle(fontSize: ts.scale(20.0)),
+                  textScaler: TextScaler.noScaling),
               SizedBox(width: ts.scale(12.0)),
-
-              // Prayer name
               Expanded(
                 child: Text(
                   displayName,
@@ -470,11 +480,10 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                   ),
                 ),
               ),
-
-              // Status badge
               if (showBadge)
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: ts.scale(10.0), vertical: ts.scale(4.0)),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: ts.scale(10.0), vertical: ts.scale(4.0)),
                   decoration: BoxDecoration(
                     color: badgeColor.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(12),
@@ -485,7 +494,9 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                       Icon(
                         isExplicitlyMissed
                             ? Icons.cancel
-                            : (status == PrayerStatus.late ? Icons.schedule : Icons.check_circle),
+                            : (status == PrayerStatus.late
+                                ? Icons.schedule
+                                : Icons.check_circle),
                         color: badgeColor,
                         size: ts.scale(16.0),
                       ),
@@ -506,7 +517,8 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                 )
               else
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: ts.scale(10.0), vertical: ts.scale(4.0)),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: ts.scale(10.0), vertical: ts.scale(4.0)),
                   decoration: BoxDecoration(
                     color: Colors.grey.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(12),
@@ -515,7 +527,8 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(Icons.radio_button_unchecked,
-                          color: AppConstants.textDisabled(isDark), size: ts.scale(16.0)),
+                          color: AppConstants.textDisabled(isDark),
+                          size: ts.scale(16.0)),
                       SizedBox(width: ts.scale(4.0)),
                       Text(
                         isArabic ? 'غير مُصلّاة' : 'Not Prayed',
@@ -540,204 +553,109 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
     PrayerStatus? currentStatus,
     bool isArabic,
   ) async {
-    final userId = getCurrentUserId();
-    final calendarDate = DateTime(date.year, date.month, date.day);
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-
-    // Read prayer times once for both effective-date check and 20-minute rule
-    final prayerState = ref.read(prayerTimesProvider);
-    final prayerTimes = prayerState?.prayerTimes ?? [];
-
-    // Between midnight and Fajr → record to previous day
-    DateTime effectiveDate = calendarDate;
-    if (calendarDate == today) {
-      final fajrMatches = prayerTimes.where((p) => p.name == 'Fajr');
-      if (fajrMatches.isNotEmpty && now.isBefore(fajrMatches.first.time)) {
-        effectiveDate = today.subtract(const Duration(days: 1));
-      }
-    }
-
-    // 20-minute rule: only when recording for actual today (not post-midnight for yesterday)
-    if (calendarDate == today && effectiveDate == today && currentStatus == null) {
-      if (!canMarkPrayer(context: context, prayerName: prayerName, prayerTimes: prayerTimes, isArabic: isArabic)) {
-        return;
-      }
-    }
+    final notifier = ref.read(dailyPrayerStatusProvider.notifier);
+    final calendarDate = _d(date);
+    final realToday = _d(DateTime.now());
+    final eff = notifier.computeEffectiveToday();
+    final prayerTimes = ref.read(prayerTimesProvider).prayerTimes;
 
     try {
       if (currentStatus != null) {
-        // Show confirmation dialog before unmarking
+        // ── Unmark ──────────────────────────────────────────────────────────
         final confirmed = await showUnmarkConfirmDialog(
           context: context,
           prayerName: prayerName,
           isArabic: isArabic,
         );
-
         if (confirmed != true || !mounted) return;
 
-        // Unmark — delete the record
-        final deleted = await _trackingService.deletePrayerRecord(
-          userId: userId,
-          prayerName: prayerName,
-          date: effectiveDate,
-        );
-
+        final deleted = await notifier.unmarkDate(calendarDate, prayerName);
         if (!deleted) {
           haptic.HapticFeedback.error();
-          if (mounted) {
-            final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  isArabic
-                      ? 'فشل إلغاء التسجيل. حاول مرة أخرى.'
-                      : 'Failed to unmark. Please try again.',
-                ),
-                backgroundColor: Colors.red,
-                duration: const Duration(seconds: 2),
-                behavior: SnackBarBehavior.floating,
-                margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
-              ),
-            );
-            Future.delayed(const Duration(seconds: 2), snackCtrl.close);
-          }
+          _snack(
+              isArabic
+                  ? 'فشل إلغاء التسجيل. حاول مرة أخرى.'
+                  : 'Failed to unmark. Please try again.',
+              color: Colors.red);
+          return;
+        }
+        haptic.HapticFeedback.light();
+        await _refreshStreak();
+        _snack(
+            isArabic ? 'تم إلغاء تسجيل $prayerName' : 'Unmarked $prayerName');
+      } else {
+        // ── Mark ────────────────────────────────────────────────────────────
+        // A future day (whose prayers haven't happened) can never be recorded.
+        if (calendarDate.isAfter(eff)) {
+          _snack(
+            isArabic
+                ? 'لا يمكن تسجيل صلاة لم يحن وقتها بعد'
+                : "You can't record a prayer before its time",
+            color: Colors.orange,
+          );
+          return;
+        }
+        // For the actual calendar today, surface the 20-minute countdown message.
+        if (calendarDate == realToday &&
+            !canMarkPrayer(
+                context: context,
+                prayerName: prayerName,
+                prayerTimes: prayerTimes,
+                isArabic: isArabic)) {
           return;
         }
 
-        // Immediately update local data
-        haptic.HapticFeedback.light();
-        setState(() {
-          final dayKey = effectiveDate;
-          final existing = _monthlyData[dayKey];
-          if (existing != null) {
-            final updatedPrayers = Map<String, PrayerStatus>.from(existing.prayers);
-            updatedPrayers.remove(prayerName);
-            _monthlyData[dayKey] = DailyPrayerSummary(
-              date: effectiveDate,
-              prayers: updatedPrayers,
-            );
-          }
-        });
-
-        // Refresh prayer cards on prayer screen and home screen
-        if (effectiveDate == today) {
-          _trackingService.clearCache();
-          ref.read(dailyPrayerStatusProvider.notifier).load(forceRefresh: true);
-        }
-
-        if (mounted) {
-          final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                isArabic ? 'تم إلغاء تسجيل $prayerName' : 'Unmarked $prayerName',
-              ),
-              duration: const Duration(milliseconds: 800),
-              behavior: SnackBarBehavior.floating,
-              margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
-            ),
-          );
-          Future.delayed(const Duration(milliseconds: 800), snackCtrl.close);
-        }
-      } else {
-        // Show dialog to choose: On Time, Late, or Missed
         final chosenStatus = await showPrayerStatusDialog(
           context: context,
           prayerName: prayerName,
           isArabic: isArabic,
         );
+        if (chosenStatus == null) return;
 
-        if (chosenStatus == null) return; // User cancelled
-
-        // Mark as completed with chosen status
-        final success = await _trackingService.recordPrayer(
-          userId: userId,
-          prayerName: prayerName,
-          date: effectiveDate,
-          prayedAt: DateTime.now(),
-          status: chosenStatus,
-          method: PrayerMethod.congregation,
-        );
-
+        final success =
+            await notifier.markDate(calendarDate, prayerName, chosenStatus);
         if (!success) {
           haptic.HapticFeedback.error();
-          if (mounted) {
-            final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  isArabic
-                      ? 'فشل تسجيل $prayerName. حاول مرة أخرى.'
-                      : 'Failed to record $prayerName. Please try again.',
-                ),
-                backgroundColor: Colors.red,
-                duration: const Duration(seconds: 2),
-                behavior: SnackBarBehavior.floating,
-                margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
-              ),
-            );
-            Future.delayed(const Duration(seconds: 2), snackCtrl.close);
-          }
+          _snack(
+              isArabic
+                  ? 'فشل تسجيل $prayerName. حاول مرة أخرى.'
+                  : 'Failed to record $prayerName. Please try again.',
+              color: Colors.red);
           return;
         }
-
-        // Immediately update local data
         haptic.HapticFeedback.success();
-        setState(() {
-          final dayKey = effectiveDate;
-          final existing = _monthlyData[dayKey];
-          if (existing != null) {
-            final updatedPrayers = Map<String, PrayerStatus>.from(existing.prayers);
-            updatedPrayers[prayerName] = chosenStatus;
-            _monthlyData[dayKey] = DailyPrayerSummary(
-              date: effectiveDate,
-              prayers: updatedPrayers,
-            );
-          } else {
-            _monthlyData[dayKey] = DailyPrayerSummary(
-              date: effectiveDate,
-              prayers: {prayerName: chosenStatus},
-            );
-          }
-        });
-
-        // Refresh prayer cards on prayer screen and home screen
-        if (effectiveDate == today) {
-          _trackingService.clearCache();
-          ref.read(dailyPrayerStatusProvider.notifier).load(forceRefresh: true);
-        }
-
-        if (mounted) {
-          final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                effectiveDate == today
-                    ? (isArabic ? 'تم تسجيل $prayerName' : 'Recorded $prayerName')
-                    : (isArabic ? 'تم تسجيل $prayerName ليوم أمس' : 'Recorded $prayerName for yesterday'),
-              ),
-              backgroundColor: Colors.green,
-              duration: const Duration(milliseconds: 800),
-              behavior: SnackBarBehavior.floating,
-              margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
-            ),
-          );
-          Future.delayed(const Duration(milliseconds: 800), snackCtrl.close);
-        }
+        await _refreshStreak();
+        final forYesterday = calendarDate == eff && eff != realToday;
+        _snack(
+          forYesterday
+              ? (isArabic
+                  ? 'تم تسجيل $prayerName ليوم أمس'
+                  : 'Recorded $prayerName for yesterday')
+              : (isArabic ? 'تم تسجيل $prayerName' : 'Recorded $prayerName'),
+          color: Colors.green,
+        );
       }
     } catch (e) {
       debugPrint('Error toggling prayer status: $e');
       haptic.HapticFeedback.error();
-      if (mounted) {
-        final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(isArabic ? 'خطأ: $e' : 'Error: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 3),
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
-          ),
-        );
-        Future.delayed(const Duration(seconds: 3), snackCtrl.close);
-      }
+      _snack(isArabic ? 'خطأ: $e' : 'Error: $e', color: Colors.red, seconds: 3);
     }
+  }
+
+  void _snack(String message, {Color? color, int? seconds}) {
+    if (!mounted) return;
+    final duration =
+        Duration(milliseconds: seconds != null ? seconds * 1000 : 800);
+    final ctrl = ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+        duration: duration,
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.only(bottom: 16, left: 16, right: 16),
+      ),
+    );
+    Future.delayed(duration, ctrl.close);
   }
 }
 

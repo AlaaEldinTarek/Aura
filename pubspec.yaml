@@ -1,7 +1,7 @@
 name: aura_app
 description: Aura (هالة) - A 2-in-1 productivity and spiritual app combining Task Management and Prayer System.
 publish_to: 'none'
-version: 1.0.0+48
+version: 1.0.0+49
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -113,7 +113,7 @@ msix_config:
   display_name: Aura | هالة
   publisher_display_name: Alaa Eldin Tarek
   identity_name: com.aura.hala
-  msix_version: 1.0.3.105
+  msix_version: 1.0.3.106
   logo_path: assets\images\logo_padded.png
   store: false
   publisher: CN=Alaa Eldin Tarek
