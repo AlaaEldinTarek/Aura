@@ -198,6 +198,9 @@ class MainActivity : FlutterFragmentActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
+        // Backup periodic prayer-time recalc (survives OEM app-freezing/reboots).
+        PrayerRecalcWorker.schedule(this)
+
         // Ringer Mode Channel
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, RINGER_CHANNEL).setMethodCallHandler { call, result ->
             when (call.method) {
@@ -650,6 +653,17 @@ class MainActivity : FlutterFragmentActivity() {
                         Log.w("BackgroundService", "Could not update running service: ${e.message}")
                     }
 
+                    result.success(true)
+                }
+                "cacheAccuratePrayerTimes" -> {
+                    val cache = call.argument<Map<String, String>>("cache") ?: emptyMap()
+                    val prefs = getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+                    val editor = prefs.edit()
+                    // Drop stale cached_* entries, then write the fresh set so the
+                    // cache never grows unbounded across days.
+                    prefs.all.keys.filter { it.startsWith("cached_") }.forEach { editor.remove(it) }
+                    cache.forEach { (k, v) -> editor.putString(k, v) }
+                    editor.apply()
                     result.success(true)
                 }
                 else -> result.notImplemented()

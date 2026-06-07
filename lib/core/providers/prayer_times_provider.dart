@@ -357,6 +357,34 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
         } catch (e) {
           debugPrint('PrayerTimesNotifier: Error updating foreground service - $e');
         }
+
+        // Cache the next 2 days' adhan-accurate times so the native recalc
+        // (00:05 alarm / foreground stale-check / WorkManager backup) uses the
+        // exact library values instead of its approximate astronomy.
+        if (!_isDesktop) try {
+          final cache = <String, String>{};
+          for (int i = 1; i <= 2; i++) {
+            final d = DateTime.now().add(Duration(days: i));
+            final dayTimes = await _prayerTimesService.getPrayerTimes(
+              date: d,
+              latitude: locationData.latitude,
+              longitude: locationData.longitude,
+              calculationMethod: method,
+              asrMadhab: madhab,
+            );
+            final mm = d.month.toString().padLeft(2, '0');
+            final dd = d.day.toString().padLeft(2, '0');
+            final prefix = 'cached_${d.year}-$mm-$dd';
+            for (final p in dayTimes) {
+              // Native reads "dhuhr"; PrayerTime.name is "Zuhr".
+              final n = p.name == 'Zuhr' ? 'dhuhr' : p.name.toLowerCase();
+              cache['${prefix}_$n'] = p.time.millisecondsSinceEpoch.toString();
+            }
+          }
+          await BackgroundServiceManager.instance.cacheAccuratePrayerTimes(cache);
+        } catch (e) {
+          debugPrint('PrayerTimesNotifier: Error caching future prayer times - $e');
+        }
       }();
     } catch (e) {
       debugPrint('PrayerTimesNotifier: Error loading prayer times: $e');

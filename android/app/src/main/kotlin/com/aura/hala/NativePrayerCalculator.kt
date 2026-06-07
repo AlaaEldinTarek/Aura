@@ -46,13 +46,15 @@ object NativePrayerCalculator {
             // Compute TODAY's times first, then decide if we need tomorrow's.
             // (Don't trust the stored isha_time — in the morning it's still yesterday's,
             // which would wrongly push the calculation to tomorrow.)
+            // Prefer the adhan-accurate values cached by Flutter; fall back to our
+            // own astronomy only when the cache is missing for that date.
             val todayCal = Calendar.getInstance()
-            var times = calculate(lat, lng, todayCal, methodName, madhabName)
+            var times = cachedOrComputed(prefs, lat, lng, todayCal, methodName, madhabName)
 
             // If today's Isha has already passed (late night), calculate for tomorrow
             if (times.isha < now) {
                 val tomorrowCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, 1) }
-                times = calculate(lat, lng, tomorrowCal, methodName, madhabName)
+                times = cachedOrComputed(prefs, lat, lng, tomorrowCal, methodName, madhabName)
             }
 
             val editor = prefs.edit()
@@ -146,6 +148,31 @@ object NativePrayerCalculator {
             maghrib = toEpoch(cal, maghribH),
             isha    = toEpoch(cal, ishaH),
         )
+    }
+
+    /** Prefer Flutter-cached adhan-accurate times for this date; else compute. */
+    private fun cachedOrComputed(
+        prefs: android.content.SharedPreferences,
+        lat: Double, lng: Double, cal: Calendar,
+        methodName: String, madhabName: String
+    ): PrayerResult {
+        return readCached(prefs, cal) ?: calculate(lat, lng, cal, methodName, madhabName)
+    }
+
+    /** Read cached "cached_{yyyy-MM-dd}_{name}" times for [cal]'s date, or null. */
+    private fun readCached(prefs: android.content.SharedPreferences, cal: Calendar): PrayerResult? {
+        val y = cal.get(Calendar.YEAR)
+        val m = (cal.get(Calendar.MONTH) + 1).toString().padStart(2, '0')
+        val d = cal.get(Calendar.DAY_OF_MONTH).toString().padStart(2, '0')
+        val prefix = "cached_$y-$m-$d"
+        val fajr = prefs.getString("${prefix}_fajr", null)?.toLongOrNull() ?: return null
+        val sunrise = prefs.getString("${prefix}_sunrise", null)?.toLongOrNull() ?: return null
+        val dhuhr = prefs.getString("${prefix}_dhuhr", null)?.toLongOrNull() ?: return null
+        val asr = prefs.getString("${prefix}_asr", null)?.toLongOrNull() ?: return null
+        val maghrib = prefs.getString("${prefix}_maghrib", null)?.toLongOrNull() ?: return null
+        val isha = prefs.getString("${prefix}_isha", null)?.toLongOrNull() ?: return null
+        Log.d(TAG, "✅ Using cached adhan-accurate times for $prefix")
+        return PrayerResult(fajr, sunrise, dhuhr, asr, maghrib, isha)
     }
 
     // ── Astronomical helpers ──────────────────────────────────────────────────

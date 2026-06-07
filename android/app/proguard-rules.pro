@@ -47,6 +47,8 @@
 -keep public class com.aura.hala.SilentOffReceiver
 -keep public class com.aura.hala.DailyRecalcReceiver
 -keep public class com.aura.hala.PrayerRescheduleService
+# WorkManager instantiates this Worker reflectively by class name — must survive R8.
+-keep public class com.aura.hala.PrayerRecalcWorker
 
 # ── Enum values (needed for serialisation) ───────────────────────────────────
 -keepclassmembers enum * {

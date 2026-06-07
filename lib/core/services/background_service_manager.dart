@@ -117,6 +117,19 @@ class BackgroundServiceManager {
     }
   }
 
+  /// Cache adhan-accurate prayer times for upcoming days. NativePrayerCalculator
+  /// reads these (keyed "cached_{yyyy-MM-dd}_{name}") and uses them verbatim
+  /// instead of recomputing with its approximate astronomy, so closed-app times
+  /// match the adhan library exactly.
+  Future<void> cacheAccuratePrayerTimes(Map<String, String> cache) async {
+    if (!_isAndroid) return;
+    try {
+      await _channel.invokeMethod('cacheAccuratePrayerTimes', {'cache': cache});
+    } catch (e) {
+      debugPrint('BackgroundServiceManager: Error caching accurate times: $e');
+    }
+  }
+
   /// Check if the foreground service is running
   bool get isRunning => _isServiceRunning;
 
