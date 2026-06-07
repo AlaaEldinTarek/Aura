@@ -68,6 +68,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
   String _asrMadhab = 'Shafi';
 
   // GlobalKeys for tutorial
+  final _appBarIconsKey = GlobalKey();
   final _prayerCardsKey = GlobalKey();
   final _toolkitKey = GlobalKey();
 
@@ -91,6 +92,12 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
   void _launchTutorial() {
     if (!mounted) return;
     final steps = <TutorialStep>[
+      if (_appBarIconsKey.currentContext != null)
+        TutorialStep(
+          targetKey: _appBarIconsKey,
+          titleKey: 'tutorial_prayer_appbar_title',
+          bodyKey: 'tutorial_prayer_appbar_body',
+        ),
       if (_prayerCardsKey.currentContext != null)
         TutorialStep(
           targetKey: _prayerCardsKey,
@@ -420,29 +427,36 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
       appBar: AppBar(
         title: Text('prayer_times_title'.tr()),
         actions: [
-          // Qibla button
-          IconButton(
-            icon: const Icon(Icons.explore_outlined),
-            onPressed: () {
-              Navigator.of(context).pushNamed('/qibla');
-            },
-            tooltip: isArabic ? 'القبلة' : 'Qibla',
-          ),
-          // Prayer Tracking button
-          IconButton(
-            icon: const Icon(Icons.calendar_month_outlined),
-            onPressed: () async {
-              await Navigator.of(context).pushNamed('/prayer_tracking');
-              // Reload completed prayers when returning from tracker
-              if (mounted) _loadCompletedPrayers();
-            },
-            tooltip: isArabic ? 'تتبع الصلوات' : 'Prayer Tracking',
-          ),
-          // Settings button
-          IconButton(
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => _showPrayerSettings(context, ref, isArabic),
-            tooltip: isArabic ? 'إعدادات الصلاة' : 'Prayer Settings',
+          // Keyed wrapper so the tutorial can spotlight all three app-bar icons
+          Row(
+            key: _appBarIconsKey,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Qibla button
+              IconButton(
+                icon: const Icon(Icons.explore_outlined),
+                onPressed: () {
+                  Navigator.of(context).pushNamed('/qibla');
+                },
+                tooltip: isArabic ? 'القبلة' : 'Qibla',
+              ),
+              // Prayer Tracking button
+              IconButton(
+                icon: const Icon(Icons.calendar_month_outlined),
+                onPressed: () async {
+                  await Navigator.of(context).pushNamed('/prayer_tracking');
+                  // Reload completed prayers when returning from tracker
+                  if (mounted) _loadCompletedPrayers();
+                },
+                tooltip: isArabic ? 'تتبع الصلوات' : 'Prayer Tracking',
+              ),
+              // Settings button
+              IconButton(
+                icon: const Icon(Icons.settings_outlined),
+                onPressed: () => _showPrayerSettings(context, ref, isArabic),
+                tooltip: isArabic ? 'إعدادات الصلاة' : 'Prayer Settings',
+              ),
+            ],
           ),
         ],
       ),

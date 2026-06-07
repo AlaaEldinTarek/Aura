@@ -376,6 +376,8 @@
   "tutorial_today_tasks_title": "Today's Tasks",
   "tutorial_today_tasks_body": "A quick preview of your pending tasks. Tap 'See All' to open the full Tasks screen.",
   "tutorial_restart": "App Tour",
+  "tutorial_prayer_appbar_title": "Quick Tools",
+  "tutorial_prayer_appbar_body": "From here open the Qibla compass, your Prayer Tracking calendar, and Prayer Settings (calculation method, adhan, iqama, and more).",
   "tutorial_prayer_cards_title": "Prayer Cards",
   "tutorial_prayer_cards_body": "Tap any prayer card to mark it as On Time, Late, or Missed. The badge updates across the app.",
   "tutorial_muslim_toolkit_title": "Muslim Toolkit",
