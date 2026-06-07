@@ -428,6 +428,14 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
         nextPrayerNameAr: nextPrayer?.nameAr,
         nextPrayerTime: nextPrayer?.time.millisecondsSinceEpoch,
         language: language,
+        // Persist coordinates + method on every refresh (not just the once-daily
+        // side-effects block) so the native NativePrayerCalculator always has
+        // them — without these, the morning recalc bails with "No stored
+        // coordinates" and the notification sticks on "Loading prayer times...".
+        latitude: state.location?.latitude,
+        longitude: state.location?.longitude,
+        calculationMethod: _getCalculationMethod().name,
+        asrMadhab: _getAsrMadhab().name,
       );
       debugPrint('📱 [UPDATE] Foreground service updated with next prayer: ${nextPrayer?.name}');
     } catch (e) {
