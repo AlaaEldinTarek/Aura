@@ -106,11 +106,13 @@ class PrayerTrackingService {
     }
 
     try {
+      // Deterministic ID → re-marking the same prayer/day overwrites one doc
+      // instead of creating a new auto-ID document each time.
       final docRef = _firestore
           .collection('users')
           .doc(userId)
           .collection('prayer_records')
-          .doc();
+          .doc(_recordDocId(prayerName, normalizedDate));
 
       final record = PrayerRecord(
         id: docRef.id,
@@ -530,10 +532,13 @@ class PrayerTrackingService {
     }
   }
 
-  /// Update local cache
+  /// Update local cache (one entry per prayer/day — mirrors the deterministic
+  /// Firestore doc, so re-marking replaces instead of appending a duplicate).
   void _updateCache(PrayerRecord record) {
     final dayKey = _getDayKey(record.userId, record.date);
-    _dailyCache.putIfAbsent(dayKey, () => []).add(record);
+    final list = _dailyCache.putIfAbsent(dayKey, () => []);
+    list.removeWhere((r) => r.prayerName == record.prayerName);
+    list.add(record);
   }
 
   /// Remove a specific prayer record from cache (instead of clearing entire day)
@@ -551,6 +556,16 @@ class PrayerTrackingService {
   /// Get cache key for a day
   String _getDayKey(String userId, DateTime date) {
     return '${userId}_${date.year}_${date.month}_${date.day}';
+  }
+
+  /// Deterministic Firestore document ID for a prayer on a given day, e.g.
+  /// "Fajr_2026-06-07". One doc per prayer per day → marking is idempotent
+  /// (re-recording overwrites the same doc instead of creating duplicates).
+  String _recordDocId(String prayerName, DateTime date) {
+    final d = DateTime(date.year, date.month, date.day);
+    final m = d.month.toString().padLeft(2, '0');
+    final day = d.day.toString().padLeft(2, '0');
+    return '${prayerName}_${d.year}-$m-$day';
   }
 
   /// Clear cache
@@ -605,17 +620,23 @@ class PrayerTrackingService {
 
       debugPrint('🗑️ [DELETE] Found ${snapshot.docs.length} records for $prayerName');
 
+      // Delete ALL matching docs for this prayer/day — catches both the new
+      // deterministic-ID doc and any legacy auto-ID duplicates, so unmark
+      // fully clears the prayer instead of leaving an old copy behind.
+      bool deletedAny = false;
       for (final doc in snapshot.docs) {
         final data = doc.data();
         final storedDate = data['date'] as String?;
-        debugPrint('🗑️ [DELETE] Checking doc ${doc.id}: storedDate=$storedDate, targetDate=$dateStr');
-
         if (storedDate == dateStr) {
           await doc.reference.delete();
-          _removeFromCache(userId, date, prayerName);
-          debugPrint('🗑️ [DELETE] Successfully deleted $prayerName for $dateStr');
-          return true;
+          deletedAny = true;
+          debugPrint('🗑️ [DELETE] Deleted ${doc.id} ($prayerName for $dateStr)');
         }
+      }
+
+      if (deletedAny) {
+        _removeFromCache(userId, date, prayerName);
+        return true;
       }
 
       debugPrint('🗑️ [DELETE] No matching record found for $prayerName on $dateStr');
@@ -634,14 +655,18 @@ class PrayerTrackingService {
             .collection('prayer_records')
             .get();
 
+        bool deletedAny = false;
         for (final doc in allSnapshot.docs) {
           final data = doc.data();
           if (data['prayerName'] == prayerName && data['date'] == dateStr) {
             await doc.reference.delete();
-            _removeFromCache(userId, date, prayerName);
-            debugPrint('🗑️ [DELETE] Deleted via fallback');
-            return true;
+            deletedAny = true;
+            debugPrint('🗑️ [DELETE] Deleted ${doc.id} via fallback');
           }
+        }
+        if (deletedAny) {
+          _removeFromCache(userId, date, prayerName);
+          return true;
         }
       } catch (e2) {
         debugPrint('PrayerTrackingService: Fallback also failed - $e2');
