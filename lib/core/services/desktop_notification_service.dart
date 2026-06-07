@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:window_manager/window_manager.dart';
 import '../models/prayer_record.dart';
 import '../providers/daily_prayer_status_provider.dart';
+import '../providers/prayer_times_provider.dart';
+import '../utils/prayer_time_rules.dart';
 import 'desktop_adhan_service.dart';
 import 'prayer_tracking_service.dart';
 import 'task_service.dart';
@@ -144,10 +146,19 @@ class DesktopNotificationService {
       final userId = getCurrentUserId();
       final now = DateTime.now();
       await PrayerTrackingService.instance.initialize();
+      // After-midnight-aware date (consistent with the Android handler):
+      // before Fajr, the prayer still belongs to the previous day.
+      DateTime? fajrTime;
+      for (final p in _container?.read(prayerTimesProvider).prayerTimes ?? const []) {
+        if (p.name == 'Fajr') {
+          fajrTime = p.time;
+          break;
+        }
+      }
       await PrayerTrackingService.instance.recordPrayer(
         userId: userId,
         prayerName: prayerName,
-        date: now,
+        date: getPrayerDate(now, fajrTime: fajrTime),
         prayedAt: now,
         status: status,
       );

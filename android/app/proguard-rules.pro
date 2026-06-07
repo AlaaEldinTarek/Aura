@@ -45,6 +45,8 @@
 -keep public class com.aura.hala.StopAdhanReceiver
 -keep public class com.aura.hala.ToggleSilentModeReceiver
 -keep public class com.aura.hala.SilentOffReceiver
+-keep public class com.aura.hala.DailyRecalcReceiver
+-keep public class com.aura.hala.PrayerRescheduleService
 
 # ── Enum values (needed for serialisation) ───────────────────────────────────
 -keepclassmembers enum * {
