@@ -1,0 +1,33 @@
+rules_version = '2';
+
+// Aura (هالة) Firestore security rules.
+//
+// Every piece of user data lives under users/{userId}:
+//   users/{userId}                      — profile / settings
+//   users/{userId}/tasks/{taskId}
+//   users/{userId}/prayer_records/{id}
+//   users/{userId}/achievements/{id}
+//   users/{userId}/dhikr_sessions/{id}
+//   users/{userId}/wird/{id}
+//
+// A signed-in user may read and write ONLY their own document tree. Everything
+// else is denied by default. Deploy with:
+//   firebase deploy --only firestore:rules
+// or paste into Firebase console → Firestore Database → Rules.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // The user document and every nested subcollection beneath it.
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null
+                         && request.auth.uid == userId;
+    }
+
+    // Anything not matched above is denied (default-deny is implicit, but kept
+    // explicit so the intent is obvious to anyone editing these rules).
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -68,12 +68,17 @@ Aura*.aab
 Aura*.msix
 .metadata
 
-# Android signing — never commit these
+# Android / MSIX signing — never commit these
 android/key.properties
 android/*.jks
 android/*.keystore
 *.pfx
 aura_cert.cer
+aura_cert.pem
+aura_signing.pfx
+
+# Archives / local backups
+*.7z
 
 # Desktop OAuth credentials
 lib/core/services/google_oauth_config.dart

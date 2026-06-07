@@ -121,4 +121,6 @@ msix_config:
   capabilities: internetClient, privateNetworkClientServer, location
   install_certificate: false
   certificate_path: aura_signing.pfx
-  certificate_password: AuraApp2024
+  # certificate_password is intentionally NOT committed. Pass it at build time:
+  #   dart run msix:create --certificate-password <password>
+  # (the aura_signing.pfx key file is gitignored and never committed either.)
