@@ -219,6 +219,38 @@ class PrayerTrackingService {
     }
   }
 
+  /// Real-time stream of a single day's prayer statuses (prayerName → status).
+  /// Used on Android to replace 30-second Firestore polling — Firestore only
+  /// charges for changed documents after the initial read, and cross-device
+  /// changes arrive instantly. Not used on desktop (snapshots() is unreliable
+  /// on Windows — see TaskService).
+  Stream<Map<String, PrayerStatus>> watchDay({
+    required String userId,
+    required DateTime date,
+  }) {
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    final startOfDay = normalizedDate;
+    final endOfDay = startOfDay.add(const Duration(days: 1));
+    return _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('prayer_records')
+        .where('date', isGreaterThanOrEqualTo: startOfDay.toIso8601String())
+        .where('date', isLessThan: endOfDay.toIso8601String())
+        .snapshots()
+        .map((snap) {
+      final map = <String, PrayerStatus>{};
+      for (final doc in snap.docs) {
+        final r = PrayerRecord.fromFirestore(doc);
+        map[r.prayerName] = r.status;
+      }
+      // Keep the in-memory cache aligned so a subsequent getPrayersForDate hits fresh data.
+      _dailyCache[_getDayKey(userId, normalizedDate)] =
+          snap.docs.map((d) => PrayerRecord.fromFirestore(d)).toList();
+      return map;
+    });
+  }
+
   /// Get prayer records for a date range
   Future<List<PrayerRecord>> getPrayersForDateRange({
     required String userId,

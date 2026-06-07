@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/prayer_record.dart';
 import '../models/prayer_time.dart';
@@ -69,6 +70,10 @@ class DailyPrayerStatusNotifier extends StateNotifier<DailyPrayerStatus> {
 
   /// Last known Fajr time — fallback when prayerTimesProvider isn't loaded yet.
   DateTime? _lastFajr;
+
+  /// Real-time Firestore listener for today's records (Android only).
+  StreamSubscription<Map<String, PrayerStatus>>? _liveSub;
+  DateTime? _liveSubDay;
 
   List<PrayerTime> get _prayerTimes {
     try {
@@ -245,6 +250,42 @@ class DailyPrayerStatusNotifier extends StateNotifier<DailyPrayerStatus> {
 
   void removePrayer(String prayerName) =>
       _removeStatus(computeEffectiveToday(), prayerName);
+
+  /// Start a real-time Firestore listener for today's statuses (Android only —
+  /// gated at the call site since snapshots() is unreliable on desktop).
+  /// Replaces 30s polling: instant cross-device updates, far fewer reads.
+  /// Idempotent — re-subscribes only when the effective day rolls over.
+  void startLiveSync() {
+    final userId = getCurrentUserId();
+    if (userId == 'guest_user') return; // guests have no Firestore
+    final eff = computeEffectiveToday();
+    if (_liveSub != null && _liveSubDay == eff) return; // already live for this day
+    _liveSub?.cancel();
+    _liveSubDay = eff;
+    _liveSub =
+        _trackingService.watchDay(userId: userId, date: eff).listen((statuses) {
+      final newByDate =
+          Map<DateTime, Map<String, PrayerStatus>>.from(state.byDate);
+      newByDate[_norm(eff)] = statuses;
+      state = state.copyWith(
+        byDate: newByDate,
+        effectiveToday: eff,
+        loadedAt: DateTime.now(),
+      );
+    }, onError: (_) {/* keep last state on transient errors */});
+  }
+
+  void stopLiveSync() {
+    _liveSub?.cancel();
+    _liveSub = null;
+    _liveSubDay = null;
+  }
+
+  @override
+  void dispose() {
+    _liveSub?.cancel();
+    super.dispose();
+  }
 }
 
 final dailyPrayerStatusProvider =

@@ -123,6 +123,10 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       ref.invalidate(allTasksProvider);
       _handleWidgetIntent();
       _syncThenLoadPrayerStatus(resumeFajrTime);
+    } else if (state == AppLifecycleState.paused && !_isDesktop) {
+      // Release the Firestore listener while backgrounded; resume re-subscribes
+      // and _syncThenLoadPrayerStatus reloads fresh data anyway.
+      ref.read(dailyPrayerStatusProvider.notifier).stopLiveSync();
     }
   }
 
@@ -135,20 +139,33 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     _tabController.index = _currentIndex;
     _updateCurrentRoute();
 
-    // Periodic prayer status sync so cross-device changes appear within 30s (all platforms).
-    // forceRefresh bypasses the tracking-service cache so a prayer marked on another
-    // device (phone ↔ desktop) is actually re-fetched from Firestore.
-    _prayerSyncTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      if (mounted) {
-        final timerPrayerTimes =
-            ref.read(prayerTimesProvider)?.prayerTimes ?? [];
-        final timerFajrTime =
-            timerPrayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
-        ref
-            .read(dailyPrayerStatusProvider.notifier)
-            .load(forceRefresh: true, fajrTime: timerFajrTime);
-      }
-    });
+    // Cross-device prayer-status sync.
+    if (_isDesktop) {
+      // Desktop: snapshots() is unreliable on Windows, so poll every 30s.
+      // forceRefresh bypasses the tracking-service cache so a prayer marked on
+      // another device (phone ↔ desktop) is actually re-fetched from Firestore.
+      _prayerSyncTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+        if (mounted) {
+          final timerPrayerTimes =
+              ref.read(prayerTimesProvider)?.prayerTimes ?? [];
+          final timerFajrTime =
+              timerPrayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
+          ref
+              .read(dailyPrayerStatusProvider.notifier)
+              .load(forceRefresh: true, fajrTime: timerFajrTime);
+        }
+      });
+    } else {
+      // Android: real-time Firestore listener — instant cross-device updates,
+      // far fewer reads than polling. The light periodic tick only re-subscribes
+      // when the effective day rolls over (startLiveSync is idempotent).
+      ref.read(dailyPrayerStatusProvider.notifier).startLiveSync();
+      _prayerSyncTimer = Timer.periodic(const Duration(minutes: 3), (_) {
+        if (mounted) {
+          ref.read(dailyPrayerStatusProvider.notifier).startLiveSync();
+        }
+      });
+    }
 
     // Desktop: show in-app banners for reminders/tasks/wird.
     if (_isDesktop) {
@@ -487,6 +504,11 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
         ref
             .read(dailyPrayerStatusProvider.notifier)
             .load(forceRefresh: true, fajrTime: fajrTime);
+        // Android: (re)attach the real-time listener now that auth + initial
+        // load are settled. Idempotent — no-op if already live for this day.
+        if (!_isDesktop) {
+          ref.read(dailyPrayerStatusProvider.notifier).startLiveSync();
+        }
       }
     }
   }
