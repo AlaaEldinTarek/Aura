@@ -52,7 +52,14 @@ class PrayerForegroundService : Service() {
 
         fun getInstance(): PrayerForegroundService? = instance
 
+        // Set when the user explicitly stops the service so onDestroy/onTaskRemoved
+        // don't auto-restart it. Cleared whenever the service is (re)started.
+        private const val KEY_USER_STOPPED = "fg_user_stopped"
+
         fun startService(context: Context) {
+            // Clear the user-stopped flag — we're intentionally (re)starting.
+            context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+                .edit().putBoolean(KEY_USER_STOPPED, false).apply()
             val intent = Intent(context, PrayerForegroundService::class.java)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 context.startForegroundService(intent)
@@ -62,6 +69,9 @@ class PrayerForegroundService : Service() {
         }
 
         fun stopService(context: Context) {
+            // Remember this was a deliberate stop so the service stays stopped.
+            context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+                .edit().putBoolean(KEY_USER_STOPPED, true).apply()
             val intent = Intent(context, PrayerForegroundService::class.java)
             context.stopService(intent)
         }
@@ -689,38 +699,55 @@ class PrayerForegroundService : Service() {
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
-        Log.d(TAG, "🔄 [TASK_REMOVED] App removed from recents — scheduling service restart in 5s")
+        Log.d(TAG, "🔄 [TASK_REMOVED] App removed from recents — scheduling service restart")
+        scheduleRestartIfNeeded(5_000L)
+    }
+
+    override fun onDestroy() {
+        instance = null
+        updateRunnable?.let { handler?.removeCallbacks(it) }
+        super.onDestroy()
+        scheduleRestartIfNeeded(2_000L)
+    }
+
+    /** True unless the user explicitly stopped the service from settings. */
+    private fun shouldAutoRestart(): Boolean {
+        return !getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+            .getBoolean(KEY_USER_STOPPED, false)
+    }
+
+    /**
+     * Restart the service via AlarmManager after [delayMs].
+     *
+     * Never call startForegroundService() directly here: on Android 12+ starting
+     * a foreground service from the background (which onDestroy/onTaskRemoved are)
+     * throws ForegroundServiceStartNotAllowedException. An exact alarm gets the
+     * brief FGS-start exemption, so this is the safe path. Skipped entirely when
+     * the user deliberately stopped the service.
+     */
+    private fun scheduleRestartIfNeeded(delayMs: Long) {
+        if (!shouldAutoRestart()) {
+            Log.d(TAG, "🛑 [RESTART] User stopped the service — not restarting")
+            return
+        }
         val restartIntent = Intent(applicationContext, PrayerForegroundService::class.java)
         val pendingIntent = PendingIntent.getService(
             applicationContext, 1, restartIntent,
             PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
         )
         val alarmManager = getSystemService(ALARM_SERVICE) as android.app.AlarmManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setExactAndAllowWhileIdle(
-                android.app.AlarmManager.RTC_WAKEUP,
-                System.currentTimeMillis() + 5_000L,
-                pendingIntent
-            )
-        } else {
-            alarmManager.setExact(
-                android.app.AlarmManager.RTC_WAKEUP,
-                System.currentTimeMillis() + 5_000L,
-                pendingIntent
-            )
-        }
-    }
-
-    override fun onDestroy() {
-        instance = null
-        handler?.removeCallbacks(updateRunnable!!)
-        super.onDestroy()
-
-        val restartIntent = Intent(applicationContext, PrayerForegroundService::class.java)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(restartIntent)
-        } else {
-            startService(restartIntent)
+        val triggerAt = System.currentTimeMillis() + delayMs
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(
+                    android.app.AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent
+                )
+            } else {
+                alarmManager.setExact(android.app.AlarmManager.RTC_WAKEUP, triggerAt, pendingIntent)
+            }
+            Log.d(TAG, "🔄 [RESTART] Scheduled service restart in ${delayMs}ms")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [RESTART] Failed to schedule restart: ${e.message}")
         }
     }
 

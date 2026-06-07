@@ -617,6 +617,19 @@ class MainActivity : FlutterFragmentActivity() {
                     val nextPrayerTime = call.argument<Long>("nextPrayerTime") ?: System.currentTimeMillis()
                     val language = call.argument<String>("language") ?: "en"
 
+                    // Persist location + method/madhab so NativePrayerCalculator can
+                    // recompute the new day's times WITHOUT the app being opened.
+                    // This handler previously dropped these args, which is why the
+                    // morning recalc failed with "No stored coordinates".
+                    val coordsEditor = getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE).edit()
+                    call.argument<Double>("latitude")?.let { coordsEditor.putFloat("prayer_latitude", it.toFloat()) }
+                    call.argument<Double>("longitude")?.let { coordsEditor.putFloat("prayer_longitude", it.toFloat()) }
+                    call.argument<String>("calculationMethod")?.let { coordsEditor.putString("prayer_calc_method", it) }
+                    call.argument<String>("asrMadhab")?.let { coordsEditor.putString("prayer_asr_madhab", it) }
+                    // Also persist per-prayer iqama times if provided.
+                    call.argument<Map<String, String>>("iqamaTimes")?.forEach { (k, v) -> coordsEditor.putString(k, v) }
+                    coordsEditor.apply()
+
                     // Save to SharedPreferences
                     PrayerForegroundService.updatePrayerTimes(
                         this, prayerTimes, nextPrayerName, nextPrayerNameAr, nextPrayerTime, language
