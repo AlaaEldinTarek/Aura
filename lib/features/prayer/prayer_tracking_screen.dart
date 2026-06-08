@@ -690,17 +690,25 @@ class _StatCard extends StatelessWidget {
         children: [
           Icon(icon, color: color, size: ts.scale(28.0)),
           SizedBox(height: ts.scale(8.0)),
-          Text(
-            value,
-            style: AppTypography.headingM.copyWith(
-              fontWeight: FontWeight.bold,
-              color: AppConstants.textPrimary(isDark),
+          // scaleDown so an enlarged system font never clips the number or
+          // breaks the label mid-word (e.g. "Comple/te").
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: AppTypography.headingM.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppConstants.textPrimary(isDark),
+              ),
             ),
           ),
-          Text(
-            label,
-            style: AppTypography.caption.copyWith(
-              color: AppConstants.textMuted(isDark),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              style: AppTypography.caption.copyWith(
+                color: AppConstants.textMuted(isDark),
+              ),
             ),
           ),
         ],

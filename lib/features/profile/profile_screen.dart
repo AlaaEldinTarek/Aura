@@ -1066,17 +1066,26 @@ class _ProfileStatCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: ts.scale(18.0)),
-              SizedBox(width: ts.scale(8.0)),
-              Text(value, style: AppTypography.headingS.copyWith(fontWeight: FontWeight.bold, color: AppConstants.textPrimary(isDark))),
-            ],
+          // scaleDown keeps the icon + number on one line and never clips the
+          // card edge when the system font is enlarged (accessibility).
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, color: color, size: ts.scale(18.0)),
+                SizedBox(width: ts.scale(8.0)),
+                Text(value, style: AppTypography.headingS.copyWith(fontWeight: FontWeight.bold, color: AppConstants.textPrimary(isDark))),
+              ],
+            ),
           ),
           SizedBox(height: ts.scale(2.0)),
-          Text(label, style: AppTypography.caption.copyWith(fontSize: ts.scale(10.0), color: AppConstants.textMuted(isDark)), textScaler: TextScaler.noScaling),
+          // scaleDown avoids ugly mid-word wraps like "Compl/etion", "Badge/s".
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(label, style: AppTypography.caption.copyWith(fontSize: ts.scale(10.0), color: AppConstants.textMuted(isDark)), textScaler: TextScaler.noScaling),
+          ),
         ],
       ),
     );

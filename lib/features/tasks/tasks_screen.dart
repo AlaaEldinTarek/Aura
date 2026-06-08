@@ -235,10 +235,15 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
                 ),
                 onChanged: (value) => setState(() => _searchQuery = value),
               )
-            : Text(
-                'task_management'.tr(),
-                style: AppTypography.label.copyWith(fontWeight: FontWeight.bold),
-                overflow: TextOverflow.ellipsis,
+            : FittedBox(
+                // scaleDown shrinks the title to fit when the system font is
+                // enlarged, instead of truncating to "Task Managem...".
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'task_management'.tr(),
+                  style: AppTypography.label.copyWith(fontWeight: FontWeight.bold),
+                ),
               ),
         centerTitle: false,
         backgroundColor: AppConstants.surface(isDark),

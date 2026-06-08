@@ -66,6 +66,9 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
   int _currentPage = 1;
   bool _showUI = true;
   double _zoomScale = 1.0;
+  // True while the current page is zoomed in (>1×) on mobile — locks the
+  // horizontal PageView swipe so one-finger drags pan the zoomed page instead.
+  bool _pageZoomed = false;
   Offset? _pointerDown; // for desktop horizontal drag-to-navigate
 
   bool get _isDesktop =>
@@ -418,6 +421,9 @@ void _togglePageBookmark() {
           children: [
             PageView.builder(
               controller: _pageController,
+              // When zoomed in on mobile, lock swipe so panning the page works.
+              // (Prev/Next arrows still navigate programmatically.)
+              physics: _pageZoomed ? const NeverScrollableScrollPhysics() : null,
               itemCount: 604,
               onPageChanged: _onPageChanged,
               itemBuilder: (context, index) {
@@ -462,7 +468,13 @@ void _togglePageBookmark() {
                     onEmptyTap: () => setState(() => _showUI = !_showUI),
                     initialScale: _zoomScale,
                     scrollController: (index + 1 == _currentPage) ? _mushafCtrl : null,
-                    onScaleChanged: (s) => _zoomScale = s,
+                    onScaleChanged: (s) {
+                      _zoomScale = s;
+                      final z = s > 1.01;
+                      if (z != _pageZoomed && mounted) {
+                        setState(() => _pageZoomed = z);
+                      }
+                    },
                   ),
                 );
               },
@@ -535,6 +547,18 @@ void _togglePageBookmark() {
                             curve: Curves.easeInOut,
                           )
                       : null,
+                ),
+              ),
+
+            // Mobile-only zoom buttons (A+ / A−) so the mushaf can be enlarged
+            // for easier reading. Pinch-to-zoom also works. Shown with the UI.
+            if (!_isDesktop && _showUI)
+              Positioned(
+                right: 16,
+                bottom: 80,
+                child: _MobileZoomControls(
+                  onZoomIn: () => _mushafCtrl.zoom(1.25),
+                  onZoomOut: () => _mushafCtrl.zoom(0.8),
                 ),
               ),
           ],
@@ -619,10 +643,11 @@ class _MushafPage extends ConsumerStatefulWidget {
 class _MushafPageState extends ConsumerState<_MushafPage> {
   late Future<(String, List<Ayah>)> _pageFuture;
 
-  // Desktop zoom
+  // Zoom (desktop buttons + mobile pinch/buttons share this controller)
   late TransformationController _transformController;
   double? _lastWidth;
   double _computedMaxScale = 2.0;
+  bool _centeredInitial = false; // centers a persisted zoom on first mobile build
 
   bool get _isDesktop => !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
 
@@ -672,8 +697,10 @@ class _MushafPageState extends ConsumerState<_MushafPage> {
     if (ctrl == null) return;
 
     if (ctrl.zoomFactor != 1.0) {
+      // Mobile never shrinks below fit-to-screen (1×); desktop allows 0.5×.
+      final minScale = _isDesktop ? 0.5 : 1.0;
       final currentScale = _transformController.value.getMaxScaleOnAxis();
-      final newScale = (currentScale * ctrl.zoomFactor).clamp(0.5, _computedMaxScale);
+      final newScale = (currentScale * ctrl.zoomFactor).clamp(minScale, _computedMaxScale);
       final tx = (_lastWidth ?? 0.0) * (1 - newScale) / 2;
       final ty = _transformController.value.getTranslation().y;
       _transformController.value = Matrix4.identity()
@@ -871,7 +898,50 @@ class _MushafPageState extends ConsumerState<_MushafPage> {
             );
           }
 
-          return pageContent;
+          // Mobile: pinch-to-zoom + button zoom (via scrollController.zoom),
+          // persisting across pages through initialScale / onScaleChanged.
+          return LayoutBuilder(
+            builder: (ctx, cons) {
+              final viewW = cons.maxWidth;
+              final viewH = cons.maxHeight;
+              final vb = _viewBox;
+              _lastWidth = viewW;
+
+              // Max zoom = page content filling the screen width (min 2.5× so
+              // even a small page can be enlarged meaningfully for readability).
+              final fitScale = min(viewW / vb.width, viewH / vb.height);
+              final renderedSvgW = vb.width * fitScale;
+              _computedMaxScale = (viewW / renderedSvgW).clamp(2.5, 6.0);
+
+              // Center a persisted zoom (initialScale > 1) on the first build of
+              // this page so the enlarged page isn't anchored to the top-left.
+              if (!_centeredInitial) {
+                _centeredInitial = true;
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  final s = _transformController.value.getMaxScaleOnAxis();
+                  if (s > 1.01) {
+                    _transformController.value = Matrix4.identity()
+                      ..translate(viewW * (1 - s) / 2, 0.0)
+                      ..scale(s);
+                  }
+                });
+              }
+
+              return InteractiveViewer(
+                transformationController: _transformController,
+                minScale: 1.0,
+                maxScale: _computedMaxScale,
+                panEnabled: true,
+                scaleEnabled: true,
+                onInteractionEnd: (_) {
+                  widget.onScaleChanged
+                      ?.call(_transformController.value.getMaxScaleOnAxis());
+                },
+                child: pageContent,
+              );
+            },
+          );
         },
       ),
     );
@@ -1492,6 +1562,73 @@ class _DesktopControls extends StatelessWidget {
               btn(Icons.arrow_forward_ios, onNextPage),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Mobile zoom controls (A+ / A−) ────────────────────────────────────────────
+
+class _MobileZoomControls extends StatelessWidget {
+  final VoidCallback onZoomIn;
+  final VoidCallback onZoomOut;
+
+  const _MobileZoomControls({
+    required this.onZoomIn,
+    required this.onZoomOut,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = AppConstants.getPrimary(isDark);
+    final bg = AppConstants.surface(isDark).withValues(alpha: 0.92);
+    final border = AppConstants.border(isDark);
+
+    Widget btn(IconData icon, String label, VoidCallback onTap) {
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(label,
+                    style: TextStyle(
+                        color: primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16)),
+                const SizedBox(width: 4),
+                Icon(icon, size: 18, color: primary),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: border),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.18),
+              blurRadius: 12,
+              offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          btn(Icons.add, 'A', onZoomIn),
+          Container(height: 1, width: 44, color: border),
+          btn(Icons.remove, 'A', onZoomOut),
         ],
       ),
     );

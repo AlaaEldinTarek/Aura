@@ -137,11 +137,13 @@ class _QuranScreenState extends ConsumerState<QuranScreen>
             key: _tabBarKey,
             child: TabBar(
               controller: _tabController,
+              // scaleDown labels so an enlarged system font shrinks them to fit
+              // each fixed tab instead of clipping (e.g. "Bookmarks" → "Bookma").
               tabs: [
-                Tab(text: 'surahs'.tr(), height: tabH),
-                Tab(text: 'juz'.tr(), height: tabH),
-                Tab(text: 'bookmarks'.tr(), height: tabH),
-                Tab(text: 'wird'.tr(), height: tabH),
+                Tab(height: tabH, child: FittedBox(fit: BoxFit.scaleDown, child: Text('surahs'.tr()))),
+                Tab(height: tabH, child: FittedBox(fit: BoxFit.scaleDown, child: Text('juz'.tr()))),
+                Tab(height: tabH, child: FittedBox(fit: BoxFit.scaleDown, child: Text('bookmarks'.tr()))),
+                Tab(height: tabH, child: FittedBox(fit: BoxFit.scaleDown, child: Text('wird'.tr()))),
               ],
             ),
           ),

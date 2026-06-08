@@ -468,16 +468,21 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                   setState(() => _showUndo = true);
                 },
                 icon: Icon(Icons.check, size: ts.scale(18.0)),
-                label: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Flexible(child: Text('wird_mark_complete'.tr(), overflow: TextOverflow.ellipsis)),
-                    SizedBox(width: ts.scale(4.0)),
-                    const InfoTipIcon(
-                      titleKey: 'tutorial_wird_juz_actions_title',
-                      bodyKey: 'tutorial_wird_juz_actions_body',
-                    ),
-                  ],
+                // scaleDown shrinks the label at large system fonts instead of
+                // truncating it to "Mark ...".
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('wird_mark_complete'.tr()),
+                      SizedBox(width: ts.scale(4.0)),
+                      const InfoTipIcon(
+                        titleKey: 'tutorial_wird_juz_actions_title',
+                        bodyKey: 'tutorial_wird_juz_actions_body',
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -486,7 +491,10 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
               child: OutlinedButton.icon(
                 onPressed: () => _showBookmarkPagesSheetJuz(context, state),
                 icon: Icon(Icons.bookmark_outline, size: ts.scale(18.0)),
-                label: Text('wird_add_from_bookmarks'.tr(), overflow: TextOverflow.ellipsis),
+                label: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text('wird_add_from_bookmarks'.tr()),
+                ),
               ),
             ),
           ],
@@ -987,7 +995,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
               child: OutlinedButton.icon(
                 onPressed: () => _showRecordPagesDialog(context, currentPage),
                 icon: Icon(Icons.edit_note, size: ts.scale(18.0)),
-                label: Text('wird_record_pages'.tr()),
+                label: FittedBox(fit: BoxFit.scaleDown, child: Text('wird_record_pages'.tr())),
               ),
             ),
             SizedBox(width: ts.scale(8.0)),
@@ -998,7 +1006,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                   setState(() => _showUndo = true);
                 },
                 icon: Icon(Icons.check, size: ts.scale(18.0)),
-                label: Text('wird_mark_complete'.tr()),
+                label: FittedBox(fit: BoxFit.scaleDown, child: Text('wird_mark_complete'.tr())),
               ),
             ),
           ],
