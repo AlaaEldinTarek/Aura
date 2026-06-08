@@ -452,6 +452,29 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         Log.d(TAG, "📿 [PRAYER] Name: $prayerName ($prayerNameAr)")
         Log.d(TAG, "⏰ [PRAYER] Scheduled for: $scheduledTimeStr")
 
+        // ── Safety guards ─────────────────────────────────────────────────────────
+        // (1) Sunrise must NEVER trigger an alarm — no adhan, no notification, no
+        //     full-screen. It only exists as a timeline marker in the foreground
+        //     notification. If a Sunrise alarm ever reaches here, drop it silently.
+        if (prayerName == "Sunrise") {
+            Log.w(TAG, "⏭️ [GUARD] Sunrise alarm received — ignoring (timeline marker only)")
+            return
+        }
+        // (2) Reject a phantom "Fajr" whose time is at/after today's sunrise. A real
+        //     Fajr is always before sunrise, so this can only come from a corrupted /
+        //     stale recalculation. Window-limited (within 6h after sunrise) so a
+        //     legitimate next-day Fajr is never rejected.
+        if (prayerName == "Fajr") {
+            val sunriseTime = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+                .getString("sunrise_time", null)?.toLongOrNull() ?: 0L
+            if (sunriseTime > 0L && prayerTime >= sunriseTime &&
+                prayerTime <= sunriseTime + 6 * 60 * 60 * 1000L) {
+                Log.w(TAG, "⏭️ [GUARD] Fajr alarm at/after sunrise " +
+                    "($scheduledTimeStr ≥ ${DateFormat.format("HH:mm", Date(sunriseTime))}) — rejecting phantom")
+                return
+            }
+        }
+
         val defaultPrefs = context.getSharedPreferences("aura_silent_mode", Context.MODE_PRIVATE)
         val silentModeEnabled = defaultPrefs.getBoolean("silent_mode_enabled", true)
         Log.d(TAG, "🔧 [SETTINGS] Silent mode enabled: $silentModeEnabled")

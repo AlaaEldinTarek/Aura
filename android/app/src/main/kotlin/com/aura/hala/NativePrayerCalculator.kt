@@ -115,23 +115,34 @@ object NativePrayerCalculator {
         // Fajr / Isha angles by method
         val (fajrAngle, ishaAngle, ishaIsFixed) = methodAngles(methodName)
 
-        // High-latitude fallback: when sun doesn't rise/set, hourAngle returns 0.
-        // Use 1/7 of the half-day as a minimum offset so Fajr/Isha are never at solar noon.
-        val fallback = if (halfDay > 0.0) halfDay / 7.0 else 1.0
+        // High-latitude fallback: when the sun never reaches the Fajr/Isha
+        // depression angle, hourAngle() returns 0. The OLD code reused 1/7 of the
+        // *half-day* as the hour angle, which placed Fajr AFTER sunrise (and fired a
+        // phantom "Fajr" adhan at sunrise time). Use the standard "1/7 of the night"
+        // rule instead: Fajr = sunrise − night/7, Isha = sunset + night/7 — which is
+        // always on the correct side of sunrise/sunset.
+        val nightH = 24.0 - 2.0 * halfDay              // hours from sunset to next sunrise
+        val nightSeventh = if (nightH > 0.0) nightH / 7.0 else 1.0
 
-        val fajrH: Double
-        val ishaH: Double
+        var fajrH: Double
+        var ishaH: Double
         if (ishaIsFixed) {
             // Isha = Maghrib + fixed offset (UmmAlQura: 90 min)
             ishaH  = maghribH + ishaAngle / 60.0
-            val fajrHA = hourAngle(lat, decl, fajrAngle).let { if (it == 0.0) fallback else it }
-            fajrH  = dhuhrH - fajrHA
+            val fajrHA = hourAngle(lat, decl, fajrAngle)
+            fajrH  = if (fajrHA == 0.0) sunriseH - nightSeventh else dhuhrH - fajrHA
         } else {
-            val fajrHA = hourAngle(lat, decl, fajrAngle).let { if (it == 0.0) fallback else it }
-            val ishaHA = hourAngle(lat, decl, ishaAngle).let { if (it == 0.0) fallback else it }
-            fajrH  = dhuhrH - fajrHA
-            ishaH  = dhuhrH + ishaHA
+            val fajrHA = hourAngle(lat, decl, fajrAngle)
+            val ishaHA = hourAngle(lat, decl, ishaAngle)
+            fajrH  = if (fajrHA == 0.0) sunriseH - nightSeventh else dhuhrH - fajrHA
+            ishaH  = if (ishaHA == 0.0) sunsetH + nightSeventh else dhuhrH + ishaHA
         }
+
+        // Hard safety clamp: a real Fajr is ALWAYS before sunrise and Isha ALWAYS
+        // after sunset. Guarantees we never emit a Fajr ≥ sunrise even on borderline
+        // angles, so the phantom-Fajr-at-sunrise bug can never recur.
+        if (fajrH >= sunriseH) fajrH = sunriseH - nightSeventh
+        if (ishaH <= sunsetH)  ishaH = sunsetH + nightSeventh
 
         // Asr (shadow ratio: Shafi = 1, Hanafi = 2)
         val shadowFactor = if (madhabName == "hanafi") 2.0 else 1.0
