@@ -254,7 +254,51 @@ class PrayerForegroundService : Service() {
             } else {
                 Log.w(TAG, "⚠️ [UPDATE] No next prayer found - prayer times may be invalid")
             }
+            return
         }
+
+        // ── Self-heal next prayer ────────────────────────────────────────────
+        // The block above only re-derives the next prayer once the stored time
+        // has already passed. If a stale day-transition wrote "tomorrow Fajr"
+        // while today's later prayers were still being computed, that future
+        // time never trips the block and the notification stays stuck on Fajr
+        // all day. So: if a SOONER upcoming prayer now exists in prefs, adopt it.
+        // Reads prefs directly — no recalc side effects, safe to run each tick.
+        val soonest = soonestUpcomingFromPrefs(now)
+        if (soonest != null && soonest.third < nextPrayerTime!!) {
+            nextPrayerName = soonest.first
+            nextPrayerNameAr = soonest.second
+            nextPrayerTime = soonest.third
+            getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE).edit()
+                .putString("next_prayer_name", nextPrayerName)
+                .putString("next_prayer_name_ar", nextPrayerNameAr)
+                .putString("next_prayer_time", nextPrayerTime.toString())
+                .apply()
+            Log.d(TAG, "🔧 [SELF-HEAL] Corrected stale next prayer → $nextPrayerName at $nextPrayerTime")
+        }
+    }
+
+    // Cheapest soonest-upcoming lookup: reads the *_time keys straight from prefs
+    // and returns the nearest future prayer, or null if none upcoming. Does NOT
+    // trigger any recalculation (unlike findNextPrayer's all-passed fallback).
+    private fun soonestUpcomingFromPrefs(now: Long): Triple<String, String, Long>? {
+        val prefs = getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+        val order = listOf(
+            Triple("Fajr", "الفجر", "fajr_time"),
+            Triple("Sunrise", "الشروق", "sunrise_time"),
+            Triple("Zuhr", "الظهر", "dhuhr_time"),
+            Triple("Asr", "العصر", "asr_time"),
+            Triple("Maghrib", "المغرب", "maghrib_time"),
+            Triple("Isha", "العشاء", "isha_time")
+        )
+        var best: Triple<String, String, Long>? = null
+        for (p in order) {
+            val t = prefs.getString(p.third, null)?.toLongOrNull() ?: continue
+            if (t > now && (best == null || t < best!!.third)) {
+                best = Triple(p.first, p.second, t)
+            }
+        }
+        return best
     }
 
     // Find the next prayer based on current time
