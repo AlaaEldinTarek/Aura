@@ -184,6 +184,19 @@
             android:enabled="true"
             android:exported="false"/>
 
+        <!-- Native task reminder delivery — EMUI drops flutter_local_notifications'
+             broadcasts but delivers to receivers in our own package -->
+        <receiver
+            android:name=".TaskReminderReceiver"
+            android:enabled="true"
+            android:exported="false"/>
+
+        <!-- Generic native delivery for pre-prayer / Wird / daily-digest reminders -->
+        <receiver
+            android:name=".NativeNotificationReceiver"
+            android:enabled="true"
+            android:exported="false"/>
+
         <!-- Jumu'ah Reminder Receiver - Fires every Friday before Zuhr -->
         <receiver
             android:name=".JumuahReminderReceiver"

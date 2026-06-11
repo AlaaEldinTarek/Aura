@@ -440,6 +440,7 @@ class MainActivity : FlutterFragmentActivity() {
                         putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME, prayerName)
                         putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME_AR, prayerNameAr)
                         putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_TIME, testTime)
+                        putExtra(PrayerAlarmReceiver.EXTRA_IS_TEST, true)
                     }
 
                     val pendingIntent = android.app.PendingIntent.getBroadcast(
@@ -493,6 +494,46 @@ class MainActivity : FlutterFragmentActivity() {
                         ?: return@setMethodCallHandler result.error("INVALID", "prayerName required", null)
                     val status = call.argument<String>("status") ?: "on_time"
                     PrayerAlarmReceiver.markPrayerTracked(this, prayerName, status)
+                    result.success(true)
+                }
+                "scheduleNativeTaskReminder" -> {
+                    val notificationId = call.argument<Int>("notificationId") ?: 0
+                    val taskId = call.argument<String>("taskId") ?: ""
+                    val title = call.argument<String>("title") ?: ""
+                    val body = call.argument<String>("body") ?: ""
+                    val triggerAt = call.argument<Long>("triggerAt")
+                        ?: return@setMethodCallHandler result.error("INVALID", "triggerAt required", null)
+                    val isArabic = call.argument<Boolean>("isArabic") ?: false
+                    TaskReminderReceiver.schedule(this, notificationId, taskId, title, body, triggerAt, isArabic)
+                    result.success(true)
+                }
+                "cancelNativeTaskReminder" -> {
+                    val notificationId = call.argument<Int>("notificationId") ?: 0
+                    TaskReminderReceiver.cancel(this, notificationId)
+                    result.success(true)
+                }
+                "scheduleNativeNotification" -> {
+                    val notificationId = call.argument<Int>("notificationId") ?: 0
+                    val title = call.argument<String>("title") ?: ""
+                    val body = call.argument<String>("body") ?: ""
+                    val channelId = call.argument<String>("channelId") ?: "task_reminders"
+                    val channelName = call.argument<String>("channelName") ?: "Reminders"
+                    val triggerAt = call.argument<Long>("triggerAt")
+                        ?: return@setMethodCallHandler result.error("INVALID", "triggerAt required", null)
+                    val tapTab = call.argument<Int>("tapTab") ?: 0
+                    val repeatDaily = call.argument<Boolean>("repeatDaily") ?: false
+                    val isArabic = call.argument<Boolean>("isArabic") ?: false
+                    val prayerName = call.argument<String>("prayerName")
+                    val prayerTimeMs = call.argument<Long>("prayerTimeMs") ?: 0L
+                    NativeNotificationReceiver.schedule(
+                        this, notificationId, title, body, channelId, channelName,
+                        triggerAt, tapTab, repeatDaily, isArabic, prayerName, prayerTimeMs
+                    )
+                    result.success(true)
+                }
+                "cancelNativeNotification" -> {
+                    val notificationId = call.argument<Int>("notificationId") ?: 0
+                    NativeNotificationReceiver.cancel(this, notificationId)
                     result.success(true)
                 }
                 "getNativePrayerStatuses" -> {

@@ -34,6 +34,13 @@ class NotificationService {
   // Store prayer times for "remind me again" feature
   final Map<String, DateTime> _scheduledPrayerTimes = {};
 
+  // Native alarm channel (same channel PrayerAlarmService uses; invoke-only,
+  // no handler registered here). Task reminders are delivered by the native
+  // TaskReminderReceiver because EMUI/Huawei silently drops broadcasts to
+  // flutter_local_notifications' receiver while the app is backgrounded.
+  static const MethodChannel _nativeAlarmChannel =
+      MethodChannel('com.aura.hala/prayer_alarms');
+
   // Notification channels
   static const String _prayerChannelId = 'prayer_times';
   static const String _prayerChannelName = 'Prayer Times';
@@ -349,6 +356,32 @@ class NotificationService {
       ],
     );
 
+    if (!kIsWeb && Platform.isAndroid) {
+      // Native delivery — EMUI drops flutter_local_notifications' broadcasts.
+      // NativeNotificationReceiver re-arms itself daily (replaces
+      // matchDateTimeComponents.time) and handles the two action buttons.
+      try {
+        await _nativeAlarmChannel.invokeMethod('scheduleNativeNotification', {
+          'notificationId': notificationId,
+          'title': title,
+          'body': body,
+          'channelId': _prayerChannelId,
+          'channelName': _prayerChannelName,
+          'triggerAt': reminderTime.millisecondsSinceEpoch,
+          'tapTab': 1,
+          'repeatDaily': true,
+          'isArabic': isArabic,
+          'prayerName': prayer.name,
+          'prayerTimeMs': prayer.time.millisecondsSinceEpoch,
+        });
+        _scheduledPrayerTimes[prayer.name] = prayer.time;
+        debugPrint('NotificationService: Native ${prayer.name} reminder scheduled for $reminderTime');
+      } catch (e) {
+        debugPrint('NotificationService: Error scheduling native prayer reminder - $e');
+      }
+      return;
+    }
+
     final NotificationDetails platformChannelSpecifics =
         NotificationDetails(android: androidPlatformChannelSpecifics);
 
@@ -508,6 +541,27 @@ class NotificationService {
       showWhen: true,
       icon: '@mipmap/ic_launcher',
     );
+
+    if (!kIsWeb && Platform.isAndroid) {
+      try {
+        await _nativeAlarmChannel.invokeMethod('scheduleNativeNotification', {
+          'notificationId': notificationId,
+          'title': title,
+          'body': body,
+          'channelId': _prayerChannelId,
+          'channelName': _prayerChannelName,
+          'triggerAt': reminderTime.millisecondsSinceEpoch,
+          'tapTab': 1,
+          'repeatDaily': false,
+          'isArabic': isArabic,
+        });
+        debugPrint('🔔 [REMIND_AGAIN] Native remind-again scheduled for $reminderTime');
+      } catch (e) {
+        debugPrint('🔔 [REMIND_AGAIN] Error scheduling native - $e');
+      }
+      debugPrint('═══════════════════════════════════════');
+      return;
+    }
 
     const NotificationDetails platformChannelSpecifics =
         NotificationDetails(android: androidPlatformChannelSpecifics);
@@ -681,6 +735,10 @@ class NotificationService {
         payload: 'task|$taskId',
       );
 
+      // Record the active snooze so a bulk re-arm (rescheduleAllTaskReminders
+      // on app open) doesn't cancel-and-replace it with the standard reminder.
+      await prefs.setInt('task_snoozed_until_$taskId', snoozeTime.millisecondsSinceEpoch);
+
       debugPrint('⏰ [TASK_SNOOZE] Rescheduled for $snoozeTime');
     } catch (e) {
       debugPrint('❌ [TASK_SNOOZE] Error: $e');
@@ -736,8 +794,36 @@ class NotificationService {
       return;
     }
 
+    // An active "Remind Later" snooze owns this notification id — leave it.
+    final snoozedUntil = prefs.getInt('task_snoozed_until_$taskId') ?? 0;
+    if (snoozedUntil > now.millisecondsSinceEpoch) {
+      debugPrint('TaskNotification: "$title" snoozed until '
+          '${DateTime.fromMillisecondsSinceEpoch(snoozedUntil)} — keeping snooze');
+      return;
+    }
+    if (snoozedUntil != 0) await prefs.remove('task_snoozed_until_$taskId');
+
     final notifId = _taskNotificationId(taskId);
     await _notifications.cancel(notifId);
+
+    if (!kIsWeb && Platform.isAndroid) {
+      // Native delivery path — survives EMUI/MIUI broadcast filtering that
+      // silently drops flutter_local_notifications' scheduled broadcasts.
+      try {
+        await _nativeAlarmChannel.invokeMethod('scheduleNativeTaskReminder', {
+          'notificationId': notifId,
+          'taskId': taskId,
+          'title': title,
+          'body': body,
+          'triggerAt': reminderTime.millisecondsSinceEpoch,
+          'isArabic': isArabic,
+        });
+        debugPrint('TaskNotification: Native reminder scheduled "$title" at $reminderTime (id=$notifId)');
+      } catch (e) {
+        debugPrint('TaskNotification: Error scheduling native reminder - $e');
+      }
+      return;
+    }
 
     final androidDetails = AndroidNotificationDetails(
       _taskChannelId,
@@ -783,6 +869,16 @@ class NotificationService {
   Future<void> cancelTaskNotification(String taskId) async {
     final notifId = _taskNotificationId(taskId);
     await _notifications.cancel(notifId);
+    if (!kIsWeb && Platform.isAndroid) {
+      try {
+        await _nativeAlarmChannel.invokeMethod(
+            'cancelNativeTaskReminder', {'notificationId': notifId});
+      } catch (e) {
+        debugPrint('TaskNotification: Error cancelling native reminder - $e');
+      }
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('task_snoozed_until_$taskId');
     debugPrint('TaskNotification: Cancelled notification for task $taskId (id=$notifId)');
   }
 
@@ -822,6 +918,33 @@ class NotificationService {
       body = parts.join(isArabic ? '، ' : ', ');
     }
 
+    // Schedule for today at the specified time, or tomorrow if already past
+    final now = DateTime.now();
+    var scheduled = DateTime(now.year, now.month, now.day, hour, minute);
+    if (scheduled.isBefore(now)) {
+      scheduled = scheduled.add(const Duration(days: 1));
+    }
+
+    if (!kIsWeb && Platform.isAndroid) {
+      try {
+        await _nativeAlarmChannel.invokeMethod('scheduleNativeNotification', {
+          'notificationId': _dailySummaryId,
+          'title': title,
+          'body': body,
+          'channelId': _taskChannelId,
+          'channelName': _taskChannelName,
+          'triggerAt': scheduled.millisecondsSinceEpoch,
+          'tapTab': 3,
+          'repeatDaily': true,
+          'isArabic': isArabic,
+        });
+        debugPrint('TaskSummary: Native daily summary scheduled at $hour:$minute');
+      } catch (e) {
+        debugPrint('TaskSummary: Error scheduling native summary - $e');
+      }
+      return;
+    }
+
     final androidDetails = AndroidNotificationDetails(
       _taskChannelId,
       _taskChannelName,
@@ -833,13 +956,6 @@ class NotificationService {
     );
 
     final details = NotificationDetails(android: androidDetails);
-
-    // Schedule for today at the specified time, or tomorrow if already past
-    final now = DateTime.now();
-    var scheduled = DateTime(now.year, now.month, now.day, hour, minute);
-    if (scheduled.isBefore(now)) {
-      scheduled = scheduled.add(const Duration(days: 1));
-    }
     final tzScheduled = tz.TZDateTime.from(scheduled, tz.local);
 
     await _notifications.zonedSchedule(
@@ -861,12 +977,24 @@ class NotificationService {
   /// Cancel the daily task summary notification
   Future<void> cancelDailyTaskSummary() async {
     await _notifications.cancel(_dailySummaryId);
+    if (!kIsWeb && Platform.isAndroid) {
+      try {
+        await _nativeAlarmChannel.invokeMethod(
+            'cancelNativeNotification', {'notificationId': _dailySummaryId});
+      } catch (_) {}
+    }
   }
 
   /// Cancel a specific prayer notification
   Future<void> cancelPrayerNotification(String prayerName) async {
     final notificationId = _getNotificationId(prayerName);
     await _notifications.cancel(notificationId);
+    if (!kIsWeb && Platform.isAndroid) {
+      try {
+        await _nativeAlarmChannel.invokeMethod(
+            'cancelNativeNotification', {'notificationId': notificationId});
+      } catch (_) {}
+    }
     debugPrint('NotificationService: Cancelled $prayerName notification');
   }
 
@@ -1053,6 +1181,26 @@ class NotificationService {
           ? 'اقرأ وردك اليومي — $dailyPageGoal صفحة اليوم'
           : 'Read your daily Wird — $dailyPageGoal pages today';
 
+      if (!kIsWeb && Platform.isAndroid) {
+        try {
+          await _nativeAlarmChannel.invokeMethod('scheduleNativeNotification', {
+            'notificationId': 5100 + i,
+            'title': title,
+            'body': body,
+            'channelId': _wirdChannelId,
+            'channelName': _wirdChannelName,
+            'triggerAt': scheduled.millisecondsSinceEpoch,
+            'tapTab': 2,
+            'repeatDaily': true,
+            'isArabic': isArabic,
+          });
+          debugPrint('📖 [WIRD] Native reminder #$i scheduled at $scheduled');
+        } catch (e) {
+          debugPrint('📖 [WIRD] Error scheduling native reminder - $e');
+        }
+        continue;
+      }
+
       final androidDetails = AndroidNotificationDetails(
         _wirdChannelId,
         _wirdChannelName,
@@ -1087,6 +1235,12 @@ class NotificationService {
   Future<void> cancelWirdReminders() async {
     for (int i = 0; i < 20; i++) {
       await _notifications.cancel(5100 + i);
+      if (!kIsWeb && Platform.isAndroid) {
+        try {
+          await _nativeAlarmChannel.invokeMethod(
+              'cancelNativeNotification', {'notificationId': 5100 + i});
+        } catch (_) {}
+      }
     }
   }
 
