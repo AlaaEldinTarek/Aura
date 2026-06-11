@@ -358,12 +358,16 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
           debugPrint('PrayerTimesNotifier: Error updating foreground service - $e');
         }
 
-        // Cache the next 2 days' adhan-accurate times so the native recalc
-        // (00:05 alarm / foreground stale-check / WorkManager backup) uses the
-        // exact library values instead of its approximate astronomy.
+        // Cache today's + the next 2 days' adhan-accurate times so the native
+        // recalc (00:05 alarm / foreground stale-check / WorkManager backup /
+        // post-Fajr/Isha refresh) uses the exact library values instead of its
+        // approximate astronomy. TODAY must be included: the post-fire recalc
+        // in PrayerAlarmReceiver compares "isha < now" against these values —
+        // without today's cache its own astronomy can place Isha a few minutes
+        // later than the alarm that just fired, re-arming it (double adhan).
         if (!_isDesktop) try {
           final cache = <String, String>{};
-          for (int i = 1; i <= 2; i++) {
+          for (int i = 0; i <= 2; i++) {
             final d = DateTime.now().add(Duration(days: i));
             final dayTimes = await _prayerTimesService.getPrayerTimes(
               date: d,

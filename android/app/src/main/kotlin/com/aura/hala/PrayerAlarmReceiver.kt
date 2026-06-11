@@ -29,6 +29,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         const val EXTRA_PRAYER_NAME_AR = "prayer_name_ar"
         const val EXTRA_PRAYER_TIME = "prayer_time"
         const val EXTRA_IS_REMINDER = "is_reminder"
+        const val EXTRA_IS_TEST = "is_test"
         const val ACTION_STOP_ADHAN = "com.aura.hala.STOP_ADHAN"
         const val ACTION_TOGGLE_SILENT = "com.aura.hala.TOGGLE_SILENT"
         const val ACTION_REMINDER_PRAYED = "com.aura.hala.REMINDER_PRAYED"
@@ -473,6 +474,24 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
                     "($scheduledTimeStr ≥ ${DateFormat.format("HH:mm", Date(sunriseTime))}) — rejecting phantom")
                 return
             }
+        }
+        // (3) Duplicate-fire suppression: the same prayer cannot legitimately
+        //     ring twice within 6 hours (consecutive days are ~24h apart). A
+        //     post-fire native recalc (or any other mis-scheduler) that re-arms
+        //     a prayer that just fired is dropped here, so a duplicate adhan is
+        //     structurally impossible — including duplicate pairs that straddle
+        //     midnight, which a calendar-date key would miss. Negative elapsed
+        //     means the clock moved backwards: play normally and overwrite.
+        //     Test alarms (is_test) bypass and do NOT mark the prayer as played.
+        if (!intent.getBooleanExtra(EXTRA_IS_TEST, false)) {
+            val dedupPrefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+            val dedupKey = "last_adhan_fired_$prayerName"
+            val elapsed = currentTime - dedupPrefs.getLong(dedupKey, 0L)
+            if (elapsed in 0 until 6 * 60 * 60 * 1000L) {
+                Log.w(TAG, "⏭️ [GUARD] $prayerName adhan already played ${elapsed / 60000} min ago — dropping duplicate alarm")
+                return
+            }
+            dedupPrefs.edit().putLong(dedupKey, currentTime).apply()
         }
 
         val defaultPrefs = context.getSharedPreferences("aura_silent_mode", Context.MODE_PRIVATE)
