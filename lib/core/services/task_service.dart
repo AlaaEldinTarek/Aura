@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/task.dart';
+import '../models/prayer_record.dart' show getCurrentUserId;
 import 'notification_service.dart';
 import 'desktop_notification_service.dart';
 import 'achievement_service.dart';
@@ -119,6 +120,68 @@ class TaskService {
     if (_isInitialized) return;
     _isInitialized = true;
     debugPrint('TaskService: Initialized');
+  }
+
+  /// Re-arm reminders for every incomplete, dated task.
+  ///
+  /// A task reminder is otherwise scheduled only once — at create/edit time.
+  /// Aggressive OEMs (EMUI/MIUI/etc.) force-stop the app when it is
+  /// backgrounded, which cancels its pending AlarmManager alarms. Prayer
+  /// alarms survive that because they are re-armed on every app open; task
+  /// reminders were not. Calling this on app start + resume restores them the
+  /// same way, so a frozen-then-reopened app keeps firing task reminders.
+  ///
+  /// Idempotent: scheduleTaskReminder cancels-then-reschedules the same id and
+  /// self-skips disabled / already-passed reminders, so this is safe to call
+  /// repeatedly. Throttled to once per [_rearmInterval] — reminders are armed
+  /// at create/edit time anyway; this pass only repairs OEM force-stop losses,
+  /// so running it on every resume would just burn Firestore reads.
+  static const Duration _rearmInterval = Duration(hours: 6);
+
+  Future<void> rescheduleAllTaskReminders() async {
+    if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
+      return;
+    }
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final lastRun = prefs.getInt('task_reminders_rearmed_at') ?? 0;
+      final elapsed = now - lastRun;
+      // Negative elapsed = clock moved backwards; run and overwrite.
+      if (elapsed >= 0 && elapsed < _rearmInterval.inMilliseconds) {
+        return;
+      }
+      final userId = getCurrentUserId();
+      final tasks = await _getIncompleteTasks(userId);
+      var count = 0;
+      for (final task in tasks) {
+        if (task.isCompleted || task.dueDate == null) continue;
+        await _scheduleReminder(task);
+        count++;
+      }
+      await prefs.setInt('task_reminders_rearmed_at', now);
+      debugPrint('TaskService: Re-armed reminders for $count task(s)');
+    } catch (e) {
+      debugPrint('TaskService: Error re-arming task reminders - $e');
+    }
+  }
+
+  /// All incomplete tasks, filtered server-side — unlike getTasksOnce, whose
+  /// createdAt-descending page of 100 can silently drop OLD incomplete tasks
+  /// for users with many tasks.
+  Future<List<Task>> _getIncompleteTasks(String userId) async {
+    if (_isGuest(userId)) {
+      await _initLocalTasks();
+      return _localTasks.where((t) => !t.isCompleted).toList();
+    }
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(userId)
+        .collection('tasks')
+        .where('isCompleted', isEqualTo: false)
+        .limit(500)
+        .get();
+    return snapshot.docs.map((doc) => Task.fromFirestore(doc)).toList();
   }
 
   // ── Streams ────────────────────────────────────────────────────────────────

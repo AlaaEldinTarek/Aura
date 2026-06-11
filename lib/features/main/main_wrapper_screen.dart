@@ -123,6 +123,9 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       ref.invalidate(allTasksProvider);
       _handleWidgetIntent();
       _syncThenLoadPrayerStatus(resumeFajrTime);
+      // Re-arm task reminders — OEMs (EMUI/MIUI) cancel pending alarms when they
+      // freeze the app; reopening restores them, like prayer alarms.
+      if (!_isDesktop) TaskService.instance.rescheduleAllTaskReminders();
     } else if (state == AppLifecycleState.paused && !_isDesktop) {
       // Release the Firestore listener while backgrounded; resume re-subscribes
       // and _syncThenLoadPrayerStatus reloads fresh data anyway.
@@ -225,6 +228,14 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       _handleWidgetIntent();
       _scheduleDailySummaryOnStartup();
       Future.delayed(const Duration(seconds: 3), _checkUntrackedPrayers);
+
+      // Cold start: re-arm task reminders that an OEM app-freeze may have
+      // cancelled while Aura was closed. Delay lets auth settle so the right
+      // user's tasks are loaded.
+      if (!_isDesktop) {
+        Future.delayed(const Duration(seconds: 3),
+            TaskService.instance.rescheduleAllTaskReminders);
+      }
 
       Future.delayed(const Duration(seconds: 1), _checkGuestMigration);
 
