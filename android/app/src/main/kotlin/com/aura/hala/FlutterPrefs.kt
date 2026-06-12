@@ -25,6 +25,13 @@ object FlutterPrefs {
     fun getString(context: Context, key: String, default: String): String =
         prefs(context).getString(KEY_PREFIX + key, default) ?: default
 
+    fun getInt(context: Context, key: String, default: Int): Int =
+        when (val v = prefs(context).all[KEY_PREFIX + key]) {
+            is Long -> v.toInt()
+            is Int -> v
+            else -> default
+        }
+
     fun putString(context: Context, key: String, value: String) {
         prefs(context).edit().putString(KEY_PREFIX + key, value).apply()
     }

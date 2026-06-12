@@ -98,10 +98,11 @@ class ToggleSilentModeReceiver : BroadcastReceiver() {
         // Mark silent mode as active
         sharedPrefs.edit().putBoolean(KEY_IS_SILENT_ACTIVE, true).apply()
 
-        // Calculate silent end time
-        val silentEndTime = System.currentTimeMillis() + (DEFAULT_SILENT_DURATION_MINUTES * 60 * 1000)
+        // Calculate silent end time from the user-configured duration
+        val durationMinutes = FlutterPrefs.getInt(context, "silent_mode_duration", DEFAULT_SILENT_DURATION_MINUTES)
+        val silentEndTime = System.currentTimeMillis() + durationMinutes * 60 * 1000L
         sharedPrefs.edit().putLong(KEY_SILENT_END_TIME, silentEndTime).apply()
-        Log.d(TAG, "⏰ Silent mode will end in $DEFAULT_SILENT_DURATION_MINUTES minutes")
+        Log.d(TAG, "⏰ Silent mode will end in $durationMinutes minutes")
 
         // Schedule automatic silent OFF
         scheduleSilentOff(context, silentEndTime)

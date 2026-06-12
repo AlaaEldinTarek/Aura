@@ -714,10 +714,11 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         // Mark silent mode as active
         silentPrefs.edit().putBoolean("is_silent_active", true).apply()
 
-        // Calculate end time (20 minutes from now)
-        val silentEndTime = System.currentTimeMillis() + (20 * 60 * 1000)
+        // End time from the user-configured duration (Flutter setting, default 20 min)
+        val durationMinutes = FlutterPrefs.getInt(context, "silent_mode_duration", 20)
+        val silentEndTime = System.currentTimeMillis() + durationMinutes * 60 * 1000L
         silentPrefs.edit().putLong("silent_end_time", silentEndTime).apply()
-        Log.d(TAG, "⏰ Silent mode will auto-restore in 20 minutes")
+        Log.d(TAG, "⏰ Silent mode will auto-restore in $durationMinutes minutes")
 
         // Schedule auto-restore
         scheduleSilentModeRestore(context, silentEndTime)
