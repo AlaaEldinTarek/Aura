@@ -69,15 +69,21 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<User?>> {
       );
 
       if (exists) {
-        debugPrint('📥 Returning user found - syncing Firestore data to local');
+        debugPrint('📥 Returning user found - pushing device prefs to Firestore');
 
-        // Load from Firestore and sync to local with timeout
-        final userData = await _firestoreService.getUserData(uid).timeout(
-          const Duration(seconds: 5),
-          onTimeout: () => null,
-        );
-        if (userData != null) {
-          await _syncToLocal(userData);
+        // Language/theme are device-level choices: the device's current value
+        // wins. Pulling them down from Firestore here meant a re-login
+        // silently reset the user's language/theme to a stale server copy.
+        final themeMode = await _prefsService.getThemeMode();
+        final language = await _prefsService.getLanguage();
+        try {
+          await _firestoreService.updateUserFields(uid, {
+            'themeMode': themeMode,
+            'language': language,
+          }).timeout(const Duration(seconds: 5));
+          debugPrint('✅ Device prefs pushed: theme=$themeMode, language=$language');
+        } catch (e) {
+          debugPrint('⚠️ Device pref push failed (continuing): $e');
         }
         // Pull wird data from Firestore
         await WirdService.instance.syncFromFirestore(uid);
@@ -136,18 +142,6 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<User?>> {
     } catch (e, st) {
       // Log sync errors but allow login to succeed
       debugPrint('⚠️ Firestore sync failed: $e');
-      debugPrint('📍 Stack trace: $st');
-    }
-  }
-
-  // Sync Firestore data to local preferences
-  Future<void> _syncToLocal(UserData userData) async {
-    try {
-      await _prefsService.setThemeMode(userData.themeMode);
-      await _prefsService.setLanguage(userData.language);
-      debugPrint('✅ Local sync completed successfully');
-    } catch (e, st) {
-      debugPrint('⚠️ Local sync partially failed: $e');
       debugPrint('📍 Stack trace: $st');
     }
   }
