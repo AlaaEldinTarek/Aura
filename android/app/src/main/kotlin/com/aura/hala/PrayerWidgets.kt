@@ -483,7 +483,10 @@ class AllPrayersWidget : AppWidgetProvider() {
         val intent = Intent(context, AllPrayersWidgetReceiver::class.java)
         val pendingIntent = PendingIntent.getBroadcast(context, 0, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
-        alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 60000L, pendingIntent)
+        // RTC (not RTC_WAKEUP): never wake the device for an invisible widget.
+        // While the screen is off the alarm is held; it delivers on wake-up.
+        // Prayer transitions during sleep are covered by the azan alarm path.
+        alarmManager.setRepeating(AlarmManager.RTC, System.currentTimeMillis() + 60000L, 60000L, pendingIntent)
     }
 
     private fun cancelWidgetUpdate(context: Context) {

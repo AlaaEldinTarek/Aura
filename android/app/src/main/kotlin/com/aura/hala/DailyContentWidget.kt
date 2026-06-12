@@ -135,8 +135,10 @@ class DailyContentWidget : AppWidgetProvider() {
                 set(Calendar.MINUTE, 1)
                 set(Calendar.SECOND, 0)
             }
+            // RTC (not RTC_WAKEUP): no need to wake the phone at midnight —
+            // the held alarm delivers on first wake-up after the day change.
             alarmManager.setRepeating(
-                AlarmManager.RTC_WAKEUP,
+                AlarmManager.RTC,
                 calendar.timeInMillis,
                 AlarmManager.INTERVAL_DAY,
                 pendingIntent
