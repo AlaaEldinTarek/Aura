@@ -155,21 +155,23 @@ lib/
 - Day transition: detects stale times, launches `MainActivity` with `refresh_prayer_times` extra
 
 ### Critical: Native SharedPreferences File Names
-Flutter `shared_preferences` ≠ native Kotlin file. **NEVER use `${packageName}_preferences` in Kotlin.**
+Flutter `shared_preferences` ≠ native Kotlin file. The plugin's real file is **`FlutterSharedPreferences`** with every key prefixed **`flutter.`** — `${packageName}_preferences` is NOT it (reads from it return defaults; writes are invisible to Dart). **In Kotlin, use the `FlutterPrefs` helper (`FlutterPrefs.kt`) for any setting Flutter saved** (it handles the file name, key prefix, and Long-stored ints). Note: the plugin caches in memory on the Dart side — after native writes, call `prefs.reload()` before reading (see `_handleWidgetIntent`).
 
 | File | Used By | Contains |
 |------|---------|----------|
-| `aura_prayer_times` | PrayerForegroundService, PrayerAlarmReceiver, AdhanFullScreenActivity, StopAdhanReceiver, DailySummaryReceiver | Prayer times, next prayer, language, `prayer_status_{name}_{YYYY-MM-DD}` keys |
+| `aura_prayer_times` | PrayerForegroundService, PrayerAlarmReceiver, AdhanFullScreenActivity, StopAdhanReceiver, DailySummaryReceiver | Prayer times, next prayer, language, `prayer_status_{name}_{YYYY-MM-DD}` keys (pruned after 7 days by DailySummaryReceiver) |
 | `aura_silent_mode` | SilentModeAutomation, PrayerAlarmReceiver, AdhanFullScreenActivity | silent_mode_enabled, is_silent_active, saved_ringer_mode |
 | `aura_prefs` | AdhanPlayer | adhan_enabled |
 | `aura_focus_mode` | FocusModeReceiver | completed_task_id, completed_at |
-| `${packageName}_preferences` | Flutter only + FocusModeService (writes focus_completed_task_id) | Default Flutter prefs |
+| `FlutterSharedPreferences` (`flutter.` key prefix) | Flutter plugin + Kotlin via `FlutterPrefs` helper | All Dart-side prefs: prayer_tracking_notifications_enabled, daily_summary_time, jumua_reminder_enabled, theme_mode, silent_mode_duration, widget handoff flags (pending_complete_task_id, widget_open_task_form, widget_navigate_to_tab) |
+| `${packageName}_preferences` | Focus Mode ONLY (FocusModeService/FocusModeActivity write, MainActivity reads via channel) — a self-consistent native↔native handoff. Do NOT use it for anything else | focus_completed_task_id, focus_task_was_completed |
 
-This was the root cause of Arabic text not showing in full-screen azan and silent mode not working.
+This was the root cause of Arabic text not showing in full-screen azan, silent mode not working, azan/post-check/daily-summary notifications always English, the daily summary time reverting to 21:00, and the Jumu'ah toggle being ignored after reboot.
 
 ### State Sync Pattern
 - Firestore ↔ SharedPreferences bidirectional sync for logged-in users
-- Login: Firestore → SharedPreferences; Change: SharedPreferences → Firestore
+- Login: device → Firestore for language/theme (device-level prefs win; pulling them down made re-logins silently reset the user's language). Change: SharedPreferences → Firestore
+- Data (tasks, prayer records, wird) still pulls from Firestore on login
 - Guest mode: SharedPreferences-only, migrated to Firestore on signup
 - Collections: `users`, `tasks`, `prayer_records`
 
