@@ -47,31 +47,38 @@ void main() {
       expect(find.text('5:30 AM'), findsOneWidget);
     });
 
-    testWidgets('shows correct emoji for Fajr', (tester) async {
+    Finder prayerIcon(String assetPath) => find.byWidgetPredicate(
+          (w) =>
+              w is Image &&
+              w.image is AssetImage &&
+              (w.image as AssetImage).assetName == assetPath,
+        );
+
+    testWidgets('shows correct icon for Fajr', (tester) async {
       final prayer = _makePrayer(name: 'Fajr');
       await tester.pumpWidget(_buildTestWidget(
         PrayerCard(prayer: prayer),
       ));
 
-      expect(find.text('🌙'), findsOneWidget);
+      expect(prayerIcon('assets/images/ic_prayer_fajr.png'), findsOneWidget);
     });
 
-    testWidgets('shows correct emoji for Dhuhr', (tester) async {
+    testWidgets('shows correct icon for Dhuhr', (tester) async {
       final prayer = _makePrayer(name: 'Dhuhr');
       await tester.pumpWidget(
         _buildTestWidget(PrayerCard(prayer: prayer)),
       );
 
-      expect(find.text('☀️'), findsOneWidget);
+      expect(prayerIcon('assets/images/ic_prayer_dhuhr.png'), findsOneWidget);
     });
 
-    testWidgets('shows correct emoji for Maghrib', (tester) async {
+    testWidgets('shows correct icon for Maghrib', (tester) async {
       final prayer = _makePrayer(name: 'Maghrib');
       await tester.pumpWidget(
         _buildTestWidget(PrayerCard(prayer: prayer)),
       );
 
-      expect(find.text('🌇'), findsOneWidget);
+      expect(prayerIcon('assets/images/ic_prayer_maghrib.png'), findsOneWidget);
     });
 
     testWidgets('shows chevron when no action available', (tester) async {

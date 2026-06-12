@@ -9,7 +9,9 @@ void main() {
     });
 
     test('contains expected prayer names in order', () {
-      expect(kPrayerNames, ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha']);
+      // 'Zuhr' is the canonical spelling in kPrayerNames (UI shows "Zuhr";
+      // only the native prefs key keeps the legacy 'dhuhr' form)
+      expect(kPrayerNames, ['Fajr', 'Zuhr', 'Asr', 'Maghrib', 'Isha']);
     });
 
     test('does not contain Sunrise', () {
