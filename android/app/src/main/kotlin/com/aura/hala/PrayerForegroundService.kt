@@ -186,8 +186,9 @@ class PrayerForegroundService : Service() {
             Log.d(TAG, "✅ [LOAD] Prayer data loaded: next = $nextPrayerName at $nextPrayerTime")
         }
 
-        // Get current date (in days since epoch)
-        val currentDay = System.currentTimeMillis() / 86400000
+        // Get current date (LOCAL calendar day — epoch-day division compares UTC
+        // days, which misses stale times between local midnight and UTC midnight)
+        val currentDay = localDayKey(System.currentTimeMillis())
         var hasOldPrayerTimes = false
 
         // Load all prayer times for automatic transition
@@ -197,7 +198,7 @@ class PrayerForegroundService : Service() {
             if (timeStr != null) {
                 val time = timeStr.toLongOrNull()
                 if (time != null) {
-                    val prayerDay = time / 86400000
+                    val prayerDay = localDayKey(time)
                     // Flag as old if prayer time is from before today
                     if (prayerDay < currentDay) {
                         hasOldPrayerTimes = true
@@ -343,16 +344,12 @@ class PrayerForegroundService : Service() {
         Log.w(TAG, "⚠️ [FIND_NEXT] All prayers passed — requesting Flutter refresh for new day")
         requestFlutterUpdate()
 
-        // Return tomorrow's Fajr as a temporary placeholder until Flutter updates
+        // Return tomorrow's Fajr as a temporary placeholder until Flutter updates:
+        // advance the stored Fajr in whole days until it lands in the future
         val fajrTime = prayerTimes["fajr_time"]
         if (fajrTime != null) {
-            val fajrDate = fajrTime / 86400000
-            val currentDate = currentTime / 86400000
-            val tomorrowFajr = if (fajrDate < currentDate) {
-                ((currentDate - fajrDate) * 86400000) + fajrTime + 86400000
-            } else {
-                fajrTime + 86400000
-            }
+            var tomorrowFajr = fajrTime
+            while (tomorrowFajr <= currentTime) tomorrowFajr += 86400000L
             Log.d(TAG, "✅ [FIND_NEXT] Temporary: Fajr tomorrow at $tomorrowFajr (${Date(tomorrowFajr)})")
             return Triple("Fajr", "الفجر", tomorrowFajr)
         }
@@ -653,6 +650,12 @@ class PrayerForegroundService : Service() {
             .setCustomBigContentView(contentView)
 
         Log.d(TAG, "⏰ [REMINDER_MODE] $prayerName | ${minsRemaining}min until azan")
+    }
+
+    /** Local-timezone day key (year + day-of-year), comparable across years. */
+    private fun localDayKey(timeMs: Long): Long {
+        val cal = java.util.Calendar.getInstance().apply { timeInMillis = timeMs }
+        return cal.get(java.util.Calendar.YEAR) * 1000L + cal.get(java.util.Calendar.DAY_OF_YEAR)
     }
 
     private fun isDarkTheme(): Boolean {
