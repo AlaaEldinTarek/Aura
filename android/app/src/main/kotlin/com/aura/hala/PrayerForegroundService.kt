@@ -76,6 +76,16 @@ class PrayerForegroundService : Service() {
             context.stopService(intent)
         }
 
+        // Re-tick the countdown loop right away — used when adhan mode just
+        // activated and the loop may be mid-way through its 60 s sleep
+        fun nudge() {
+            val svc = instance ?: return
+            val h = svc.handler ?: return
+            val r = svc.updateRunnable ?: return
+            h.removeCallbacks(r)
+            h.post(r)
+        }
+
         fun requestFlutterUpdateStatic(context: Context) {
             Log.d(TAG, "🔄 [REFRESH] Recalculating prayer times natively...")
             val ok = NativePrayerCalculator.calculateAndSave(context)
@@ -357,7 +367,11 @@ class PrayerForegroundService : Service() {
         updateRunnable = object : Runnable {
             override fun run() {
                 updateNotification()
-                handler?.postDelayed(this, UPDATE_INTERVAL)
+                // Adhan mode shows an "Iqama in Xm Ys" seconds countdown — tick
+                // every second only during that window, once a minute otherwise
+                val adhanActive = getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+                    .getBoolean("adhan_active", false)
+                handler?.postDelayed(this, if (adhanActive) 1_000L else UPDATE_INTERVAL)
             }
         }
 
