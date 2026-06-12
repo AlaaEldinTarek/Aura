@@ -11,6 +11,7 @@ import '../../core/services/shared_preferences_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/prayer_alarm_service.dart';
 import '../../core/services/platform_channel_service.dart';
+import '../../core/services/windows_startup_service.dart';
 import '../../core/widgets/setting_tile.dart';
 import '../../core/theme/app_typography.dart';
 import 'prayer_calculation_settings_dialog.dart';
@@ -29,6 +30,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _dailySummaryTime = '21:00';
   String _calculationMethod = 'MuslimWorldLeague';
   String _asrMadhab = 'Shafi';
+  bool _windowsStartup = true;
   bool _loaded = false;
 
   @override
@@ -46,6 +48,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final sp = await SharedPreferences.getInstance();
     final method = sp.getString(AppConstants.keyCalculationMethod) ?? 'MuslimWorldLeague';
     final madhab = sp.getString(AppConstants.keyAsrMadhab) ?? 'Shafi';
+    final windowsStartup =
+        sp.getBool(WindowsStartupService.prefKey) ?? true;
     if (mounted) {
       setState(() {
         _silentMode = silent;
@@ -54,6 +58,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         _dailySummaryTime = summaryTime;
         _calculationMethod = method;
         _asrMadhab = madhab;
+        _windowsStartup = windowsStartup;
         _loaded = true;
       });
     }
@@ -253,6 +258,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         title: isArabic ? 'تحسين البطارية' : 'Battery Optimization',
                         subtitle: isArabic ? 'تعطيل لضمان الإشعارات في الخلفية' : 'Disable for reliable background alerts',
                         onTap: () => PlatformChannelService.openBatteryOptimizationSettings(),
+                      ),
+                    ]),
+                  ],
+
+                  // ── Desktop ─────────────────────────────────────────────
+                  if (!kIsWeb && Platform.isWindows) ...[
+                    SettingsSectionHeader(
+                      icon: Icons.desktop_windows_outlined,
+                      title: isArabic ? 'سطح المكتب' : 'Desktop',
+                    ),
+                    SettingsCard(children: [
+                      SettingTileSwitch(
+                        icon: Icons.power_settings_new_outlined,
+                        iconColor: Colors.blue,
+                        title: isArabic ? 'التشغيل مع بدء ويندوز' : 'Start with Windows',
+                        subtitle: isArabic
+                            ? 'تشغيل التطبيق تلقائياً في الخلفية عند بدء النظام'
+                            : 'Launch in the background when Windows starts',
+                        value: _windowsStartup,
+                        onChanged: (v) async {
+                          setState(() => _windowsStartup = v);
+                          await WindowsStartupService.setEnabled(v);
+                        },
                       ),
                     ]),
                   ],

@@ -439,8 +439,14 @@ class DesktopNotificationService {
   // ─── Daily Task Digest ────────────────────────────────────────────────────
 
   /// Schedule a timer-based daily task digest at 8:00 AM (if not yet past).
+  /// [fetchCounts] is called when the timer FIRES (returns [today, overdue]) —
+  /// counts fetched at schedule time would be stale, and fetching at startup
+  /// crashes the process (Defender blocks new-exe network access).
   Future<void> scheduleDailyTaskDigest(
-      int todayCount, int overdueCount) async {
+    int todayCount,
+    int overdueCount, {
+    Future<List<int>> Function()? fetchCounts,
+  }) async {
     if (!isDesktop) return;
     _digestTimer?.cancel();
     _digestTimer = null;
@@ -450,8 +456,19 @@ class DesktopNotificationService {
     if (digestTime.isBefore(now)) return;
 
     final delay = digestTime.difference(now);
-    _digestTimer = Timer(delay, () {
-      _showDailyTaskDigest(todayCount, overdueCount);
+    _digestTimer = Timer(delay, () async {
+      var today = todayCount;
+      var overdue = overdueCount;
+      if (fetchCounts != null) {
+        try {
+          final counts = await fetchCounts();
+          today = counts[0];
+          overdue = counts[1];
+        } catch (e) {
+          debugPrint('DesktopNotificationService: digest count fetch failed: $e');
+        }
+      }
+      _showDailyTaskDigest(today, overdue);
       _digestTimer = null;
     });
     debugPrint(

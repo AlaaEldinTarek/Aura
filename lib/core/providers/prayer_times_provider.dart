@@ -79,6 +79,10 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
   // Track last side effects day to avoid re-running on same day
   String? _lastSideEffectsDate;
 
+  // Wall-clock of the previous minute tick — a large gap means the machine
+  // slept, which freezes Dart timers (desktop adhan timers fire late)
+  DateTime _lastTickWallClock = DateTime.now();
+
   PrayerTimesNotifier(this._prayerTimesService, this._locationService, [this._prefs])
       : super(PrayerTimesState(selectedDate: DateTime.now())) {
     // Wrap init in microtask to avoid modifying state during provider creation
@@ -113,6 +117,22 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
   void _startNextPrayerUpdateTimer() {
     _nextPrayerUpdateTimer?.cancel();
     _nextPrayerUpdateTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      final now = DateTime.now();
+      final gap = now.difference(_lastTickWallClock);
+      _lastTickWallClock = now;
+
+      // Desktop: Dart timers freeze during system sleep, so the adhan timers
+      // scheduled by DesktopPrayerScheduler drift by the sleep duration.
+      // A tick gap well beyond 1 minute means the machine slept — reschedule.
+      if (_isDesktop && gap > const Duration(minutes: 3)) {
+        debugPrint('💤 [DESKTOP] Wall-clock jump ${gap.inMinutes} min (system sleep?) — rescheduling prayer timers');
+        if (state.prayerTimes.isNotEmpty) {
+          DesktopPrayerScheduler.instance
+              .schedulePrayerTimers(state.prayerTimes)
+              .catchError((e) => debugPrint('⚠️ [DESKTOP] Reschedule after wake failed: $e'));
+        }
+      }
+
       if (!state.isLoading && state.prayerTimes.isNotEmpty) {
         // Quick update: just recalculate next/current prayer without GPS
         _quickUpdateNextPrayer();
@@ -261,9 +281,24 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
         // Schedule daily task digest notification
         try {
           if (_isDesktop) {
-            // Skip Firestore on desktop — network calls at startup crash the process
-            // (Windows Defender blocks new exe network access). Schedule with zero counts.
-            await DesktopNotificationService.instance.scheduleDailyTaskDigest(0, 0);
+            // Counts are fetched when the 8 AM timer fires — fetching here at
+            // startup crashes the process (Defender blocks new exe network access)
+            // and would be stale by digest time anyway.
+            await DesktopNotificationService.instance.scheduleDailyTaskDigest(
+              0,
+              0,
+              fetchCounts: () async {
+                final userId = getCurrentUserId();
+                if (userId.isEmpty) return const [0, 0];
+                final tasks = await TaskService.instance
+                    .getTasksOnce(userId: userId, limit: 500);
+                final today =
+                    tasks.where((t) => t.isDueToday && !t.isCompleted).length;
+                final overdue =
+                    tasks.where((t) => t.isOverdue && !t.isCompleted).length;
+                return [today, overdue];
+              },
+            );
           } else {
             final userId = getCurrentUserId();
             if (userId.isNotEmpty) {

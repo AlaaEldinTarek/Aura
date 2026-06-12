@@ -37,6 +37,7 @@ import 'features/achievements/achievements_screen.dart';
 import 'core/services/offline_queue_service.dart';
 import 'core/services/desktop_notification_service.dart';
 import 'core/services/desktop_tray_service.dart';
+import 'core/services/windows_startup_service.dart';
 import 'features/tasks/task_form_screen.dart';
 import 'features/tasks/task_stats_screen.dart';
 import 'core/models/task.dart';
@@ -89,7 +90,8 @@ void main(List<String> args) async {
     }
 
     // Keep the registry entry current so it survives MSIX updates
-    if (Platform.isWindows) _registerWindowsStartup();
+    // (no-op if the user disabled "start with Windows" in Settings)
+    if (Platform.isWindows) WindowsStartupService.registerIfEnabled();
   }
 
   // Initialize Firebase with error handling
@@ -232,27 +234,6 @@ void main(List<String> args) async {
       child: const AuraApp(),
     ),
   );
-}
-
-Future<void> _registerWindowsStartup() async {
-  try {
-    final exePath = Platform.resolvedExecutable;
-    final result = await Process.run('reg', [
-      'add',
-      r'HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\Run',
-      '/v', 'Aura',
-      '/t', 'REG_SZ',
-      '/d', '"$exePath" --startup',
-      '/f',
-    ]);
-    if (result.exitCode == 0) {
-      debugPrint('✅ [STARTUP] Windows startup registered: $exePath');
-    } else {
-      debugPrint('⚠️ [STARTUP] reg add failed: ${result.stderr}');
-    }
-  } catch (e) {
-    debugPrint('⚠️ [STARTUP] Failed to register Windows startup: $e');
-  }
 }
 
 class AuraApp extends ConsumerWidget {
