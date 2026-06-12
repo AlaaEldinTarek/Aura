@@ -82,3 +82,6 @@ aura_signing.pfx
 
 # Desktop OAuth credentials
 lib/core/services/google_oauth_config.dart
+
+# Auto-generated SDK device-registration ids
+adi-registration.properties
