@@ -367,10 +367,11 @@ class SilentOffReceiver : BroadcastReceiver() {
     }
 
     /**
-     * Get language preference
+     * Get language preference — Flutter writes it into aura_prayer_times
+     * (aura_prefs never holds a language key)
      */
     private fun getLanguagePreference(context: Context): String {
-        val sharedPrefs = context.getSharedPreferences("aura_prefs", Context.MODE_PRIVATE)
+        val sharedPrefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
         return sharedPrefs.getString("language", "en") ?: "en"
     }
 }

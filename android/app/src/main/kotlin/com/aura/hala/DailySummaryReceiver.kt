@@ -72,6 +72,9 @@ class DailySummaryReceiver : BroadcastReceiver() {
         if (intent.action != ACTION) return
         Log.d(TAG, "📅 Daily summary receiver fired")
 
+        // Housekeeping: prayer_status_* keys are kept as "synced" forever otherwise
+        pruneOldPrayerStatuses(context)
+
         // Ensure channel exists — receiver fires without app being open
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -152,5 +155,27 @@ class DailySummaryReceiver : BroadcastReceiver() {
     private fun todayDateKey(): String {
         val cal = Calendar.getInstance()
         return "${cal.get(Calendar.YEAR)}-${String.format("%02d", cal.get(Calendar.MONTH) + 1)}-${String.format("%02d", cal.get(Calendar.DAY_OF_MONTH))}"
+    }
+
+    /** Remove prayer_status_{name}_{YYYY-MM-DD} keys older than 7 days. */
+    private fun pruneOldPrayerStatuses(context: Context) {
+        val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+        val cutoffCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -7) }
+        val cutoff = "${cutoffCal.get(Calendar.YEAR)}-${String.format("%02d", cutoffCal.get(Calendar.MONTH) + 1)}-${String.format("%02d", cutoffCal.get(Calendar.DAY_OF_MONTH))}"
+        val editor = prefs.edit()
+        var removed = 0
+        for (key in prefs.all.keys) {
+            if (!key.startsWith("prayer_status_")) continue
+            val date = key.substringAfterLast('_')
+            // ISO dates compare correctly as strings
+            if (date.length == 10 && date < cutoff) {
+                editor.remove(key)
+                removed++
+            }
+        }
+        if (removed > 0) {
+            editor.apply()
+            Log.d(TAG, "🧹 Pruned $removed prayer status keys older than $cutoff")
+        }
     }
 }
