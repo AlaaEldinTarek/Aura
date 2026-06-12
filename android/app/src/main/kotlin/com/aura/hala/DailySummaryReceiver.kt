@@ -84,8 +84,7 @@ class DailySummaryReceiver : BroadcastReceiver() {
             }
         }
 
-        val flutterPrefs = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
-        val trackingEnabled = flutterPrefs.getBoolean("prayer_tracking_notifications_enabled", true)
+        val trackingEnabled = FlutterPrefs.getBoolean(context, "prayer_tracking_notifications_enabled", true)
         if (!trackingEnabled) {
             Log.d(TAG, "📅 Tracking disabled, skipping summary")
             rescheduleForTomorrow(context)
@@ -105,7 +104,7 @@ class DailySummaryReceiver : BroadcastReceiver() {
             return
         }
 
-        val language = flutterPrefs.getString("language", "en") ?: "en"
+        val language = prayerPrefs.getString("language", "en") ?: "en"
         val isArabic = language == "ar"
         val count = untracked.size
 
@@ -146,8 +145,7 @@ class DailySummaryReceiver : BroadcastReceiver() {
     }
 
     private fun rescheduleForTomorrow(context: Context) {
-        val flutterPrefs = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
-        val timeStr = flutterPrefs.getString("daily_summary_time", "21:00") ?: "21:00"
+        val timeStr = FlutterPrefs.getString(context, "daily_summary_time", "21:00")
         schedule(context, timeStr)
     }
 

@@ -49,8 +49,7 @@ class TasksWidget : AppWidgetProvider() {
                 val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
                 prefs.edit().putString("pending_complete_task_id", taskId).apply()
                 // Also write to Flutter's SharedPreferences
-                val flutterPrefs = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
-                flutterPrefs.edit().putString("pending_complete_task_id", taskId).apply()
+                FlutterPrefs.putString(context, "pending_complete_task_id", taskId)
                 // Launch app to process completion
                 val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
                 if (launchIntent != null) {
@@ -61,8 +60,7 @@ class TasksWidget : AppWidgetProvider() {
             }
             ACTION_ADD_TASK -> {
                 // Write flag to Flutter's SharedPreferences
-                val flutterPrefs = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
-                flutterPrefs.edit().putBoolean("widget_open_task_form", true).apply()
+                FlutterPrefs.putBoolean(context, "widget_open_task_form", true)
                 val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
                 if (launchIntent != null) {
                     launchIntent.putExtra("open_task_form", true)
@@ -289,8 +287,7 @@ class NextTaskWidget : AppWidgetProvider() {
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             prefs.edit().putString("pending_complete_task_id", taskId).apply()
             // Also write to Flutter's SharedPreferences
-            val flutterPrefs = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
-            flutterPrefs.edit().putString("pending_complete_task_id", taskId).apply()
+            FlutterPrefs.putString(context, "pending_complete_task_id", taskId)
             val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)
             if (launchIntent != null) {
                 launchIntent.putExtra("complete_task_id", taskId)

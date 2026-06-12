@@ -94,10 +94,9 @@ class PrayerBootReceiver : BroadcastReceiver() {
     }
 
     private fun rescheduleDailySummary(context: Context) {
-        val flutterPrefs = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
-        val trackingEnabled = flutterPrefs.getBoolean("prayer_tracking_notifications_enabled", true)
+        val trackingEnabled = FlutterPrefs.getBoolean(context, "prayer_tracking_notifications_enabled", true)
         if (!trackingEnabled) return
-        val timeStr = flutterPrefs.getString("daily_summary_time", "21:00") ?: "21:00"
+        val timeStr = FlutterPrefs.getString(context, "daily_summary_time", "21:00")
         DailySummaryReceiver.schedule(context, timeStr)
         Log.d(TAG, "Daily prayer summary rescheduled for $timeStr")
     }

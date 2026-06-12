@@ -54,8 +54,7 @@ class MainActivity : FlutterFragmentActivity() {
     private fun handleWidgetTabIntent(intent: Intent) {
         val tabIndex = intent.getIntExtra("widget_target_tab", -1)
         if (tabIndex >= 0) {
-            val prefs = getSharedPreferences("${packageName}_preferences", android.content.Context.MODE_PRIVATE)
-            prefs.edit().putInt("widget_navigate_to_tab", tabIndex).apply()
+            FlutterPrefs.putInt(this, "widget_navigate_to_tab", tabIndex)
             Log.d("MainActivity", "🗂️ [WIDGET] Queued tab navigation → $tabIndex")
         }
     }

@@ -573,8 +573,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
 
         // Schedule post-prayer check (30 min after adhan)
         if (prayerName != "Sunrise") {
-            val flutterPrefs = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
-            val trackingEnabled = flutterPrefs.getBoolean("prayer_tracking_notifications_enabled", true)
+            val trackingEnabled = FlutterPrefs.getBoolean(context, "prayer_tracking_notifications_enabled", true)
             if (trackingEnabled) {
                 schedulePostPrayerCheck(context, prayerName, prayerNameAr, prayerTime, getNotificationId(prayerName))
             } else {
@@ -765,15 +764,11 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         Log.d(TAG, "📱 [NOTIFICATION] ===== showPrayerNotification START =====")
         Log.d(TAG, "📱 [NOTIFICATION] Prayer: $prayerName ($prayerNameAr)")
 
-        // Get language preference from default SharedPreferences (Flutter uses this)
-        val defaultPrefs = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
-        val language = defaultPrefs.getString("language", "en") ?: "en"
+        // Language is written by Flutter into aura_prayer_times (same source as AdhanFullScreenActivity)
+        val timesPrefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+        val language = timesPrefs.getString("language", "en") ?: "en"
         val isArabic = language == "ar"
         Log.d(TAG, "📱 [NOTIFICATION] Language: $language, isArabic: $isArabic")
-
-        // Check if silent mode is enabled
-        val silentModeEnabled = defaultPrefs.getBoolean("silent_mode_enabled", true)
-        Log.d(TAG, "📱 [NOTIFICATION] Silent mode enabled in settings: $silentModeEnabled")
 
         // Check if silent mode is currently active
         val silentPrefs = context.getSharedPreferences("aura_silent_mode", Context.MODE_PRIVATE)
@@ -919,8 +914,8 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             }
         }
 
-        val defaultPrefs = context.getSharedPreferences("${context.packageName}_preferences", Context.MODE_PRIVATE)
-        val language = defaultPrefs.getString("language", "en") ?: "en"
+        val timesPrefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+        val language = timesPrefs.getString("language", "en") ?: "en"
         val isArabic = language == "ar"
 
         val prayerLabel = if (isArabic) prayerNameAr else prayerName

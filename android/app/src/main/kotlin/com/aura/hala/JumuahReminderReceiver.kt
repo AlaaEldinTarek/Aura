@@ -21,10 +21,7 @@ class JumuahReminderReceiver : BroadcastReceiver() {
         private const val REQUEST_CODE = 8001
 
         fun schedule(context: Context) {
-            val flutterPrefs = context.getSharedPreferences(
-                "${context.packageName}_preferences", Context.MODE_PRIVATE
-            )
-            val enabled = flutterPrefs.getBoolean("jumua_reminder_enabled", true)
+            val enabled = FlutterPrefs.getBoolean(context, "jumua_reminder_enabled", true)
             if (!enabled) {
                 Log.d(TAG, "Jumu'ah reminder disabled, skipping schedule")
                 return
@@ -105,10 +102,7 @@ class JumuahReminderReceiver : BroadcastReceiver() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        val flutterPrefs = context.getSharedPreferences(
-            "${context.packageName}_preferences", Context.MODE_PRIVATE
-        )
-        if (!flutterPrefs.getBoolean("jumua_reminder_enabled", true)) return
+        if (!FlutterPrefs.getBoolean(context, "jumua_reminder_enabled", true)) return
 
         val prayerPrefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
         val isArabic = (prayerPrefs.getString("language", "en") ?: "en") == "ar"

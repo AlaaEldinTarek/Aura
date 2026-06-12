@@ -467,6 +467,9 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
   Future<void> _handleWidgetIntent() async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      // Native code (widgets, MainActivity) writes these keys directly to the
+      // prefs file on disk — reload to bust Dart's in-memory cache.
+      await prefs.reload();
 
       // Handle tap-to-complete from widget
       final taskId = prefs.getString('pending_complete_task_id');
