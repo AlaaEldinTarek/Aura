@@ -15,7 +15,7 @@ are registered in `MainActivity.configureFlutterEngine` unless noted. Confidence
 | `com.aura.hala/ringer_mode` | none found | `MainActivity.kt:24,204` | Partial (Kotlin only — F10) |
 | `com.aura.hala/app_control` | none found | `MainActivity.kt:25,225` (`openUrl`) | Partial (Kotlin only — F5/F10) |
 | `com.aura.hala/silent_mode` | `silent_mode_service.dart:14` | none found | Partial (Dart only — F9) |
-| `flutter/vibration` | `haptic_feedback.dart:14` (`vibrate`) | none in app code (UNKNOWN: engine/plugin) | Partial |
+| `flutter/vibration` | `haptic_feedback.dart:14` (`vibrate`) | none in `android/`; not a Flutter engine channel → no-op (F23) | Partial (Dart only) |
 
 Old CLAUDE.md said `ringer_mode` ↔ `SilentModeAutomation.kt`; the handler is in MainActivity and Dart uses a different
 channel name (`silent_mode`). Silent-mode automation actually runs natively from `PrayerAlarmReceiver` + prefs (see prefs-keys).
