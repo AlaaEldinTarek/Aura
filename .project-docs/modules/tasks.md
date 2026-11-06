@@ -11,7 +11,8 @@ Relocated from CLAUDE.md on 2026-11-06; not yet re-verified (Step 2). Focus Mode
 - Categories: work, personal, shopping, health, study, prayer, other. Priorities: low, medium, high.
 - Recurrence: none/daily/weekly/monthly — completion auto-generates next via `completeRecurringTask()`.
 - Subtasks: `SubTask` model; `subtaskProgress` (0.0–1.0) and `completedSubtasks` are computed.
-- Pin to top: `isPinned`; `_applySort()` always floats pinned tasks above the sort order.
+- Pin to top: `isPinned`; `_applySort()` floats pinned tasks above the sort order, but dated sections re-sort by
+  `dueDate`, so it only holds in No Date / Completed (findings F30b; folder view: `lib/features/tasks/README.md`).
 - Due time: `hasDueTime` + `TimeOfDay` in `dueDate`; badge shows 12h with ص/م.
 - Firestore sync (collection: contracts/firestore-paths.md).
 
