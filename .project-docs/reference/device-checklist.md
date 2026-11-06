@@ -67,7 +67,7 @@ is believed to do; record what you actually see, not the expectation.
 | S16 | Focus mode start/end | Start focus on a task with short duration | Overlay/lock + DND (if granted); end notification 5999; completed task handed back to app | F-FOCUS | |
 | S17 | Boot reschedule | `"$ADB" reboot`, unlock, don't open app; wait for next prayer | Alarms, daily summary, Jumu'ah rescheduled by boot receiver; adhan fires | F-BOOT + F-PRAYER | |
 | S18 | Stale prayer-time recalculation | Don't open app across midnight (or advance date 1 day) | Foreground notification/widgets show new day's times via `NativePrayerCalculator`; MainActivity NOT launched | F-BOOT + F-PRAYER | |
-| S19 | Offline task create → sync | Logged-in; airplane mode; create/edit/delete task; reconnect | Local changes visible immediately; appear in Firestore after reconnect | F-APP | |
+| S19 | Offline task create → sync | Logged-in; airplane mode; create/edit/delete task; reconnect | Local changes visible immediately; appear in Firestore after reconnect (Firestore SDK cache; custom offline queue is never filled — findings F16) | F-APP | |
 | S20 | Guest → account migration | Guest mode: create tasks; sign up / log in | Guest tasks uploaded to `users/{uid}/tasks`; no duplicates | F-APP | |
 | S21 | Arabic / RTL screens | Switch to Arabic; visit Home, Prayer, Tasks, Quran/Wird, Settings, Profile | Full RTL, Arabic numerals everywhere, Zuhr shown as الظهر / Jumu'ah on Friday | F-APP | |
 

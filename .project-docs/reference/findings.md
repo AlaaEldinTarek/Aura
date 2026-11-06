@@ -1,8 +1,9 @@
 # Findings — investigate, do not fix (without an approved spec)
 Created 2026-11-06 from analyzer run at 75d38b9 and the CLAUDE.md relocation.
 
-## F1 — equal_keys_in_map — UNVERIFIED (possible silent data bug)
-- `lib/core/services/location_service.dart:356` — two equal keys in a map literal; the later value silently wins.
+## F1 — equal_keys_in_map — VERIFIED harmless
+- `lib/core/services/location_service.dart:327, 356` — `'Istanbul'` twice in `cityTranslations`, identical values →
+  no behavior change; lint only.
 
 ## F2 — depend_on_referenced_packages — UNVERIFIED
 - `lib/core/services/auth_service.dart:7` — imports `crypto`, which is not a direct dependency (transitive only).
@@ -68,6 +69,62 @@ Created 2026-11-06 from analyzer run at 75d38b9 and the CLAUDE.md relocation.
   map key as-is. Kotlin readers use `dhuhr_time` (`PrayerAlarmReceiver.kt:619`, `JumuahReminderReceiver.kt:32`), which
   only `NativePrayerCalculator.kt:63` writes. Result: orphan `zuhr_time` key, and `dhuhr_time` is not refreshed by this
   Dart path. Breaks the CLAUDE.md rule "prefs key always `dhuhr_time`". Found during EGM batch 2.
+
+## F16 — Offline queue is never populated — VERIFIED (static)
+- `OfflineQueueService.enqueue()` (`offline_queue_service.dart:55`) has no caller in `lib/`; `SyncService` replay
+  (`sync_service.dart:33–66`, triggered by `connectivity_provider.dart`) only ever pushes Wird. Offline writes rely on
+  the Firestore SDK cache instead (UNVERIFIED — device scenario **S19** offline task create → sync). Replay also uses
+  `.add()` (non-idempotent). Not a bug yet. If S19 passes on device, `OfflineQueueService` + queue replay = dead code → P6 cleanup.
+
+## F17 — Desktop IP location code is never called → Mecca default — code VERIFIED; DECISION: deliberate (not a bug)
+- `_updateIpLocationInBackground` / `_getIpLocation` (`location_service.dart:131–170`) have no callers, so
+  `desktop_ip_*` is never written; `getBestLocation` (`:182–192`) falls back to Mecca unless a manual location is set.
+  Comment there says "user can set actual location in Settings".
+- **Decision (user, 2026-11-06): deliberate for now** — desktop users set their location manually. Not a bug; the unused
+  IP-location helpers stay until a phase decides to remove or re-enable them.
+
+## F18 — Desktop in-app notification stream never emits — VERIFIED (static)
+- `DesktopNotificationService._notifController` (`desktop_notification_service.dart:39`) is never `add`ed to, but
+  `main_wrapper_screen.dart:175` subscribes to `notificationStream` → in-app banners never show on desktop.
+- Decision (user): dead code → **P6 cleanup**.
+
+## F19 — Cleanup deletes prayers marked within 20 min of adhan — code VERIFIED, impact UNVERIFIED
+- **Tag: likely user-visible bug → fix track** (with F7, F15; needs an approved spec; do not fix during refactor phases).
+- `cleanupFuturePrayerRecords` (`prayer_tracking_service.dart:716–741`) deletes today's records with
+  `prayedAt < adhan + 20 min`. Desktop adhan toast "Prayed ✓" records `prayedAt: now` at adhan time
+  (`desktop_notification_service.dart:158–162`); `NotificationService._handleMarkPrayed` (`notification_service.dart:541`)
+  does the same. Such records would be deleted on the next app start that day.
+
+## F20 — Scout-reported issues in lib/core/services
+Verified 2026-11-06 (read-only, user picked these three):
+- **F20a streak counts missed/excused prayers — VERIFIED.** `_streakFromRecords` (`prayer_tracking_service.dart:477–500`)
+  and `_calculateBestStreak` (`:524–544`) count distinct `prayerName` per day (`>= 5`) with no status filter.
+- **F20b recurring-task duplicates — NOT CONFIRMED (toggle path).** Guest `_completeRecurringTask`
+  (`task_service.dart:560–590`) skips the existing-child check, but un-completing runs `_deleteChildTasks` (`:519–523`)
+  first, so repeated toggles leave one next instance. Concurrent double-tap race: UNVERIFIED.
+- **F20c daily task digest never repeats on its own — VERIFIED.** `scheduleDailyTaskDigest`
+  (`notification_service.dart:1040–1068`) is a one-shot `zonedSchedule` (no `matchDateTimeComponents`); it is re-armed
+  only by `PrayerTimesNotifier.loadPrayerTimes` side effects (once per date per app process), so days without an app
+  start get no digest and counts are frozen at schedule time.
+
+**UNVERIFIED backlog** — check only when a phase touches that area:
+- notification_service: task snooze uses plugin path on Android and skips `cancelNativeTaskReminder` (:606–654);
+  digest channel `task_digest` not pre-created, raw digits in Arabic (:1016–1070);
+  `prayer_check` channel created twice (:166, :212); `cancelAllNotifications` leaves native alarms (:920);
+  enabling a prayer in `togglePrayerNotification` doesn't reschedule (:1205); unguarded `int.parse` on wird times (:1088).
+- prayer_tracking_service: best streak reads the oldest
+  5000 records (:517); `deletePrayerRecord` fetches all records of a prayer (:646); no guest branch in `watchDay` /
+  `getStatistics` (:227, :302).
+- task_service: recurring child drops subtasks/focus fields
+  (:581); recurring completion skips achievements (:519); `scheduleDailyTaskSummary` called on desktop (:730);
+  migrated tasks keep reminders under old local ids (:104).
+- wird_service: pages read past goal not counted (:100–112); juz-mode undo subtracts pages (:176, :204).
+- achievement_service: dhikr 100/200 effectively need sessions within 30 days (:190–204).
+- desktop: tray actions may fire twice (`desktop_tray_service.dart:86–145`); "Stop Adhan" item hidden right after
+  play starts (`desktop_prayer_scheduler.dart:86`); adhan/post-check toasts ignore notify flags (:83, :98).
+- auth_service: desktop OAuth has no `state` param and no loopback timeout (:144–179); email logged (:101).
+- quran_svg_service: partial download served as cached page (:41–44). rating_service: doc says khatm/records rule,
+  code checks only 7-day install age (:8, :33).
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
