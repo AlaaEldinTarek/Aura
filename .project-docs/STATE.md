@@ -4,10 +4,10 @@
 - Support target: current minSdk and newer (Android 10 must keep working; test device nova 5T = API 29)
 - Phase: Bootstrap Step 2 — understand the code | Spec: none yet (docs/designs/aura-refactor.md in Step 4)
 - Done (Step 2): contracts/* verified Dart↔Kotlin; device-checklist.md (S01–S21 + emulator E01–E04); findings F4–F14
-- Done (EGM): `lib/core/providers/README.md`, `lib/core/services/README.md` (rules + progress: INDEX.md § Folder READMEs)
-- Current task: EGM batch 3, one folder per run — user runs `/egm:egm-bootstrap lib/core/models` (then utils, widgets, theme)
+- Done (EGM): all `lib/core/*` folder READMEs (providers, services, models, utils, widgets, theme); rules + progress: INDEX.md
+- Current task: EGM features batches — user runs `/egm:egm-bootstrap lib/features/<folder>` (16 subfolders, one per run)
 - Blockers: Android 14/15 emulator not set up (E01–E04 BLOCKED); adb not on PATH (use SDK path)
 - Pending user: run device-checklist baseline S01–S21 and record results
-- Next: batches 3 (×4), 4a, 4b, 5 → parent READMEs (lib/core, lib/features) → drift report once → Step 2.5 modules/*.md
-- Fix track (needs spec): F7, F15, F19 (likely user-visible bugs) | P6 cleanup candidates: F16 (if S19 passes), F18
-- Open questions: reference/findings.md (F4, F7–F13, F15–F20, § Doc conflicts)
+- Next: features, android kotlin → parent READMEs (lib/core, lib/features) → drift report once → Step 2.5 modules/*.md
+- Fix track (needs spec): FX-1 = F20a+F25 (HIGH), F7, F15, F19, F20c, F21 (LOW) | P6 cleanup: F16 (if S19 passes), F18, F23, F28
+- Open questions: reference/findings.md (F4, F7–F29, § Doc conflicts)
