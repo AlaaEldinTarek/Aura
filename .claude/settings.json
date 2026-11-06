@@ -56,6 +56,9 @@
       "PowerShell(dart format --output=write*)"
     ],
     "deny": [
+      "Artifact",
+      "mcp__claude_ai_Claude_Docs__batch",
+      "mcp__claude_ai_Claude_Docs__update",
       "Bash(git reset --hard*)",
       "PowerShell(git reset --hard*)",
       "Bash(git -C * reset --hard*)",
