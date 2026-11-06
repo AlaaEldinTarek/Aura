@@ -214,6 +214,108 @@ Check only when a phase touches the area:
 - Dynamic themes have no `textTheme` (`app_theme.dart:325–382`); `AppTheme.primaryFont` / `arabicFont` and
   `dynamic_color` import unused (`:2, :7–9`). Consolidation candidate for a theme phase.
 
+## F30 — Tasks screen issues (lib/features/tasks) — code VERIFIED (static), impact UNVERIFIED
+- **(a) Task shown twice** — **Tag: fix track, LOW.** a task due today with a time within the next 3 h is in both Today (`isDueToday && !isOverdue`)
+  and Due Soon; both sections render (`tasks_screen.dart:1152–1171, :1242–1265`). Likely user-visible.
+- **(b) Pin / sort ignored in dated sections** — **Tag: fix track, MEDIUM; first confirm it is not intentional.** `_applySort` floats pinned tasks (`:1014–1017`), but every dated section is
+  re-sorted by `dueDate` (`:1149, :1155, :1171, :1179, :1188, :1196, :1204`). `modules/tasks.md` § TasksScreen says pinned
+  tasks always float → doc conflict (code wins).
+- **(c) Completed-today with null `completedAt`** — **Tag: fix track, MEDIUM.** `_isCompletedToday` returns `true` when `completedAt == null` (`:1022`).
+- **(d) Editing a task due in the past** — **Tag: fix track, HIGH.** `showDatePicker(initialDate: _selectedDueDate, firstDate: DateTime.now())`
+  (`task_form_screen.dart:232–233`) breaks the Flutter assert `initialDate >= firstDate`. Device behavior UNVERIFIED.
+- **(e) Tags list aliased** — **Tag: fix track, MEDIUM.** `_tags = task.tags ?? []` (`task_form_screen.dart:69`) shares the list with the original `Task`;
+  subtasks are copied (`:76`).
+- **(f) Focus resume refresh** — **Tag: P3 (provider duplication).** `_checkFocusTaskCompleted` invalidates `tasksProvider(const TaskFilterParams())` (`:164`), but
+  the screen watches `allTasksProvider` / `taskStatisticsProvider` (both stream/autoDispose, so they may refresh anyway).
+
+## F31 — Tasks scout backlog (lib/features/tasks) — UNVERIFIED
+Check only when a phase touches the area:
+- Arabic numerals missing (raw ints): section counts (`tasks_screen.dart:1406`), stats row and calendar (`:736–752, :660,
+  :720`), quick-add date (`:2830`); form dates, recurrence label and subtask counter (`task_form_screen.dart:609, :830,
+  :1312–1324, :1400`); most stats values (`task_stats_screen.dart:182, :196–199, :524–533, :657, :687, :869–889`).
+  Focus chips use hard-coded `'١٥'…` (`task_form_screen.dart:1100–1106`).
+- Inline EN/AR strings without `.tr()` in all 3 files (CLAUDE.md rule); Arabic typo 'تمت تحديث المهمة' (`task_form_screen.dart:201`);
+  plural 'مهام' for any count (`tasks_screen.dart:1940, :1980, :1998, :2037`).
+- Two language sources: UI uses `Localizations.localeOf`; notifications / focus use prefs `language` (`task_form_screen.dart:138,
+  :187`, `tasks_screen.dart:1627`).
+- No in-flight guard on save / quick add → possible duplicate tasks (`task_form_screen.dart:445`, `tasks_screen.dart:2717`).
+- Focus Mode scheduled for date-only (midnight) or past due times (`task_form_screen.dart:136, :185`); the custom-duration field
+  does not follow chip taps (`initialValue`, `:1123`).
+- `_bulkComplete` toggles already-completed selected tasks back to incomplete (`tasks_screen.dart:1919`).
+- Just-completed tasks outside Today/Overdue vanish immediately (the `_recentlyCompleted` exemption is undone by `!t.isCompleted`,
+  `:1167–1208`); only tasks completed before today, with no others, give a blank list with no empty state (`:1215`).
+- Category: `other` has no chip in the form picker or quick add (`task_form_screen.dart:363`, `tasks_screen.dart:2876–2882`);
+  an unknown saved filter falls back to `other` (`:188–191`).
+- Calendar view ignores filters/search; select mode survives a switch to calendar (`tasks_screen.dart:254, :271, :492–522`).
+- `_duplicateTask` drops subtasks, recurrence, focus, estimate, pin (`:1832–1841`); `_showPriorityPicker` skips the stats invalidate (`:2114`).
+- `_InlineSubtaskCard` builds from stale `widget.task.subtasks` (lost update on fast taps); a failed add leaves `_adding` true (`:2980–3023`).
+- Missing `mounted` checks after `await` (`tasks_screen.dart:1929, :1969, :2194, :2208`; `task_form_screen.dart:134–148, :1265`).
+- Stats: average completion time only counts tasks with a `dueDate` and truncates to hours (`task_stats_screen.dart:739–748`); streak
+  not re-read on refresh (`:39–58`); Overview errors render nothing (`:120–147`).
+- RTL: `EdgeInsets.only(right:)` / `Positioned(right:)` (`tasks_screen.dart:1535, :2784, :2886`).
+
+## F32 — Home screen issues (lib/features/home) — code VERIFIED (static), impact UNVERIFIED
+- **(a) Task streak only counts Home completions** — **Tag: likely user-visible bug → fix track, HIGH.** `task_streak_count` / `task_streak_date` are written only by
+  `home_screen.dart` `_incrementStreak` (`:1736–1752`), called when the last "today" task is completed from Home (`:1675`).
+  `tasks_screen.dart` has no reference to the streak keys, so finishing the day on the Tasks tab does not extend
+  the streak shown in Home, Stats, achievements and the tasks widget. Likely user-visible.
+- **(b) Prefs write during build** — **Tag: P4 (Home decomposition).** the streak mini-stat uses `FutureBuilder(future: _getStreak())` (`:1386–1387`), so a new
+  future on every rebuild; `_getStreak` writes `task_streak_count = 0` when the streak is broken (`:1730`).
+- **(c) Prayer progress labels skip Jumu'ah** — **Tag: fix track, LOW; grouped with F26.** hard-coded Arabic list / `kPrayerNames[i]` (`:1213–1222`), not
+  `getPrayerDisplayName` (CLAUDE.md rule). Same family as F26.
+- **(d) Tutorial retry never stops after dispose** — **Tag: P4 (Home decomposition).** `_launchTutorialWhenActive` re-schedules itself every 300 ms while
+  `!mounted` (`:97–101, :110–113`); a disposed State never remounts and `_pendingTutorialLaunch` is not cleared.
+- **(e) Unused code**: `_buildDailyProgressRing` (`:1755`), `_buildRecentActivity` / `_getRecentRecords` (`:1853, :1951`),
+  `_getPrayerEmoji` (`:243`) have no callers. **Tag: P6 cleanup.**
+
+## F33 — Home scout backlog (lib/features/home) — UNVERIFIED
+Check only when a phase touches the area:
+- Inline EN/AR strings without `.tr()` across the screen (only `app_tagline`, tutorial and InfoTip keys are translated);
+  AppBar title `'Aura | هالة'` hard-coded (`home_screen.dart:326`).
+- Raw Western digits in Arabic: task progress `'$percentage%'` and mini-stats (`:1298, :1373–1390`).
+- Countdown: shows `--:--` for the first second (notifier starts at zero) and after reaching zero until the provider
+  refreshes `nextPrayer`; `0s` shown for a sub-second remainder (`:54–55, :192–241`).
+- `dailyPrayerStatusProvider.load(fajrTime:)` runs once in `initState`; if prayer times are not loaded yet, `fajrTime` is
+  null and the load is not repeated (`:74–79`).
+- Celebration re-fires when the last task is un-completed and completed again; `wasLastTask` uses a possibly stale
+  `valueOrNull` (`:1660–1681`). `overlay.remove()` after 3 s is unguarded (`:1695`).
+- Streak "yesterday" uses `now.subtract(Duration(days: 1))` (DST edge) (`:1724, :1746`).
+- Mobile adds the pre-tasks gap even in `tasksOnly` mode (`:501`); redundant `?.` on non-null `prayerTimesProvider` (`:75`).
+
+## F34 — Main shell issues (lib/features/main) — code VERIFIED (static), impact UNVERIFIED
+- **(a) Swipe reaches hidden tabs (mobile)**: the PageView always holds all 5 pages with swipe enabled
+  (`main_wrapper_screen.dart:1290–1309`); app mode only hides nav items, so in `tasksOnly` / `prayerOnly` a swipe opens
+  Prayer/Quran or Tasks. Likely user-visible.
+- **(b) Untracked-prayer sheet ignores the 20-minute rule**: past = adhan time passed (`:598–600`); marking goes straight
+  to `markToday` without `canMarkPrayer` (`:1017–1038`).
+- **(c) Resume untracked check reads reset prayer times**: `_checkUntrackedPrayers()` is not awaited (`:115`) and awaits
+  `isPrayerTrackingEnabled()` (`:586`) before reading `prayerTimesProvider` (`:594`), while `ref.invalidate(prayerTimesProvider)`
+  runs synchronously at `:121`. The comment's "check BEFORE invalidating" intent is not met; the check may see empty times
+  and return.
+- **(d) `setCurrentRoute` without try-catch or Android guard**: `_updateCurrentRoute` (`:759–762`) runs on every tab change,
+  also on Windows where `MainActivity` does not exist → unhandled `MissingPluginException` (CLAUDE.md: channels always try-catch).
+- **(e) Desktop popup unmounts the shell**: while `_activePopup != null`, `build` returns only the popup (`:1166–1288`), so
+  `_DesktopShell` and its nested navigator are disposed; pushed routes and sidebar collapse state are lost after each popup.
+
+## F35 — Main shell scout backlog (lib/features/main) — UNVERIFIED
+Check only when a phase touches the area:
+- Desktop back/Esc switches to Home instead of popping the nested navigator; `SystemNavigator.pop()` on desktop (`:1096–1109`).
+- Desktop `/prayer` and `/quran` push a second screen over the PageView instead of switching tabs; sidebar keeps Home
+  highlighted (`:1445–1446, :1487–1488`; pushed from `home_screen.dart`).
+- Untracked check uses calendar today, not the Fajr-based effective day (`:593, :604`); repeated resumes can stack sheets (`:582, :618`).
+- Post-prayer picker list has only `'Zuhr'` (a native `'Dhuhr'` → picker never shows); after Isha both pickers silently do
+  nothing (`:774–777, :908–939`).
+- Native handler casts `call.arguments[...]` without null/type checks or try-catch (`:255–286`).
+- `_handleWidgetIntent` runs from both resume and post-frame; `prefs.remove` not awaited → possible double toggle (`:475–496`).
+- Popup queue can stall: `windowManager.isVisible()` outside try, early returns leave `_isShowingPopup = true` (`:361, :395, :408`).
+- `_AdhanOverlay` Stop/Prayed do not dismiss it; double `onDismiss` possible (`:1826, :1892–1910`); popup "Dismiss" keeps adhan audio playing.
+- `reminder prayerTime` = adhan ms but post-check `prayerTime` = now+delay ms (`:863` vs `:1051`) — check native expectation.
+- `_scheduleRemindLater`: unused `bgChannel`, `prefs`, `newTriggerTime` (`:847–856`); local `_toArabicNumerals` duplicates `NumberFormatter` (`:893`).
+- Inline EN/AR strings and raw prayer names (no `getPrayerDisplayName`) in popup, overlay, pickers, untracked sheet; sidebar badge
+  and tooltips not localized (`:684, :792, :954, :1175–1266, :1552, :1596, :1688, :1734, :1863–1918, :2064`).
+- Two user sources (`currentUserIdProvider` vs `currentUserProvider?.uid`, `:478` vs `:589, :1027`); on mobile `jumpToPage` also
+  fires `onPageChanged` (double haptic / route update).
+
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
 - `ringer_mode` handler is in `MainActivity`, not `SilentModeAutomation.kt`.
