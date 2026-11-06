@@ -33,5 +33,12 @@ Read STATE.md first. Use this only when CLAUDE.md's Context Loading table doesn'
 - Device characterization checklist → reference/device-checklist.md
 - Old CLAUDE.md section → new file map → reference/claude-md-relocation.md
 
+## Folder READMEs (EGM contracts)
+- Done: `lib/core/providers/README.md`. Pending: core/services, core/{models,utils,widgets,theme,constants},
+  features (2 batches), android kotlin. Drift report: once, after all batches.
+- Rules (user-approved 2026-11-06): no line numbers (name functions/classes; line numbers only in findings.md);
+  ≤ ~120 lines (one table row per file, key invariants only); folder README = what this folder's files expose + their
+  rules, modules/*.md = cross-folder feature view — never duplicate, link instead.
+
 ## Other
 - Decisions (ADRs) → decisions/ · Daily log → log/YYYY-MM-DD.md · Specs → ../docs/designs/

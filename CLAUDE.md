@@ -64,6 +64,7 @@ Windows/MSIX build: `.project-docs/modules/desktop.md`.
 | Windows desktop | modules/desktop (+ modules/desktop-scaling) |
 | Refactor phase work | STATE + spec phase section + modules it names |
 | Architecture | relevant ADRs + relevant section of docs/designs/aura-refactor.md |
+| Editing a folder | its `README.md` (EGM contract; folder view — modules/*.md is the cross-folder feature view) |
 
 - Every session: read `.project-docs/STATE.md` first, nothing else by default. `INDEX.md` only when this table doesn't answer.
 - Never read logs unless asked about a date. Never reread a file already in context unless it changed.
