@@ -4,9 +4,10 @@
 - Support target: current minSdk and newer (Android 10 must keep working; test device nova 5T = API 29)
 - Phase: Bootstrap Step 2 — understand the code | Spec: none yet (docs/designs/aura-refactor.md in Step 4)
 - Done (Step 2): contracts/* verified Dart↔Kotlin; device-checklist.md (S01–S21 + emulator E01–E04); findings F4–F14
-- Current task: EGM bootstrap batch 2 (`lib/core/providers`) → user reviews README format/length before other batches
+- Done (EGM): batch 2 `lib/core/providers/README.md` (format approved; rules in INDEX.md § Folder READMEs)
+- Current task: EGM batch 1 `lib/core/services` — user runs `/egm:egm-bootstrap lib/core/services`
 - Blockers: Android 14/15 emulator not set up (E01–E04 BLOCKED); adb not on PATH (use SDK path)
 - Pending user: run device-checklist baseline S01–S21 and record results
-- Next: remaining EGM batches (1, 3, 4a, 4b, 5) one per turn → Step 2.5 fill modules/*.md
-- Fix track (needs spec): F7 (likely user-visible bug)
-- Open questions: reference/findings.md (F4, F7–F13, § Doc conflicts)
+- Next: remaining EGM batches (3, 4a, 4b, 5) one per turn → drift report once → Step 2.5 fill modules/*.md
+- Fix track (needs spec): F7, F15 (likely user-visible bugs)
+- Open questions: reference/findings.md (F4, F7–F13, F15, § Doc conflicts)
