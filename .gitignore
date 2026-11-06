@@ -59,7 +59,11 @@ app.*.map.json
 /ios/Runner/GeneratedPluginRegistrant.*
 
 # Claude
-.claude/
+.claude/*
+!.claude/settings.json
+!.claude/hooks/
+!.claude/skills/
+.project-docs/reference/logcat/
 Aura_v1.0.2.apk
 
 # Build outputs

@@ -49,7 +49,7 @@ Windows/MSIX build: `.project-docs/modules/desktop.md`.
   approval: `reset --hard`, `clean`, `checkout -- <file>`, `push --force`, branch deletion, history rewrite, amending
   pushed commits. Never push (user pushes/merges). Phases on `refactor/pN-<name>` + PR. Preserve `pubspec.lock`.
 - **Commits**: one per logical change; imperative mood ("Fix Zuhr", not "Fixed Zuhr"); summary <72 chars, body explains
-  what/why/which files; always end with `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>`.
+  what/why/which files.
 
 ## Context Loading
 | Task | Required context (under `.project-docs/`) |

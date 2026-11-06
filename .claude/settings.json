@@ -1,0 +1,93 @@
+{
+  "permissions": {
+    "allow": [
+      "Edit",
+      "Write",
+      "Read",
+      "Glob",
+      "Grep",
+      "WebFetch(*)",
+      "WebSearch(*)",
+      "Bash(git status*)",
+      "Bash(git diff*)",
+      "Bash(git log*)",
+      "PowerShell(git status*)",
+      "PowerShell(git diff*)",
+      "PowerShell(git log*)",
+      "Bash(flutter analyze*)",
+      "Bash(flutter test*)",
+      "PowerShell(flutter analyze*)",
+      "PowerShell(flutter test*)",
+      "Bash(dart format --output=none*)",
+      "PowerShell(dart format --output=none*)"
+    ],
+    "ask": [
+      "Bash(git push*)",
+      "PowerShell(git push*)",
+      "Bash(git stash*)",
+      "PowerShell(git stash*)",
+      "Bash(git rebase*)",
+      "PowerShell(git rebase*)",
+      "Bash(git commit --amend*)",
+      "PowerShell(git commit --amend*)",
+      "Bash(rm *)",
+      "PowerShell(rm *)",
+      "PowerShell(Remove-Item *)",
+      "PowerShell(del *)",
+      "Bash(flutter pub upgrade*)",
+      "PowerShell(flutter pub upgrade*)",
+      "Bash(flutter pub add*)",
+      "PowerShell(flutter pub add*)",
+      "Bash(flutter pub remove*)",
+      "PowerShell(flutter pub remove*)",
+      "Bash(flutter build*)",
+      "PowerShell(flutter build*)",
+      "Bash(dart fix*)",
+      "PowerShell(dart fix*)",
+      "Bash(dart format .*)",
+      "Bash(dart format lib*)",
+      "Bash(dart format test*)",
+      "Bash(dart format --fix*)",
+      "Bash(dart format --output=write*)",
+      "PowerShell(dart format .*)",
+      "PowerShell(dart format lib*)",
+      "PowerShell(dart format test*)",
+      "PowerShell(dart format --fix*)",
+      "PowerShell(dart format --output=write*)"
+    ],
+    "deny": [
+      "Bash(git reset --hard*)",
+      "PowerShell(git reset --hard*)",
+      "Bash(git -C * reset --hard*)",
+      "PowerShell(git -C * reset --hard*)",
+      "Bash(git clean*)",
+      "PowerShell(git clean*)",
+      "Bash(git restore*)",
+      "PowerShell(git restore*)",
+      "Bash(git checkout -- *)",
+      "PowerShell(git checkout -- *)",
+      "Bash(git branch -D*)",
+      "PowerShell(git branch -D*)",
+      "Bash(git push --force*)",
+      "Bash(git push -f*)",
+      "Bash(git push * --force*)",
+      "Bash(git push * -f*)",
+      "PowerShell(git push --force*)",
+      "PowerShell(git push -f*)",
+      "PowerShell(git push * --force*)",
+      "PowerShell(git push * -f*)"
+    ]
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "pwsh -NoProfile -ExecutionPolicy Bypass -File \"$CLAUDE_PROJECT_DIR/.claude/hooks/log-reminder.ps1\""
+          }
+        ]
+      }
+    ]
+  }
+}
