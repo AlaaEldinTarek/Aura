@@ -1,11 +1,17 @@
 # Contract — Firestore paths
-Seeded from old CLAUDE.md on 2026-11-06; Confidence: Unknown until Step 2. No schema changes without an approved spec.
+Verified 2026-11-06 at 4aa1022 by static grep of `lib/` (Step 2). Firestore is Dart-only (no Kotlin access). No schema
+changes without an approved spec. Guest user id is `'guest_user'` (`task_service.dart:32`) — never written to Firestore.
 
-| Collection / path | Contents | Notes |
-| --- | --- | --- |
-| `users` | User profile, synced prefs (language/theme) | Login direction: device → Firestore (auth-sync.md) |
-| `tasks` | Tasks | Pulled on login; guest data migrated on signup |
-| `prayer_records` | Prayer tracking records (`prayedAt`, status) | Cleanup of impossible records: prayer-tracking.md |
-| Daily content (Hadith/Ayah/Dua) | Read-only content | Path UNKNOWN |
-| Wird sync | Wird state for logged-in users | Path UNKNOWN |
-| Achievements, dhikr stats | — | Whether synced: UNKNOWN |
+| Path | Dart location | Dynamic? | Confidence |
+| --- | --- | --- | --- |
+| `users/{uid}` | `firestore_service.dart:12`, `sync_service.dart:85,104` | uid | Verified |
+| `users/{uid}/tasks/{autoId}` | `task_service.dart:103–642` (guest migration batch :100–104) | uid | Verified |
+| `users/{uid}/prayer_records/{prayerName}_{YYYY-MM-DD}` | `prayer_tracking_service.dart:112–687`; doc id `_recordDocId` :596–600 | uid, name, date | Verified |
+| `users/{uid}/achievements/…` | `achievement_service.dart:30,56,401` | uid | Verified |
+| `users/{uid}/dhikr_sessions/…` | `dhikr_service.dart:25–154` | uid | Verified |
+| `users/{uid}/wird/data` | `wird_service.dart:497,517–520` | uid | Verified |
+| `users/{uid}/{operation.collection}` | `sync_service.dart:87,106` (offline queue; values `prayer_records`, `dhikr_sessions`, `tasks` per `offline_queue_service.dart:9`) | collection | Partial — no `QueuedOperation(` producer found (UNKNOWN whether queue is populated) |
+| `_` (local id generation only, never written) | `task_service.dart:34` | — | Verified |
+
+Daily content (Hadith/Ayah/Dua): no Firestore path found — UNKNOWN source (likely bundled assets; Step 2.4).
+`prayer_records` name casing: `{prayerName}` is whatever caller passes ('Zuhr' vs 'Dhuhr' UNKNOWN per call site).

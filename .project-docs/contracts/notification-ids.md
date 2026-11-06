@@ -1,26 +1,44 @@
 # Contract — notification IDs & channels
-Seeded from old CLAUDE.md on 2026-11-06; Confidence: Unknown until Step 2. Do NOT modify IDs.
+Verified 2026-11-06 at 4aa1022 by static grep (Step 2). Do NOT modify IDs. All IDs share one Android NotificationManager
+(same package, null tag), so Dart `flutter_local_notifications` and Kotlin `NotificationManagerCompat` IDs collide if equal.
 
-## IDs
-| ID / range | Purpose | Owner |
-| --- | --- | --- |
-| 1001–1006 | Prayer alarms (adhan notification) | PrayerAlarmReceiver.kt |
-| 2001–2006 | Prayer reminders | PrayerAlarmReceiver.kt |
-| 6001–6006 | Post-prayer checks (30 min after adhan) | PrayerAlarmReceiver.kt |
-| 7001 | Daily prayer summary | DailySummaryReceiver.kt |
-| 8001 | Jumu'ah reminder | JumuahReminderReceiver.kt |
-| 3999 | Task daily summary (`matchDateTimeComponents: time`) | Flutter NotificationService |
-| 5100–5119 | Wird reminders (max 10 used) | Flutter NotificationService |
-| 7100–8099 | Achievement unlocked (hash-based per achievement ID) | Flutter NotificationService |
+## Notification IDs
+| ID / range | Purpose | Dart location | Kotlin location | Dynamic? | Confidence |
+| --- | --- | --- | --- | --- | --- |
+| 1–6 | Flutter prayer notifications (`_fajrNotificationId`…) | `notification_service.dart:74–79` | — | No | Partial (Dart only) |
+| 1001–1006 | Adhan notification (Fajr, Sunrise, Dhuhr/Zuhr, Asr, Maghrib, Isha) | — | `PrayerAlarmReceiver.kt:48–53, getNotificationId :73` | No | Partial (Kotlin only) |
+| 2001–2006 | Pre-prayer reminders | — | `PrayerAlarmReceiver.kt:56–61, :85` | No | Partial (Kotlin only) |
+| 2000 | PrayerRescheduleService foreground notification | — | `PrayerRescheduleService.kt:30` | No | Partial (Kotlin only) |
+| 3999 | Task daily summary | `notification_service.dart:805` | (`cancelNativeNotification` passthrough) | No | Verified |
+| 4001 | Daily task digest (08:00) | `notification_service.dart:1021` | — | No | Partial — inside 4000–4999 (F8) |
+| 4000–4999 | Task reminders, `4000 + hash % 1000` | `notification_service.dart:669` | via `scheduleNativeTaskReminder` | Yes (hash) | Verified |
+| 5001–5006 | Flutter-side prayer notifications (`_getNotificationId + 5000`) | `notification_service.dart:431` | — | No | Partial |
+| +5000 offset | "Remind again" re-schedule of a native notification | — | `NativeNotificationReceiver.kt:131` | Yes | Partial |
+| 5100–5119 | Wird reminders (max 10 used) | `notification_service.dart:1105–1159` | via `scheduleNativeNotification` | Yes | Verified |
+| 5998 | Focus Mode foreground service | — | `FocusModeService.kt:32` | No | Partial |
+| 5999 | Focus Mode end notification | — | `FocusModeReceiver.kt:38` | No | Partial |
+| 6001–6006 | Post-prayer "Did you pray?" checks | `notification_service.dart:1285,1341,1371` (`6000 + id`; scheduler at :1265 has no caller found — F12) | `PrayerAlarmReceiver.kt:65–70, :97` | No | Verified (both sides) |
+| 7001 | Daily prayer summary | `_jumuahNotificationId = 7001` cancelled at `notification_service.dart:1390,1401` | `DailySummaryReceiver.kt:20` | No | Verified — collision F7 |
+| 7100–8099 | Achievement unlocked, `7100 + hash % 1000` | `notification_service.dart:1171` | — | Yes (hash) | Verified — overlaps 8001 (F4) |
+| 8001 | Jumu'ah reminder | — | `JumuahReminderReceiver.kt:19` | No | Partial (Kotlin only) |
+| 9999 | Prayer foreground service | — | `PrayerForegroundService.kt:32` | No | Partial |
 
-⚠ 7100–8099 contains 8001 (Jumu'ah) — possible collision, see reference/findings.md (UNVERIFIED).
+PendingIntent request-code offsets (not notification IDs, but must stay unique): `PrayerAlarmReceiver` +1000/+2000
+(`:147,:348,:372,:810`), `FocusModeReceiver` base 5000, `TasksWidget` widgetId +1000/+2000/+5000.
 
 ## Channels
-| Channel | Importance / notes | Owner |
-| --- | --- | --- |
-| `prayer_foreground_channel` | IMPORTANCE_HIGH, VISIBILITY_PUBLIC, PRIORITY_MAX, CATEGORY_ALARM | PrayerForegroundService.kt |
-| `prayer_tracking` | IMPORTANCE_DEFAULT; created by DailySummaryReceiver if absent | DailySummaryReceiver.kt |
-| `jumuah_reminder` | — | JumuahReminderReceiver.kt |
-| `wird_reminder` | — | Flutter NotificationService |
-| `achievement_unlocked` | — | Flutter NotificationService |
-| Others created in MainActivity | UNKNOWN | MainActivity.kt |
+| Channel ID | Dart location | Kotlin location | Confidence |
+| --- | --- | --- | --- |
+| `prayer_foreground_channel_v4` | — | `PrayerForegroundService.kt:30` (old docs said `prayer_foreground_channel`) | Partial |
+| `prayer_times` | `notification_service.dart:45` | `MainActivity.kt:116`, `PrayerAlarmReceiver.kt:798` | Verified |
+| `prayer_tracking` | — | `MainActivity.kt:157`, `DailySummaryReceiver.kt:81`, `PrayerAlarmReceiver.kt:913` | Partial |
+| `prayer_check` | `notification_service.dart:70` | — | Partial |
+| `task_reminders` | `notification_service.dart:50` | `TaskReminderReceiver.kt:37` | Verified |
+| `jumuah_reminder` | `notification_service.dart:55` | `JumuahReminderReceiver.kt:20` | Verified |
+| `wird_reminder` | `notification_service.dart:60` | via `NativeNotificationReceiver` extra `channel_id` | Partial |
+| `achievement_unlocked` | `notification_service.dart:65` | — | Partial |
+| `azkar_reminder` | — | `AzkarAlarmReceiver.kt:29` | Partial |
+| `focus_mode` | — | `FocusModeReceiver.kt:37` | Partial |
+| `focus_mode_service` | — | `FocusModeService.kt:31` | Partial |
+| `prayer_reschedule` | — | `PrayerRescheduleService.kt:31` | Partial |
+| `channel_id` | — | `NativeNotificationReceiver.kt:44` is the **extra key**, not a channel; channel comes from Dart | — |

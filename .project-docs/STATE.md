@@ -1,8 +1,12 @@
 # Project State — 2026-11-06
 - App: Aura 1.0.0+59 (MSIX 1.0.3.114) | Analyze: 425 issues (0 errors) | Tests: 64 pass / 0 fail
-- Baseline commit: 75d38b9 (main == origin/main) | Flutter 3.38.7 / Dart 3.10.7 (frozen)
-- Phase: Bootstrap Step 1 — tooling & lean docs | Spec: none yet (docs/designs/aura-refactor.md in Step 4)
-- Current task: Level A docs applied (uncommitted); Level B tooling awaiting "approve B"
-- Blockers: test device (Huawei nova 5T) not connected; adb not on PATH
-- Next: "approve B" → apply tooling → Step 2 (baseline, contracts, device checklist, EGM bootstrap)
-- Open questions: reference/findings.md § Doc conflicts
+- Baseline commit: 75d38b9 | Flutter 3.38.7 / Dart 3.10.7 (frozen) | Android minSdk 24 / target 36 / compile 36
+- Support target: current minSdk and newer (Android 10 must keep working; test device nova 5T = API 29)
+- Phase: Bootstrap Step 2 — understand the code | Spec: none yet (docs/designs/aura-refactor.md in Step 4)
+- Done (Step 2): contracts/* verified Dart↔Kotlin; device-checklist.md (S01–S21 + emulator E01–E04); findings F4–F14
+- Current task: EGM bootstrap batch 2 (`lib/core/providers`) → user reviews README format/length before other batches
+- Blockers: Android 14/15 emulator not set up (E01–E04 BLOCKED); adb not on PATH (use SDK path)
+- Pending user: run device-checklist baseline S01–S21 and record results
+- Next: remaining EGM batches (1, 3, 4a, 4b, 5) one per turn → Step 2.5 fill modules/*.md
+- Fix track (needs spec): F7 (likely user-visible bug)
+- Open questions: reference/findings.md (F4, F7–F13, § Doc conflicts)
