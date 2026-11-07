@@ -302,7 +302,7 @@ Check only when a phase touches the area:
   `_DesktopShell` and its nested navigator are disposed; pushed routes and sidebar collapse state are lost after each popup.
 
 ## F36 — Prayer feature issues (lib/features/prayer) — code VERIFIED (static), impact UNVERIFIED
-- **(a) Hanafi Asr never applied** — **Tag: fix track, CRITICAL, first in queue (FX-0); includes the MWL fallbacks for MoonsightingCommittee / Singapore / Turkey and F36c.** `prayer_screen.dart` `_saveCalculationSettings` and `settings_screen.dart:113` store
+- **(a) Hanafi Asr never applied** — **Tag: fix track, CRITICAL, first in queue (FX-0); includes the MWL fallbacks for MoonsightingCommittee / Singapore / Turkey, F36c and F52a.** `prayer_screen.dart` `_saveCalculationSettings` and `settings_screen.dart:113` store
   `AsrMadhab.value` `'Hanafi'`; `prayer_times_provider.dart` `_getAsrMadhab` matches the lowercase enum
   (`prayer_settings.dart` `hanafi`) → falls back to Shafi, and sends `'shafi'` to native (`:505`). No caller of
   `setAsrMadhab`. `'MoonsightingCommittee'`, `'Singapore'`, `'Turkey'` fall back to MWL (`:531–547`). Likely user-visible.
@@ -689,7 +689,8 @@ Source: `reference/2026-11-07_DRIFT_REPORT.md` (doc drift fixed in the modules).
 drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F46c, F49a, F51h/i/j/l/m/p/q. Items
 (a)–(c) re-checked in code by the main session.
 - **(a) Settings / iqama changes don't reach alarms or native data until the next resume** — **Tag: fix track MEDIUM
-  (prayer times, adhan); same family as F36c (FX-0) — add to FX-0 only if the user agrees.** `settings_screen.dart`
+  (prayer times, adhan); joined FX-0 (user 2026-11-07: same settings → times → alarms path as F36a / F36c; the FX-0
+  spec must cover recalculation AND alarm / native refresh).** `settings_screen.dart`
   `_recalculatePrayerTimes` calls `loadPrayerTimes(DateTime.now())` (`:295–300`) on the existing notifier;
   `_lastSideEffectsDate == todayKey` returns before side effects (`prayer_times_provider.dart:255–257`), so adhan alarms,
   post-prayer checks, widgets, native calc method and cached times keep the old settings until a resume
@@ -710,8 +711,8 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
 - **(e) Two 8 AM task digests** — **Tag: fix track LOW.** `scheduleDailyTaskSummary` (3999, native repeating,
   `task_service.dart:730`) and `scheduleDailyTaskDigest` (4001, plugin, `prayer_times_provider.dart:308`) both target 8:00
   with different text (see F8, F20c).
-- **(f) Focus Mode promises an exit that does not exist** — **Tag: fix track LOW (per tag rule; user may raise —
-  locks the phone with a false promise).** `task_form_screen.dart:1209–1210` says "exit by pressing volume up 3 times";
+- **(f) Focus Mode promises an exit that does not exist** — **Tag: fix track HIGH (user 2026-11-07: user locked
+  in with a promised escape that doesn't exist).** `task_form_screen.dart:1209–1210` says "exit by pressing volume up 3 times";
   `FocusModeActivity.onKeyDown` handles only BACK/HOME/APP_SWITCH/RECENT_APPS (`FocusModeActivity.kt:221–240`).
 - **(g) Wird data loss / divergence** — **Tag: fix track MEDIUM (data).** `recordPagesRead` adds nothing to
   `wird_total_pages_read` when the day was already completed (`wird_service.dart:100–112`; promotes the F20 backlog item;
