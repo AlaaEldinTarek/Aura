@@ -31,13 +31,14 @@ Read STATE.md first. Use this only when CLAUDE.md's Context Loading table doesn'
 - Analyzer/test baseline numbers → reference/baseline.md
 - Findings to investigate + doc conflicts → reference/findings.md
 - Device characterization checklist → reference/device-checklist.md
+- Module drift vs code (2026-11-07 snapshot) → reference/2026-11-07_DRIFT_REPORT.md
 - Old CLAUDE.md section → new file map → reference/claude-md-relocation.md
 
 ## Folder READMEs (EGM contracts)
 - Done: `lib/core/providers/README.md`, `lib/core/services/README.md`, `lib/core/models/README.md`, `lib/core/utils/README.md`, `lib/core/widgets/README.md`, `lib/core/theme/README.md`, `lib/features/tasks/README.md`, `lib/features/home/README.md`, `lib/features/main/README.md`, `lib/features/prayer/README.md`, `lib/features/quran/README.md`, `lib/features/achievements/README.md`, `lib/features/auth/README.md`, `lib/features/azkar/README.md`, `lib/features/daily_content/README.md`, `lib/features/dhikl/README.md`, `lib/features/islamic_events/README.md`, `lib/features/onboarding/README.md`, `lib/features/profile/README.md`, `lib/features/qibla/README.md`, `lib/features/settings/README.md`, `lib/features/splash/README.md`,
   `android/app/src/main/kotlin/com/aura/hala/README.md` (the empty package folders `kotlin/`, `com/`, `com/aura/` get
   no README), parents `lib/core/README.md` (also covers `core/constants`, no own README) and `lib/features/README.md`.
-  All folder READMEs done. Pending: drift report once.
+  All folder READMEs done. Drift report on modules/ done 2026-11-07 (reference/2026-11-07_DRIFT_REPORT.md, 6f83153).
 - Rules (user-approved 2026-11-06): no line numbers (name functions/classes; line numbers only in findings.md);
   ≤ ~120 lines (one table row per file, key invariants only); folder README = what this folder's files expose + their
   rules, modules/*.md = cross-folder feature view — never duplicate, link instead.
