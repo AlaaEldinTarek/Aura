@@ -750,6 +750,16 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   `$oauthError` into HTML unescaped (`auth_service.dart:163–181`, extends the F20 backlog item); Focus Mode "blocks the
   notification shade" — no code found.
 
+## F53 — Prayer calculation for other dates (found while preparing FX-0, 2026-11-07) — code VERIFIED (static)
+- **(a) Times for any date other than today are today's times shifted by whole days** — **Tag: fix track, priority
+  pending user (CRITICAL/HIGH candidate; proposed into FX-0).** `PrayerTimesService.getPrayerTimes(date:)` always
+  calls `adhan.PrayerTimes.today(...)` (`prayer_times_service.dart:80`) and adds `Duration(days: daysDifference)`
+  (`:94–111`). `PrayerTimesNotifier` caches days 0–2 with it (`prayer_times_provider.dart:403–423`) as
+  `cached_{date}_*`, which `NativePrayerCalculator.cachedOrComputed` / `readCached` prefer over its own calculation
+  (`NativePrayerCalculator.kt:165–189`). Effect: days 1–2 are off by the daily drift (~1–2 min/day) and by **1 hour
+  across a DST change** (exact 24 h added); native alarms on that day use the cached value if the app was not opened.
+  Any screen asking for another date gets the same shifted times. Device impact UNVERIFIED (DST case: Egypt has DST).
+
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
 - `ringer_mode` handler is in `MainActivity`, not `SilentModeAutomation.kt`.
