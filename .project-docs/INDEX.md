@@ -32,6 +32,7 @@ Read STATE.md first. Use this only when CLAUDE.md's Context Loading table doesn'
 - Findings to investigate + doc conflicts → reference/findings.md
 - Device characterization checklist → reference/device-checklist.md
 - Module drift vs code (2026-11-07 snapshot) → reference/2026-11-07_DRIFT_REPORT.md
+- Original bootstrap prompt (Steps 0–6) → reference/bootstrap-prompt-v2.1.md
 - Old CLAUDE.md section → new file map → reference/claude-md-relocation.md
 
 ## Folder READMEs (EGM contracts)
