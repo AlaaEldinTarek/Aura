@@ -684,6 +684,71 @@ calculator method/madhab strings equal Dart enum `.name` values (`prayer_setting
   retries the calculator every tick when no coordinates are stored; calculator prefs reads sit outside `try`;
   latent Dhuhr/Zuhr split in status keys if any caller ever sends `"Dhuhr"` (all found send `"Zuhr"`).
 
+## F52 — Module drift check (`.project-docs/modules/`, 2026-11-07) — code VERIFIED (static), impact UNVERIFIED
+Source: `reference/2026-11-07_DRIFT_REPORT.md` (doc drift fixed in the modules). Only bugs not already logged; the
+drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F46c, F49a, F51h/i/j/l/m/p/q. Items
+(a)–(c) re-checked in code by the main session.
+- **(a) Settings / iqama changes don't reach alarms or native data until the next resume** — **Tag: fix track MEDIUM
+  (prayer times, adhan); same family as F36c (FX-0) — add to FX-0 only if the user agrees.** `settings_screen.dart`
+  `_recalculatePrayerTimes` calls `loadPrayerTimes(DateTime.now())` (`:295–300`) on the existing notifier;
+  `_lastSideEffectsDate == todayKey` returns before side effects (`prayer_times_provider.dart:255–257`), so adhan alarms,
+  post-prayer checks, widgets, native calc method and cached times keep the old settings until a resume
+  (`ref.invalidate`, `main_wrapper_screen.dart:121`) or the next day. `/iqama_settings` saves `iqama_minutes` and never
+  reloads. Also: side effects re-run on every resume (guard is per notifier instance).
+- **(b) After midnight, Home and Prayer screens hide yesterday's statuses** — **Tag: fix track MEDIUM (tracking).**
+  The provider holds the effective day (yesterday until Fajr), but `home_screen.dart:302–309` and
+  `prayer_screen.dart:221` filter it with `isPrayerTimeReached` against today's times → all hidden 00:00–Fajr.
+  `_markPrayerAsCompleted` runs `canMarkPrayer` against today's times (`prayer_screen.dart:235–242`), blocking yesterday's
+  Isha after midnight (provider would allow it; tracking screen works).
+- **(c) Native statuses marked synced even when the Firestore write fails** — **Tag: fix track MEDIUM (tracking +
+  data).** `syncNativePrayerStatuses` ignores `recordPrayer`'s `bool` (`prayer_alarm_service.dart:336–347`;
+  `recordPrayer` returns false on error, `prayer_tracking_service.dart:69–104`) and calls `clearNativePrayerStatus`
+  (value → `"synced"`) → never retried.
+- **(d) Full reload every minute after Isha** — **Tag: fix track LOW, device check.** After Isha `getNextPrayer` returns a
+  tomorrow-dated Fajr; `_quickUpdateNextPrayer` (`prayer_times_provider.dart:150–157`) calls `loadPrayerTimes(now)` each
+  tick until midnight (`isLoading` toggles; GPS cached; side effects guarded). Possible loading flicker.
+- **(e) Two 8 AM task digests** — **Tag: fix track LOW.** `scheduleDailyTaskSummary` (3999, native repeating,
+  `task_service.dart:730`) and `scheduleDailyTaskDigest` (4001, plugin, `prayer_times_provider.dart:308`) both target 8:00
+  with different text (see F8, F20c).
+- **(f) Focus Mode promises an exit that does not exist** — **Tag: fix track LOW (per tag rule; user may raise —
+  locks the phone with a false promise).** `task_form_screen.dart:1209–1210` says "exit by pressing volume up 3 times";
+  `FocusModeActivity.onKeyDown` handles only BACK/HOME/APP_SWITCH/RECENT_APPS (`FocusModeActivity.kt:221–240`).
+- **(g) Wird data loss / divergence** — **Tag: fix track MEDIUM (data).** `recordPagesRead` adds nothing to
+  `wird_total_pages_read` when the day was already completed (`wird_service.dart:100–112`; promotes the F20 backlog item;
+  feeds `wird_khatma` / `wird_pages_*`). `syncFromFirestore` replaces local settings / streak / totals with the cloud copy
+  on every init, no merge, and `wird_progress_history` never syncs (`wird_service.dart:490–560`).
+- **(h) Wird achievements awarded late** — **Tag: fix track LOW.** No wird code calls `checkAndAward` (callers:
+  `prayer_tracking_service.dart:134`, `task_service.dart:531`, `profile_screen.dart:1180`).
+- **(i) Wird reminder says pages in juz mode (mobile)** — **Tag: fix track LOW.** `WirdService.scheduleReminders` passes
+  only `dailyPageGoal`, no juz flag (`wird_service.dart:466–470`, `notification_service.dart:1093–1095`); desktop gets
+  `isJuzMode`.
+- **(j) Desktop reminder timers drift after sleep and are today-only** — **Tag: fix track LOW (Windows).** Wake detection
+  reschedules only prayer timers (`prayer_times_provider.dart:127–133`); task / wird / digest `Timer`s in
+  `desktop_notification_service.dart` (`:382, :423, :459`) are not; wird and digest cover today only (`:416, :457`).
+- **(k) Home countdown stops when the desktop window loses focus** — **Tag: fix track LOW (Windows), behavior inferred.**
+  `home_screen.dart:205–207` cancels the timer on `inactive` as well as `paused`.
+- **(l) Dhikr ignores vibration settings** — **Tag: fix track LOW.** `dhikr_screen.dart:111–127` uses Flutter
+  `HapticFeedback` + unconditional `Vibration.vibrate(50)`, not `lib/core/utils/haptic_feedback.dart` (see F23, F44 backlog).
+- **(m) "Start with Windows" is opt-out** — **Tag: fix track LOW, confirm intent first.** `windows_startup_enabled`
+  defaults to true (`windows_startup_service.dart:20`); `registerIfEnabled()` runs every launch (`main.dart:94`).
+- **(n) Pinned float relies on a stable sort** — **Tag: fix track LOW, with F30b.** `_applySort` re-sorts to float pinned
+  tasks (`tasks_screen.dart:1014–1017`); Dart `List.sort` is not guaranteed stable.
+- **(o) Dead code / stale comments** — **Tag: P6 cleanup.** Dart `PrayerTimesNotifier.updateNextPrayer` (no caller);
+  `BackgroundServiceHandler.kt` (unreferenced; `MainActivity` registers the channel); unused `quran_service.dart` import
+  (`main.dart:22`); named route `/khatma_dua` never pushed by name; dead variable `y` in `WirdService.undoComplete`
+  (`:198`); duplicate INTERNET permission (`AndroidManifest.xml:3, :37`); tracked junk folders under
+  `android/app/src/main/res/` named after shell commands (`drawable" && mv …`, `layout" && cp …`); stale comments:
+  `main_wrapper_screen.dart:59` ("1.8×", formula gives 1.53), `AdhanFullScreenActivity.kt:300` ("Stop Vibrate" closes),
+  `task_provider.dart:23–25` ("autoDispose"), `PrayerAlarmReceiver.kt:587–590` (placeholder times), `FocusModeReceiver`
+  KDoc (fullScreenIntent).
+- **(p) Dart and native `proportional` differ** — **Tag: P3 (two calc engines; memory "next-prayer architecture").**
+  Dart maps it to MWL 18°/17° (`prayer_times_service.dart:272–274`), native uses 15°/15°
+  (`NativePrayerCalculator.kt:235`). Not selectable in the UI today.
+- Backlog (UNVERIFIED): overlapping fire-and-forget `checkAndAward` calls can award and toast the same achievement twice
+  (`achievement_service.dart:55–64, :393–433`); desktop OAuth loopback accepts the first request of any kind and writes
+  `$oauthError` into HTML unescaped (`auth_service.dart:163–181`, extends the F20 backlog item); Focus Mode "blocks the
+  notification shade" — no code found.
+
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
 - `ringer_mode` handler is in `MainActivity`, not `SilentModeAutomation.kt`.
