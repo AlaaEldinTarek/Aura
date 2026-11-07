@@ -391,7 +391,8 @@ Check only when a phase touches the area:
 
 ## F41 — Auth screens (lib/features/auth) — code VERIFIED (static), impact UNVERIFIED
 - **(a) Guest flag reset after onboarding finishes** — **Tag: fix track, HIGH (guest data migration; user
-  2026-11-07). Device check S22 (pending on nova 5T).** `_continueAsGuest` (`login_screen.dart:209–231`) awaits `pushNamed('/onboarding')` and then calls
+  2026-11-07). DEVICE-VERIFIED 2026-11-07: S22 on nova 5T (API 29), base 1.0.0+59 — Login shown on relaunch.**
+  Effect (1) confirmed on device; effect (2) (migration prompt skipped) follows from code, not device-checked (S20). `_continueAsGuest` (`login_screen.dart:209–231`) awaits `pushNamed('/onboarding')` and then calls
   `setGuest(false)` if still mounted. `PreferenceScreen._finish` leaves with `pushReplacementNamed('/home')`
   (`preference_screen.dart:245`), which completes the replaced route's future while Login stays in the stack under
   `/home` (mounted). Expected result: `is_guest` = false right after guest onboarding. Then (1) Splash sends the

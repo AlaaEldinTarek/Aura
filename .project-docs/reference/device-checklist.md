@@ -70,7 +70,7 @@ is believed to do; record what you actually see, not the expectation.
 | S19 | Offline task create → sync | Logged-in; airplane mode; create/edit/delete task; reconnect | Local changes visible immediately; appear in Firestore after reconnect (Firestore SDK cache; custom offline queue is never filled — findings F16) | F-APP | |
 | S20 | Guest → account migration | Guest mode: create tasks; sign up / log in | Guest tasks uploaded to `users/{uid}/tasks`; no duplicates | F-APP | |
 | S21 | Arabic / RTL screens | Switch to Arabic; visit Home, Prayer, Tasks, Quran/Wird, Settings, Profile | Full RTL, Arabic numerals everywhere, Zuhr shown as الظهر / Jumu'ah on Friday | F-APP | |
-| S22 | Guest flag survives onboarding | Fresh state (signed out, no guest): Login → Continue as guest → finish onboarding → Home; kill app; relaunch | Today (findings F41a): Login appears = bug confirmed (`is_guest` reset to false). After fix: Home appears. Run before S20 (S20 depends on it) | F-APP | |
+| S22 | Guest flag survives onboarding | Fresh state (signed out, no guest): Login → Continue as guest → finish onboarding → Home; kill app; relaunch | Today (findings F41a): Login appears = bug confirmed (`is_guest` reset to false). After fix: Home appears. Run before S20 (S20 depends on it) | F-APP | FAIL (2026-11-07, nova 5T, base): Login appeared on relaunch — F41a confirmed |
 
 ### Emulator scenarios (Android 14/15) — device: **emulator**, status: **BLOCKED** (emulator not set up)
 After E01–E04 pass, also re-run S01–S03, S05, S10, S17 on the emulator.
@@ -84,4 +84,4 @@ After E01–E04 pass, also re-run S01–S03, S05, S10, S17 on the emulator.
 ## Recorded runs
 | Date | Build | Scenarios run | Notes |
 | --- | --- | --- | --- |
-| | 1.0.0+59 (base) | | |
+| 2026-11-07 | 1.0.0+59 (base) | S22 | FAIL — Login on relaunch after guest onboarding (F41a confirmed). Other scenarios not run yet. |
