@@ -283,19 +283,42 @@ Check only when a phase touches the area:
 - Mobile adds the pre-tasks gap even in `tasksOnly` mode (`:501`); redundant `?.` on non-null `prayerTimesProvider` (`:75`).
 
 ## F34 — Main shell issues (lib/features/main) — code VERIFIED (static), impact UNVERIFIED
-- **(a) Swipe reaches hidden tabs (mobile)**: the PageView always holds all 5 pages with swipe enabled
+- **(a) Swipe reaches hidden tabs (mobile)** — **Tag: fix track, MEDIUM.** the PageView always holds all 5 pages with swipe enabled
   (`main_wrapper_screen.dart:1290–1309`); app mode only hides nav items, so in `tasksOnly` / `prayerOnly` a swipe opens
   Prayer/Quran or Tasks. Likely user-visible.
-- **(b) Untracked-prayer sheet ignores the 20-minute rule**: past = adhan time passed (`:598–600`); marking goes straight
+- **(b) Untracked-prayer sheet ignores the 20-minute rule** — **Tag: fix track, grouped with F19 as one "20-minute
+  rule" item (define the rule once, apply everywhere).** past = adhan time passed (`:598–600`); marking goes straight
   to `markToday` without `canMarkPrayer` (`:1017–1038`).
-- **(c) Resume untracked check reads reset prayer times**: `_checkUntrackedPrayers()` is not awaited (`:115`) and awaits
+- **(c) Resume untracked check reads reset prayer times** — **Tag: fix track, MEDIUM.** `_checkUntrackedPrayers()` is not awaited (`:115`) and awaits
   `isPrayerTrackingEnabled()` (`:586`) before reading `prayerTimesProvider` (`:594`), while `ref.invalidate(prayerTimesProvider)`
   runs synchronously at `:121`. The comment's "check BEFORE invalidating" intent is not met; the check may see empty times
   and return.
-- **(d) `setCurrentRoute` without try-catch or Android guard**: `_updateCurrentRoute` (`:759–762`) runs on every tab change,
+- **(d) `setCurrentRoute` without try-catch or Android guard** — **Tag: P2 (PlatformChannels registry adds the
+  Android-only guard).** `_updateCurrentRoute` (`:759–762`) runs on every tab change,
   also on Windows where `MainActivity` does not exist → unhandled `MissingPluginException` (CLAUDE.md: channels always try-catch).
-- **(e) Desktop popup unmounts the shell**: while `_activePopup != null`, `build` returns only the popup (`:1166–1288`), so
+- **(e) Desktop popup unmounts the shell** — **Tag: fix track, LOW (Windows).** while `_activePopup != null`, `build` returns only the popup (`:1166–1288`), so
   `_DesktopShell` and its nested navigator are disposed; pushed routes and sidebar collapse state are lost after each popup.
+
+## F36 — Prayer feature issues (lib/features/prayer) — code VERIFIED (static), impact UNVERIFIED
+- **(a) Hanafi Asr never applied**: `prayer_screen.dart` `_saveCalculationSettings` and `settings_screen.dart:113` store
+  `AsrMadhab.value` `'Hanafi'`; `prayer_times_provider.dart` `_getAsrMadhab` matches the lowercase enum
+  (`prayer_settings.dart` `hanafi`) → falls back to Shafi, and sends `'shafi'` to native (`:505`). No caller of
+  `setAsrMadhab`. `'MoonsightingCommittee'`, `'Singapore'`, `'Turkey'` fall back to MWL (`:531–547`). Likely user-visible.
+- **(b) Prayer tab next prayer goes stale**: local copy updated only in `_loadPrayerTimes` (`initState`, pull-to-refresh);
+  countdown `onComplete` reloads the provider but not the local state, and the screen never watches it (`prayer_screen.dart:743–755, :401–424`).
+- **(c) Settings page method/madhab change**: writes prefs then `Navigator.pop(context)` with no recalculation
+  (`prayer_screen.dart:1544–1557`; `settings_screen.dart` calls `_recalculatePrayerTimes`).
+- **(d) Doc conflict**: `modules/prayer-tracking.md` § After-midnight rules describes `_monthlyData`, a `ref.listen` guard and
+  an automatic yesterday remap that no longer exist in `prayer_tracking_screen.dart` (code wins).
+
+## F37 — Prayer scout backlog (lib/features/prayer) — UNVERIFIED
+- Tracking: a day of five "Missed" (stored `excused`) gets the green complete marker (F25); stats count today's unreached
+  prayers in the total; no try/finally in `_loadData`; raw English names and `$e` in Arabic snackbars.
+- Report: `totalMissed` derived as 150 − logged (includes not-yet-due and pre-tracking days); 8-day overlapping week buckets;
+  last-month window misses day 1 on some dates; best streak only 30 days and order-dependent; `'Dhuhr'` records never shown.
+- Settings page: foreground-service toggle has no try-catch / platform guard; `_toggleAdhan` dead; reminder / silent changes
+  do not reschedule; summary time without Arabic numerals.
+- Prayer tab: unused `_calculationMethod` / `_saveCalculationSettings`, unused imports, `setState` without `mounted` checks.
 
 ## F35 — Main shell scout backlog (lib/features/main) — UNVERIFIED
 Check only when a phase touches the area:
