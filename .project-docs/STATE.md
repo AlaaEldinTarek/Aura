@@ -4,7 +4,7 @@
 - Support target: current minSdk and newer (Android 10 must keep working; test device nova 5T = API 29)
 - Phase: Bootstrap Step 2 — understand the code | Spec: none yet (docs/designs/aura-refactor.md in Step 4)
 - Done (Step 2): contracts/* verified Dart↔Kotlin; device-checklist.md (S01–S26 + emulator E01–E04); findings F4–F14
-- Done (EGM): all `lib/core/*` folder READMEs; features tasks, home, main (7d5682b), prayer (e87448c), quran, achievements, auth, azkar (eca7bcc), daily_content, dhikl (2cf79a7), islamic_events, onboarding (9e07c1e), profile, qibla (88a6551), settings (see log 2026-11-07); rules + progress: INDEX.md
+- Done (EGM): all `lib/core/*` folder READMEs; features tasks, home, main (7d5682b), prayer (e87448c), quran, achievements, auth, azkar (eca7bcc), daily_content, dhikl (2cf79a7), islamic_events, onboarding (9e07c1e), profile, qibla (88a6551), settings (be29b87); rules + progress: INDEX.md
 - Current task: EGM features batches — user runs `/egm:egm-bootstrap lib/features/<folder>` (16 subfolders, one per run)
 - Blockers: Android 14/15 emulator not set up (E01–E04 BLOCKED); adb not on PATH (use SDK path)
 - Pending user: run device-checklist baseline S01–S21 + S23 + S24 and S25 + S26 and record results (S22 done 2026-11-07: FAIL → F41a device-verified)
