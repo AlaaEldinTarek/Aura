@@ -586,8 +586,17 @@ Check only when a phase touches the area:
 Scout claims re-checked in code before tagging: (a), (e), (k) invoke paths, (m), (p), (q). Checked and fine:
 calculator method/madhab strings equal Dart enum `.name` values (`prayer_settings.dart`); Dart cache keys map
 `Zuhr` → `cached_{date}_dhuhr` (`prayer_times_provider.dart:419`); `prayer_latitude/longitude` written as Float.
-- **(a) Daily summary uses device-locale digits in date keys** — **Tag: proposed fix track HIGH (tracking + data) —
-  awaiting user; device scenario S27.** `DailySummaryReceiver.todayDateKey` and `pruneOldPrayerStatuses`
+- **Fix-track group "locale-dependent keys"** (user 2026-11-07, HIGH, first HIGH item right after FX-0) = F51a.
+  Rule for the spec: every key, prefs name or Firestore path is built locale-independently (`Locale.US` /
+  `Locale.ROOT` in Kotlin; integer `toString` / `toIso8601String` in Dart). **Audit 2026-11-07 (read-only, `lib/` +
+  `android/app/src/main/kotlin/`)**: Kotlin `String.format` / `SimpleDateFormat` / `DateFormat.format` without an explicit
+  locale → only `DailySummaryReceiver.todayDateKey` + `pruneOldPrayerStatuses` build keys; all other hits are log
+  lines or UI text. Kotlin key-case conversion uses `lowercase()` (`Locale.ROOT`, safe); no `toLowerCase()` /
+  `toUpperCase()`. Kotlin `cached_` prefix uses `Int.toString().padStart` (safe). Dart: no `DateFormat` without an
+  explicit locale and no `NumberFormat`; date keys (`_recordDocId` Firestore id, `WirdProgress.dateKey`, task stats,
+  `cached_*`) use `int.toString().padLeft` or `toIso8601String`, which are locale-independent. Result: no further hits.
+- **(a) Daily summary uses device-locale digits in date keys** — **Tag: fix track HIGH (tracking + data), group
+  "locale-dependent keys" (user 2026-11-07: data loss for phones using Arabic-Indic digits); device scenario S27 (user runs).** `DailySummaryReceiver.todayDateKey` and `pruneOldPrayerStatuses`
   (`DailySummaryReceiver.kt:155–165`) build dates with `String.format("%02d", …)` (default locale); every writer uses
   `SimpleDateFormat("yyyy-MM-dd", Locale.US)` (`PrayerAlarmReceiver.kt:388, :418, :855–1041`,
   `NativeNotificationReceiver.kt:119`). On a device whose locale formats Arabic-Indic digits, `today` never matches →
@@ -606,7 +615,8 @@ calculator method/madhab strings equal Dart enum `.name` values (`prayer_setting
   the next adhan saves the current ringer (vibrate) as `saved_ringer_mode` unconditionally (`PrayerAlarmReceiver.kt:706–707`),
   so the later restore returns to vibrate. Both `restoreRingerMode` copies lack try/catch (restoring SILENT without
   DND access may throw).
-- **(f) Focus Mode may cover the adhan screen** — **Tag: fix track MEDIUM (adhan) pending device scenario S28.**
+- **(f) Focus Mode may cover the adhan screen** — **Tag: fix track MEDIUM (adhan) pending device scenario S28.
+  Product rule for the spec (user 2026-11-07): adhan always takes priority over Focus Mode.**
   `FocusModeService.monitorRunnable` relaunches `FocusModeActivity` within 100 ms whenever it is not visible and keeps
   a touch-blocking overlay (`FocusModeService.kt:107–119, :271–367`); nothing checks `adhan_active`. Audio likely
   still plays; the adhan screen's controls may be unreachable. The same loop re-posts notification 5996 every 100 ms.
@@ -618,11 +628,12 @@ calculator method/madhab strings equal Dart enum `.name` values (`prayer_setting
   defaulting to `"Asr"` when MainActivity removes the key (`putString(…, null)`, `MainActivity.kt:293–295`); a passed
   time stops the countdown at 0 until another writer runs. `updateNextPrayer` builds tomorrow's Fajr as today's
   `fajr_time` + 24 h (`PrayerAlarmReceiver.kt:634`); the foreground service self-heals only toward sooner times.
-- **(i) Boot restarts a foreground service the user turned off** — **Tag: fix track LOW; group "Dart->native settings
-  bridge".** `PrayerBootReceiver` calls `PrayerForegroundService.startService` (`PrayerBootReceiver.kt:89`), which
+- **(i) Boot restarts a foreground service the user turned off** — **Tag: fix track MEDIUM; group "Dart->native
+  settings bridge" (user 2026-11-07: a user's choice ignored after reboot is never LOW).** `PrayerBootReceiver` calls `PrayerForegroundService.startService` (`PrayerBootReceiver.kt:89`), which
   clears `fg_user_stopped`; it never reads Dart's `background_notification_enabled`, which
   `BackgroundServiceManager` honors (`background_service_manager.dart:49`).
-- **(j) Azkar may show twice / after dismiss** — **Tag: fix track MEDIUM — confirm intent first.** The adhan screen
+- **(j) Azkar may show twice / after dismiss** — **Tag: fix track MEDIUM. User 2026-11-07: the double launch is
+  unintended; intended behavior = exactly one azkar launch, at iqama.** The adhan screen
   launches azkar at iqama (`AdhanFullScreenActivity.kt:94–101`) and `AzkarAlarmReceiver` (scheduled at iqama + 10 min,
   `PrayerAlarmReceiver.kt:569–572`) launches it again; the 3 s delayed lambda is not removed in `onDestroy`, so azkar
   opens even if the user closed the adhan screen during "Stand for prayer".
