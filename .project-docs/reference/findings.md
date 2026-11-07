@@ -571,8 +571,8 @@ Check only when a phase touches the area:
 - **(a) Unused permission helper** — **Tag: P6.** `_requestNotificationPermission` (`splash_screen.dart:37–44`) has
   no caller (`initState` comment says permission is requested after onboarding); it is the only use of the
   `notification_service.dart` import.
-- **(b) Routing depends on the 2.5 s delay, not on state readiness** — **Tag: proposed fix track LOW, group
-  "sign-in & onboarding flow" — awaiting user.** `FirstLaunchNotifier` / `GuestModeNotifier` start as
+- **(b) Routing depends on the 2.5 s delay, not on state readiness** — **Tag: fix track LOW, group
+  "sign-in & onboarding flow" (user 2026-11-07).** `FirstLaunchNotifier` / `GuestModeNotifier` start as
   `AsyncValue.data(true)` / `data(false)` (`preferences_provider.dart:196–199, :225–228`), so the
   `guestModeAsync.isLoading` guard (`splash_screen.dart:211`) never holds during the initial read, and
   `firstLaunchProvider` is not checked at all. If the prefs reads have not finished when `splashDuration` ends, a guest
@@ -581,6 +581,97 @@ Check only when a phase touches the area:
 - Backlog (UNVERIFIED): `_AuthNavigationHandler` schedules a `pushReplacementNamed` on every rebuild after the delay;
   a provider change during the route transition (old route still mounted) could navigate twice. Deprecated
   `withOpacity` (`:81`).
+
+## F51 — Android native (android/app/src/main/kotlin/com/aura/hala) — code VERIFIED (static), impact UNVERIFIED
+Scout claims re-checked in code before tagging: (a), (e), (k) invoke paths, (m), (p), (q). Checked and fine:
+calculator method/madhab strings equal Dart enum `.name` values (`prayer_settings.dart`); Dart cache keys map
+`Zuhr` → `cached_{date}_dhuhr` (`prayer_times_provider.dart:419`); `prayer_latitude/longitude` written as Float.
+- **(a) Daily summary uses device-locale digits in date keys** — **Tag: proposed fix track HIGH (tracking + data) —
+  awaiting user; device scenario S27.** `DailySummaryReceiver.todayDateKey` and `pruneOldPrayerStatuses`
+  (`DailySummaryReceiver.kt:155–165`) build dates with `String.format("%02d", …)` (default locale); every writer uses
+  `SimpleDateFormat("yyyy-MM-dd", Locale.US)` (`PrayerAlarmReceiver.kt:388, :418, :855–1041`,
+  `NativeNotificationReceiver.kt:119`). On a device whose locale formats Arabic-Indic digits, `today` never matches →
+  summary always reports 5 untracked; the cutoff compares `"2026-1…" < "2026-١…"` as always true → prune (runs first
+  in `onReceive`, `:76`, even when tracking is off) deletes **all** `prayer_status_*` keys, including today's
+  not-yet-synced native answers. Depends on device locale, not app language.
+- **(b) Prune ignores sync state** — **Tag: fix track MEDIUM (data).** Keys older than 7 days are removed whatever
+  their value (`:161–175`); if the app is not opened for 7+ days, native answers never reach Firestore.
+- **(c) Summary counts prayers not yet due** — **Tag: fix track MEDIUM (tracking).** `untracked` checks key
+  presence only (`:99–102`); Isha after the summary time (summer, high latitude, or an early custom time) is counted.
+- **(d) Status date = time of the action, not of the prayer** — **Tag: fix track MEDIUM (tracking).** Post-check
+  buttons and `NativeNotificationReceiver` "mark prayed" use `Date()` (`PrayerAlarmReceiver.kt:1027–1041`,
+  `NativeNotificationReceiver.kt:116–121`); an Isha post-check answered after midnight is stored on the next day.
+- **(e) Silent-mode window can leave the phone on vibrate** — **Tag: fix track MEDIUM (adhan).**
+  `EXTEND_SILENT` writes only `silent_end_time=0` and keeps `is_silent_active=true` (`ToggleSilentModeReceiver.kt:186–211`);
+  the next adhan saves the current ringer (vibrate) as `saved_ringer_mode` unconditionally (`PrayerAlarmReceiver.kt:706–707`),
+  so the later restore returns to vibrate. Both `restoreRingerMode` copies lack try/catch (restoring SILENT without
+  DND access may throw).
+- **(f) Focus Mode may cover the adhan screen** — **Tag: fix track MEDIUM (adhan) pending device scenario S28.**
+  `FocusModeService.monitorRunnable` relaunches `FocusModeActivity` within 100 ms whenever it is not visible and keeps
+  a touch-blocking overlay (`FocusModeService.kt:107–119, :271–367`); nothing checks `adhan_active`. Audio likely
+  still plays; the adhan screen's controls may be unreachable. The same loop re-posts notification 5996 every 100 ms.
+- **(g) `cancelAllAlarms` cancels adhan alarms only** — **Tag: fix track MEDIUM (tracking), confirm callers.**
+  Cancels request codes 1001–1006 (`PrayerAlarmReceiver.kt:301–315`); reminder (+1000) and post-check (+2000) alarms
+  survive a cancel (e.g. after a location change) and fire with old times.
+- **(h) Widgets show a stale or invented next prayer** — **Tag: fix track MEDIUM (prayer times); same root as
+  memory "next-prayer architecture".** `AllPrayersWidget` reads `next_prayer_*` only (`PrayerWidgets.kt:117–120`),
+  defaulting to `"Asr"` when MainActivity removes the key (`putString(…, null)`, `MainActivity.kt:293–295`); a passed
+  time stops the countdown at 0 until another writer runs. `updateNextPrayer` builds tomorrow's Fajr as today's
+  `fajr_time` + 24 h (`PrayerAlarmReceiver.kt:634`); the foreground service self-heals only toward sooner times.
+- **(i) Boot restarts a foreground service the user turned off** — **Tag: fix track LOW; group "Dart->native settings
+  bridge".** `PrayerBootReceiver` calls `PrayerForegroundService.startService` (`PrayerBootReceiver.kt:89`), which
+  clears `fg_user_stopped`; it never reads Dart's `background_notification_enabled`, which
+  `BackgroundServiceManager` honors (`background_service_manager.dart:49`).
+- **(j) Azkar may show twice / after dismiss** — **Tag: fix track MEDIUM — confirm intent first.** The adhan screen
+  launches azkar at iqama (`AdhanFullScreenActivity.kt:94–101`) and `AzkarAlarmReceiver` (scheduled at iqama + 10 min,
+  `PrayerAlarmReceiver.kt:569–572`) launches it again; the 3 s delayed lambda is not removed in `onDestroy`, so azkar
+  opens even if the user closed the adhan screen during "Stand for prayer".
+- **(k) Fallback adhan cannot be stopped** — **Tag: fix track MEDIUM (adhan).** After a failed custom/built-in
+  attempt `releasePlayer()` drops the volume-key stop; the final notification-sound fallback uses an untracked local
+  `MediaPlayer` (`AdhanPlayer.kt:401–412`), so `stop()` and `isPlaying()` ignore it; a `MediaPlayer` leaks when a raw
+  file is missing (`:290–325`); vibration fires twice on custom failure. No audio focus or `AudioAttributes`.
+- **(l) Boot recovery is fragile** — **Tag: fix track MEDIUM (adhan), device check.** Boot work runs in
+  `Handler.postDelayed(30 s)` without `goAsync()` (`PrayerBootReceiver.kt:40–47`); `PrayerRescheduleService` skips
+  past times and never recalculates (`PrayerRescheduleService.kt:111–146`), so after a boot on a new day adhan depends
+  on the foreground service / worker recalc.
+- **(m) Focus Mode end-of-session issues** — **Tag: fix track LOW.** DND restore forces `INTERRUPTION_FILTER_ALL` +
+  `RINGER_MODE_NORMAL` (user's prior DND lost; can end a prayer vibrate window); "restart" after completion runs
+  without foreground/monitor and saves empty task fields; relaunch after the duration has passed restarts the full
+  timer; request-code hash collisions replace another task's alarm (`FocusModeActivity.kt:310–330`,
+  `FocusModeService.kt:187–212, :418–430`, `FocusModeReceiver.kt:49`).
+- **(n) Arabic UI numerals / strings** — **Tag: fix track LOW.** Raw digits: summary count + wrong plural
+  (`DailySummaryReceiver.kt:116`), iqama countdown (`AdhanFullScreenActivity.kt:90`), azkar counters
+  (`AzkarFullScreenActivity.kt:317, :328`). English-only: channel names (all receivers), "Focus Mode Active" in both
+  branches (`FocusModeService.kt:388`), `PrayerRescheduleService` text, `StopAdhanReceiver` "Unknown".
+- **(o) Widget display issues** — **Tag: fix track LOW.** Past prayers use the "now" dot (`dotPast` unused); day /
+  month names follow the device locale; tabular Hijri may differ from the app; DailyContentWidget list is off by one
+  day vs `daily_content_service.dart`, ordered differently, and shows the English translation in Arabic mode; tasks
+  widget shows yesterday's list after midnight until Flutter pushes; NextTaskWidget has no tap target when `task_0_id`
+  is empty; only DailyContentWidget treats `amoled` as dark.
+- **(p) Other user-visible LOW** — **Tag: fix track LOW.** Jumu'ah notification has no tap action and uses the stored
+  `dhuhr_time` of whatever day (`JumuahReminderReceiver.kt:30–58, :135–141`); foreground service deletes/recreates its
+  channel when the user lowers importance (`PrayerForegroundService.kt:147–155`); Sunrise can show as next with
+  "Until Azan" (confirm intent); `AzkarAlarmReceiver` small icon is the launcher mipmap; `NativeNotificationReceiver`
+  daily repeat re-arms from fire time and shifts `prayerTimeMs` by a fixed 24 h; calculator truncates minutes and
+  uses one DST offset (cache fallback only).
+- **(q) Dead code** — **Tag: P6 cleanup.** VERIFIED (static): `AuraAccessibilityService.kt` (+ `res/xml` config,
+  string, proguard keep) and `WidgetUpdateService.kt` are not in the manifest; `RingProgressView.kt` unreferenced;
+  `StopAdhanReceiver` is declared but nothing sends `STOP_ADHAN`; `ToggleSilentModeReceiver` `ENABLE_SILENT` branch
+  and `SilentModeScheduler.triggerSilentMode`; `FocusModeReceiver` `ACTION_FOCUS_COMPLETE` path (writes
+  `aura_focus_mode`, broadcasts `FOCUS_TASK_DONE`, channel `focus_mode`, notification 5999 — none used);
+  `FocusModeService` `ACTION_TASK_DONE` / `ACTION_TASK_NOT_DONE`; `aura_focus_state` is write-only;
+  `PrayerForegroundService.loadPrayerIconForPrayer`; `PrayerRescheduleService.calculatePrayerTimes`;
+  `DailyContentWidget.ACTION_DAILY_UPDATE`; `AdhanPlayer.playbackLock` / empty `unregisterVolumeReceiver`;
+  unreachable Sunrise checks in `PrayerAlarmReceiver.onReceive`; stale comments (StopAdhan KDoc, "20 min",
+  "opens app picker", "updates every second").
+- **(r) Platform guards** — **Tag: P2.** `setExactAndAllowWhileIdle` without try/catch in `PrayerAlarmReceiver`,
+  `NativeNotificationReceiver`, `TaskReminderReceiver` (manifest declares `USE_EXACT_ALARM`, so low risk);
+  foreground-service self-restart uses `PendingIntent.getService` on O+; `openExactAlarmSettings` reports success on
+  failure; boot also listens to `android.intent.action.REBOOT`.
+- Backlog (UNVERIFIED): `AdhanPlayer.stop`/`releasePlayer` unsynchronized across threads; synchronous `prepare()` on
+  the receiver thread; cold-start `navigation` call may reach Dart before its handler is set; foreground service
+  retries the calculator every tick when no coordinates are stored; calculator prefs reads sit outside `try`;
+  latent Dhuhr/Zuhr split in status keys if any caller ever sends `"Dhuhr"` (all found send `"Zuhr"`).
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).

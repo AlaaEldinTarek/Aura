@@ -49,7 +49,11 @@ daily-summary notifications always English, daily summary time reverting to 21:0
 
 ## Native-only keys (Kotlin ↔ Kotlin; listed so refactors don't drop them)
 - `aura_prayer_times`: `adhan_active`, `adhan_end_time`, `adhan_iqama_time` (abs ms, 0 = none), `adhan_prayer_name(_ar)`,
-  `reminder_active`, `reminder_prayer_name(_ar)`, `reminder_prayer_time`, `combined_widget_tab_{widgetId}`.
+  `reminder_active`, `reminder_prayer_name(_ar)`, `reminder_prayer_time`, `combined_widget_tab_{widgetId}`,
+  `last_adhan_fired_{name}` (6 h duplicate guard, `PrayerAlarmReceiver`), `fg_user_stopped` (`PrayerForegroundService`;
+  cleared by `startService`, so boot ignores it — findings F51i).
+- `aura_focus_state` (`FocusModeService`): write-only, no reader. `aura_focus_mode` (`FocusModeReceiver`): written
+  only on a dead path, no reader (findings F51q).
 - `aura_silent_mode`: `is_silent_active`, `saved_ringer_mode`, `silent_end_time`. `silent_mode_enabled` is read
   (`PrayerAlarmReceiver.kt:497–498`, `AdhanFullScreenActivity.kt:292–294`, default `true`) but no Kotlin or Dart code
   writes it here; the Dart toggle writes `flutter.silent_mode_enabled` in `FlutterSharedPreferences` (findings F49a).

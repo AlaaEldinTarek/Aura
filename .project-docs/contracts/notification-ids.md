@@ -15,16 +15,22 @@ Verified 2026-11-06 at 4aa1022 by static grep (Step 2). Do NOT modify IDs. All I
 | 5001–5006 | Flutter-side prayer notifications (`_getNotificationId + 5000`) | `notification_service.dart:431` | — | No | Partial |
 | +5000 offset | "Remind again" re-schedule of a native notification | — | `NativeNotificationReceiver.kt:131` | Yes | Partial |
 | 5100–5119 | Wird reminders (max 10 used) | `notification_service.dart:1105–1159` | via `scheduleNativeNotification` | Yes | Verified |
+| 5996 | Focus Mode relaunch full-screen notification (cancelled on stop) | — | `FocusModeService` `relaunchActivity` | No | Partial (added 2026-11-07, F51f) |
 | 5998 | Focus Mode foreground service | — | `FocusModeService.kt:32` | No | Partial |
-| 5999 | Focus Mode end notification | — | `FocusModeReceiver.kt:38` | No | Partial |
+| 5999 | Focus Mode end notification — never posted (dead path, F51q) | — | `FocusModeReceiver.kt:38` | No | Partial |
 | 6001–6006 | Post-prayer "Did you pray?" checks | `notification_service.dart:1285,1341,1371` (`6000 + id`; scheduler at :1265 has no caller found — F12) | `PrayerAlarmReceiver.kt:65–70, :97` | No | Verified (both sides) |
 | 7001 | Daily prayer summary | `_jumuahNotificationId = 7001` cancelled at `notification_service.dart:1390,1401` | `DailySummaryReceiver.kt:20` | No | Verified — collision F7 |
 | 7100–8099 | Achievement unlocked, `7100 + hash % 1000` | `notification_service.dart:1171` | — | Yes (hash) | Verified — overlaps 8001 (F4) |
 | 8001 | Jumu'ah reminder | — | `JumuahReminderReceiver.kt:19` | No | Partial (Kotlin only) |
+| 9000–9006 | Post-prayer azkar (Fajr 9001 … Isha 9006; Dhuhr/Zuhr 9003) | — | `AzkarAlarmReceiver.getAzkarNotificationId` | No | Partial (added 2026-11-07) |
 | 9999 | Prayer foreground service | — | `PrayerForegroundService.kt:32` | No | Partial |
 
 PendingIntent request-code offsets (not notification IDs, but must stay unique): `PrayerAlarmReceiver` +1000/+2000
 (`:147,:348,:372,:810`), `FocusModeReceiver` base 5000, `TasksWidget` widgetId +1000/+2000/+5000.
+Added 2026-11-07 (Kotlin EGM): silent restore 3999 (`SilentOffReceiver`), azkar 3000–3006, daily summary 7001,
+Jumu'ah 8001, foreground-service silent buttons 8001/8002 (to `ToggleSilentModeReceiver`, different component),
+daily recalc 9100, test adhan 9999, `NativeNotificationReceiver` / `TaskReminderReceiver` id, id+1, id+2 (+3),
+Focus relaunch 5996. Full per-file list: `android/app/src/main/kotlin/com/aura/hala/README.md`.
 
 ## Channels
 | Channel ID | Dart location | Kotlin location | Confidence |
