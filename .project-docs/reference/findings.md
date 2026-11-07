@@ -377,6 +377,49 @@ Check only when a phase touches the area:
 - Localization: raw `'Error: $e'` in all tabs; inline EN/AR close dialog and stats tooltip; `%d` via `toString()`
   (Wird sheets, reader replace sheet); `DateFormat(..., 'ar')` dates not through `NumberFormatter`.
 
+## F40 — Achievements screen (lib/features/achievements) — code VERIFIED (static), impact UNVERIFIED
+- **(a) Unknown earned ids inflate the header count** — **Tag: fix track, LOW.** `Achievement.earnedFromFirestore`
+  (`achievement.dart:47–61`) maps an unknown id to a `special` "Unknown" badge; `earnedCount`
+  (`achievements_screen.dart:67–69`) counts it but `visibleTotal` (`:64–66`) does not, so "N of M" can exceed M.
+  Only if Firestore holds ids no longer in `AchievementDefinitions.all`.
+- **(b) Inline EN/AR strings** — **Tag: fix track, LOW.** title, header and category names (`:73, :105, :113–115,
+  :147–154`) bypass `.tr()`.
+- **(c) `_totalAchievements` is set but never read** (`:23, :42`) — **Tag: P6.**
+- Backlog (UNVERIFIED, check when a phase touches it): badge width from `MediaQuery` screen width (`:261`) may be
+  wrong inside the desktop shell pane; load errors show as "0 earned" with no message (`:46–48`); deprecated
+  `withOpacity`.
+
+## F41 — Auth screens (lib/features/auth) — code VERIFIED (static), impact UNVERIFIED
+- **(a) Guest flag reset after onboarding finishes** — **Tag: fix track, HIGH (guest data migration; user
+  2026-11-07). Device check S22 (pending on nova 5T).** `_continueAsGuest` (`login_screen.dart:209–231`) awaits `pushNamed('/onboarding')` and then calls
+  `setGuest(false)` if still mounted. `PreferenceScreen._finish` leaves with `pushReplacementNamed('/home')`
+  (`preference_screen.dart:245`), which completes the replaced route's future while Login stays in the stack under
+  `/home` (mounted). Expected result: `is_guest` = false right after guest onboarding. Then (1) Splash sends the
+  next cold start to `/login` (`splash_screen.dart:218–224`), and (2) a later sign-in sees `wasGuest == false`
+  (`auth_provider.dart:63, :130–139`), so `pending_guest_migration_uid` is never set and the local-task sync prompt
+  is skipped. Device check: guest → finish onboarding → kill app → relaunch; Login shown = confirmed.
+- **(b) Raw exception text in snackbars** — **Tag: fix track, LOW.** `_showErrorSnackBar(e.toString())` in both
+  screens shows `Exception: …` (English, from `AuthService`) in Arabic UI too.
+- **(c) Inline EN/AR strings** in the forgot-password dialog (`login_screen.dart:245–282`) — **Tag: fix track, LOW.**
+- **(d) Dead code** — **Tag: P6.** `_showDesktopGoogleDialog`, `_step`, `_isDesktop` (login), `_isDesktopSignup`
+  (signup); desktop Google sign-in now goes through `AuthService.signInWithGoogle` (`auth_service.dart:88`).
+- **(e) Contract doc gap** — **RESOLVED 2026-11-07** (keys added to prefs-keys.md). `is_guest`
+  (`AppConstants.keyIsGuest`) and `pending_guest_migration_uid` (`auth_provider.dart:138`) were missing.
+
+## F42 — Azkar screen (lib/features/azkar) — code VERIFIED (static), impact UNVERIFIED
+- **(a) Stale streak shown** — **Tag: fix track, LOW.** `azkar_provider.dart` `_onSessionComplete` (`:74–97`) is the
+  only place `streakCount` changes; nothing resets it after a skipped day, and `_ProgressHeader` shows it whenever
+  > 0 (`azkar_screen.dart:286`). A broken streak keeps showing its old value until the next completion.
+- **(b) No day rollover while the app stays alive** — **Tag: fix track, LOW.** the date reset runs only in
+  `AzkarNotifier._load` (`azkar_provider.dart:19–27`, provider is not autoDispose), so ticks from yesterday stay
+  visible after midnight until the app process restarts.
+- **(c) Inline EN/AR strings** (title, tabs, header) — **Tag: fix track, LOW.**
+- **(d) Dead code** — **Tag: P6.** `AzkarState.totalSessions` is written (`_onSessionComplete`) but never read;
+  `AzkarNotifier.resetDay` has no callers.
+- Backlog (UNVERIFIED): `totalSessions` also grows on every un-tick/re-tick of the last item; deprecated
+  `withOpacity`.
+- Contract doc gap — **RESOLVED 2026-11-07**: `azkar_state` / `azkar_streak_date` added to prefs-keys.md.
+
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
 - `ringer_mode` handler is in `MainActivity`, not `SilentModeAutomation.kt`.
