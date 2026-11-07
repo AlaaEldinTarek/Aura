@@ -391,7 +391,7 @@ Check only when a phase touches the area:
 
 ## F41 — Auth screens (lib/features/auth) — code VERIFIED (static), impact UNVERIFIED
 - **(a) Guest flag reset after onboarding finishes** — **Tag: fix track, HIGH (guest data migration; user
-  2026-11-07). DEVICE-VERIFIED 2026-11-07: S22 on nova 5T (API 29), base 1.0.0+59 — Login shown on relaunch.**
+  2026-11-07); group "sign-in & onboarding flow" with F46a. DEVICE-VERIFIED 2026-11-07: S22 on nova 5T (API 29), base 1.0.0+59 — Login shown on relaunch.**
   Effect (1) confirmed on device; effect (2) (migration prompt skipped) follows from code, not device-checked (S20). `_continueAsGuest` (`login_screen.dart:209–231`) awaits `pushNamed('/onboarding')` and then calls
   `setGuest(false)` if still mounted. `PreferenceScreen._finish` leaves with `pushReplacementNamed('/home')`
   (`preference_screen.dart:245`), which completes the replaced route's future while Login stays in the stack under
@@ -442,6 +442,35 @@ Check only when a phase touches the area:
   calls `setState` without a `mounted` check; double haptics (`HapticFeedback` + `vibration` plugin, see F23);
   session row falls back to hardcoded `'Custom'`; deprecated `withOpacity`.
 - Contract doc gap — **RESOLVED 2026-11-07**: `custom_dhikr_presets` added to prefs-keys.md.
+
+## F45 — Islamic events screen (lib/features/islamic_events) — code VERIFIED (static), impact UNVERIFIED
+- **(a) Event countdowns go stale across midnight** — **Tag: fix track, LOW.** `islamicEventsProvider`
+  (`islamic_events_provider.dart:5–7`) is a plain `Provider` computed once per process; `daysUntil` and "Today!" do
+  not advance until the app restarts. Also affects the Home event card (`daysUntil <= 30` filter).
+- **(b) Hijri date shown with Western digits in Arabic UI** — **Tag: fix track, LOW.** `_hijriLabel`
+  (`islamic_events_screen.dart:73–76`) uses `HijriDate.formatAr` directly; it returns raw digits (see F24 backlog).
+- **(c) Unused `isDesktop` + `Platform` / `kIsWeb` imports** (`:1, :3, :23`) — **Tag: P6.**
+- Backlog (UNVERIFIED): event dates rely on the arithmetic `HijriDate` (F24: possible off-by-one, `day` 0 at year
+  boundary) and may differ from local sighting by 1–2 days; multi-day events (e.g. first 10 days of Dhul Hijjah)
+  show only their first day, then jump to next year; Arabic "بعد $n يوم" uses singular يوم for every n; inline
+  countdown strings; deprecated `withOpacity`.
+
+## F46 — Onboarding (lib/features/onboarding) — code VERIFIED (static), impact UNVERIFIED
+- **(a) Onboarding resets language / theme / mode to defaults on re-login** — **Tag: fix track, MEDIUM (user
+  2026-11-07); group "sign-in & onboarding flow" with F41a. Not intended: 5873793 ("Stop login from resetting device
+  language and theme") fixed the same effect at login. Device check S23 (not run yet). Open product question for
+  the fix spec: returning users skip onboarding entirely, or onboarding preloads saved values?** `_PreferenceScreenState` starts from `_language = 'en'`,
+  `_theme = 'system'`, `_mode = AppMode.both` (`preference_screen.dart:27–29`) instead of the saved values, and every
+  sign-in routes to `/onboarding` (`login_screen.dart:51, :71`, `signup_screen.dart:56, :76`). An Arabic / dark /
+  prayer-only user who signs out and back in sees English defaults; "Skip" (`:353–354`) or "Continue" through
+  saves them (`_finish`, `:233–238`). Fresh installs are unaffected (defaults match).
+- **(b) Inline EN/AR strings** throughout the wizard — **Tag: fix track, LOW.**
+- **(c) Dead code** — **Tag: P6.** `ModeSelectionScreen` / route `/mode_selection` (no navigator); no-op
+  `ctx.findAncestorStateOfType<State>()` in `_finish` (`:235–236`).
+- Backlog (UNVERIFIED): `_finish` swallows every error with no message (`:247`); no `PopScope`, so system back on
+  steps 1–4 leaves onboarding (exits the app after sign-in, cancels guest from Login); progress-bar margin uses
+  `right:` (ignores RTL); carousel marketing claims ("9 scholarly methods", "Silences all notifications") not checked
+  against code.
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
