@@ -16,8 +16,8 @@ daily-summary notifications always English, daily summary time reverting to 21:0
 | File | Sites | Used by | Confidence |
 | --- | --- | --- | --- |
 | `aura_prayer_times` | 44 | PrayerForegroundService, PrayerAlarmReceiver, AdhanFullScreenActivity, StopAdhanReceiver, DailySummaryReceiver, NativePrayerCalculator, JumuahReminderReceiver, PrayerWidgets, DailyContentWidget, MainActivity (channel writes) | Verified |
-| `aura_silent_mode` | 8 (+`ToggleSilentModeReceiver.PREFS_NAME`) | SilentModeAutomation, PrayerAlarmReceiver, AdhanFullScreenActivity, ToggleSilentModeReceiver | Partial (native only) |
-| `aura_prefs` | 5 | AdhanPlayer (`adhan_enabled`, custom adhan) | Partial (native only; Dart via adhan channel) |
+| `aura_silent_mode` | 8 (+`ToggleSilentModeReceiver.PREFS_NAME`) | SilentModeAutomation, PrayerAlarmReceiver, AdhanFullScreenActivity, ToggleSilentModeReceiver, PrayerForegroundService | Verified (native only; `silent_mode_enabled` has no writer — findings F49a) |
+| `aura_prefs` | 5 (`MainActivity.kt:369,375`, `AdhanPlayer.kt:180`, `PrayerBootReceiver.kt:59`, `ToggleSilentModeReceiver.kt:254`) | MainActivity adhan channel (W/R `adhan_enabled`), AdhanPlayer (R `adhan_enabled`), PrayerBootReceiver (R `notifications_enabled`), ToggleSilentModeReceiver (R `language`) | Verified. Custom adhan is NOT stored here (in-memory only — findings F49b) |
 | `aura_tasks_widget` | 3 (`TasksWidget.kt:19,261`, `MainActivity.kt:323`) | TasksWidget, MainActivity `updateTasksWidget` | Partial — undocumented before Step 2 |
 | `aura_focus_state` | 2 (`FocusModeService.kt:33`) | FocusModeService (`duration_minutes`, `started_at`, …) | Partial — undocumented before Step 2 |
 | `aura_focus_mode` | 1 | FocusModeReceiver (`completed_task_id`, `completed_at`) | Partial |
@@ -50,9 +50,15 @@ daily-summary notifications always English, daily summary time reverting to 21:0
 ## Native-only keys (Kotlin ↔ Kotlin; listed so refactors don't drop them)
 - `aura_prayer_times`: `adhan_active`, `adhan_end_time`, `adhan_iqama_time` (abs ms, 0 = none), `adhan_prayer_name(_ar)`,
   `reminder_active`, `reminder_prayer_name(_ar)`, `reminder_prayer_time`, `combined_widget_tab_{widgetId}`.
-- `aura_silent_mode`: `silent_mode_enabled`, `is_silent_active`, `saved_ringer_mode`, `silent_end_time`.
+- `aura_silent_mode`: `is_silent_active`, `saved_ringer_mode`, `silent_end_time`. `silent_mode_enabled` is read
+  (`PrayerAlarmReceiver.kt:497–498`, `AdhanFullScreenActivity.kt:292–294`, default `true`) but no Kotlin or Dart code
+  writes it here; the Dart toggle writes `flutter.silent_mode_enabled` in `FlutterSharedPreferences` (findings F49a).
 - `aura_tasks_widget`: `task_count`, `tasks_done`, `tasks_total`, `streak`, `language`, `task_{i}_{id|title|time|category|priority|overdue|subtaskDone|subtaskTotal}`.
-- `aura_prefs`: `adhan_enabled` (+ custom adhan key — UNKNOWN name). Also `notifications_enabled` (file UNKNOWN).
+- `aura_prefs`: `adhan_enabled` (W `MainActivity.kt:369–370` via adhan channel `setAdhanEnabled`; R `MainActivity.kt:375`,
+  `AdhanPlayer.kt:180–181`). Read with no writer found (default used): `notifications_enabled`
+  (`PrayerBootReceiver.kt:59–60`, default `true`), `language` (`ToggleSilentModeReceiver.kt:254–255`, default `"en"` —
+  findings F49h). No custom adhan key: `AdhanPlayer.customAdhanPath` is an in-memory `var` set by channel
+  `setCustomAdhan` (`MainActivity.kt:379–383`) and lost when the process dies (findings F49b).
 - `${packageName}_preferences`: `focus_completed_task_id`, `focus_task_was_completed`.
 
 ## Dart-only keys (FlutterSharedPreferences; no Kotlin reader found)

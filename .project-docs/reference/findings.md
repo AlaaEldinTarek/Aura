@@ -39,6 +39,7 @@ Created 2026-11-06 from analyzer run at 75d38b9 and the CLAUDE.md relocation.
   maps to 1 would replace/cancel the digest (or vice versa).
 
 ## F9 — Dart channel `com.aura.hala/silent_mode` has no Kotlin handler — VERIFIED (static)
+- **Tag: fix track, group "Dart->native settings bridge"** (with F49a, F49b, F15; see F49).
 - `silent_mode_service.dart:14` invokes `setEnabled`/`setDuration`/`cancelAll`; no Kotlin registers `silent_mode`
   (calls would throw `MissingPluginException`, caught). No importer of `silent_mode_service.dart` found in `lib/`/`test/`
   → likely dead code (UNVERIFIED; "not found" ≠ unused). Silent mode works natively via prefs (contracts/prefs-keys.md).
@@ -64,6 +65,7 @@ Created 2026-11-06 from analyzer run at 75d38b9 and the CLAUDE.md relocation.
 
 ## F15 — Dart writes `zuhr_time` into native `aura_prayer_times` — code VERIFIED, impact UNVERIFIED
 - **Tag: likely user-visible bug → fix track** (with F7; needs an approved spec; do not fix during refactor phases).
+  Grouped in "Dart->native settings bridge" (with F49a, F49b, F9; see F49).
 - `prayer_times_provider.dart:370` builds `'${p.name.toLowerCase()}_time'` → `zuhr_time` and sends it via
   `BackgroundServiceManager.updatePrayerTimes`; `MainActivity.kt:656–679` → `PrayerForegroundService.kt:108` stores every
   map key as-is. Kotlin readers use `dhuhr_time` (`PrayerAlarmReceiver.kt:619`, `JumuahReminderReceiver.kt:32`), which
@@ -304,6 +306,7 @@ Check only when a phase touches the area:
   `AsrMadhab.value` `'Hanafi'`; `prayer_times_provider.dart` `_getAsrMadhab` matches the lowercase enum
   (`prayer_settings.dart` `hanafi`) → falls back to Shafi, and sends `'shafi'` to native (`:505`). No caller of
   `setAsrMadhab`. `'MoonsightingCommittee'`, `'Singapore'`, `'Turkey'` fall back to MWL (`:531–547`). Likely user-visible.
+  Likely root cause: duplicate `AsrMadhab` / method enums (F49f, linked to FX-0).
 - **(b) Prayer tab next prayer goes stale** — **Tag: fix track, HIGH.** local copy updated only in `_loadPrayerTimes` (`initState`, pull-to-refresh);
   countdown `onComplete` reloads the provider but not the local state, and the screen never watches it (`prayer_screen.dart:743–755, :401–424`).
 - **(c) Settings page method/madhab change** — **Tag: fix track, MEDIUM, grouped with F36a (FX-0).** writes prefs then `Navigator.pop(context)` with no recalculation
@@ -515,6 +518,47 @@ Check only when a phase touches the area:
   heading (`:81–101`). If that heading is magnetic, the arrow is off by the local declination (~4–5° in Egypt).
 - Backlog (UNVERIFIED): `setState` after `await getBestLocation` without `mounted`
   (`:59, :103`); `CompassPainter.heading` always 0 (unused parameter); app-bar `titlePadding` `left: 16` ignores RTL.
+
+## F49 — Settings feature (lib/features/settings) — code VERIFIED (static), impact UNVERIFIED
+- **Fix-track group "Dart->native settings bridge"** (user 2026-11-07) = F49a + F49b + F15 + F9: settings written on
+  the Dart side that native code never reads, or reads under another name/file. The fix spec must define exactly one
+  documented prefs file + key per native-read setting (and record it in `contracts/prefs-keys.md`).
+- **(a) Silent-mode toggle never reaches native** — **Tag: fix track HIGH (adhan behavior); group "Dart->native
+  settings bridge"; device scenario S25.** `SettingsScreen` and `prayer_screen.dart:1420–1421` write `silent_mode_enabled` to Flutter prefs
+  (`shared_preferences_service.dart:201–203`), but `PrayerAlarmReceiver.kt:497–498` and
+  `AdhanFullScreenActivity.kt:293–294` read it from the `aura_silent_mode` file, and no Kotlin or Dart code writes that
+  key there (the Dart `silent_mode` channel has no handler, F9). Native therefore always uses the default `true`:
+  turning silent mode off in the app does not stop vibrate mode at adhan. Device check: disable it → wait for an
+  adhan → ringer still switches; logcat `🔧 [SETTINGS] Silent mode enabled: true`.
+- **(b) Chosen adhan reciter is not persisted natively** — **Tag: fix track HIGH (adhan); group "Dart->native
+  settings bridge"; device scenario S26.**
+  `AdhanPlayer.customAdhanPath` is an in-memory `var` (`AdhanPlayer.kt:47, :53–60`), set only through the
+  `setCustomAdhan` channel (`MainActivity.kt:379–383`); nothing saves it, and no Dart code re-sends
+  `selected_adhan_id` on start. When the alarm fires in a new process (app killed), the built-in adhan plays.
+  Related in the same flow: `AdhanPlayerService.setCustomAdhan(null)` sends nothing (`adhan_player_service.dart:134–139`),
+  so "Reset" and deleting the selected reciter do not clear the native path; previewing a reciter
+  (`adhan_downloads_screen.dart` play button) calls `setCustomAdhan(path)` and makes it the live adhan for the process.
+- **(c) Calculation dialog does not reflect taps and may overflow** — **Tag: fix track, LOW.**
+  `PrayerCalculationSettingsDialog` is stateless (radio stays on the value passed at open) and lays out 14
+  `ListTile`s in a non-scrolling `Column` (`prayer_calculation_settings_dialog.dart:37–157`); on small screens the
+  Asr section may be clipped. Needs a device check.
+- **(d) Raw values in UI** — **Tag: fix track, LOW.** Settings subtitle shows stored keys (`'$_calculationMethod ·
+  $_asrMadhab'`, `settings_screen.dart:99`); minute counts (`:135, :170, :322, :348`) and the summary time (`:236`)
+  are raw digits in Arabic.
+- **(e) Inline EN/AR strings** across the folder — **Tag: fix track, LOW.**
+- **(f) Duplicate `AsrMadhab` enums** (`asr_madhab_selection.dart` vs `core/models/prayer_settings.dart`, different
+  string forms) and two method enums — **Tag: P3, linked to FX-0** (likely root cause of F36a; fix with FX-0).
+- **(g) Contract doc error** — `contracts/prefs-keys.md` listed `aura_prefs` as holding "custom adhan" and
+  `aura_silent_mode.silent_mode_enabled` as native-only; code shows custom adhan is in memory only and the flag has
+  no writer. **Corrected in `contracts/prefs-keys.md` in the settings EGM commit (2026-11-07).**
+- **(h) Silent-mode toggle receiver reads language from `aura_prefs`** — **Tag: awaiting user (proposed: add to
+  "Dart->native settings bridge", LOW).** `ToggleSilentModeReceiver.kt:253–255` `getLanguage` reads
+  `aura_prefs.language`; no code writes `language` to `aura_prefs` (writers are `aura_prayer_times`,
+  `aura_tasks_widget`, focus state), so its messages (`:142, :222, :238`) are always English. The same file's
+  `getLanguagePreference` (`:373`) reads `aura_prayer_times` correctly. Found while correcting (g); impact UNVERIFIED.
+- Backlog (UNVERIFIED): iqama save does not recalculate (new iqama shows after the next load); service ignores a
+  legacy `Dhuhr` iqama key; theme dialog lacks `amoled` (shown as "System" if set elsewhere); download errors are
+  English-only; `setState` / `ref` after awaits without `mounted` in places; deprecated `withOpacity`.
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
