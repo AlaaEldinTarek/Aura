@@ -38,8 +38,8 @@ Navigation out: `/qibla`, `/prayer_tracking`, toolkit (`/qibla`, `/azkar`, `/dhi
   (grey "Not Prayed"), never `missed`. Day complete = all 5 present and none `missed` (so `excused` counts; F25).
   Any past day can be edited. Only the real today applies `canMarkPrayer`; tapping a future day, including the real
   today before Fajr, is rejected. Stats cover the real current month: completed = `onTime` + `late`, over days × 5.
-- **`modules/prayer-tracking.md` is out of date here**: it describes `_monthlyData`, a `ref.listen` guard and an
-  automatic yesterday remap in `_togglePrayerStatus`; none of these exist in the current code (findings F36).
+- **After midnight**: `_togglePrayerStatus` records to the tapped date (no remap); the snackbar says "for yesterday"
+  when that date is the effective day. Cross-folder rules: `modules/prayer-tracking.md` (rewritten 2026-11-07, F36d).
 - **Report**: data is `getPrayersForDateRange(now − 60 d, now)` + `calculateCurrentStreak`; main stats use the last
   30 days. `excused` is counted as Excused and left out of the completion denominator. `totalMissed` is derived
   (`150 − logged`), not counted. Per-prayer rows are keyed by `kPrayerNames` (`'Zuhr'`) with a fixed total of 30. The

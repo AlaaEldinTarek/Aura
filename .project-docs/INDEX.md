@@ -34,12 +34,15 @@ Read STATE.md first. Use this only when CLAUDE.md's Context Loading table doesn'
 - Old CLAUDE.md section → new file map → reference/claude-md-relocation.md
 
 ## Folder READMEs (EGM contracts)
-- Done: `lib/core/providers/README.md`, `lib/core/services/README.md`, `lib/core/models/README.md`, `lib/core/utils/README.md`, `lib/core/widgets/README.md`, `lib/core/theme/README.md`, `lib/features/tasks/README.md`, `lib/features/home/README.md`, `lib/features/main/README.md`, `lib/features/prayer/README.md`. Pending:
+- Done: `lib/core/providers/README.md`, `lib/core/services/README.md`, `lib/core/models/README.md`, `lib/core/utils/README.md`, `lib/core/widgets/README.md`, `lib/core/theme/README.md`, `lib/features/tasks/README.md`, `lib/features/home/README.md`, `lib/features/main/README.md`, `lib/features/prayer/README.md`, `lib/features/quran/README.md`. Pending:
   core/theme (one run each), features (2 batches), android kotlin. `core/constants` (1 file) gets no README — mention it
   in the `lib/core` parent README. Parent READMEs (`lib/core`, `lib/features`) after all batches; drift report once at the end.
 - Rules (user-approved 2026-11-06): no line numbers (name functions/classes; line numbers only in findings.md);
   ≤ ~120 lines (one table row per file, key invariants only); folder README = what this folder's files expose + their
   rules, modules/*.md = cross-folder feature view — never duplicate, link instead.
+- Finding tags (user-approved 2026-11-07, remaining feature folders): user-visible → fix track (LOW unless it affects
+  prayer times, adhan, tracking or data); dead code → P6; provider duplication → P3; channel/platform guards → P2.
+  Ask the user only for uncertain items and CRITICAL/HIGH.
 
 ## Other
 - Decisions (ADRs) → decisions/ · Daily log → log/YYYY-MM-DD.md · Specs → ../docs/designs/

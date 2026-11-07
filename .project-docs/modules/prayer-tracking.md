@@ -20,17 +20,20 @@ Relocated from CLAUDE.md on 2026-11-06; not yet re-verified against code (Step 2
 - `DailyPrayerSummary.isComplete` requires `prayers.length >= kPrayerNames.length` (all 5) AND none missed.
 
 ## After-midnight rules
-- `_togglePrayerStatus`: between 00:00 and today's Fajr, `effectiveDate` = yesterday. The prayer records to
-  `effectiveDate`, `_monthlyData[effectiveDate]` updates (not today's), snackbar says "Recorded [Prayer] for yesterday",
-  and the 20-minute rule is skipped in this window. Users see those marks by selecting yesterday in the calendar.
+- Effective day = `dailyPrayerStatusProvider.notifier.computeEffectiveToday()` (between 00:00 and today's Fajr →
+  yesterday). The tracking screen uses it for the initial selected/focused day (`_effectiveToday`, set once in `initState`).
+- `_PrayerTrackingScreenState._togglePrayerStatus` records to the **tapped calendar date** (`markDate` / `unmarkDate`);
+  there is no automatic remap to yesterday. A date after the effective day is rejected ("can't record a prayer before
+  its time"), so the real today is rejected before Fajr. `canMarkPrayer` (20-minute rule) applies only when the tapped
+  date is the real calendar today. When the tapped date is the effective day and that is yesterday, the snackbar says
+  "Recorded [Prayer] for yesterday".
 - `dailyPrayerStatusProvider.load()` takes optional `fajrTime`; when given it computes the effective date (midnight→Fajr
   → yesterday) before querying Firestore. All callers with `prayerTimesProvider` access must pass it.
 - In `MainWrapperScreen.didChangeAppLifecycleState`, read Fajr time **before** `ref.invalidate(prayerTimesProvider)`
   (invalidation clears state). The 30-second sync timer in `MainWrapperScreen` also passes Fajr time.
-- `_PrayerTrackingScreenState._effectiveToday` is computed once in `initState` (same logic as `_selectedDay`). The
-  `ref.listen` on `dailyPrayerStatusProvider` writes to `_monthlyData[_effectiveToday]` — never recompute the date inside
-  the listener (race: `prayerTimesProvider` may not be loaded → yesterday's data in today's slot). Guard: if
-  `next.statuses.isEmpty` and `_monthlyData[_effectiveToday]` has data, skip the write.
+- Month data: the tracking screen has no local month map and no `ref.listen`; it calls
+  `dailyPrayerStatusProvider.notifier.loadMonth(_focusedDay, forceRefresh: true)` and renders the provider state
+  (verified 2026-11-07, findings F36d; the old `_monthlyData` / listener guard no longer exists).
 
 ## isPrayerTimeReached guard
 - `prayer_time_rules.dart` exports `isPrayerTimeReached(prayerName, prayerTimes)` — true only if

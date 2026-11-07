@@ -59,7 +59,11 @@ daily-summary notifications always English, daily summary time reverting to 21:0
 - Tasks: `task_notifications_enabled`, `task_reminder_minutes` (also desktop), `task_sort_order`, `task_category_filter`,
   `task_streak_count`, `task_streak_date`.
 - Wird: `wird_settings` (JSON), `wird_streak_count`, `wird_streak_date`, `wird_total_pages_read`,
-  `wird_total_days_completed`, `wird_progress_history` (JSON, pruned to 90 days).
+  `wird_total_days_completed`, `wird_progress_history` (JSON, pruned to 90 days), `wird_completed_juz` (JSON list),
+  `wird_khatm_count`, `wird_khatm_dates` (JSON list) — all in `wird_service.dart`.
+- Quran: `quran_bookmarks` (JSON list), `quran_reading_progress` (JSON) — `quran_bookmark_service.dart`.
 - `focus_a11y_ever_enabled`: **removed** in bc765f6 ("Remove accessibility service") with `AuraAccessibilityService`
   (manifest comment `AndroidManifest.xml:340`); no replacement key. Old installs may still hold it — orphan, harmless.
-- Tutorial-seen flags: names UNKNOWN (`SharedPreferencesService.isTutorialXSeen()`) — Step 2.4.
+- Tutorial-seen flags (`app_constants.dart` `keyTutorial*`, via `SharedPreferencesService`): `tutorial_completed`,
+  `tutorial_prayer_seen`, `tutorial_quran_seen`, `tutorial_tasks_seen`, `tutorial_juz_seen`, `tutorial_bookmarks_seen`,
+  `tutorial_wird_seen`, `tutorial_reader_seen`.

@@ -300,18 +300,18 @@ Check only when a phase touches the area:
   `_DesktopShell` and its nested navigator are disposed; pushed routes and sidebar collapse state are lost after each popup.
 
 ## F36 — Prayer feature issues (lib/features/prayer) — code VERIFIED (static), impact UNVERIFIED
-- **(a) Hanafi Asr never applied**: `prayer_screen.dart` `_saveCalculationSettings` and `settings_screen.dart:113` store
+- **(a) Hanafi Asr never applied** — **Tag: fix track, CRITICAL, first in queue (FX-0); includes the MWL fallbacks for MoonsightingCommittee / Singapore / Turkey and F36c.** `prayer_screen.dart` `_saveCalculationSettings` and `settings_screen.dart:113` store
   `AsrMadhab.value` `'Hanafi'`; `prayer_times_provider.dart` `_getAsrMadhab` matches the lowercase enum
   (`prayer_settings.dart` `hanafi`) → falls back to Shafi, and sends `'shafi'` to native (`:505`). No caller of
   `setAsrMadhab`. `'MoonsightingCommittee'`, `'Singapore'`, `'Turkey'` fall back to MWL (`:531–547`). Likely user-visible.
-- **(b) Prayer tab next prayer goes stale**: local copy updated only in `_loadPrayerTimes` (`initState`, pull-to-refresh);
+- **(b) Prayer tab next prayer goes stale** — **Tag: fix track, HIGH.** local copy updated only in `_loadPrayerTimes` (`initState`, pull-to-refresh);
   countdown `onComplete` reloads the provider but not the local state, and the screen never watches it (`prayer_screen.dart:743–755, :401–424`).
-- **(c) Settings page method/madhab change**: writes prefs then `Navigator.pop(context)` with no recalculation
+- **(c) Settings page method/madhab change** — **Tag: fix track, MEDIUM, grouped with F36a (FX-0).** writes prefs then `Navigator.pop(context)` with no recalculation
   (`prayer_screen.dart:1544–1557`; `settings_screen.dart` calls `_recalculatePrayerTimes`).
-- **(d) Doc conflict**: `modules/prayer-tracking.md` § After-midnight rules describes `_monthlyData`, a `ref.listen` guard and
+- **(d) Doc conflict** — **RESOLVED 2026-11-07** (doc rewritten from code). `modules/prayer-tracking.md` § After-midnight rules describes `_monthlyData`, a `ref.listen` guard and
   an automatic yesterday remap that no longer exist in `prayer_tracking_screen.dart` (code wins).
 
-## F37 — Prayer scout backlog (lib/features/prayer) — UNVERIFIED
+## F37 — Prayer scout backlog (lib/features/prayer) — UNVERIFIED (backlog, tagged)
 - Tracking: a day of five "Missed" (stored `excused`) gets the green complete marker (F25); stats count today's unreached
   prayers in the total; no try/finally in `_loadData`; raw English names and `$e` in Arabic snackbars.
 - Report: `totalMissed` derived as 150 − logged (includes not-yet-due and pre-tracking days); 8-day overlapping week buckets;
@@ -338,6 +338,44 @@ Check only when a phase touches the area:
   and tooltips not localized (`:684, :792, :954, :1175–1266, :1552, :1596, :1688, :1734, :1863–1918, :2064`).
 - Two user sources (`currentUserIdProvider` vs `currentUserProvider?.uid`, `:478` vs `:589, :1027`); on mobile `jumpToPage` also
   fires `onPageChanged` (double haptic / route update).
+
+## F38 — Quran feature issues (lib/features/quran) — code VERIFIED (static), impact UNVERIFIED
+- **(a) Reader close button skips the khatma prompt** — **Tag: fix track, HIGH (khatma not recorded).** `_TopBar.onClose` calls `Navigator.pop(context)` directly
+  (`quran_reader_screen.dart:496–501`), which bypasses `PopScope`; the page-604 khatma / Wird prompt and the close
+  confirm (`:312–391`) only run on system back or Esc. Page-mode khatma can be lost. Likely user-visible.
+- **(b) `scrollToAyaNo` is never used** — **Tag: fix track, MEDIUM.** accepted by `QuranReaderScreen` (`:27, :34`) but never read; search results,
+  bookmarks and last-read open the right page but no ayah targeting. Last-read always saves ayah 1 (`_saveProgress`).
+- **(c) Wird "choose one" bookmark (page mode) counts every bookmark of that color** — **Tag: fix track, HIGH (wrong Wird progress data).** `wird_tab.dart:627, :649–650`
+  sets `countedBookmarkPages = {page}` (`wird_service.dart:358–365`); the auto-sync in `build()` (`:147–189`) then
+  sees all other pages of that color as new and calls `syncBookmarkPages` on them.
+- **(d) Stats English weekday labels off by one** — **Tag: fix track, LOW.** `quran_stats_screen.dart:390–391` indexes a Monday-first list with
+  `weekday % 7` (Monday → "Tu", Sunday → "Mo"); the Arabic list is Sunday-first and correct.
+- **(e) Stats average unit wrong in juz mode** — **Tag: fix track, LOW.** `averageDaily = totalPagesRead / totalDaysCompleted`
+  (`wird_provider.dart:25`) but is labelled `quran_stats_juz` in juz mode (`quran_stats_screen.dart:142–144`).
+- **(f) Contract doc gap** — **RESOLVED 2026-11-07** (keys added to prefs-keys.md). `contracts/prefs-keys.md` lacks `quran_bookmarks`, `quran_reading_progress`
+  (`quran_bookmark_service.dart:6–7`), the Wird completed-juz / khatm keys (`wird_service.dart`) and tutorial flag names
+  (`app_constants.dart:118–123`).
+- Not a bug: "Reset All Progress" (key `wird_reset_today`) wiping all Wird progress is labelled and confirmed as such.
+
+## F39 — Quran scout backlog (lib/features/quran) — UNVERIFIED (backlog, tagged)
+Check only when a phase touches the area:
+- Reader: marker colors misassigned on pages spanning two surahs (ayahs sorted by `ayaNo` only); the page bookmark
+  (`page_<n>`, ayah 1) colors ayah 1 green and appears in green replace candidates; `_juzStartPages` (and
+  `QuranService.getJuzList`) use a fixed 20-page table, possibly off for some juz (e.g. 7, 11); desktop drag/arrow
+  direction ignores RTL; `_TopBar.pageNo` / `lang` unused; tutorial may no-op when the bars are hidden; preload futures
+  unawaited (unhandled errors offline); `ref` after await without `mounted`; hardcoded "Failed to load page", stale "gold" comment.
+- Wird: auto-sync side effects in `build()`; `_syncInProgress` stays true if the sync throws; juz grid re-scrolls on
+  every build; `prevCompleted != nextCompleted` compares list identity; unawaited concurrent notifier writes
+  (`recordPagesRead` + `setLinkedBookmarkColor`); `int.parse` of reminder times without try; `ref` after `showTimePicker`
+  without `mounted`; `_showUndo` starts true (Undo shown after restart); count mode no 604 clamp / no error on 0;
+  `wird_bookmark_unique_pages` counts bookmarks not pages; unused `setDialogState`, `_BookmarkPagesSheet.lang`, `app_spacing` import.
+- Search: clear button does not cancel the debounce (stale results); no Arabic normalization, misnamed `lowerQuery`,
+  unbounded results; `quranSearchProvider` family not autoDispose.
+- Stats / khatma: average inflated by pages read on incomplete days; khatm circle uses juz list even in page mode;
+  hidden `ShareCard` (Opacity 0) leaves a gap; `khatmDates[n-1]` alignment assumed; painter assumes 7 values; fixed sizes
+  not text-scaled; deprecated `withOpacity`.
+- Localization: raw `'Error: $e'` in all tabs; inline EN/AR close dialog and stats tooltip; `%d` via `toString()`
+  (Wird sheets, reader replace sheet); `DateFormat(..., 'ar')` dates not through `NumberFormatter`.
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
