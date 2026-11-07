@@ -551,14 +551,36 @@ Check only when a phase touches the area:
 - **(g) Contract doc error** — `contracts/prefs-keys.md` listed `aura_prefs` as holding "custom adhan" and
   `aura_silent_mode.silent_mode_enabled` as native-only; code shows custom adhan is in memory only and the flag has
   no writer. **Corrected in `contracts/prefs-keys.md` in the settings EGM commit (2026-11-07).**
-- **(h) Silent-mode toggle receiver reads language from `aura_prefs`** — **Tag: awaiting user (proposed: add to
-  "Dart->native settings bridge", LOW).** `ToggleSilentModeReceiver.kt:253–255` `getLanguage` reads
+- **(h) Silent-mode toggle receiver reads language from `aura_prefs`** — **Tag: fix track LOW; group "Dart->native
+  settings bridge".** `ToggleSilentModeReceiver.kt:253–255` `getLanguage` reads
   `aura_prefs.language`; no code writes `language` to `aura_prefs` (writers are `aura_prayer_times`,
   `aura_tasks_widget`, focus state), so its messages (`:142, :222, :238`) are always English. The same file's
   `getLanguagePreference` (`:373`) reads `aura_prayer_times` correctly. Found while correcting (g); impact UNVERIFIED.
+- **(i) Boot receiver's `aura_prefs.notifications_enabled` check has no effect** — **Tag: P6 cleanup.** VERIFIED
+  (static): `PrayerBootReceiver.kt:59–65` skips `PrayerRescheduleService` (adhan alarms) when the flag is false, but
+  nothing writes it, so it is always `true`. No user choice is lost after reboot: the Dart toggle
+  `prayer_notifications_enabled` ("Remind 10 minutes before", `prayer_screen.dart:1262–1270`) only gates the Dart
+  reminder (`notification_service.dart:295`), and Dart schedules native adhan alarms without checking any toggle
+  (`prayer_times_provider.dart:319–320` → `prayer_alarm_service.dart:151–165`), same as the boot path. If a writer were
+  added, reboot would diverge from normal scheduling — remove the check rather than wire it.
 - Backlog (UNVERIFIED): iqama save does not recalculate (new iqama shows after the next load); service ignores a
   legacy `Dhuhr` iqama key; theme dialog lacks `amoled` (shown as "System" if set elsewhere); download errors are
   English-only; `setState` / `ref` after awaits without `mounted` in places; deprecated `withOpacity`.
+
+## F50 — Splash screen (lib/features/splash) — code VERIFIED (static), impact UNVERIFIED
+- **(a) Unused permission helper** — **Tag: P6.** `_requestNotificationPermission` (`splash_screen.dart:37–44`) has
+  no caller (`initState` comment says permission is requested after onboarding); it is the only use of the
+  `notification_service.dart` import.
+- **(b) Routing depends on the 2.5 s delay, not on state readiness** — **Tag: proposed fix track LOW, group
+  "sign-in & onboarding flow" — awaiting user.** `FirstLaunchNotifier` / `GuestModeNotifier` start as
+  `AsyncValue.data(true)` / `data(false)` (`preferences_provider.dart:196–199, :225–228`), so the
+  `guestModeAsync.isLoading` guard (`splash_screen.dart:211`) never holds during the initial read, and
+  `firstLaunchProvider` is not checked at all. If the prefs reads have not finished when `splashDuration` ends, a guest
+  is sent to `/login` and a returning user to `/onboarding`. Prefs reads are normally much faster than 2.5 s; no
+  device evidence.
+- Backlog (UNVERIFIED): `_AuthNavigationHandler` schedules a `pushReplacementNamed` on every rebuild after the delay;
+  a provider change during the route transition (old route still mounted) could navigate twice. Deprecated
+  `withOpacity` (`:81`).
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).

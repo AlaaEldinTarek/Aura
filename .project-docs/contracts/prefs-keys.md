@@ -56,7 +56,7 @@ daily-summary notifications always English, daily summary time reverting to 21:0
 - `aura_tasks_widget`: `task_count`, `tasks_done`, `tasks_total`, `streak`, `language`, `task_{i}_{id|title|time|category|priority|overdue|subtaskDone|subtaskTotal}`.
 - `aura_prefs`: `adhan_enabled` (W `MainActivity.kt:369–370` via adhan channel `setAdhanEnabled`; R `MainActivity.kt:375`,
   `AdhanPlayer.kt:180–181`). Read with no writer found (default used): `notifications_enabled`
-  (`PrayerBootReceiver.kt:59–60`, default `true`), `language` (`ToggleSilentModeReceiver.kt:254–255`, default `"en"` —
+  (`PrayerBootReceiver.kt:59–60`, default `true`; dead check — findings F49i), `language` (`ToggleSilentModeReceiver.kt:254–255`, default `"en"` —
   findings F49h). No custom adhan key: `AdhanPlayer.customAdhanPath` is an in-memory `var` set by channel
   `setCustomAdhan` (`MainActivity.kt:379–383`) and lost when the process dies (findings F49b).
 - `${packageName}_preferences`: `focus_completed_task_id`, `focus_task_was_completed`.
