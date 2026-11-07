@@ -1,3 +1,4 @@
 # Decisions (ADRs)
 One file per decision: `NNNN-<slug>.md`, ≤20 lines, sections Context / Decision / Consequences.
-First planned: `0001-aura-refactor-master-spec.md` (Step 4).
+- 0001 — fix track before the refactor (group order + per-group workflow).
+Planned: master refactor spec ADR (`aura-refactor`, Step 4) after the CRITICAL/HIGH fixes.

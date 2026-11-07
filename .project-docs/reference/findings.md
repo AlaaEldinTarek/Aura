@@ -730,7 +730,7 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   `home_screen.dart:205–207` cancels the timer on `inactive` as well as `paused`.
 - **(l) Dhikr ignores vibration settings** — **Tag: fix track LOW.** `dhikr_screen.dart:111–127` uses Flutter
   `HapticFeedback` + unconditional `Vibration.vibrate(50)`, not `lib/core/utils/haptic_feedback.dart` (see F23, F44 backlog).
-- **(m) "Start with Windows" is opt-out** — **Tag: fix track LOW, confirm intent first.** `windows_startup_enabled`
+- **(m) "Start with Windows" is opt-out** — **Tag: fix track LOW (user 2026-11-07: should be off by default).** `windows_startup_enabled`
   defaults to true (`windows_startup_service.dart:20`); `registerIfEnabled()` runs every launch (`main.dart:94`).
 - **(n) Pinned float relies on a stable sort** — **Tag: fix track LOW, with F30b.** `_applySort` re-sorts to float pinned
   tasks (`tasks_screen.dart:1014–1017`); Dart `List.sort` is not guaranteed stable.
