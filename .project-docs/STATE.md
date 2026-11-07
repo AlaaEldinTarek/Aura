@@ -4,10 +4,10 @@
 - Support target: current minSdk and newer (Android 10 must keep working; test device nova 5T = API 29)
 - Phase: Bootstrap Step 2 — understand the code | Spec: none yet (docs/designs/aura-refactor.md in Step 4)
 - Done (Step 2): contracts/* verified Dart↔Kotlin; device-checklist.md (S01–S22 + emulator E01–E04); findings F4–F14
-- Done (EGM): all `lib/core/*` folder READMEs; features tasks, home, main (7d5682b), prayer (e87448c), quran, achievements, auth, azkar; rules + progress: INDEX.md
+- Done (EGM): all `lib/core/*` folder READMEs; features tasks, home, main (7d5682b), prayer (e87448c), quran, achievements, auth, azkar (eca7bcc), daily_content, dhikl (uncommitted); rules + progress: INDEX.md
 - Current task: EGM features batches — user runs `/egm:egm-bootstrap lib/features/<folder>` (16 subfolders, one per run)
 - Blockers: Android 14/15 emulator not set up (E01–E04 BLOCKED); adb not on PATH (use SDK path)
 - Pending user: run device-checklist baseline S01–S22 and record results (S22 = F41a guest flag; user running on nova 5T)
 - Next: features, android kotlin → parent READMEs (lib/core, lib/features) → drift report once → Step 2.5 modules/*.md
-- Fix track (needs spec): FX-0 = F36a+F36c (CRITICAL, first) | FX-1 = F20a+F25 (HIGH), F30d, F32a, F36b, F38a, F38c, F41a (HIGH), F30b (confirm intent first), F30c, F30e, F34a, F34c, F38b (MEDIUM), F19+F34b (one 20-min rule item), F7, F15, F20c, F21, F26+F32c, F30a, F34e, F38d, F38e, F40a, F40b, F41b, F41c, F42a, F42b, F42c (LOW) | P2: F34d | P3: F30f | P4: F32b, F32d | P6 cleanup: F16 (if S19 passes), F18, F23, F28, F32e, F40c, F41d, F42d
-- Open questions: reference/findings.md (F4, F7–F42, § Doc conflicts)
+- Fix track (needs spec): FX-0 = F36a+F36c (CRITICAL, first) | FX-1 = F20a+F25 (HIGH), F30d, F32a, F36b, F38a, F38c, F41a (HIGH), F30b (confirm intent first), F30c, F30e, F34a, F34c, F38b, F42a (MEDIUM), F19+F34b (one 20-min rule item), F7, F15, F20c, F21, F26+F32c, F30a, F34e, F38d, F38e, F40a, F40b, F41b, F41c, F42b, F42c, F43a (confirm intent first), F43b, F44a, F44b, F44c (LOW) | P2: F34d | P3: F30f | P4: F32b, F32d | P6 cleanup: F16 (if S19 passes), F18, F23, F28, F32e, F40c, F41d, F42d
+- Open questions: reference/findings.md (F4, F7–F44, § Doc conflicts)

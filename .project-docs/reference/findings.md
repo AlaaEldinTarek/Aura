@@ -407,7 +407,7 @@ Check only when a phase touches the area:
   (`AppConstants.keyIsGuest`) and `pending_guest_migration_uid` (`auth_provider.dart:138`) were missing.
 
 ## F42 — Azkar screen (lib/features/azkar) — code VERIFIED (static), impact UNVERIFIED
-- **(a) Stale streak shown** — **Tag: fix track, LOW.** `azkar_provider.dart` `_onSessionComplete` (`:74–97`) is the
+- **(a) Stale streak shown** — **Tag: fix track, MEDIUM (tracking; same family as F32a streak; user 2026-11-07).** `azkar_provider.dart` `_onSessionComplete` (`:74–97`) is the
   only place `streakCount` changes; nothing resets it after a skipped day, and `_ProgressHeader` shows it whenever
   > 0 (`azkar_screen.dart:286`). A broken streak keeps showing its old value until the next completion.
 - **(b) No day rollover while the app stays alive** — **Tag: fix track, LOW.** the date reset runs only in
@@ -419,6 +419,28 @@ Check only when a phase touches the area:
 - Backlog (UNVERIFIED): `totalSessions` also grows on every un-tick/re-tick of the last item; deprecated
   `withOpacity`.
 - Contract doc gap — **RESOLVED 2026-11-07**: `azkar_state` / `azkar_streak_date` added to prefs-keys.md.
+
+## F43 — Daily content screen (lib/features/daily_content) — code VERIFIED (static), impact UNVERIFIED
+- **(a) English-only translation and source in Arabic UI** — **Tag: fix track, LOW.** `DailyContent` has only
+  `translation` / `source` in English (`daily_content_service.dart`); `daily_content_screen.dart:94–122` shows them
+  right-aligned under the Arabic text. May be intended (bilingual card) — confirm intent before fixing.
+- **(b) Inline EN/AR title strings** (`:23–25`) — **Tag: fix track, LOW.**
+- Backlog (UNVERIFIED): `_dayOfYear` (`daily_content_service.dart:139–140`) is 0-based and wraps by list length, so
+  Jan 1 always shows item 0; whether the native `DailyContentWidget` picks the same item is not checked here
+  (see modules/widgets when documenting android kotlin).
+
+## F44 — Dhikr feature (lib/features/dhikl) — code VERIFIED (static), impact UNVERIFIED
+- **(a) "Continue" in the completion dialog resets the counter** — **Tag: fix track, LOW.** The button calls
+  `_incrementCounter` (`dhikr_screen.dart:215–218`), which resets when `_isCompleted` is true (`:106–109`), so it
+  behaves exactly like "Start New". Likely user-visible.
+- **(b) Raw integers in Arabic UI** — **Tag: fix track, LOW.** counter `'$_currentCount'`, `'/ $_currentTarget'`
+  (`:716, :726`), target label (`:615`) and the target sheet values (`:478+`) skip `NumberFormatter` (CLAUDE.md rule).
+- **(c) Inline EN/AR strings** in all three screens — **Tag: fix track, LOW.**
+- Backlog (UNVERIFIED): `_onComplete` (dialog + unawaited Firestore write) runs inside `setState`; stats load runs
+  7 sequential range queries plus 2 others; progress bar `Alignment.centerLeft` ignores RTL; `_loadCustomPresets`
+  calls `setState` without a `mounted` check; double haptics (`HapticFeedback` + `vibration` plugin, see F23);
+  session row falls back to hardcoded `'Custom'`; deprecated `withOpacity`.
+- Contract doc gap — **RESOLVED 2026-11-07**: `custom_dhikr_presets` added to prefs-keys.md.
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
