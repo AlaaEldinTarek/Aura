@@ -759,6 +759,17 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   (`NativePrayerCalculator.kt:165–189`). Effect: days 1–2 are off by the daily drift (~1–2 min/day) and by **1 hour
   across a DST change** (exact 24 h added); native alarms on that day use the cached value if the app was not opened.
   Any screen asking for another date gets the same shifted times. Device impact UNVERIFIED (DST case: Egypt has DST).
+  Correction (FX-0 spec, 2026-11-07): the shift does **not** cause a 1-hour DST error (24 h added to an absolute
+  instant keeps the wall-clock time); the DST hour error is Kotlin's single per-day offset (F51p).
+
+## F54 — Iqama for alarms armed for another day (found in the FX-0 review, 2026-11-07) — code VERIFIED (static)
+- **(a) An adhan alarm armed for tomorrow counts down to today's iqama instant** — **MEDIUM; out of FX-0 (user
+  2026-11-07).** At adhan time `PrayerAlarmReceiver` reads `{prayer}_iqama_time` from `aura_prayer_times`
+  (`PrayerAlarmReceiver.kt:543–561`) and stores it as `adhan_iqama_time` for the countdown. Dart writes those keys
+  only for today's prayers (`prayer_times_provider.dart:372–379`, absolute epoch ms). When the alarm fires on a later
+  day (tomorrow's Fajr armed after Isha, or native-rescheduled days without an app open), the stored value is still
+  the earlier day's instant, so the countdown is wrong or already past. FX-0's next-occurrence scheduling reaches this
+  path more often. Device impact UNVERIFIED. Future fix: iqama per date (FX-0 spec, Future Improvements).
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).

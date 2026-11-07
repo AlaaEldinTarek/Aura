@@ -50,4 +50,5 @@ Read STATE.md first. Use this only when CLAUDE.md's Context Loading table doesn'
   Ask the user only for uncertain items and CRITICAL/HIGH.
 
 ## Other
-- Decisions (ADRs) → decisions/ · Daily log → log/YYYY-MM-DD.md · Specs → ../docs/designs/
+- Decisions (ADRs) → decisions/ · Daily log → log/YYYY-MM-DD.md · Specs → ../docs/designs/ · Spec review reports →
+  reference/reviews/<spec>/
