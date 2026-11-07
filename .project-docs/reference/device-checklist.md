@@ -87,8 +87,9 @@ is believed to do; record what you actually see, not the expectation.
 
 **FX-0 baseline plan (author, 2026-11-07).** Base build 1.0.0+59 stays installed until every baseline run is done.
 Day 1: prep snapshot (method, madhab, iqama, city, screenshot, `dumpsys alarm`), S13, S01, S06, S29, S30, S31, S33,
-S34 · night 1: S18 · day 2: S35, S17 · Friday: S11 · last: S32. Package reference times for S29/S32/S33 are computed
-from city-level coordinates (not the exact home location) in a scratch script, not in the repo.
+S34 · night 1: S18 · day 2: S35, S17 · Friday: S11 · last: S32. Package reference times for S29/S30/S33/S11 (city-level
+coordinates, not the exact home location): [fx-0-baseline-reference.md](fx-0-baseline-reference.md); S32 dates
+computed when the run day is known.
 
 ### Emulator scenarios (Android 14/15) — device: **emulator**, status: **BLOCKED** (emulator not set up)
 After E01–E04 pass, also re-run S01–S03, S05, S10, S17 on the emulator.

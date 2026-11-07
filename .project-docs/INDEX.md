@@ -30,7 +30,8 @@ Read STATE.md first. Use this only when CLAUDE.md's Context Loading table doesn'
 - Feature list, folders, providers, routes, init flow, dependencies, assets → reference/architecture.md
 - Analyzer/test baseline numbers → reference/baseline.md
 - Findings to investigate + doc conflicts → reference/findings.md
-- Device characterization checklist → reference/device-checklist.md
+- Device characterization checklist → reference/device-checklist.md · FX-0 baseline package times →
+  reference/fx-0-baseline-reference.md
 - Module drift vs code (2026-11-07 snapshot) → reference/2026-11-07_DRIFT_REPORT.md
 - Original bootstrap prompt (Steps 0–6) → reference/bootstrap-prompt-v2.1.md
 - Old CLAUDE.md section → new file map → reference/claude-md-relocation.md
