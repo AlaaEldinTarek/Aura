@@ -752,7 +752,7 @@ commit stays green. Any test that runs `PrayerTimesNotifier` resets the static g
   table, licence, "do not edit except to re-port").
 - Each folder README documents its files (project rule: folder READMEs stay current with the code).
 #### 18. `.project-docs/reference/device-checklist.md` (Modify)
-- Add S29–S35 (Delivery section).
+- S29–S35 (Delivery section) were added early, 2026-11-07, for the baseline run; commit 13 records the FX-0 results.
 #### 19. `.project-docs/reference/findings.md` (Modify)
 - Already recorded with the spec approval (2026-11-07): the F53a DST correction and F54a (MEDIUM; an alarm armed for
   tomorrow reads today's `*_iqama_time`). Commit 13: mark F36a, F36c, F52a, F53a fixed with the PR.
