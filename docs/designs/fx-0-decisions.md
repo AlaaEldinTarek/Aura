@@ -1,12 +1,12 @@
 # FX-0 — decided inputs for the spec (prayer method / madhab / recalculation)
-Input for `/egm:egm-draft` (user runs it). Decisions by the user, 2026-11-07. Findings: F36a, F36c, F52a (+ F53a
-proposed, pending user). Modules: `.project-docs/modules/prayer.md`, `notifications-native.md`. ADR 0001.
+Input for `/egm:egm-draft` (user runs it). Decisions by the user, 2026-11-07. Findings: F36a, F36c, F52a, F53a. Modules: `.project-docs/modules/prayer.md`, `notifications-native.md`. ADR 0001.
 
 ## Scope (decided)
 - F36a: Hanafi Asr is applied (stored `'Hanafi'` / `'Shafi'` read as-is; no prefs key rename) and every UI method
   maps to its exact `adhan` method.
 - F36c + F52a: any method / madhab / iqama change recalculates AND refreshes alarms, post-prayer checks, widgets,
   native data (`updatePrayerTimes`) and the `cached_*` days — from both entry points (Settings, Prayer screen dialog).
+- F53a: times for any date are calculated for that date (no whole-day shift of today's times).
 
 ## Decisions
 1. **Native times must never differ from Dart times.**
@@ -20,6 +20,15 @@ proposed, pending user). Modules: `.project-docs/modules/prayer.md`, `notificati
    madhab; Kotlin parity vs package within ±1 min for several cities (incl. Cairo and one high-latitude city) and
    dates (summer, winter, DST change).
 4. **No in-app notice.** The Asr correction is mentioned in the Play Store release notes only.
+5. **Makkah +3 min Dhuhr stays** as a documented app adjustment, applied identically in Dart and Kotlin. Test rule
+   (both sides): package output + documented app adjustments == app output.
+6. **F53a joins FX-0.**
+7. **The spec must compare two options and pick one with reasons:**
+   - A) Full Kotlin parity with the package for all methods.
+   - B) Dart precomputes N days (e.g. 7), each calculated for its own date (fixes F53a at the root), and stores
+     them for native; the Kotlin calculator becomes a fallback that still needs package parity.
+   Either way the spec lists and resolves each existing native divergence: method adjustments, Tehran Maghrib
+   angle, high-latitude rule, minute truncation vs rounding, single UTC offset per day (details below).
 
 ## Package parameters (from `adhan-2.0.0+1/lib/src/calculation_method.dart`, `getParameters()`)
 | UI value → package method | Fajr | Isha | Method adjustments (min) |
@@ -39,17 +48,17 @@ Package defaults: `highLatitudeRule = middle_of_the_night`; all times rounded to
   instead of the package's middle-of-the-night, truncates minutes and uses one UTC offset per day (F51p). Each of
   these breaks decision 1 for existing methods too, not only the new ones.
 - Dart `PrayerTimesService.getPrayerTimes(date:)` always calculates TODAY (`PrayerTimes.today`) and shifts by
-  `Duration(days: n)` → the cached days 1–2 are today's times + 24/48 h (F53a, below). The package offers
+  `Duration(days: n)` → the cached days 1–2 are today's times + 24/48 h (F53a). The package offers
   `PrayerTimes(coordinates, DateComponents, params)` for any date.
 - `_getAsrMadhab` compares `'Hanafi'` with enum name `hanafi`; native receives `madhab.name` (currently always
   `'shafi'`); Kotlin expects lowercase `"hanafi"`. Contract strings: `.project-docs/contracts/prefs-keys.md` +
   method-channels.
 
-## Open for the user (not yet decided)
-- **Makkah +3 min Dhuhr**: the app adds `adjustments.dhuhr = 3` for Umm al-Qura (Dart and Kotlin); the package has
-  no such adjustment. Decision 3 ("Dart == package") conflicts — keep the +3 as a documented app adjustment on top
-  of the package, or drop it?
-- **F53a** (date shift): include in FX-0, and priority (CRITICAL / HIGH)?
+## Documented app adjustments (on top of the package)
+- Umm al-Qura (`makkah`): Dhuhr +3 min (`params.adjustments.dhuhr = 3` in Dart; `dhuhrAdj` in Kotlin) — decision 5.
+
+## Open for the user
+- None as of 2026-11-07.
 
 ## Non-goals
 - Umm al-Qura Ramadan Isha +30 min (package note) — not applied today; out of scope.

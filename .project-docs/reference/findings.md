@@ -751,8 +751,8 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   notification shade" — no code found.
 
 ## F53 — Prayer calculation for other dates (found while preparing FX-0, 2026-11-07) — code VERIFIED (static)
-- **(a) Times for any date other than today are today's times shifted by whole days** — **Tag: fix track, priority
-  pending user (CRITICAL/HIGH candidate; proposed into FX-0).** `PrayerTimesService.getPrayerTimes(date:)` always
+- **(a) Times for any date other than today are today's times shifted by whole days** — **Tag: fix track, joined FX-0
+  (CRITICAL group; user 2026-11-07).** `PrayerTimesService.getPrayerTimes(date:)` always
   calls `adhan.PrayerTimes.today(...)` (`prayer_times_service.dart:80`) and adds `Duration(days: daysDifference)`
   (`:94–111`). `PrayerTimesNotifier` caches days 0–2 with it (`prayer_times_provider.dart:403–423`) as
   `cached_{date}_*`, which `NativePrayerCalculator.cachedOrComputed` / `readCached` prefer over its own calculation
