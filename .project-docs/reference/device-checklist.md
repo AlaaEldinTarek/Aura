@@ -72,6 +72,7 @@ is believed to do; record what you actually see, not the expectation.
 | S21 | Arabic / RTL screens | Switch to Arabic; visit Home, Prayer, Tasks, Quran/Wird, Settings, Profile | Full RTL, Arabic numerals everywhere, Zuhr shown as الظهر / Jumu'ah on Friday | F-APP | |
 | S22 | Guest flag survives onboarding | Fresh state (signed out, no guest): Login → Continue as guest → finish onboarding → Home; kill app; relaunch | Today (findings F41a): Login appears = bug confirmed (`is_guest` reset to false). After fix: Home appears. Run before S20 (S20 depends on it) | F-APP | FAIL (2026-11-07, nova 5T, base): Login appeared on relaunch — F41a confirmed |
 | S23 | Settings survive re-login onboarding | Signed in: set Arabic, dark theme, prayer-only mode; sign out; sign in again; on onboarding step 0 tap Skip | Today (findings F46a): language → English, theme → system, mode → both = bug confirmed. After fix: Arabic / dark / prayer-only kept | F-APP | |
+| S24 | Qibla vs trusted reference | Outdoors, away from metal; calibrate compass (figure-8). Same spot, same phone position: open Aura Qibla and a trusted Qibla app (e.g. Google Qibla Finder); compare arrow bearings; also note Aura's instruction text | Findings F48f: a ~4–5° difference (≈ local magnetic declination) confirms magnetic heading is used; ≤ 1–2° = no offset. Record both bearings and the location | F-APP | |
 
 ### Emulator scenarios (Android 14/15) — device: **emulator**, status: **BLOCKED** (emulator not set up)
 After E01–E04 pass, also re-run S01–S03, S05, S10, S17 on the emulator.

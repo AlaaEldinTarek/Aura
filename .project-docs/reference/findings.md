@@ -391,7 +391,7 @@ Check only when a phase touches the area:
 
 ## F41 — Auth screens (lib/features/auth) — code VERIFIED (static), impact UNVERIFIED
 - **(a) Guest flag reset after onboarding finishes** — **Tag: fix track, HIGH (guest data migration; user
-  2026-11-07); group "sign-in & onboarding flow" with F46a. DEVICE-VERIFIED 2026-11-07: S22 on nova 5T (API 29), base 1.0.0+59 — Login shown on relaunch.**
+  2026-11-07); group "sign-in & onboarding flow" with F46a, F47f. DEVICE-VERIFIED 2026-11-07: S22 on nova 5T (API 29), base 1.0.0+59 — Login shown on relaunch.**
   Effect (1) confirmed on device; effect (2) (migration prompt skipped) follows from code, not device-checked (S20). `_continueAsGuest` (`login_screen.dart:209–231`) awaits `pushNamed('/onboarding')` and then calls
   `setGuest(false)` if still mounted. `PreferenceScreen._finish` leaves with `pushReplacementNamed('/home')`
   (`preference_screen.dart:245`), which completes the replaced route's future while Login stays in the stack under
@@ -457,7 +457,7 @@ Check only when a phase touches the area:
 
 ## F46 — Onboarding (lib/features/onboarding) — code VERIFIED (static), impact UNVERIFIED
 - **(a) Onboarding resets language / theme / mode to defaults on re-login** — **Tag: fix track, MEDIUM (user
-  2026-11-07); group "sign-in & onboarding flow" with F41a. Not intended: 5873793 ("Stop login from resetting device
+  2026-11-07); group "sign-in & onboarding flow" with F41a, F47f. Not intended: 5873793 ("Stop login from resetting device
   language and theme") fixed the same effect at login. Device check S23 (not run yet). Open product question for
   the fix spec: returning users skip onboarding entirely, or onboarding preloads saved values?** `_PreferenceScreenState` starts from `_language = 'en'`,
   `_theme = 'system'`, `_mode = AppMode.both` (`preference_screen.dart:27–29`) instead of the saved values, and every
@@ -471,6 +471,50 @@ Check only when a phase touches the area:
   steps 1–4 leaves onboarding (exits the app after sign-in, cancels guest from Login); progress-bar margin uses
   `right:` (ignores RTL); carousel marketing claims ("9 scholarly methods", "Silences all notifications") not checked
   against code.
+
+## F47 — Profile screen (lib/features/profile) — code VERIFIED (static), impact UNVERIFIED
+- **(a) Edited display name may not refresh** — **Tag: fix track, LOW.** `_showEditNameDialog` calls
+  `user.updateDisplayName` (`profile_screen.dart:897`), but the screen rebuilds only from `authStateProvider`
+  (`authStateChanges`, `auth_provider.dart:29–30`), which does not emit on profile updates; the Firestore user doc
+  is not updated either. Needs a device check.
+- **(b) Raw numbers in Arabic UI** — **Tag: fix track, LOW.** completion `'${…}%'` (`:645–647`) and the guest-sync
+  count `replaceAll('%d', '${migration.taskCount}')` (`:360–362`) skip `NumberFormatter`.
+- **(c) Raw error text** — **Tag: fix track, LOW.** `'Error: $e'` snackbars in edit-name / change-password (`:902, :957`).
+- **(d) Inline EN/AR strings** for most labels — **Tag: fix track, LOW.**
+- **(e) Dead code** — **Tag: P6.** `_showThemeDialog`, `_getThemeModeText`, `_showLanguageDialog`,
+  `_JumuahReminderTile` have no callers (theme / language / Jumu'ah live in Settings).
+- **(f) Logout has no defined destination** — **Tag: fix track, group "sign-in & onboarding flow" (with F41a, F46a;
+  user 2026-11-07). The fix spec must define logout behavior.** `_showLogoutDialog` only calls `signOut()`
+  (`:1035–1037`); nothing navigates (no auth listener in `main_wrapper_screen.dart`). The shell stays open on
+  `guest_user` data with `is_guest == false`; the next cold start goes to `/login` (`splash_screen.dart:218–224`).
+- **(g) Firestore usage (performance — measure, don't guess)** — **Tag: P3 (repositories / caching; user
+  2026-11-07).** `_buildPrayerStatsSummary` builds `FutureBuilder(future: _loadProfileStats())` inside `build`
+  (`:632–633`), so every rebuild runs 3 reads (`getStatistics`, `calculateCurrentStreak`, `getEarnedCount`,
+  `:845–851`); `_AchievementsBadgeGrid.initState` runs `checkAndAward` (reads + possible writes) on every mount
+  (`:1179–1182`). To measure before P3: count Firestore reads/writes per Profile visit and per rebuild (debug log
+  counters or Firebase console usage), on a signed-in account.
+- Backlog (UNVERIFIED): `migrate()` errors are unhandled (no snackbar, button throws); change-password tile shown for
+  Google accounts and has no recent-login handling; deprecated `withOpacity`.
+
+## F48 — Qibla screen (lib/features/qibla) — code VERIFIED (static), impact UNVERIFIED
+- **(a) Instruction text ignores 0/360 wrap and direction** — **Tag: fix track, MEDIUM (Qibla accuracy affects
+  prayer; users follow the text; user 2026-11-07); group "Qibla accuracy" with F48f.** `_buildInstructions` uses `(_qiblaDirection! - _heading!).abs()` (`qibla_screen.dart:353–355`): with
+  qibla 5° and heading 355° (10° off) it says "Turn to the right" instead of "facing/close"; for every larger
+  offset it always says "Turn to the right", even when left is shorter (`:366–368`). The dial marker itself is
+  correct. Affects users whose qibla bearing is near north (e.g. south of Makkah).
+- **(b) Error title chosen by theme, not language** — **Tag: fix track, LOW.** `isDark ? 'خطأ في تحميل القبلة' :
+  'Error loading Qibla'` (`:415`): dark theme shows Arabic, light shows English.
+- **(c) Endless spinner without compass events** — **Tag: P2 (platform guard).** `_isLoading` turns false only in the
+  compass listener (`:97–100`); `FlutterCompass.events?.listen` does nothing if the stream is null (no sensor, and
+  likely Windows — the route is built in the desktop shell). No error or fallback shown. Desktop behavior UNVERIFIED.
+- **(d) Raw digits in Arabic UI** — **Tag: fix track, LOW.** distance `'${distance.toStringAsFixed(0)} كم'` (`:233–235`).
+- **(e) Inline EN/AR strings; raw `e.toString()` error text** — **Tag: fix track, LOW.**
+- **(f) Possible magnetic-vs-true-north offset** — **Tag: fix track, MEDIUM pending measurement (user 2026-11-07);
+  group "Qibla accuracy" with F48a. Device check S24 (not run yet).** The bearing is relative to true north
+  (`_calculateQiblaDirection`, `:111–129`), but no declination correction is applied to the `flutter_compass`
+  heading (`:81–101`). If that heading is magnetic, the arrow is off by the local declination (~4–5° in Egypt).
+- Backlog (UNVERIFIED): `setState` after `await getBestLocation` without `mounted`
+  (`:59, :103`); `CompassPainter.heading` always 0 (unused parameter); app-bar `titlePadding` `left: 16` ignores RTL.
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
