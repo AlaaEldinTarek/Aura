@@ -621,7 +621,7 @@ calculator method/madhab strings equal Dart enum `.name` values (`prayer_setting
   `cached_*`) use `int.toString().padLeft` or `toIso8601String`, which are locale-independent. Result: no further hits.
 - **(a) Daily summary uses device-locale digits in date keys** — **Tag: fix track HIGH (tracking + data), group
   "locale-dependent keys" (user 2026-11-07: data loss for phones using Arabic-Indic digits); device scenario S27 (user runs).**
-  **Status 2026-11-08: FIXED on `fix/locale-keys` (d9ff65c), not merged; VERIFIED by ar-EG unit test (failed on old
+  **Status 2026-11-08: DONE — merged via PR #2 (e61f345; fix d9ff65c); VERIFIED by ar-EG unit test (failed on old
   code, passes after); S27 optional.** `DailySummaryReceiver.todayDateKey` and `pruneOldPrayerStatuses`
   (`DailySummaryReceiver.kt:155–165`) build dates with `String.format("%02d", …)` (default locale); every writer uses
   `SimpleDateFormat("yyyy-MM-dd", Locale.US)` (`PrayerAlarmReceiver.kt:388, :418, :855–1041`,
