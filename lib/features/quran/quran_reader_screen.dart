@@ -20,6 +20,7 @@ import 'package:aura_app/core/services/shared_preferences_service.dart';
 import 'package:aura_app/core/models/wird.dart';
 import 'package:aura_app/core/providers/wird_provider.dart';
 import 'khatma_celebration_screen.dart';
+import 'quran_reader_bottom_bar.dart';
 import 'package:aura_app/core/theme/app_typography.dart';
 
 class QuranReaderScreen extends ConsumerStatefulWidget {
@@ -506,7 +507,7 @@ void _togglePageBookmark() {
               Positioned(
                 key: _bottomBarKey,
                 bottom: 0, left: 0, right: 0,
-                child: _BottomBar(
+                child: QuranReaderBottomBar(
                   currentPage: _currentPage,
                   totalPages: 604,
                   lang: lang,
@@ -1404,72 +1405,7 @@ class _TopBar extends StatelessWidget {
   }
 }
 
-// ── Bottom bar ────────────────────────────────────────────────────────────────
-
-class _BottomBar extends StatelessWidget {
-  final int currentPage;
-  final int totalPages;
-  final String lang;
-  final VoidCallback? onGoToPrevious;
-  final VoidCallback? onGoToNext;
-
-  const _BottomBar({
-    required this.currentPage,
-    required this.totalPages,
-    required this.lang,
-    this.onGoToPrevious,
-    this.onGoToNext,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final primary = AppConstants.getPrimary(isDark);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: (AppConstants.surface(isDark))
-            .withValues(alpha: 0.95),
-        border: Border(
-          top: BorderSide(color: AppConstants.divider(isDark)),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: [
-            IconButton(
-              onPressed: onGoToPrevious,
-              icon: Icon(
-                Icons.arrow_back,
-                color: currentPage > 1 ? primary : Colors.grey,
-              ),
-            ),
-            Expanded(
-              child: Text(
-                '${NumberFormatter.withArabicNumeralsByLanguage(currentPage.toString(), lang)} / ${NumberFormatter.withArabicNumeralsByLanguage(totalPages.toString(), lang)}',
-                textAlign: TextAlign.center,
-                style: AppTypography.label.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.hintColor,
-                ),
-              ),
-            ),
-            IconButton(
-              onPressed: onGoToNext,
-              icon: Icon(
-                Icons.arrow_forward,
-                color: currentPage < totalPages ? primary : Colors.grey,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// Bottom bar: quran_reader_bottom_bar.dart
 
 // ── Desktop floating controls ─────────────────────────────────────────────────
 

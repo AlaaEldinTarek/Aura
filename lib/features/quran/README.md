@@ -15,7 +15,8 @@ and the khatma celebration and dua screens. Data comes from `../../core/` and is
 | File | Public symbols / entry points |
 | --- | --- |
 | `quran_screen.dart` | `QuranScreen()`: route `/quran`, also bottom-nav tab page. Private tabs `_SurahListTab`, `_JuzTab`, `_BookmarksTab`; `_LastReadCard` |
-| `quran_reader_screen.dart` | `QuranReaderScreen({required suraNo, scrollToAyaNo, initialJuz, initialPage})`, always pushed via `MaterialPageRoute` (no named route). Private: `_MushafPage`, `_AyahSheet`, `_BookmarkReplaceSheet`, `_AyahMarkerColorizer`, bars and zoom controls |
+| `quran_reader_screen.dart` | `QuranReaderScreen({required suraNo, scrollToAyaNo, initialJuz, initialPage})`, always pushed via `MaterialPageRoute` (no named route). Private: `_MushafPage`, `_AyahSheet`, `_BookmarkReplaceSheet`, `_AyahMarkerColorizer`, top bar and zoom controls |
+| `quran_reader_bottom_bar.dart` | `QuranReaderBottomBar({currentPage, totalPages, lang, onGoToPrevious, onGoToNext})`: reader bottom bar (prev / next, page counter with Arabic numerals in Arabic) |
 | `wird_tab.dart` | `WirdTab({required lang})`, the 4th tab of `QuranScreen`. Private: `_WirdContentView`, `_BookmarkPagesSheet`, `_BookmarkListSheet`, `_RecordPagesContent` |
 | `quran_search_screen.dart` | `QuranSearchScreen()`, opened only from the `QuranScreen` AppBar (`MaterialPageRoute`) |
 | `quran_stats_screen.dart` | `QuranStatsScreen()`: route `/quran_stats` (Wird streak card) |
