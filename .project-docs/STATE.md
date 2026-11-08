@@ -1,4 +1,4 @@
-# Project State — 2026-11-07
+# Project State — 2026-11-08
 - App: Aura 1.0.0+59 (MSIX 1.0.3.114) | Analyze: 425 issues (0 errors) | Tests: 64 pass / 0 fail
 - Baseline commit: 75d38b9 | Flutter 3.38.7 / Dart 3.10.7 (frozen) | Android minSdk 24 / target 36 / compile 36
 - Support target: current minSdk and newer (Android 10 must keep working; test device nova 5T = API 29)
@@ -6,7 +6,7 @@
 - Done (Step 2): contracts/* verified Dart↔Kotlin; device-checklist.md (S01–S26 + emulator E01–E04); findings F4–F14
 - Done (EGM): all `lib/core/*` folder READMEs; features tasks, home, main (7d5682b), prayer (e87448c), quran, achievements, auth, azkar (eca7bcc), daily_content, dhikl (2cf79a7), islamic_events, onboarding (9e07c1e), profile, qibla (88a6551), settings (be29b87), splash (569d651) — all feature folders done; android kotlin (`com/aura/hala`, F51), parents `lib/core` + `lib/features`; rules + progress: INDEX.md; drift report on modules/ + all 15 modules rewritten from code (6f83153, findings F52)
 - Current task: FX-0 — spec Approved 2026-11-07 (docs/designs/fx-0-prayer-settings.md; reviews in reference/reviews/fx-0/; 13-commit order on `fix/fx-0-prayer-settings`)
-- Next (FX-0): device baseline on base build — S01, S06, S11, S13, S17, S18 + S29–S35 (rows + day plan in reference/device-checklist.md; base build stays installed) → "approve B" (JUnit line, fixture generator + CSV) → "approve phase FX-0"
+- Next (FX-0): device baseline on base build — S01, S06, S11, S13, S17 + S29–S33, S35 (S18, S34 PASS 2026-11-08; rows + day plan in reference/device-checklist.md; base build stays installed) → "approve B" (JUnit line, fixture generator + CSV) → "approve phase FX-0"
 - Blockers: Android 14/15 emulator not set up (E01–E04 BLOCKED); adb not on PATH (use SDK path)
 - Pending user: run device-checklist baseline S01–S21 + S23 + S24 and S25 + S26 + S27 + S28 and record results (S22 done 2026-11-07: FAIL → F41a device-verified)
 - Done (Step 2.5 "fill modules/*.md"): covered by the drift rewrite (6f83153). Bootstrap prompt: reference/bootstrap-prompt-v2.1.md
