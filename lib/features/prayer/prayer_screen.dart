@@ -1542,17 +1542,21 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
 
   /// Save calculation settings
   Future<void> _saveCalculationSettings() async {
+    // Read before the first await: no BuildContext use across an async gap.
+    final notifier = ProviderScope.containerOf(context, listen: false)
+        .read(prayerTimesProvider.notifier);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(
         AppConstants.keyCalculationMethod, _calculationMethod);
     await prefs.setString(AppConstants.keyAsrMadhab, _asrMadhab);
     debugPrint('Saved calculation settings: $_calculationMethod, $_asrMadhab');
 
-    // Refresh prayer times with new calculation settings
-    if (mounted) {
-      // Navigate back and refresh
-      Navigator.pop(context);
-      // The parent screen will refresh when we return
+    // Close the method dialog right after saving, then reload.
+    if (mounted) Navigator.pop(context);
+    try {
+      await notifier.loadPrayerTimes(DateTime.now());
+    } catch (e) {
+      debugPrint('PrayerSettings: reload failed — $e');
     }
   }
 }

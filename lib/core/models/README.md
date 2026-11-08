@@ -15,7 +15,7 @@ changes without an approved spec.
 | `task.dart` | `Task`, `SubTask`, `TaskPriority`, `TaskCategory`, `RecurrenceType` | `Task.fromFirestore` / `toFirestore`, `fromJson` / `toJson`; `SubTask.toMap` / `fromMap` |
 | `prayer_record.dart` | `PrayerRecord`, `PrayerStatus`, `PrayerMethod`, `DailyPrayerSummary`, `PrayerStatistics`, `kPrayerNames`, `getCurrentUserId()` | `PrayerRecord.fromFirestore` / `toFirestore`, `fromJson` / `toJson` |
 | `prayer_time.dart` | `PrayerTime` (Equatable; `emoji`, `time12h`, `copyWith`) | none (in-memory) |
-| `prayer_settings.dart` | `CalculationMethod`, `AsrMadhab` (+ display-name extensions) | none (stored as enum `.name` by providers) |
+| `prayer_settings.dart` | `CalculationMethod` (14 values), `AsrMadhab` (+ display-name extensions); `calculationMethodFromPref`, `asrMadhabFromPref` (stored UI strings → enums; madhab case-insensitive) | enum `.name` sent to native as `prayer_calc_method` / `prayer_asr_madhab` (contract, prefs-keys.md) |
 | `user_data.dart` | `UserData` (`create`, `copyWith`) | `fromFirestore` / `toFirestore` |
 | `achievement.dart` | `Achievement`, `AchievementCategory`, `AchievementDefinitions.all` (38 definitions) | `toFirestore`, `earnedFromFirestore(id, earnedAt)` |
 | `dhikr.dart` | `DhikrSession`, `DhikrPreset`, `DhikrPresets.builtIn` (5), `DhikrStatistics` | `DhikrSession.fromFirestore` / `toFirestore`; `DhikrPreset.fromJson` / `toJson` |

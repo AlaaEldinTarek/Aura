@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants/app_constants.dart';
+import '../../core/providers/prayer_times_provider.dart';
 import '../../core/utils/haptic_feedback.dart';
 import '../../core/utils/number_formatter.dart';
 import '../../core/theme/app_typography.dart';
@@ -273,6 +274,7 @@ class _IqamaSettingsScreenState extends ConsumerState<IqamaSettingsScreen> {
   }
 
   Future<void> _saveIqamaSettings() async {
+    final notifier = ref.read(prayerTimesProvider.notifier);
     try {
       final prefs = await SharedPreferences.getInstance();
 
@@ -283,6 +285,13 @@ class _IqamaSettingsScreenState extends ConsumerState<IqamaSettingsScreen> {
 
       await prefs.setString(_prefsKey, dataString);
       debugPrint('✅ Iqama settings saved: $dataString');
+
+      // Reload so alarms, countdowns and native data use the new minutes.
+      try {
+        await notifier.loadPrayerTimes(DateTime.now());
+      } catch (e) {
+        debugPrint('IqamaSettings: reload failed — $e');
+      }
 
       // Trigger haptic feedback
       HapticFeedback.light();

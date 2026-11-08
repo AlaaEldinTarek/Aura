@@ -16,7 +16,7 @@ Native names used here are contracts: [method-channels](/.project-docs/contracts
 | --- | --- |
 | `notification_service.dart` | `NotificationService`: `initialize`, permissions, prayer reminders (`schedulePrayerNotification`, `scheduleDailyPrayers`, `scheduleRemindMeAgain`), task reminders + daily summary/digest, wird reminders, achievement toast, post-prayer check, Jumu'ah, focus-mode + overlay/DND helpers |
 | `prayer_alarm_service.dart` | `PrayerAlarmService`: native adhan/reminder/post-check alarms, `scheduleDailyPrayerAlarms`, exact-alarm permission, native status sync (`getNativePrayerStatuses`, `syncNativePrayerStatuses`), daily summary |
-| `prayer_times_service.dart` | `PrayerTimesService()`: `getPrayerTimes`, `getNextPrayer`, `getCurrentPrayer`, `getTimeRemaining`, static `loadIqamaMinutes` |
+| `prayer_times_service.dart` | `PrayerTimesService()`: `getPrayerTimes` (calculated for the requested date itself; Umm al-Qura Dhuhr +3), `getNextPrayer`, `getCurrentPrayer`, `getTimeRemaining`, static `loadIqamaMinutes` |
 | `prayer_tracking_service.dart` | `PrayerTrackingService`: `recordPrayer`, `deletePrayerRecord`, day/range/month reads, `watchDay` stream, `getStatistics`, `calculateCurrentStreak`, `cleanupFuturePrayerRecords` |
 | `task_service.dart` | `TaskService`: task stream/once/paging, add/update/toggle/delete/reorder, `getStatistics`, guest migration, `rescheduleAllTaskReminders`; `TaskStatistics` |
 | `wird_service.dart` | `WirdService`: settings, daily progress, juz/khatma, bookmark sync, streak/stats, reminders, `syncToFirestore` / `syncFromFirestore` |
@@ -104,5 +104,6 @@ Native names used here are contracts: [method-channels](/.project-docs/contracts
 - Exact alarms, notifications, the foreground service, home widgets, Firestore, local prefs, Windows tray/registry.
 
 ## System Verification
-- Run: `flutter test` (covers `prayer_times_service.dart` only); device scenarios:
+- Run: `flutter test` (covers `prayer_times_service.dart` only; `test/core/services/prayer_calculation_test.dart`
+  checks every method × madhab against the golden fixture `test/fixtures/prayer_parity.csv`); device scenarios:
   [device checklist](/.project-docs/reference/device-checklist.md).

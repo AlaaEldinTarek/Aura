@@ -32,7 +32,7 @@ enum AdhanCalculationMethod {
   ),
   dubai(
     value: 'Dubai',
-    nameEn: 'Dubai (approximate)',
+    nameEn: 'Dubai',
     nameAr: 'دبي',
     description: 'Dubai calculation method',
     descriptionAr: 'طريقة حساب دبي',

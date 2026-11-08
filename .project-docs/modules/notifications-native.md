@@ -25,8 +25,17 @@ code): CLAUDE.md Rules.
   shows summary, reschedules, prunes keys > 7 days; creates channel `prayer_tracking` if absent. Don't change key format.
 - `DailyRecalcReceiver.kt` — exact alarm 00:05: native recalculation, reschedules itself. `PrayerRecalcWorker.kt` —
   WorkManager backup recalculation (scheduled from `MainActivity` and `PrayerBootReceiver`).
-- `NativePrayerCalculator.kt` — pure-Kotlin calculator. Reads lat/lng + method from `aura_prayer_times`, saves results,
-  reschedules alarms.
+- `NativePrayerCalculator.kt` — reads lat/lng + method + madhab from `aura_prayer_times`; prefers the 7 days Flutter
+  caches (`cached_{date}_*`, today … +6), else calculates with `calculate(lat, lng, y, m, d, zone, method, madhab)`;
+  saves results, reschedules alarms. The calculation is a line-by-line port of adhan 2.0.0+1 in `adhan/` (18 files
+  mirroring the package's `lib/src`, MIT `LICENSE` in that folder; do not edit except to re-port), equal to the Dart
+  package (plus Umm al-Qura Dhuhr +3) within ±1 min — `NativePrayerCalculatorParityTest` (JVM, golden fixture
+  `test/fixtures/prayer_parity.csv`). Logs `⚠️ No cached times for {date} — using native fallback` and
+  `⚠️ Unknown method '…' — using MWL` (tag `NativePrayerCalc`).
+- Adhan alarms from Dart (FX-0): each of the five prayers (1001, 1003–1006) is scheduled at its next occurrence (today
+  if ahead, else tomorrow from cached day +1), replacing the old alarm with the same `PendingIntent`; no cancel call.
+  Post-prayer checks (request code + 2000) are never cancelled: a check whose new time + 30 min is already past keeps
+  its old alarm. A prayer moved later after it fired is guarded only by the 6-hour duplicate guard.
 - `AdhanPlayer.kt` — singleton MediaPlayer, per-prayer / custom audio, vibration. Only `play()` is `@Synchronized`
   (`stop` / `releasePlayer` / `isPlaying` are not; F51 backlog).
 - `AdhanFullScreenActivity.kt` — over lock screen. Pulse during adhan; then iqama countdown (polls

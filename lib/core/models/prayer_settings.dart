@@ -26,6 +26,71 @@ enum CalculationMethod {
 
   // Proportional method
   proportional,
+
+  // Qatar (Umm al-Qura variant with an 18° Fajr)
+  qatar,
+
+  // Dubai (The Gulf Region)
+  dubai,
+
+  // Diyanet, Turkey
+  turkey,
+
+  // Singapore
+  singapore,
+
+  // Moonsighting Committee (seasonal Fajr/Isha bounds)
+  moonsightingCommittee,
+}
+
+/// Maps a stored `calculation_method` pref to its internal method.
+///
+/// Accepts the picker values saved by the settings screens
+/// (`AdhanCalculationMethod.value`, e.g. 'UmmAlQura', 'Qatar') and an exact
+/// enum name ('makkah'). Each UI value maps to its own method. Null or unknown
+/// → [CalculationMethod.muslimWorldLeague]. The enum names are what native
+/// receives as `prayer_calc_method` (contract, see contracts/prefs-keys.md).
+CalculationMethod calculationMethodFromPref(String? value) {
+  switch (value) {
+    case 'MuslimWorldLeague':
+      return CalculationMethod.muslimWorldLeague;
+    case 'Egyptian':
+      return CalculationMethod.egyptian;
+    case 'Karachi':
+      return CalculationMethod.karachi;
+    case 'UmmAlQura':
+      return CalculationMethod.makkah;
+    case 'NorthAmerica':
+      return CalculationMethod.isna;
+    case 'Kuwait':
+      return CalculationMethod.kuwait;
+    case 'Tehran':
+      return CalculationMethod.tehran;
+    case 'Qatar':
+      return CalculationMethod.qatar;
+    case 'Dubai':
+      return CalculationMethod.dubai;
+    case 'Turkey':
+      return CalculationMethod.turkey;
+    case 'Singapore':
+      return CalculationMethod.singapore;
+    case 'MoonsightingCommittee':
+      return CalculationMethod.moonsightingCommittee;
+  }
+  for (final m in CalculationMethod.values) {
+    if (m.name == value) return m;
+  }
+  return CalculationMethod.muslimWorldLeague;
+}
+
+/// Maps a stored `asr_madhab` pref ('Shafi' / 'Hanafi', any case) to its
+/// madhab. Null or unknown → [AsrMadhab.shafi].
+AsrMadhab asrMadhabFromPref(String? value) {
+  final lower = value?.toLowerCase();
+  for (final m in AsrMadhab.values) {
+    if (m.name == lower) return m;
+  }
+  return AsrMadhab.shafi;
 }
 
 /// Madhab (school of thought) for Asr prayer calculation
@@ -59,6 +124,16 @@ extension CalculationMethodExtension on CalculationMethod {
         return 'Fixed Angle (12°)';
       case CalculationMethod.proportional:
         return 'Proportional';
+      case CalculationMethod.qatar:
+        return 'Qatar';
+      case CalculationMethod.dubai:
+        return 'Dubai';
+      case CalculationMethod.turkey:
+        return 'Turkey';
+      case CalculationMethod.singapore:
+        return 'Singapore';
+      case CalculationMethod.moonsightingCommittee:
+        return 'Moonsighting Committee';
     }
   }
 
@@ -82,6 +157,16 @@ extension CalculationMethodExtension on CalculationMethod {
         return 'زاوية ثابتة (12°)';
       case CalculationMethod.proportional:
         return 'نسبي';
+      case CalculationMethod.qatar:
+        return 'قطر';
+      case CalculationMethod.dubai:
+        return 'دبي';
+      case CalculationMethod.turkey:
+        return 'تركيا';
+      case CalculationMethod.singapore:
+        return 'سنغافورة';
+      case CalculationMethod.moonsightingCommittee:
+        return 'لجنة الرؤية';
     }
   }
 }

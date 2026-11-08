@@ -76,24 +76,20 @@ class PrayerTimesService {
     // Map custom AsrMadhab enum to Adhan library's Madhab
     params.madhab = _mapToAdhanMadhab(asrMadhab);
 
-    // Calculate prayer times for today
-    final prayerTimesForDate = adhan.PrayerTimes.today(coordinates, params);
-
-    // Calculate the difference in days between the requested date and today
-    final today = DateTime.now();
+    // Calculate prayer times for the requested date itself (F53a): each day
+    // gets its own sun position, no whole-day shift of today's times.
     final requestedDate = DateTime(date.year, date.month, date.day);
-    final todayDate = DateTime(today.year, today.month, today.day);
-    final daysDifference = requestedDate.difference(todayDate).inDays;
+    final prayerTimesForDate = adhan.PrayerTimes(
+        coordinates, adhan.DateComponents.from(requestedDate), params);
 
     // Debug logging
+    final today = DateTime.now();
+    final daysDifference = requestedDate
+        .difference(DateTime(today.year, today.month, today.day))
+        .inDays;
     debugPrint('PRAYER TIMES: Calculating for date: $requestedDate (days from today: $daysDifference)');
     debugPrint('PRAYER TIMES: Calculation method: ${calculationMethod.name}, Madhab: ${asrMadhab.name}');
     debugPrint('PRAYER TIMES: Location: $latitude, $longitude');
-
-    // Adjust prayer times by the day difference and convert to local
-    DateTime adjustByDays(DateTime time, int days) {
-      return time.add(Duration(days: days));
-    }
 
     // Convert each prayer time to local time if it's in UTC
     DateTime toLocalTime(DateTime utcTime) {
@@ -103,13 +99,12 @@ class PrayerTimesService {
       return utcTime;
     }
 
-    // Adjust prayer times by the day difference and convert to local
-    final fajrLocal = toLocalTime(adjustByDays(prayerTimesForDate.fajr, daysDifference));
-    final dhuhrLocal = toLocalTime(adjustByDays(prayerTimesForDate.dhuhr, daysDifference));
-    final asrLocal = toLocalTime(adjustByDays(prayerTimesForDate.asr, daysDifference));
-    final maghribLocal = toLocalTime(adjustByDays(prayerTimesForDate.maghrib, daysDifference));
-    final ishaLocal = toLocalTime(adjustByDays(prayerTimesForDate.isha, daysDifference));
-    final sunriseLocal = toLocalTime(adjustByDays(prayerTimesForDate.sunrise, daysDifference));
+    final fajrLocal = toLocalTime(prayerTimesForDate.fajr);
+    final dhuhrLocal = toLocalTime(prayerTimesForDate.dhuhr);
+    final asrLocal = toLocalTime(prayerTimesForDate.asr);
+    final maghribLocal = toLocalTime(prayerTimesForDate.maghrib);
+    final ishaLocal = toLocalTime(prayerTimesForDate.isha);
+    final sunriseLocal = toLocalTime(prayerTimesForDate.sunrise);
 
     debugPrint('PRAYER TIMES: Local times for $requestedDate:');
     debugPrint('  - Fajr: $fajrLocal');
@@ -272,6 +267,16 @@ class PrayerTimesService {
       case CalculationMethod.proportional:
         // Proportional - use MWL
         return adhan.CalculationMethod.muslim_world_league;
+      case CalculationMethod.qatar:
+        return adhan.CalculationMethod.qatar;
+      case CalculationMethod.dubai:
+        return adhan.CalculationMethod.dubai;
+      case CalculationMethod.turkey:
+        return adhan.CalculationMethod.turkey;
+      case CalculationMethod.singapore:
+        return adhan.CalculationMethod.singapore;
+      case CalculationMethod.moonsightingCommittee:
+        return adhan.CalculationMethod.moon_sighting_committee;
     }
   }
 

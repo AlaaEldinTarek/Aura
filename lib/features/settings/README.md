@@ -13,7 +13,7 @@ or logic change without an approved spec.
 | File | Public symbols / entry points |
 | --- | --- |
 | `settings_screen.dart` | `SettingsScreen()` (route `/settings`). Private: `_SettingsScreenState` (pickers for silent duration, task reminder minutes, language, theme, daily summary time) |
-| `prayer_calculation_settings_dialog.dart` | `PrayerCalculationSettingsDialog.show({context, currentMethod, currentMadhab, onMethodChanged, onMadhabChanged})` (`StatelessWidget`); callers: `settings_screen.dart`, `prayer/prayer_screen.dart` |
+| `prayer_calculation_settings_dialog.dart` | `PrayerCalculationSettingsDialog.show({context, currentMethod, currentMadhab, onMethodChanged, onMadhabChanged})` (`StatefulWidget`); callers: `settings_screen.dart`, `prayer/prayer_screen.dart` |
 | `adhan_calculation_method.dart` | `enum AdhanCalculationMethod` (12 values, `.value` strings e.g. `'MuslimWorldLeague'`, `'UmmAlQura'`), `getLocalizedName`, `fromValue` (fallback MWL) |
 | `asr_madhab_selection.dart` | `enum AsrMadhab` (`shafi` / `hanafi`, `.value` `'Shafi'` / `'Hanafi'`), `getLocalizedName`, `fromValue` — a different type from `core/models/prayer_settings.dart` `AsrMadhab` |
 | `iqama_settings_screen.dart` | `IqamaSettingsScreen()` (route `/iqama_settings`) |
@@ -21,11 +21,14 @@ or logic change without an approved spec.
 
 ## Invariants
 - **Calculation method / madhab** are stored as the settings enums' `.value` strings (`calculation_method`,
-  `asr_madhab` via `AppConstants.keyCalculationMethod` / `keyAsrMadhab`). `prayer_times_provider.dart` maps them to
-  the core enums; `'Hanafi'` and three methods do not map (findings F36a, FX-0). `SettingsScreen` recalculates
-  (`prayerTimesProvider.loadPrayerTimes`) after each change; its tile subtitle shows the raw stored strings.
-- **Dialog state is fixed at open**: `PrayerCalculationSettingsDialog` is stateless, so the radio selection does not
-  move after a tap until it is reopened; the content is a non-scrolling `Column` of 14 tiles.
+  `asr_madhab` via `AppConstants.keyCalculationMethod` / `keyAsrMadhab`). `prayer_times_provider.dart` maps each to
+  its own core enum value (`calculationMethodFromPref`, `asrMadhabFromPref`; FX-0). `SettingsScreen` and the prayer
+  settings page recalculate (`prayerTimesProvider.loadPrayerTimes`) after each change; the Settings tile subtitle
+  shows the raw stored strings.
+- **Calculation dialog** (A-1): `PrayerCalculationSettingsDialog` is a `StatefulWidget` holding the current
+  selection, so a tapped radio shows as selected right away (then the unchanged callback runs). The method and
+  madhab sections scroll (`Flexible` + `SingleChildScrollView`); the header and Done button stay fixed. Widget test:
+  `test/features/settings/prayer_calculation_settings_dialog_test.dart` (360 × 640, en / ar).
 - **Silent mode** toggle / duration write `silent_mode_enabled` / `silent_mode_duration` in Flutter prefs. Native
   reads the duration from Flutter prefs but the enabled flag from `aura_silent_mode` (findings F49).
 - **Prayer tracking** toggle writes `prayer_tracking_notifications_enabled` (read natively at fire time); the daily
@@ -34,8 +37,8 @@ or logic change without an approved spec.
 - **Platform sections**: Android only — Exact Alarms / Battery Optimization links (`PlatformChannelService`);
   Windows only — Start with Windows (`WindowsStartupService`).
 - **Iqama**: minutes per prayer (keys `Fajr`, `Zuhr`, `Asr`, `Maghrib`, `Isha`; legacy `Dhuhr` accepted on load),
-  0–60, saved as `"Fajr:15,Zuhr:15,…"` in `iqama_minutes`; read by `PrayerTimesService.loadIqamaMinutes` on the next
-  prayer-time load (no recalculation on save).
+  0–60, saved as `"Fajr:15,Zuhr:15,…"` in `iqama_minutes`; read by `PrayerTimesService.loadIqamaMinutes`. Each save
+  calls `prayerTimesProvider.loadPrayerTimes(DateTime.now())`, so countdowns and native iqama keys update (FX-0).
 - **Adhan downloads**: files go to `<app documents>/adhans/<fileName>` with Dio (30 s connect / 120 s receive);
   selection is `selected_adhan_id` in prefs plus `AdhanPlayerService.setCustomAdhan(path)`. Native keeps that path in
   memory only; `setCustomAdhan(null)` sends nothing; preview also calls `setCustomAdhan` (findings F49).

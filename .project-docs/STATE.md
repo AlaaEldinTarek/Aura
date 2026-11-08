@@ -1,5 +1,5 @@
 # Project State — 2026-11-08
-- App: Aura 1.0.0+59 (MSIX 1.0.3.114) | Analyze: 425 issues (0 errors) | Tests: 64 pass / 0 fail
+- App: Aura 1.0.0+59 (MSIX 1.0.3.114) | Analyze: 425 issues on main, 423 on `fix/fx-0-prayer-settings` (0 errors) | Tests: main 64 pass; FX-0 branch 140 Dart + 2 Kotlin pass
 - Baseline commit: 75d38b9 | Flutter 3.38.7 / Dart 3.10.7 (frozen) | Android minSdk 24 / target 36 / compile 36
 - Support target: current minSdk and newer (Android 10 must keep working; test device nova 5T = API 29)
 - Phase: Fix track before refactor (ADR 0001); bootstrap Steps 0–2.5 + Step 6 report done | Refactor Steps 3–4 after CRITICAL/HIGH fixes
@@ -7,7 +7,8 @@
 - Done (EGM): all `lib/core/*` folder READMEs; features tasks, home, main (7d5682b), prayer (e87448c), quran, achievements, auth, azkar (eca7bcc), daily_content, dhikl (2cf79a7), islamic_events, onboarding (9e07c1e), profile, qibla (88a6551), settings (be29b87), splash (569d651) — all feature folders done; android kotlin (`com/aura/hala`, F51), parents `lib/core` + `lib/features`; rules + progress: INDEX.md; drift report on modules/ + all 15 modules rewritten from code (6f83153, findings F52)
 - Current task: FX-0 — spec Approved 2026-11-07, amended A-1 2026-11-08 (+F49c, F49j: dialog scroll + selection, commit 5a) (docs/designs/fx-0-prayer-settings.md; reviews in reference/reviews/fx-0/; 14-commit order on `fix/fx-0-prayer-settings`)
 - Baseline (base build) stopped 2026-11-08: S18, S34, S01, S06 PASS; S29, S30 BLOCKED; S33 FAIL/BLOCKED (key after-fix check); S11, S13, S17, S31, S32, S35 deferred to after-fix (regression only) — reference/device-checklist.md
-- Next (FX-0): "approve B" (JUnit line only) + "approve phase FX-0" given 2026-11-08 → implement on `fix/fx-0-prayer-settings`, tests first
+- FX-0 implemented 2026-11-08 on `fix/fx-0-prayer-settings`: 14 commits d15ad6d … 6f57e28 (spec order), not pushed; Kotlin port 734 code lines, parity exact on all 21,840 fixture times
+- Next (FX-0): user pushes branch + opens PR (description draft in session scratchpad) → install FX-0 build on nova 5T on request → after-fix device runs (S01, S06, S11, S13, S17, S18, S29–S35; S33 key) → merge
 - Blockers: E01–E04 BLOCKED — host is ARM64 Windows, SDK emulator is x64-only (2026-11-08; device-checklist); adb not on PATH (use SDK path)
 - Pending user: run device-checklist baseline S01–S21 + S23 + S24 and S25 + S26 + S27 + S28 and record results (S22 done 2026-11-07: FAIL → F41a device-verified)
 - Done (Step 2.5 "fill modules/*.md"): covered by the drift rewrite (6f83153). Bootstrap prompt: reference/bootstrap-prompt-v2.1.md
