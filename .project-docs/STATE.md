@@ -1,5 +1,5 @@
 # Project State — 2026-11-08
-- App: Aura 1.1.0+60 on `release/1.1.0` (main: 1.0.0+59; MSIX 1.0.3.114) | Analyze: 418 issues (0 errors) | Tests: 162 Dart + 6 Kotlin (`./gradlew :app:testDebugUnitTest`) pass
+- App: Aura 1.1.0+60 on main, tag `v1.1.0` = 9ce26e2 (MSIX 1.0.3.114) | Analyze: 418 issues (0 errors) | Tests: 162 Dart + 6 Kotlin (`./gradlew :app:testDebugUnitTest`) pass
 - Baseline commit: 75d38b9 | Flutter 3.38.7 / Dart 3.10.7 (frozen) | Android minSdk 24 / target 36 / compile 36
 - Support target: current minSdk and newer (Android 10 must keep working; test device nova 5T = API 29)
 - Phase: Fix track before refactor (ADR 0001); bootstrap Steps 0–2.5 + Step 6 report done | Refactor Steps 3–4 after CRITICAL/HIGH fixes
@@ -8,12 +8,12 @@
 - Done: FX-0 (F36a, F36c, F52a, F53a, F51p, F49c, F49j) — merged to main 2026-11-08 via PR #1 (merge 195e284; spec docs/designs/fx-0-prayer-settings.md; PR text reference/reviews/fx-0/pr-description.md). After-fix on nova 5T: S29 PASS, S33 PASS, S30 reverse-setup observation OK. FX-0 CLOSED (DONE). Installed on the device: release 1.1.0+60 final (6c4fa8c, 2026-11-08 22:47)
 - Closed: F56 — not a bug (user changed the method to Umm al-Qura at ~16:49; app saved, recalculated and re-armed correctly; FX-0 as designed)
 - F57 (MEDIUM, UX): split Prayer Calculation dialog into Method / Asr Madhab dialogs (prayer settings page + Settings tab, two tiles, localized subtitles, select then "Done" saves + recalcs + closes; keys unchanged); supersedes F49k. DONE: merged via PR #3 (63cf25f); user device check PASS (preview 22:24); release 1.1.0
-- Release 1.1.0+60 = FX-0 + F51a + F57 + F58 (branch `release/1.1.0`, merge 6c4fa8c): AAB build/app/outputs/bundle/release/Aura_v1.1.0+60.aab (79,097,942 B) + APK; cert 84bc8109…8678971f = installed app; libapp.so identical to the user-tested preview; installed in place 22:47, smoke OK; symbols Desktop\Aura-builds\1.1.0\debug-info (older build: debug-info-superseded-b1f7cc6, never commit). Notes .project-docs/releases/1.1.0-release-notes.md (EN 497 / AR 424 chars). Not pushed, not uploaded
+- Released 1.1.0+60 (FX-0 + F51a + F57 + F58): PR #4 merged (9ce26e2), tag `v1.1.0` pushed. AAB + symbols in Desktop\Aura-builds\1.1.0 (Aura_v1.1.0+60.aab, debug-info; never commit). Cert 84bc8109…8678971f. Play upload pending (user), 20% staged rollout
 - F58 (MEDIUM, UI): Quran reader A+/A− zoom buttons cover the line start of the last two lines (device VERIFIED, page 122, 360 dp); fixed position `quran_reader_screen.dart:555–563`; DONE: merged via PR #3 (63cf25f); user device check PASS; release 1.1.0
 - Optional FX-0 regression checks (current build): S34 tonight after Isha (ID 1001 armed for tomorrow's Fajr), S18 tomorrow morning (00:05 recalc uses `cached_2026-11-09`); others when convenient: S01, S06, S11, S13, S17, scripted S30, S31, S32, S35 — reference/device-checklist.md
 - Done: "locale-dependent keys" (F51a) — merged to main 2026-11-08 via PR #2 (merge e61f345; spec docs/designs/fix-locale-keys.md; fix d9ff65c, ar-EG unit test). S27 after-fix optional (phone is English)
 - Done: F58 + F57 merged to main via PR #3 (63cf25f; specs docs/designs/fix-f58-reader-zoom.md, fix-f57-split-dialog.md). User device check PASS on preview APK 22:24 (reader bar, split dialogs, two Settings tiles); user setting back on Umm al-Qura + Shafi
-- Next: push `release/1.1.0` + Play upload of 1.1.0+60 (user). Then: spec for "sign-in & onboarding flow" (F41a + F46a + F47f + F50b) — docs/designs/fix-<name>.md via /egm:egm-draft (user)
+- Next: spec for "sign-in & onboarding flow" (F41a + F46a + F47f + F50b; user goal: returning users go straight to Home) — docs/designs/fix-<name>.md via /egm:egm-draft (user)
 - Blockers: E01–E04 BLOCKED — host is ARM64 Windows, SDK emulator is x64-only (2026-11-08; device-checklist); adb, keytool, apksigner not on PATH (SDK platform-tools, Android Studio jbr/bin, SDK build-tools; Git Bash needs MSYS_NO_PATHCONV=1 for device paths)
 - Pending user: run device-checklist baseline S01–S21 + S23 + S24 and S25 + S26 + S27 + S28 and record results (S22 done 2026-11-07: FAIL → F41a device-verified)
 - Done (Step 2.5 "fill modules/*.md"): covered by the drift rewrite (6f83153). Bootstrap prompt: reference/bootstrap-prompt-v2.1.md
