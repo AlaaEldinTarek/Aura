@@ -515,47 +515,13 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
   /// AdhanCalculationMethod.value format ('UmmAlQura').
   CalculationMethod _getCalculationMethod() {
     if (_prefs == null) return CalculationMethod.muslimWorldLeague;
-    final methodString = _prefs!.getString('calculation_method') ?? 'muslimWorldLeague';
-
-    // Try direct enum name match first.
-    final direct = CalculationMethod.values.firstWhere(
-      (m) => m.name == methodString,
-      orElse: () => CalculationMethod.muslimWorldLeague,
-    );
-    if (direct != CalculationMethod.muslimWorldLeague ||
-        methodString == 'muslimWorldLeague') {
-      return direct;
-    }
-
-    // Map from AdhanCalculationMethod.value strings saved by prayer_screen.
-    switch (methodString) {
-      case 'UmmAlQura':
-      case 'Qatar':
-        return CalculationMethod.makkah;
-      case 'NorthAmerica':
-        return CalculationMethod.isna;
-      case 'Egyptian':
-        return CalculationMethod.egyptian;
-      case 'Karachi':
-        return CalculationMethod.karachi;
-      case 'Tehran':
-        return CalculationMethod.tehran;
-      case 'Kuwait':
-      case 'Dubai':
-        return CalculationMethod.kuwait;
-      default:
-        return CalculationMethod.muslimWorldLeague;
-    }
+    return calculationMethodFromPref(_prefs!.getString('calculation_method'));
   }
 
-  /// Get Asr Madhab from preferences
+  /// Get Asr Madhab from preferences ('Shafi' / 'Hanafi', any case).
   AsrMadhab _getAsrMadhab() {
     if (_prefs == null) return AsrMadhab.shafi;
-    final madhabString = _prefs!.getString('asr_madhab') ?? 'shafi';
-    return AsrMadhab.values.firstWhere(
-      (m) => m.name == madhabString,
-      orElse: () => AsrMadhab.shafi,
-    );
+    return asrMadhabFromPref(_prefs!.getString('asr_madhab'));
   }
 
   /// Save calculation method

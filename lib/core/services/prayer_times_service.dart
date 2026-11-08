@@ -267,6 +267,16 @@ class PrayerTimesService {
       case CalculationMethod.proportional:
         // Proportional - use MWL
         return adhan.CalculationMethod.muslim_world_league;
+      case CalculationMethod.qatar:
+        return adhan.CalculationMethod.qatar;
+      case CalculationMethod.dubai:
+        return adhan.CalculationMethod.dubai;
+      case CalculationMethod.turkey:
+        return adhan.CalculationMethod.turkey;
+      case CalculationMethod.singapore:
+        return adhan.CalculationMethod.singapore;
+      case CalculationMethod.moonsightingCommittee:
+        return adhan.CalculationMethod.moon_sighting_committee;
     }
   }
 

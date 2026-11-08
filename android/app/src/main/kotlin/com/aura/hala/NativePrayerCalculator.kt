@@ -149,7 +149,9 @@ object NativePrayerCalculator {
         val asrH = dhuhrH + asrHourAngle(lat, decl, shadowFactor)
 
         // Makkah (UmmAlQura): Dhuhr +3 min
-        val dhuhrAdj = if (methodName == "makkah") dhuhrH + 3.0 / 60.0 else dhuhrH
+        val dhuhrAdj = if (methodName == "makkah" ||
+            methodName == "qatar" // FX-0 interim: replaced by the adhan port (commit 12)
+        ) dhuhrH + 3.0 / 60.0 else dhuhrH
 
         return PrayerResult(
             fajr    = toEpoch(cal, fajrH),
@@ -233,6 +235,11 @@ object NativePrayerCalculator {
         "kuwait"       -> Triple(18.0,  17.5, false)
         "fixedAngle"   -> Triple(19.5,  17.5, false)
         "proportional" -> Triple(15.0,  15.0, false)
+        "qatar"        -> Triple(18.5,  90.0, true)  // FX-0 interim: replaced by the adhan port (commit 12)
+        "dubai"        -> Triple(18.0,  17.5, false) // FX-0 interim: replaced by the adhan port (commit 12)
+        "turkey"       -> Triple(18.0,  17.0, false) // FX-0 interim: replaced by the adhan port (commit 12)
+        "singapore"    -> Triple(18.0,  17.0, false) // FX-0 interim: replaced by the adhan port (commit 12)
+        "moonsightingCommittee" -> Triple(18.0, 17.0, false) // FX-0 interim: replaced by the adhan port (commit 12)
         else           -> Triple(18.0,  17.0, false)  // MWL
     }
 
