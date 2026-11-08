@@ -819,9 +819,12 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   `.claude/worktrees/crazy-haibt` (branch `claude/crazy-haibt` deleted). Files: `task.dart`, `task_service.dart`,
   `task_card.dart`, `tasks_screen.dart`. Base is 261 commits behind main.
 
-## F56 — Alarms on Umm al-Qura after MWL was restored (2026-11-08) — device VERIFIED, cause UNKNOWN
-- **(a) Selected method MWL, but alarms and stored method become Umm al-Qura** — **Tag: CRITICAL (user 2026-11-08);
-  release 1.1.0 ON HOLD until fixed.** Evidence (nova 5T, FX-0 build, PID 26682;
+## F56 — Alarms on Umm al-Qura after MWL was restored (2026-11-08) — CLOSED: user action, not a bug
+- **Closed 2026-11-08 (user): the user changed the method to Umm al-Qura at ~16:49 (app in foreground
+  16:49:29–16:50:38). The app correctly saved it, recalculated and re-armed all alarms (Isha 18:39 = Maghrib + 90 min);
+  FX-0 behaved as designed. Release hold removed.** Original record kept below for reference.
+- **(a) Selected method MWL, but alarms and stored method become Umm al-Qura** — ~~Tag: CRITICAL (user 2026-11-08);
+  release 1.1.0 ON HOLD until fixed.~~ Evidence (nova 5T, FX-0 build, PID 26682;
   `reference/logcat/S33-fx0-2026-11-08.txt`, `S33-fx0-alarm.txt`, `logcat-maghrib-2026-11-08.txt`):
   - 15:43:49 `Saved calculation settings: MuslimWorldLeague, Shafi` → recalc `muslimWorldLeague`; dumpsys 15:44: Isha
     alarm 18:22, Maghrib 17:09, Isha post-check 18:52 (MWL).
@@ -839,8 +842,8 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
     in foreground 15:44–15:55 and 16:49:29–16:50:38 (system buffer). Investigation: see log 2026-11-08.
 
 ## F57 — Split the Prayer Calculation dialog (user request with screenshot, 2026-11-08) — UX
-- **(a) One dialog for method + madhab; split into two** — **Tag: MEDIUM (UX); supersedes F49k; schedule: same fix group
-  as F56 (after its root cause is known), included in release 1.1.0.** Requested behavior:
+- **(a) One dialog for method + madhab; split into two** — **Tag: MEDIUM (UX); supersedes F49k; schedule: included in
+  release 1.1.0 (F56, with which it was grouped, closed as not a bug).** Requested behavior:
   - Prayer settings page: "Calculation Method" tile → dialog with the 12 methods only; "Asr Madhab" tile → separate
     dialog with Shafi / Hanafi only (today both open `PrayerCalculationSettingsDialog`, `prayer_screen.dart:1480–1535`).
   - Settings tab: the single "Calculation Method & Madhab" tile (`settings_screen.dart:95–118`) becomes two tiles with
@@ -853,7 +856,14 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
     unchanged — no contract change.
   - Spec: short note, no EGM review. Tests: widget tests for both dialogs (current selection shown, tap moves the
     radio, "Done" fires the callback once with the chosen value, dialog closes).
-  - Note for F56: today the dialog saves on every tap; "save on Done only" also removes accidental saves.
+  - Note: today the dialog saves on every tap; "save on Done only" also prevents accidental saves.
+
+## F58 — Quran reader A+/A− zoom buttons overlap content (user report, 2026-11-08) — UI
+- **(a) A+/A− overlap** — **Tag: MEDIUM (UI); fix track, needs spec.** User-reported overlap of the mobile zoom
+  buttons in the Quran reader. Code (static): `_MobileZoomControls` are drawn at a fixed `Positioned(right: 16,
+  bottom: 80)` over the mushaf whenever the UI is shown on mobile (`quran_reader_screen.dart:555–563`, widget
+  `:1571`); the position ignores RTL (not `PositionedDirectional`) and the mushaf/page layout. What exactly they cover
+  (mushaf text, page-nav buttons, bottom bar) and on which screen size: UNVERIFIED (screenshot not in docs).
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
