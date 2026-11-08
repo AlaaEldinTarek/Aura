@@ -1,10 +1,10 @@
 # Android Native (`com.aura.hala`)
 
 ## Overview
-All native Android code (30 Kotlin files, flat): the Flutter host activity and its MethodChannels, exact-alarm
-receivers (adhan, reminders, post-prayer check, daily summary, Jumu'ah, azkar, tasks, Focus Mode), the prayer
-foreground service, a pure-Kotlin prayer calculator, home-screen widgets, and full-screen activities shown over the
-lock screen. Cross-folder feature flows: [notifications-native](/.project-docs/modules/notifications-native.md),
+All native Android code (30 Kotlin files, flat, plus the `adhan/` subfolder): the Flutter host activity and its
+MethodChannels, exact-alarm receivers (adhan, reminders, post-prayer check, daily summary, Jumu'ah, azkar, tasks,
+Focus Mode), the prayer foreground service, a pure-Kotlin prayer calculator (`adhan/`: line-by-line port of the adhan
+package, see its README), home-screen widgets, and full-screen activities shown over the lock screen. Cross-folder feature flows: [notifications-native](/.project-docs/modules/notifications-native.md),
 [widgets](/.project-docs/modules/widgets.md), [focus-mode](/.project-docs/modules/focus-mode.md),
 [prayer-tracking](/.project-docs/modules/prayer-tracking.md). Shared names are contracts:
 [method-channels](/.project-docs/contracts/method-channels.md), [prefs-keys](/.project-docs/contracts/prefs-keys.md),
@@ -17,7 +17,7 @@ lock screen. Cross-folder feature flows: [notifications-native](/.project-docs/m
 | `MainActivity.kt` | `MainActivity` (`FlutterFragmentActivity`): registers all channels in `configureFlutterEngine` (`adhan`, `prayer_alarms`, `background_service`, `widgets`, `navigation`, `focus_mode`, `ringer_mode`, `app_control`); creates channels `prayer_times` (HIGH) and `prayer_tracking` (DEFAULT); turns launch extras into `navigation` calls and `widget_navigate_to_tab`; schedules `PrayerRecalcWorker`. All members private |
 | `PrayerAlarmReceiver.kt` | `PrayerAlarmReceiver`: adhan / 45-min reminder / post-prayer check receiver. Companion: `schedulePrayerAlarm`, `scheduleReminderAlarm`, `scheduleDelayedReminder`, `schedulePostPrayerCheck`, `cancelPostPrayerCheck`, `cancelAllAlarms`, `markPrayerTracked`, ID helpers `getNotificationId` / `getReminderNotificationId` / `getPostCheckNotificationId`, `EXTRA_*` and `ACTION_*` constants |
 | `PrayerForegroundService.kt` | `PrayerForegroundService`: persistent next-prayer notification (9999). Companion: `startService`, `stopService`, `updatePrayerTimes`, `nudge`, `getInstance`, `requestFlutterUpdateStatic` (despite the name: native recalc only) |
-| `NativePrayerCalculator.kt` | `NativePrayerCalculator.calculateAndSave(context)`: uses Dart's `cached_{date}_*` times when all 6 exist, else own astronomy; saves `*_time` + `next_prayer_*`; schedules adhan alarms |
+| `NativePrayerCalculator.kt` | `NativePrayerCalculator.calculateAndSave(context)`: uses Dart's `cached_{date}_*` times (today … +6) when all 6 exist, else `calculate(lat, lng, y, m, d, zone, method, madhab)` (adhan port in `adhan/`, logs the fallback); saves `*_time` + `next_prayer_*`; schedules adhan alarms. Unknown method → MWL with a warning |
 | `DailyRecalcReceiver.kt` | `DailyRecalcReceiver.schedule`: 00:05 daily recalc (`DAILY_RECALC`, rc 9100), then starts the foreground service |
 | `PrayerRecalcWorker.kt` | `PrayerRecalcWorker.schedule`: WorkManager unique periodic work `aura_periodic_prayer_recalc` (6 h, KEEP) |
 | `PrayerBootReceiver.kt` | `PrayerBootReceiver`: after boot / package replace (30 s delay) starts `PrayerRescheduleService`, daily summary, Jumu'ah, foreground service, daily recalc, worker |
@@ -84,6 +84,7 @@ lock screen. Cross-folder feature flows: [notifications-native](/.project-docs/m
   `PrayerRescheduleService`, `FocusModeService` (self-restarts until the timer ends).
 
 ## Verification
-- No Kotlin unit tests (`android/app/src/test` absent). Build: `flutter build apk --release --obfuscate
+- Kotlin unit tests: `android/app/src/test/kotlin/com/aura/hala/NativePrayerCalculatorParityTest.kt` (JUnit 4,
+  test-only dependency) — run `./gradlew :app:testDebugUnitTest` in `android/`. Build: `flutter build apk --release --obfuscate
   --split-debug-info=build/debug-info`; behavior: [device checklist](/.project-docs/reference/device-checklist.md) and
   the logcat filters in the log-tags contract.

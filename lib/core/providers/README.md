@@ -4,7 +4,7 @@
 Riverpod state layer for the whole app (12 files, flat, no subdirectories). Providers wrap the singleton services in
 `lib/core/services/` (`XService.instance`) and expose state to `lib/features/`. Most notifiers are `StateNotifier`s that
 load from SharedPreferences / Firestore in an async `_init()` and write through on every setter.
-`prayer_times_provider.dart` is also the **scheduling hub**: each new prayer-times date fans out to native alarms,
+`prayer_times_provider.dart` is also the **scheduling hub**: each change of the prayer-times inputs fans out to native alarms,
 widgets, the foreground service and desktop timers. Edit it carefully (CLAUDE.md).
 
 ## Local Interface & Invariants
@@ -36,9 +36,14 @@ widgets, the foreground service and desktop timers. Edit it carefully (CLAUDE.md
   `markDate` blocks days after the effective day, and for the real calendar day it requires `isPrayerTimeReached` (adhan + 20 min, `utils/prayer_time_rules.dart`).
   Local state changes only if the service write returns `true`. `updatePrayer` / `removePrayer` are optimistic-only (no
   Firestore write). State is stale after 30 s or a day change.
-- **Prayer side effects run once per date** (`PrayerTimesNotifier.loadPrayerTimes`, `_lastSideEffectsDate`,
-  guard set synchronously). The order is fixed and every step is try/catch-isolated: post-prayer checks → task digest → adhan alarms →
-  desktop timers → widgets → prayer-record cleanup → foreground service → accurate-times cache.
+- **Prayer side effects run when the inputs change** (`PrayerTimesNotifier.loadPrayerTimes`, FX-0): an input
+  fingerprint (`sideEffectsFingerprint` in `utils/prayer_refresh.dart`: wall-clock date, method, madhab, iqama, the
+  times of 7 calendar days) is compared with `_lastFingerprint` and stored synchronously; each run takes a number from
+  the static `_generation` (reset in tests with `resetGenerationForTest()`) and stops before any platform write once a
+  newer run has started. The order is fixed and every step is try/catch-isolated: widgets → desktop timers →
+  foreground service (`updatePrayerTimes`) → 7-day accurate-times cache (`buildNativeCache`) → adhan alarms at next
+  occurrence (`nextOccurrences`) → post-prayer checks (`postChecksToSchedule`, never cancelled). Task digest → prayer-record
+  cleanup run after them once per wall-clock day (`_lastDailyEffectsDate`).
 - **Day transition**: a 1-minute timer (`_quickUpdateNextPrayer`) only flips next/current flags. A full
   `loadPrayerTimes` runs when the next prayer falls on a later date. `updateNextPrayer` reloads for the next prayer's date.
   On desktop, a wall-clock gap of more than 3 min (sleep) re-runs `DesktopPrayerScheduler.schedulePrayerTimers`.

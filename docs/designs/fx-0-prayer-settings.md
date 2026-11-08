@@ -1,7 +1,7 @@
 # FX-0 — Prayer settings: correct method / madhab, per-date times, full refresh
 
 Author: Alaa Eldin Tarek · Date: 2026-11-07 · Status: Approved (2026-11-07) · Amended A-1 (2026-11-08: calculation
-dialog scroll + selection, § Changes 8) · Findings: F36a, F36c, F52a, F53a, F51p, F49c, F49j · Fix-track rule: [ADR 0001](../../.project-docs/decisions/0001-fix-track-before-refactor.md)
+dialog scroll + selection, § Changes 8) · Implemented 2026-11-08 on `fix/fx-0-prayer-settings` (§ Implementation notes) · Findings: F36a, F36c, F52a, F53a, F51p, F49c, F49j · Fix-track rule: [ADR 0001](../../.project-docs/decisions/0001-fix-track-before-refactor.md)
 · Decision record: [fx-0-decisions.md](fx-0-decisions.md) · Modules:
 [prayer.md](../../.project-docs/modules/prayer.md), [notifications-native.md](../../.project-docs/modules/notifications-native.md)
 · Contracts: [prefs-keys.md](../../.project-docs/contracts/prefs-keys.md),
@@ -822,6 +822,23 @@ Release notes (Goal 7) are not a repo file; the author pastes the text into the 
 - **Port size**: code lines of `adhan/*.kt` (§ Terms) against the 1,650 stop rule (item 13); reported in the PR.
 - **Device**: before/after runs of S01, S06, S11, S13, S17, S18, S29–S35 on the nova 5T (API 29); results recorded
   in the checklist. After FX-0, S29 is set up through the dialog at normal Display and Font size (A-1, Goal 8). Nothing is reported as passed unless it ran.
+
+### Implementation notes (2026-11-08)
+What the implementation changed relative to the text above (all within the file boundary):
+- **Item 11:** the dialog pop is guarded by the State's `mounted`, not `context.mounted`: the analyzer reports
+  `use_build_context_synchronously` for `context.mounted` inside a `State`. Same behaviour, no new analyzer issue.
+- **Item 21:** `show()` moved from the end of the class to the widget class next to `createState` (the old class body
+  is now the State); its signature is unchanged. The widget test loads the bundled Roboto / Cairo fonts: with the
+  default test font (every glyph a full em square) the unchanged section header (`_buildSectionHeader`) overflows by
+  50 px at 360 dp, which does not happen with real fonts. The two `.toList()` calls in the spreads were dropped
+  (2 fewer analyzer infos).
+- **Item 13:** `adhanDayOfYear` returns the calendar day of the year, which equals Dart's host-dependent `dayOfYear`
+  on hosts with a UTC offset in [0, 24 h) (the fixture host rule, item 2). `TimeZone` → `ZoneId` via `ZoneId.of(zone.id)`.
+  Port size: 734 code lines (estimate 824, stop rule 1,650).
+- **Item 2:** the fixture was generated on a UTC+3 host (Asia/Riyadh), not Africa/Cairo; both satisfy the offset ≥ 0 rule.
+- **Results:** Dart 140 tests pass (64 existing + 76 new); Kotlin parity: 21,840 of 21,840 fixture times equal the
+  package to the millisecond; `flutter analyze` 423 issues (baseline 425); release APK builds at every commit.
+  Device after-fix runs: pending (device-checklist.md).
 
 ---
 
