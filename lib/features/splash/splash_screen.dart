@@ -8,6 +8,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/services/notification_service.dart';
+import '../../core/utils/start_route.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
   const SplashScreen({super.key});
@@ -214,14 +215,11 @@ class _AuthNavigationHandler extends ConsumerWidget {
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (context.mounted) {
-        String destination;
-        if (isGuest) {
-          destination = isFirstLaunch ? '/onboarding' : '/home';
-        } else if (user != null) {
-          destination = isFirstLaunch ? '/onboarding' : '/home';
-        } else {
-          destination = '/login';
-        }
+        final destination = resolveStartRoute(
+          isSignedIn: user != null,
+          isGuest: isGuest,
+          isFirstLaunch: isFirstLaunch,
+        );
 
         Navigator.of(context).pushReplacementNamed(destination);
       }
