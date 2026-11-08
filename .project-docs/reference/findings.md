@@ -868,6 +868,13 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   `:1571`); the position ignores RTL (not `PositionedDirectional`) and the mushaf/page layout. Other pages / screen
   sizes: UNVERIFIED.
 
+## F59 — Logout keeps local data (user 2026-11-08, from spec fix-signin-onboarding) — privacy
+- **(a) Previous user's local data survives logout** — **Tag: MEDIUM (privacy); decide later (user 2026-11-08).**
+  Logout (`profile_screen.dart:1035–1037`; F47f fix keeps this) calls only `signOut()`; local prefs and local data
+  (tasks, prayer tracking, wird, settings) stay on the device. A second account or a guest on a shared phone may see
+  the previous user's local data. Code VERIFIED (static) for "nothing is cleared"; which data is actually visible to
+  the next account: UNVERIFIED (needs a device check). Open product question: clear on logout, keep, or ask.
+
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
 - `ringer_mode` handler is in `MainActivity`, not `SilentModeAutomation.kt`.
