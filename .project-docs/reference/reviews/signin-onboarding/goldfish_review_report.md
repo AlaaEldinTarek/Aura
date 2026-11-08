@@ -1,3 +1,5 @@
+Status: resolved — all 22 applied in f09ff33 / b819648
+
 # Goldfish Annotated Review Report
 
 **Target:** `docs/designs/fix-signin-onboarding.md` (lines 35–end; B1 also touches line 26 and STATE.md:16)
