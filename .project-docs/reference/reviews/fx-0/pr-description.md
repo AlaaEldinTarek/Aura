@@ -82,8 +82,25 @@ NativePrayerCalculatorParityTest > everyFixtureRowWithinOneMinute FAILED
 - Item 2: fixture generated on a UTC+3 host (Asia/Riyadh) instead of Africa/Cairo (both offset ≥ 0).
 
 ## Device verification (nova 5T, API 29)
-Not run yet. Baseline: S01, S06, S18, S34 PASS; S29, S30 BLOCKED; S33 FAIL/BLOCKED (key after-fix check). After-fix:
-S01, S06, S11, S13, S17, S18, S29–S35 (S29 at normal Display/Font size). Nothing here is reported as device-passed.
+Baseline (base build 1.0.0+59, 2026-11-08): S01, S06, S18, S34 PASS; S29, S30 BLOCKED (Hanafi unreachable, F49c);
+S33 FAIL/BLOCKED (method save never recalculated, F36c).
+
+FX-0 build (code f9f23ad, same release certificate as the installed base, installed in place with `adb install -r`
+2026-11-08 14:35, data kept). Details: `.project-docs/reference/device-checklist.md`; logs (local, gitignored) under
+`.project-docs/reference/logcat/`.
+
+| Scenario | Date (phone time) | Result | Log files |
+| --- | --- | --- | --- |
+| S29 Hanafi Asr | 2026-11-08 14:38–15:33 | **PASS** — Hanafi reached and tapped at normal Display/Font size, radio moved; immediate recalc; app and widget Asr 15:33 (= package); alarm 14:46 → 15:33, post-check 15:16 → 16:03; no adhan at 14:46; adhan fired 15:33:00, iqama 15:48, no MainActivity launch | `fx0-after-install-alarm.txt`, `S29-fx0-alarm.txt`, `S29-fx0-2026-11-08.txt`, `S29-fx0-fire-2026-11-08.txt`, `S29-fx0-asr-2026-11-08.txt` |
+| S33 Corrected methods | 2026-11-08 15:39–15:43 | **PASS** — Qatar, Dubai, (Kuwait), Turkey, Singapore, Moonsighting Committee, MWL restore: each save recalculated immediately and equals the adhan package for the device location; alarms followed; Isha back at 18:22 after restore | `S33-fx0-2026-11-08.txt`, `S33-fx0-alarm.txt` |
+| S30 No stale alarm | 2026-11-08 15:36 | **Observation (reverse setup)** — Shafi set after the Hanafi Asr fired: Asr re-armed only for tomorrow (14:45), no second Asr adhan today; Asr post-check kept at 16:03 (CUJ 2 exception a). Scripted S30 not run | `S33-fx0-2026-11-08.txt`, `S33-fx0-alarm.txt` |
+
+Pending:
+- **S34** (tomorrow's Fajr armed after Isha) — tonight after Isha 18:22: `dumpsys alarm` shows ID 1001 for 2026-11-09 Fajr.
+- **S18** (stale recalculation across midnight) — tomorrow morning: 00:05 recalc uses `cached_2026-11-09` (7-day cache), no MainActivity launch.
+- Also pending: S01, S06, S11, S13, S17, scripted S30, S31, S32, S35.
+
+Nothing else is reported as device-passed.
 
 ## Release notes (Goal 7, Play Console)
 - EN: "More accurate adhan timing when the app isn't open, including daylight-saving changes." + Hanafi Asr and the
