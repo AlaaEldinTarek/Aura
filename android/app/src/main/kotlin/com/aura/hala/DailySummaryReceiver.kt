@@ -11,6 +11,7 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import java.util.Calendar
+import java.util.Locale
 
 class DailySummaryReceiver : BroadcastReceiver() {
 
@@ -53,9 +54,11 @@ class DailySummaryReceiver : BroadcastReceiver() {
             Log.d(TAG, "📅 Daily summary scheduled for ${String.format("%02d:%02d", hour, minute)}")
         }
 
-        /** YYYY-MM-DD key for prayer_status_* prefs; must match the writers' format. */
-        internal fun dateKey(cal: Calendar): String =
-            "${cal.get(Calendar.YEAR)}-${String.format("%02d", cal.get(Calendar.MONTH) + 1)}-${String.format("%02d", cal.get(Calendar.DAY_OF_MONTH))}"
+        /** YYYY-MM-DD key for prayer_status_* prefs; Locale.US like the writers (F51a: never device digits). */
+        internal fun dateKey(cal: Calendar): String = String.format(
+            Locale.US, "%04d-%02d-%02d",
+            cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH)
+        )
 
         fun cancel(context: Context) {
             val intent = Intent(context, DailySummaryReceiver::class.java).apply { action = ACTION }

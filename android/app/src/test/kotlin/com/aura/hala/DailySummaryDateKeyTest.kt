@@ -9,7 +9,6 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 
 /**
@@ -69,7 +68,6 @@ class DailySummaryDateKeyTest {
         assertCutoffOrdering()
     }
 
-    @Ignore("F51a: enabled by the Locale.US fix")
     @Test
     fun arabicLocale_keysMatchWriters() {
         Locale.setDefault(Locale.forLanguageTag("ar-EG"))
@@ -77,7 +75,6 @@ class DailySummaryDateKeyTest {
         assertKeysMatchWriters()
     }
 
-    @Ignore("F51a: enabled by the Locale.US fix")
     @Test
     fun arabicLocale_cutoffOrdering() {
         Locale.setDefault(Locale.forLanguageTag("ar-EG"))
