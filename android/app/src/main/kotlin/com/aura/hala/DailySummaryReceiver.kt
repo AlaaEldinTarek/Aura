@@ -53,6 +53,10 @@ class DailySummaryReceiver : BroadcastReceiver() {
             Log.d(TAG, "📅 Daily summary scheduled for ${String.format("%02d:%02d", hour, minute)}")
         }
 
+        /** YYYY-MM-DD key for prayer_status_* prefs; must match the writers' format. */
+        internal fun dateKey(cal: Calendar): String =
+            "${cal.get(Calendar.YEAR)}-${String.format("%02d", cal.get(Calendar.MONTH) + 1)}-${String.format("%02d", cal.get(Calendar.DAY_OF_MONTH))}"
+
         fun cancel(context: Context) {
             val intent = Intent(context, DailySummaryReceiver::class.java).apply { action = ACTION }
             val pending = PendingIntent.getBroadcast(
@@ -152,16 +156,13 @@ class DailySummaryReceiver : BroadcastReceiver() {
         schedule(context, timeStr)
     }
 
-    private fun todayDateKey(): String {
-        val cal = Calendar.getInstance()
-        return "${cal.get(Calendar.YEAR)}-${String.format("%02d", cal.get(Calendar.MONTH) + 1)}-${String.format("%02d", cal.get(Calendar.DAY_OF_MONTH))}"
-    }
+    private fun todayDateKey(): String = dateKey(Calendar.getInstance())
 
     /** Remove prayer_status_{name}_{YYYY-MM-DD} keys older than 7 days. */
     private fun pruneOldPrayerStatuses(context: Context) {
         val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
         val cutoffCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -7) }
-        val cutoff = "${cutoffCal.get(Calendar.YEAR)}-${String.format("%02d", cutoffCal.get(Calendar.MONTH) + 1)}-${String.format("%02d", cutoffCal.get(Calendar.DAY_OF_MONTH))}"
+        val cutoff = dateKey(cutoffCal)
         val editor = prefs.edit()
         var removed = 0
         for (key in prefs.all.keys) {
