@@ -9,6 +9,7 @@ class TaskCard extends StatelessWidget {
   final VoidCallback? onToggle;
   final VoidCallback? onDelete;
   final VoidCallback? onLongPress;
+  final VoidCallback? onPin;
   final bool isSelected;
 
   const TaskCard({
@@ -18,6 +19,7 @@ class TaskCard extends StatelessWidget {
     this.onToggle,
     this.onDelete,
     this.onLongPress,
+    this.onPin,
     this.isSelected = false,
   });
 
@@ -170,6 +172,18 @@ class TaskCard extends StatelessWidget {
                         ],
                       ),
                     ),
+                    if (onPin != null)
+                      IconButton(
+                        icon: Icon(
+                          task.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+                          size: 20,
+                        ),
+                        color: task.isPinned ? Colors.amber.shade600 : Colors.grey,
+                        onPressed: onPin,
+                        tooltip: isArabic
+                            ? (task.isPinned ? 'إلغاء التثبيت' : 'تثبيت')
+                            : (task.isPinned ? 'Unpin' : 'Pin'),
+                      ),
                     if (onDelete != null)
                       IconButton(
                         icon: const Icon(Icons.delete_outline, size: 20),
@@ -182,6 +196,18 @@ class TaskCard extends StatelessWidget {
               ),
             ),
           ),
+          // Pin indicator — top-right corner
+          if (task.isPinned)
+            Positioned(
+              top: 6,
+              right: isArabic ? null : 6,
+              left: isArabic ? 6 : null,
+              child: Icon(
+                Icons.push_pin,
+                size: 13,
+                color: Colors.amber.shade600,
+              ),
+            ),
           // Left accent bar — top layer
           if (showAccent)
             Positioned(

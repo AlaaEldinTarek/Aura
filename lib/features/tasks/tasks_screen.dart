@@ -774,28 +774,45 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     bool isVisible(Task t) =>
         !t.isCompleted || _recentlyCompleted.contains(t.id);
 
+    // Pin-aware comparator: pinned tasks float to top, then original order
+    int pinnedFirst(Task a, Task b) {
+      if (a.isPinned && !b.isPinned) return -1;
+      if (!a.isPinned && b.isPinned) return 1;
+      return 0;
+    }
+
     final overdueTasks = tasks
         .where((t) => isVisible(t) && t.isOverdue)
         .toList()
-      ..sort((a, b) =>
-          (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099)));
+      ..sort((a, b) {
+        final pin = pinnedFirst(a, b);
+        if (pin != 0) return pin;
+        return (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099));
+      });
 
     final todayTasks = tasks
         .where((t) => isVisible(t) && t.isDueToday && !t.isOverdue)
         .toList()
-      ..sort((a, b) =>
-          (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099)));
+      ..sort((a, b) {
+        final pin = pinnedFirst(a, b);
+        if (pin != 0) return pin;
+        return (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099));
+      });
 
     final upcomingTasks = tasks
         .where((t) => isVisible(t) && t.isUpcoming)
         .toList()
-      ..sort((a, b) =>
-          (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099)));
+      ..sort((a, b) {
+        final pin = pinnedFirst(a, b);
+        if (pin != 0) return pin;
+        return (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099));
+      });
 
     final otherTasks = tasks
         .where((t) =>
             isVisible(t) && !t.isDueToday && !t.isUpcoming && !t.isOverdue)
-        .toList();
+        .toList()
+      ..sort(pinnedFirst);
 
     final completedTasks = tasks
         .where((t) => t.isCompleted && !_recentlyCompleted.contains(t.id))
@@ -942,6 +959,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
         onTap: () => _editTask(task),
         onDelete: () => _deleteTask(task, isArabic),
         onLongPress: () => _showContextMenu(task, isArabic),
+        onPin: () => _pinTask(task),
       ),
     );
   }
@@ -987,6 +1005,24 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
                 ),
               ),
               const Divider(height: 20),
+
+              // Pin / Unpin
+              ListTile(
+                leading: Icon(
+                  task.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+                  size: 22,
+                  color: task.isPinned ? Colors.amber.shade600 : null,
+                ),
+                title: Text(
+                  task.isPinned
+                      ? (isArabic ? 'إلغاء التثبيت' : 'Unpin')
+                      : (isArabic ? 'تثبيت' : 'Pin'),
+                ),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _pinTask(task);
+                },
+              ),
 
               // Edit
               ListTile(
@@ -1249,6 +1285,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
   }
 
   // ─── Actions ─────────────────────────────────────────────────────────────
+
+  Future<void> _pinTask(Task task) async {
+    final userId = ref.read(currentUserIdProvider);
+    await TaskService.instance.toggleTaskPin(userId: userId, taskId: task.id);
+  }
 
   bool _isToggling = false;
 

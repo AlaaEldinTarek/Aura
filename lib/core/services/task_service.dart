@@ -417,6 +417,37 @@ class TaskService {
     debugPrint('TaskService: Created next recurrence for task ${task.id}');
   }
 
+  /// Toggle pin state of a task
+  Future<bool> toggleTaskPin({
+    required String userId,
+    required String taskId,
+  }) async {
+    try {
+      final taskRef = _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('tasks')
+          .doc(taskId);
+
+      Task? currentTask = _taskCache[taskId];
+      if (currentTask == null) {
+        final doc = await taskRef.get();
+        if (!doc.exists) return false;
+        currentTask = Task.fromFirestore(doc);
+      }
+
+      final newPinned = !currentTask.isPinned;
+      await taskRef.update({'isPinned': newPinned});
+      _taskCache[taskId] = currentTask.copyWith(isPinned: newPinned);
+
+      debugPrint('TaskService: ${newPinned ? 'Pinned' : 'Unpinned'} task $taskId');
+      return true;
+    } catch (e) {
+      debugPrint('TaskService: Error toggling pin - $e');
+      return false;
+    }
+  }
+
   /// Delete a task
   Future<bool> deleteTask({
     required String userId,

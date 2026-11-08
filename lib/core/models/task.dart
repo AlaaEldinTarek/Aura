@@ -13,6 +13,7 @@ class Task {
   final DateTime? completedAt;
   final List<String>? tags;
   final bool hasDueTime;
+  final bool isPinned;
   // Recurrence fields
   final RecurrenceType recurrenceType;
   final int recurrenceInterval;
@@ -31,6 +32,7 @@ class Task {
     this.completedAt,
     this.tags,
     this.hasDueTime = false,
+    this.isPinned = false,
     this.recurrenceType = RecurrenceType.none,
     this.recurrenceInterval = 1,
     this.recurrenceEndDate,
@@ -62,6 +64,7 @@ class Task {
           ? List<String>.from(data['tags'] as List)
           : null,
       hasDueTime: data['hasDueTime'] as bool? ?? false,
+      isPinned: data['isPinned'] as bool? ?? false,
       recurrenceType: RecurrenceType.fromString(
           data['recurrenceType'] as String? ?? 'none'),
       recurrenceInterval: data['recurrenceInterval'] as int? ?? 1,
@@ -85,6 +88,7 @@ class Task {
       'completedAt': completedAt?.toIso8601String(),
       'tags': tags,
       'hasDueTime': hasDueTime,
+      'isPinned': isPinned,
       'recurrenceType': recurrenceType.value,
       'recurrenceInterval': recurrenceInterval,
       'recurrenceEndDate': recurrenceEndDate?.toIso8601String(),
@@ -105,6 +109,7 @@ class Task {
     DateTime? completedAt,
     List<String>? tags,
     bool? hasDueTime,
+    bool? isPinned,
     RecurrenceType? recurrenceType,
     int? recurrenceInterval,
     DateTime? recurrenceEndDate,
@@ -126,6 +131,7 @@ class Task {
       completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
       tags: tags ?? this.tags,
       hasDueTime: hasDueTime ?? this.hasDueTime,
+      isPinned: isPinned ?? this.isPinned,
       recurrenceType: recurrenceType ?? this.recurrenceType,
       recurrenceInterval: recurrenceInterval ?? this.recurrenceInterval,
       recurrenceEndDate: clearRecurrenceEndDate
