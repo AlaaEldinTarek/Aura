@@ -644,6 +644,11 @@ calculator method/madhab strings equal Dart enum `.name` values (`prayer_setting
   launches azkar at iqama (`AdhanFullScreenActivity.kt:94–101`) and `AzkarAlarmReceiver` (scheduled at iqama + 10 min,
   `PrayerAlarmReceiver.kt:569–572`) launches it again; the 3 s delayed lambda is not removed in `onDestroy`, so azkar
   opens even if the user closed the adhan screen during "Stand for prayer".
+  Device evidence (2026-11-08, nova 5T, base, Zuhr): adhan screen closed at 11:38:04 (before iqama 11:53);
+  `AzkarAlarmReceiver` fired 12:03:00 (iqama + 10 min) and `ActivityTaskManager` logged two
+  `START … AzkarFullScreenActivity` 130 ms apart (12:03:00.074 and .207; the second returned result 3, delivered to
+  the existing screen), so the user saw one screen. Cause UNKNOWN; not investigated (user 2026-11-08)
+  (`reference/logcat/dhuhr-2026-11-08.txt`).
 - **(k) Fallback adhan cannot be stopped** — **Tag: fix track MEDIUM (adhan).** After a failed custom/built-in
   attempt `releasePlayer()` drops the volume-key stop; the final notification-sound fallback uses an untracked local
   `MediaPlayer` (`AdhanPlayer.kt:401–412`), so `stop()` and `isPlaying()` ignore it; a `MediaPlayer` leaks when a raw
@@ -785,6 +790,9 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   `PrayerAlarmReceiver: ✅ [ADHAN_MODE] Activated for Fajr | iqama=1794016800000 | end=1794103500021` —
   iqama 1794016800000 = 2026-11-07 05:00 (+03), yesterday's instant, 23 h 45 min before the adhan
   (`reference/logcat/S18-base.txt`). Device impact VERIFIED; stays MEDIUM, out of FX-0.
+  Context (2026-11-08, base, S01 at Dhuhr): an alarm armed and fired on the same day logged
+  `iqama=1794127980000` = 11:53, Zuhr 11:38 + 15 min — correct. Consistent with F54a being a day-change problem only
+  (`reference/logcat/dhuhr-2026-11-08.txt`).
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).

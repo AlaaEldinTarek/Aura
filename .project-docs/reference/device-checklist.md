@@ -49,12 +49,12 @@ is believed to do; record what you actually see, not the expectation.
 
 | # | Scenario | Steps | Expected (from code) | Filter | Result (base) |
 | --- | --- | --- | --- | --- | --- |
-| S01 | Adhan — screen unlocked | Set a prayer 2–3 min ahead (or `testAdhanNow` from settings test button); keep app in background | Notification 1001–1006 on `prayer_times`, adhan audio, full-screen `AdhanFullScreenActivity`; MainActivity NOT launched | F-PRAYER | |
+| S01 | Adhan — screen unlocked | Set a prayer 2–3 min ahead (or `testAdhanNow` from settings test button); keep app in background | Notification 1001–1006 on `prayer_times`, adhan audio, full-screen `AdhanFullScreenActivity`; MainActivity NOT launched | F-PRAYER | **PASS** (2026-11-08 Dhuhr, nova 5T, base): real Zuhr alarm fired 11:38:00 exactly; adhan audio (`adhan_default.mp3`), vibrate mode, notification 1003 on `prayer_times`, `AdhanFullScreenActivity` launched; no MainActivity launch. ADHAN_MODE iqama = 11:53 (same day, correct). `logcat/dhuhr-2026-11-08.txt` |
 | S02 | Adhan — screen locked | As S01, screen off/locked | Full-screen activity shows over lock screen, audio plays, Stop works | F-PRAYER | |
 | S03 | Adhan — doze | `"$ADB" shell dumpsys deviceidle force-idle`, wait for prayer; afterwards `dumpsys deviceidle unforce` | Alarm fires on time (exact alarm), same as S02 | F-PRAYER | |
 | S04 | Adhan — stop controls | During adhan: (a) look at the notification; (b) press a volume key; (c) on a second adhan tap ✕, on a third press Back | (a) Minimal notification, no action buttons, auto-dismisses after ~3 s (`setTimeoutAfter(3000)`); (b) audio stops, adhan screen stays (iqama countdown); (c) audio stops and screen closes. `StopAdhanReceiver` not involved (nothing sends `STOP_ADHAN`, F51q). Corrected 2026-11-07 (drift report) | F-PRAYER | |
 | S05 | Pre-prayer reminder | Enable reminder; wait for reminder time | Notification 2001–2006; foreground notification shows reminder; action buttons work | F-PRAYER + F-TRACK | |
-| S06 | Post-prayer check → Done | ~30 min after adhan, tap Done/on-time | Notification 6001–6006 dismissed; `prayer_status_{name}_{date}` written; app shows status after open | F-TRACK | |
+| S06 | Post-prayer check → Done | ~30 min after adhan, tap Done/on-time | Notification 6001–6006 dismissed; `prayer_status_{name}_{date}` written; app shows status after open | F-TRACK | **PASS** (2026-11-08 Dhuhr, base): post-prayer check fired 12:08:00 (adhan + 30 min, req 3003); Done at 12:08:28 → `POST_DONE`, notification 6003 cancelled, Zuhr saved as `on_time` to prefs ("syncs on next app open"). In-app display after open not yet checked. `logcat/dhuhr-2026-11-08.txt` |
 | S07 | Post-prayer check → Late | As S06, tap Late | Status `late` recorded and shown in app | F-TRACK | |
 | S08 | Post-prayer check → Missed / Remind again | As S06, tap Missed; repeat with "remind again" | Status recorded; remind-again reschedules (ID +5000) | F-TRACK | |
 | S09 | Post-prayer check tap (body) | Tap notification body | App opens; picker behavior recorded (note: picker extras have no writer — F13) | F-TRACK | |
@@ -119,4 +119,4 @@ digits `٠١٢٣٤٥٦٧٨٩`) — the same locale-formatted-number class as F51
 | Date | Build | Scenarios run | Notes |
 | --- | --- | --- | --- |
 | 2026-11-07 | 1.0.0+59 (base) | S22 | FAIL — Login on relaunch after guest onboarding (F41a confirmed). Other scenarios not run yet. |
-| 2026-11-08 | 1.0.0+59 (base) | Prep, S18, S34 | Prep recorded (MWL/Shafi, times match package after open). S18, S34 PASS. Cache used across midnight (F53a evidence); stale iqama at Fajr adhan (F54a evidence). |
+| 2026-11-08 | 1.0.0+59 (base) | Prep, S18, S34, S01, S06 | Prep recorded (MWL/Shafi, times match package after open). S18, S34 PASS. Cache used across midnight (F53a evidence); stale iqama at Fajr adhan (F54a evidence). S01, S06 PASS at Dhuhr; same-day iqama correct (F54a context); azkar launched twice at 12:03 (F51j evidence). |
