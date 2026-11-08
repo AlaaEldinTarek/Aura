@@ -813,6 +813,12 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   `iqama=1794127980000` = 11:53, Zuhr 11:38 + 15 min — correct. Consistent with F54a being a day-change problem only
   (`reference/logcat/dhuhr-2026-11-08.txt`).
 
+## F55 — Preserved WIP branch (2026-11-08) — UNVERIFIED (not reviewed)
+- **(a) wip/crazy-haibt-tasks holds unreviewed task changes (+111/-7); review when the tasks fix group starts.**
+  Commit e4b1d5c (pushed as backup, no PR/merge) on top of 08cc443; formerly uncommitted in the removed worktree
+  `.claude/worktrees/crazy-haibt` (branch `claude/crazy-haibt` deleted). Files: `task.dart`, `task_service.dart`,
+  `task_card.dart`, `tasks_screen.dart`. Base is 261 commits behind main.
+
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
 - `ringer_mode` handler is in `MainActivity`, not `SilentModeAutomation.kt`.
