@@ -5,7 +5,7 @@ One folder per screen group (16 folders, each with its own README). Features own
 providers and call services from [`../core/README.md`](../core/README.md). Routes are declared in `lib/main.dart`
 (`_generateRoute`); the desktop shell builds the same screens in its nested navigator in `main/`. Cross-feature
 imports exist only in `main/main_wrapper_screen.dart` (hosts the tabs and desktop routes), `prayer/prayer_screen.dart`
-(reuses the calculation dialog and enums from `settings/`) and `quran/quran_reader_screen.dart`
+(reuses the calculation dialogs and enums from `settings/`) and `quran/quran_reader_screen.dart`
 (`desktopSidebarVisibleProvider` from `main/`) — VERIFIED by grep of relative and package imports, 2026-11-07.
 
 ## Subdirectories & Boundaries
@@ -18,7 +18,7 @@ imports exist only in `main/main_wrapper_screen.dart` (hosts the tabs and deskto
 - tasks: [./tasks/README.md](./tasks/README.md) — task list/calendar, form, statistics.
 - quran: [./quran/README.md](./quran/README.md) — Quran tab, SVG Mushaf reader, Wird, search, stats, khatma screens.
 - profile: [./profile/README.md](./profile/README.md) — Profile tab: stats, account actions, app mode, logout.
-- settings: [./settings/README.md](./settings/README.md) — Settings, iqama offsets, adhan reciters, calculation dialog.
+- settings: [./settings/README.md](./settings/README.md) — Settings, iqama offsets, adhan reciters, calculation dialogs.
 - achievements: [./achievements/README.md](./achievements/README.md) — read-only badge list.
 - azkar: [./azkar/README.md](./azkar/README.md) — morning/evening azkar checklist.
 - dhikl: [./dhikl/README.md](./dhikl/README.md) — tasbeeh counter, stats, custom zikr (folder name typo kept on purpose).

@@ -1,5 +1,5 @@
 # Project State — 2026-11-08
-- App: Aura 1.0.0+59 (MSIX 1.0.3.114) | Analyze: 423 issues (0 errors) | Tests: 140 Dart + 6 Kotlin (`./gradlew :app:testDebugUnitTest`) pass
+- App: Aura 1.0.0+59 (MSIX 1.0.3.114) | Analyze: 418 issues on fix/ui-1.1.0 (main 423; 0 errors) | Tests: 162 Dart (fix/ui-1.1.0; main 140) + 6 Kotlin (`./gradlew :app:testDebugUnitTest`) pass
 - Baseline commit: 75d38b9 | Flutter 3.38.7 / Dart 3.10.7 (frozen) | Android minSdk 24 / target 36 / compile 36
 - Support target: current minSdk and newer (Android 10 must keep working; test device nova 5T = API 29)
 - Phase: Fix track before refactor (ADR 0001); bootstrap Steps 0–2.5 + Step 6 report done | Refactor Steps 3–4 after CRITICAL/HIGH fixes
@@ -12,7 +12,7 @@
 - F58 (MEDIUM, UI): Quran reader A+/A− zoom buttons cover the line start of the last two lines (device VERIFIED, page 122, 360 dp); fixed position `quran_reader_screen.dart:555–563`; release 1.1.0, spec approved
 - Optional FX-0 regression checks (current build): S34 tonight after Isha (ID 1001 armed for tomorrow's Fajr), S18 tomorrow morning (00:05 recalc uses `cached_2026-11-09`); others when convenient: S01, S06, S11, S13, S17, scripted S30, S31, S32, S35 — reference/device-checklist.md
 - Done: "locale-dependent keys" (F51a) — merged to main 2026-11-08 via PR #2 (merge e61f345; spec docs/designs/fix-locale-keys.md; fix d9ff65c, ar-EG unit test). S27 after-fix optional (phone is English)
-- Next: F58 + F57 on `fix/ui-1.1.0` (specs docs/designs/fix-f58-reader-zoom.md + fix-f57-split-dialog.md, 1f9999e; "approve phase F58/F57"; 4 commits, one PR) → device check by user → PR → merge main into release/1.1.0 → rebuild 1.1.0+60. Push + Play upload on hold. Then: spec for "sign-in & onboarding flow" (F41a + F46a + F47f + F50b)
+- In progress: F58 + F57 done on `fix/ui-1.1.0` (d1f69f7, 8fab1d3, 2bcd95e, c8ddfa9; not pushed). Preview APK 1.1.0+60 (build-name/number override, same cert) installed on nova 5T 22:24 → user device check → PR → merge main into release/1.1.0 → rebuild 1.1.0+60. Push + Play upload on hold. Then: spec for "sign-in & onboarding flow" (F41a + F46a + F47f + F50b)
 - Blockers: E01–E04 BLOCKED — host is ARM64 Windows, SDK emulator is x64-only (2026-11-08; device-checklist); adb, keytool, apksigner not on PATH (SDK platform-tools, Android Studio jbr/bin, SDK build-tools; Git Bash needs MSYS_NO_PATHCONV=1 for device paths)
 - Pending user: run device-checklist baseline S01–S21 + S23 + S24 and S25 + S26 + S27 + S28 and record results (S22 done 2026-11-07: FAIL → F41a device-verified)
 - Done (Step 2.5 "fill modules/*.md"): covered by the drift rewrite (6f83153). Bootstrap prompt: reference/bootstrap-prompt-v2.1.md
