@@ -187,7 +187,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 }
 
 // Widget that handles navigation based on auth state
-class _AuthNavigationHandler extends ConsumerWidget {
+class _AuthNavigationHandler extends ConsumerStatefulWidget {
   final bool isNavigating;
 
   const _AuthNavigationHandler({
@@ -195,32 +195,33 @@ class _AuthNavigationHandler extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authStateProvider);
-    final user = authState.value;
+  ConsumerState<_AuthNavigationHandler> createState() =>
+      _AuthNavigationHandlerState();
+}
 
-    final firstLaunchAsync = ref.watch(firstLaunchProvider);
-    final isFirstLaunch = firstLaunchAsync.value ?? true;
+class _AuthNavigationHandlerState
+    extends ConsumerState<_AuthNavigationHandler> {
+  // Set before the post-frame callback is scheduled, so later rebuilds
+  // cannot schedule a second navigation.
+  bool _navigated = false;
 
-    final guestModeAsync = ref.watch(guestModeProvider);
-    final isGuest = guestModeAsync.value ?? false;
+  @override
+  Widget build(BuildContext context) {
+    // Waits for the delay and for auth, guest and first-launch to finish
+    // loading (null while any is loading).
+    final destination = resolveSplashRoute(
+      auth: ref.watch(authStateProvider),
+      guest: ref.watch(guestModeProvider),
+      firstLaunch: ref.watch(firstLaunchProvider),
+    );
 
-    if (!isNavigating) {
+    if (!widget.isNavigating || destination == null || _navigated) {
       return const SizedBox.shrink();
     }
 
-    if (authState.isLoading || guestModeAsync.isLoading) {
-      return const SizedBox.shrink();
-    }
-
+    _navigated = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (context.mounted) {
-        final destination = resolveStartRoute(
-          isSignedIn: user != null,
-          isGuest: isGuest,
-          isFirstLaunch: isFirstLaunch,
-        );
-
+      if (mounted) {
         Navigator.of(context).pushReplacementNamed(destination);
       }
     });

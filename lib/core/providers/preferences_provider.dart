@@ -194,7 +194,7 @@ class FirstLaunchNotifier extends StateNotifier<AsyncValue<bool>> {
   final SharedPreferencesService _prefsService;
 
   FirstLaunchNotifier(this._prefsService)
-      : super(const AsyncValue.data(true)) {
+      : super(const AsyncValue.loading()) {
     _init();
   }
 
@@ -223,7 +223,7 @@ class GuestModeNotifier extends StateNotifier<AsyncValue<bool>> {
   final SharedPreferencesService _prefsService;
 
   GuestModeNotifier(this._prefsService)
-      : super(const AsyncValue.data(false)) {
+      : super(const AsyncValue.loading()) {
     _init();
   }
 
