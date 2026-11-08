@@ -92,8 +92,22 @@ S34 · night 1: S18 · day 2: S35, S17 · Friday: S11 · last: S32. Package refe
 coordinates, not the exact home location): [fx-0-baseline-reference.md](fx-0-baseline-reference.md); S32 dates
 computed when the run day is known.
 
-### Emulator scenarios (Android 14/15) — device: **emulator**, status: **BLOCKED** (emulator not set up)
+### Emulator scenarios (Android 14/15) — device: **emulator**, status: **BLOCKED** (host is ARM64 Windows)
 After E01–E04 pass, also re-run S01–S03, S05, S10, S17 on the emulator.
+
+**Why BLOCKED (2026-11-08, setup attempt via SDK command-line tools).** Host CPU: Snapdragon X Elite (ARM64
+Windows). The SDK repository ships the emulator for Windows **x64 only** (stable 37.2.13 and 37.3.8; ARM64 builds
+exist only for macOS). Installed `emulator.exe` is x64 (PE machine 0x8664) and runs under Windows x64 emulation:
+- x86_64 image (`android-34;google_apis;x86_64`): `emulator -accel-check` → "Virtualization extension is not
+  supported" — no hardware acceleration, so x86_64 guests cannot run.
+- arm64 image (`android-34;google_apis;arm64-v8a`): `FATAL | Avd's CPU Architecture 'arm64' is not supported by the
+  QEMU2 emulator on x86_64 host. System image must match the host architecture.`
+E01–E04 can run only on an **Intel/AMD PC** (emulator) or a **physical Android 13+ phone** — there is no Windows
+ARM64 emulator in the SDK as of 2026-11-08. The test AVD `aura34` and both API 34 images were removed after the
+attempt. Baseline continues on the nova 5T only.
+Tooling note (not an app finding; F51a class): the older AVD `Pixel6_x64` `config.ini` holds Arabic-Indic digits
+(`hw.ramSize = ٢G`, `sdcard.size = ٥١٢ MB`, `vm.heapSize = ٢٢٨M`), written under the Windows locale `ar-EG` (native
+digits `٠١٢٣٤٥٦٧٨٩`) — the same locale-formatted-number class as F51a.
 | # | Scenario | Steps | Expected (from code) | Filter | Result (base) |
 | --- | --- | --- | --- | --- | --- |
 | E01 | Exact-alarm permission (API 31+) | Revoke "Alarms & reminders" for Aura; open app; then grant | `canScheduleExactAlarms` false → app prompts / `openExactAlarmSettings`; after grant alarms schedule and adhan fires | F-PRAYER | BLOCKED |
