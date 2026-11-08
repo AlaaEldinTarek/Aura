@@ -6,7 +6,16 @@ Verified against code 2026-11-07 (reference/2026-11-07_DRIFT_REPORT.md). Collect
   `sharedPreferencesServiceProvider`; `guest_migration_provider.dart`
 - `lib/core/services/auth_service` (+ `google_oauth_config.dart`), `firestore_service`, `offline_queue_service`,
   `sync_service`, `connectivity` provider
-- Screens: `lib/features/auth/` (`/login`, `/signup`); next step after auth is `/onboarding`
+- Screens: `lib/features/auth/` (`/login`, `/signup`); next step after auth is `resolvePostAuthRoute`
+  (`lib/core/utils/start_route.dart`): `/onboarding` on the first launch on this device, else `/home` (`first_launch`)
+
+## Start-up routing & logout (spec fix-signin-onboarding, 2026-11-09)
+- Splash: `resolveSplashRoute` waits for auth, `is_guest` and `first_launch` to load (both flag notifiers start as
+  `loading`), then routes once: guest or signed in → `/onboarding` if first launch else `/home`; otherwise `/login`.
+- Guest: "Continue as guest" sets `is_guest`, then returning guest → `/home`; first launch → onboarding, which returns
+  `result: true` on finish so Login keeps guest mode (back from onboarding cancels guest).
+- Logout (Profile): `AuthService.signOut` (Firebase + Google; throws if either fails, logged `❌ [AUTH]`); if no user is
+  signed in afterwards → `/login` with the stack cleared. Prefs, settings and local data are kept (F59).
 
 ## Auth
 - Email/Password, guest mode. Google: `google_sign_in` on mobile; desktop uses a loopback PKCE flow

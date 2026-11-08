@@ -32,6 +32,8 @@ widgets, the foreground service and desktop timers. Edit it carefully (CLAUDE.md
   Firestore (never pulled); new user → `createUserData` with local prefs. Each Firestore call has a 5 s timeout, and errors are swallowed
   so login still succeeds. Guest tasks are **not** auto-migrated: a `pending_guest_migration_uid` flag is set and
   `GuestMigrationNotifier.migrate()` runs on user confirmation.
+- **Start flags** (`FirstLaunchNotifier`, `GuestModeNotifier`): start as `loading` until the first prefs read, then
+  `data` (or `error`), so Splash cannot route on a default (F50b; `test/core/providers/start_flags_test.dart`).
 - **Effective prayer day** (`DailyPrayerStatusNotifier.computeEffectiveToday`): before Fajr counts as yesterday.
   `markDate` blocks days after the effective day, and for the real calendar day it requires `isPrayerTimeReached` (adhan + 20 min, `utils/prayer_time_rules.dart`).
   Local state changes only if the service write returns `true`. `updatePrayer` / `removePrayer` are optimistic-only (no

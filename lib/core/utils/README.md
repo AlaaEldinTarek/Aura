@@ -19,6 +19,7 @@ SnackBar) and `captureAndShare` (files + share sheet). CLAUDE.md rules that live
 | `prayer_refresh.dart` | pure helpers for the prayer-times refresh (no Flutter imports): `sideEffectsFingerprint`, `cacheDays` (calendar days), `buildNativeCache` (`cached_{yyyy-MM-dd}_{name}`), `nextOccurrences`, `postChecksToSchedule`, `isLatest`; tests in `test/core/utils/prayer_refresh_test.dart` |
 | `haptic_feedback.dart` | app `HapticFeedback` (shadows Flutter's): `light`, `medium`, `heavy`, `selection`, `notify`, `success`, `error`, `warning`, `buttonPress`, `toggle`, `cardTap`, `isVibrationEnabled`, `isSimplifiedMode` |
 | `share_util.dart` | top-level `captureAndShare(key, filename)` |
+| `start_route.dart` | pure start-up routing rules (spec fix-signin-onboarding): `resolveStartRoute`, `resolvePostAuthRoute`, `resolveSplashRoute` (null while auth / guest / first-launch is loading); tests in `test/core/utils/start_route_test.dart` |
 
 ### Invariants
 - **Arabic numerals**: `withArabicNumerals` maps ASCII `0–9` to Arabic-Indic `٠–٩`; `withArabicNumeralsByLanguage`
@@ -36,6 +37,9 @@ SnackBar) and `captureAndShare` (files + share sheet). CLAUDE.md rules that live
 - **Haptics gating** (prefs `vibration_enabled` default **false**, `vibration_simplified` default **true**):
   `light` / `selection` / `success` / `buttonPress` / `toggle` / `cardTap` need enabled and not simplified; `medium` /
   `warning` need enabled only; `heavy` / `error` / `notify` always fire (by design: "error feedback is critical").
+- **Start routes**: guest or signed in → `/onboarding` on first launch (`first_launch` true) else `/home`; otherwise
+  `/login`. After sign-in / sign-up / guest: first launch → `/onboarding`, returning user → `/home`. Splash: auth
+  error → `/login`; guest / first-launch error → not guest / first launch.
 - **Sharing**: renders the widget at 3× to PNG in the temp dir. Mobile opens the share sheet; Windows copies the file to
   Documents and opens Explorer; macOS uses `open`.
 

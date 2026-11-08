@@ -2,7 +2,8 @@
 
 ## Overview
 The first-run setup wizard. `preference_screen.dart` is the live flow (route `/onboarding`): Splash opens it on first
-launch, and Login/Signup open it after **every** successful sign-in ([auth](../auth/README.md)). It collects language,
+launch, and Login/Signup open it after a sign-in only on the first launch on this device; returning users go to
+`/home` ([auth](../auth/README.md)). It collects language,
 theme and app mode, shows a mode-specific feature carousel, saves through the preference providers
 ([providers](../../core/providers/README.md)) and replaces itself with `/home`. `mode_selection_screen.dart` is an
 older standalone mode picker that nothing navigates to. Behavior-preserving rule: no UI or logic change without an
@@ -22,13 +23,14 @@ approved spec.
   `_next` / `_back` move one slide or step; `_navigating` blocks taps during the 350–410 ms page animation.
   Swiping is disabled (`NeverScrollableScrollPhysics`); there is no `PopScope`, so system back leaves the route.
 - **Defaults are fixed, not read from current settings**: `_language = 'en'`, `_theme = 'system'`,
-  `_mode = AppMode.both`. "Skip" (step 0 only) calls `_finish` with whatever is selected, so re-login resets saved settings
-  (findings F46a).
+  `_mode = AppMode.both`. "Skip" (step 0 only) calls `_finish` with whatever is selected. Safe since F46a: only users
+  without a finished onboarding on this device (`first_launch` true) reach this screen, and their saved values are
+  still the defaults.
 - **Wizard language**: onboarding text follows the selected `_language` (`_isAr`), not the app locale; strings are
   inline EN/AR pairs (no `.tr()`). The app locale changes only when `_finish` saves.
 - **Finish**: after saving, requests `Permission.notification` on Android/iOS only, then
-  `pushReplacementNamed('/home')`. Any exception is swallowed (`catch (_) {}`) and the user stays on the screen.
-  The `pushReplacementNamed` also completes Login's awaited guest push (findings F41a).
+  `pushReplacementNamed('/home', result: true)`. Any exception is swallowed (`catch (_) {}`) and the user stays on
+  the screen. `result: true` completes Login's awaited guest push so Login keeps guest mode (F41a).
 - **`ModeSelectionScreen`** (unused): tapping a card writes `appModeProvider.setMode` immediately; "Get Started" →
   `/home`.
 

@@ -76,6 +76,10 @@ daily-summary notifications always English, daily summary time reverting to 21:0
 - Auth / guest: `is_guest` (`AppConstants.keyIsGuest`; via `SharedPreferencesService.isGuest` / `setGuest`; written by
   `login_screen.dart` and `auth_provider.dart`, read by Splash routing and `_syncUserData`), `pending_guest_migration_uid`
   (String uid; written in `auth_provider.dart` `_syncUserData` when a guest with local tasks signs in; read and removed by `guest_migration_provider.dart`).
+- Start-up: `first_launch` (bool, default true; `AppConstants.keyFirstLaunch`; via `SharedPreferencesService.isFirstLaunch`
+  / `setFirstLaunch`; set false by onboarding `_finish`; read by Splash routing (`resolveSplashRoute`) and by Login /
+  Signup / "Continue as guest" (`resolvePostAuthRoute`): false = returning user on this device → Home). Doc row added
+  2026-11-09 (spec fix-signin-onboarding); key unchanged.
 - Azkar: `azkar_state` (JSON `AzkarState`, `dateKey` = today), `azkar_streak_date` (`yyyy-MM-dd`) — `azkar_provider.dart`.
 - Dhikr: `custom_dhikr_presets` (JSON list of `DhikrPreset`) — `dhikr_screen.dart` `_customPresetsKey`.
 - Quran: `quran_bookmarks` (JSON list), `quran_reading_progress` (JSON) — `quran_bookmark_service.dart`.

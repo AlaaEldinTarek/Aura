@@ -15,7 +15,8 @@ it reads and writes through auth, preference, task, achievement and prayer-track
 
 - Watches: `authStateProvider` (`authStateChanges`), `themeModeProvider`, `appModeProvider`, `taskStatisticsProvider`,
   `guestMigrationProvider`.
-- Navigation out: `/login` (root navigator, `pushReplacementNamed`), `/settings`, `/achievements`.
+- Navigation out: `/login` (root navigator: `pushReplacementNamed` from the login prompt, `pushNamedAndRemoveUntil`
+  after logout), `/settings`, `/achievements`.
 - App Tour sets `tabNavigationProvider = 0` and `showTutorialProvider = true` (Home runs the tutorial).
 
 ## Invariants
@@ -36,8 +37,9 @@ it reads and writes through auth, preference, task, achievement and prayer-track
 - **Version**: Windows shows `AppConstants.desktopVersion` (findings F28); other platforms `PackageInfo`
   `version+buildNumber`.
 - **Guest sync card**: shown while `guestMigrationProvider.isPending`; button → `migrate()` then a success snackbar.
-- **Logout**: confirm dialog → `authStateNotifierProvider.signOut()`; no navigation — the screen rebuilds into the
-  login prompt inside the shell (findings F47f).
+- **Logout** (F47f): confirm dialog → `authServiceProvider.signOut()` in `try` (Firebase + Google; throws if either
+  fails, logged `❌ [AUTH] signOut failed`). Afterwards, if `currentUser == null` → root
+  `pushNamedAndRemoveUntil('/login')` (shell cleared); still signed in → stay. Prefs and local data are kept (F59).
 - **Numbers** mostly via `NumberFormatter`; exceptions in findings F47. Strings mostly inline EN/AR; `profile`,
   `login*`, `logout*`, `guest_sync_*`, `error_loading_profile` are `.tr()` keys.
 

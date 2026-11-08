@@ -1,6 +1,7 @@
 # Fix: sign-in & onboarding flow (F41a, F46a, F47f, F50b)
 
-Status: DRAFT (not approved; Stage 9 review fixes applied) · Level C · branch `fix/signin-onboarding`
+Status: APPROVED (user 2026-11-09, "approve phase signin-onboarding"; Stage 9 review fixes applied); implemented
+20c8b4c, 620a394, 7e494f2, 7f3889a, 3552c52 · Level C · branch `fix/signin-onboarding`
 · findings `reference/findings.md` F41 (a), F46 (a), F47 (f), F50 (b)
 
 Decision already made (user): **returning users go straight to Home (skip onboarding).**

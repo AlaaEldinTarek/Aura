@@ -29,7 +29,8 @@ Inline literal tags in MainActivity: `MainActivity`, `PrayerChannel`, `FocusMode
 
 ## Emoji prefixes
 Present on both sides: `🕌` prayer, `🔔` notifications/channels, `✅` success, `❌` error, `⏭️` skip, `📱`/`🔄`.
-Bracketed sub-tags also used as filters in practice: `[CHANNEL]`, `[POST_CHECK]`, `[JUMUA]`.
+Bracketed sub-tags also used as filters in practice: `[CHANNEL]`, `[POST_CHECK]`, `[JUMUA]`, `[AUTH]` (Dart only,
+added 2026-11-09: `❌ [AUTH] signOut failed: …` in `profile_screen.dart` logout; filter `grep "\[AUTH\]"`).
 Note: Git Bash `grep` cannot receive 4-byte emoji arguments on this machine. Device-checklist filters use tags; for
 emoji use PowerShell `Select-String -Pattern '🕌' -Encoding utf8` on a saved capture.
 
