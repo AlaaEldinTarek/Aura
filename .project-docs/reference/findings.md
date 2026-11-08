@@ -559,8 +559,8 @@ Check only when a phase touches the area:
   A-1).** The dialog is stateless (`:11`), so `isSelected` / `groupValue` stay on `currentMethod` / `currentMadhab`
   passed at open (`:74, :78, :116, :120`); a tapped option does not show as selected until reopened. A Hanafi user
   cannot see the selection take effect (Settings entry point keeps the dialog open). Code VERIFIED (static).
-- **(k) Asr Madhab tile opens the dialog at the methods list** — **Tag: fix track, LOW; outside FX-0 (user
-  2026-11-08).** The prayer settings page's Asr Madhab tile (`prayer_screen.dart:1517`) opens the same dialog as the
+- **(k) Asr Madhab tile opens the dialog at the methods list** — **REPLACED by F57 (user 2026-11-08): split dialogs; the
+  scroll-to-madhab fix below is dropped.** ~~Tag: fix track, LOW; outside FX-0 (user 2026-11-08).~~ The prayer settings page's Asr Madhab tile (`prayer_screen.dart:1517`) opens the same dialog as the
   Method tile, starting at the 12 methods, so the madhab section is the last thing on screen (after A-1's scroll fix
   the user must still scroll past all methods). Proposed fix (not in A-1: it changes the `show()` signature, a caller
   and adds a UI behavior): optional `scrollToMadhab` flag on `show()` / constructor, `GlobalKey` on the madhab
@@ -837,6 +837,23 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
     :1550`, `settings_screen.dart:107`); the provider writes enum names (`:584`); no Firestore/sync writer;
     `AdhanCalculationMethod.fromValue` falls back to MWL. Writer between 15:44 and 17:36 UNKNOWN (logs rotated); app
     in foreground 15:44–15:55 and 16:49:29–16:50:38 (system buffer). Investigation: see log 2026-11-08.
+
+## F57 — Split the Prayer Calculation dialog (user request with screenshot, 2026-11-08) — UX
+- **(a) One dialog for method + madhab; split into two** — **Tag: MEDIUM (UX); supersedes F49k; schedule: same fix group
+  as F56 (after its root cause is known), included in release 1.1.0.** Requested behavior:
+  - Prayer settings page: "Calculation Method" tile → dialog with the 12 methods only; "Asr Madhab" tile → separate
+    dialog with Shafi / Hanafi only (today both open `PrayerCalculationSettingsDialog`, `prayer_screen.dart:1480–1535`).
+  - Settings tab: the single "Calculation Method & Madhab" tile (`settings_screen.dart:95–118`) becomes two tiles with
+    the same behavior.
+  - Each tile shows its current choice as subtitle, localized (e.g. "Muslim World League", "Shafi"; today the Settings
+    tile shows raw values `MuslimWorldLeague · Shafi`).
+  - Tapping an option selects it (radio moves); "Done" saves, recalculates (same FX-0 path) and closes. (User
+    correction 2026-11-08; replaces "tap saves and closes immediately".)
+  - All strings via `.tr()` in en.json + ar.json; stored values and keys (`calculation_method`, `asr_madhab`)
+    unchanged — no contract change.
+  - Spec: short note, no EGM review. Tests: widget tests for both dialogs (current selection shown, tap moves the
+    radio, "Done" fires the callback once with the chosen value, dialog closes).
+  - Note for F56: today the dialog saves on every tap; "save on Done only" also removes accidental saves.
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
