@@ -308,50 +308,11 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
       // Checked before each platform write: a newer run owns the writes.
       bool stale() => !isLatest(run, _generation);
 
+      // Prayer-derived effects, in this order, each in its own try/catch:
+      // widgets and desktop timers, native data (updatePrayerTimes), the cache,
+      // then adhan alarms and post-checks — so a native recalculation that runs
+      // in between already reads the new data.
       Future<void> prayerEffects() async {
-        // Schedule post-prayer check alarms (Android only)
-        if (!_isDesktop) try {
-          const notificationIds = {
-            'Fajr': 1001, 'Sunrise': 1002, 'Zuhr': 1003,
-            'Asr': 1004, 'Maghrib': 1005, 'Isha': 1006,
-          };
-          for (final prayer in updatedPrayerTimes) {
-            if (prayer.name == 'Sunrise') continue;
-            if (prayer.time.isAfter(DateTime.now())) {
-              if (stale()) return;
-              final requestCode = notificationIds[prayer.name] ?? 1000;
-              await PrayerAlarmService.instance.schedulePostPrayerCheck(
-                prayerName: prayer.name,
-                prayerNameAr: prayer.nameAr,
-                prayerTime: prayer.time,
-                requestCode: requestCode,
-              );
-            }
-          }
-        } catch (e) {
-          debugPrint('PrayerTimesNotifier: Error scheduling post-prayer checks - $e');
-        }
-
-        // Schedule native alarms for adhan playback (Android only)
-        if (stale()) return;
-        if (!_isDesktop) try {
-          await PrayerAlarmService.instance.scheduleDailyPrayerAlarms(updatedPrayerTimes);
-        } catch (e) {
-          debugPrint('PrayerTimesNotifier: Error scheduling adhan alarms - $e');
-        }
-
-        // Desktop: schedule timer-based adhan + notifications
-        if (stale()) return;
-        if (_isDesktop) {
-          try {
-            await DesktopAdhanService.instance.initialize();
-            await DesktopPrayerScheduler.instance.schedulePrayerTimers(updatedPrayerTimes);
-            debugPrint('✅ [DESKTOP] Prayer timers scheduled');
-          } catch (e) {
-            debugPrint('⚠️ [DESKTOP] Error scheduling prayer timers: $e');
-          }
-        }
-
         // Save to widget service for home screen widgets
         if (stale()) return;
         try {
@@ -366,6 +327,18 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
           );
         } catch (e) {
           debugPrint('PrayerTimesNotifier: Error saving to widget service - $e');
+        }
+
+        // Desktop: schedule timer-based adhan + notifications
+        if (stale()) return;
+        if (_isDesktop) {
+          try {
+            await DesktopAdhanService.instance.initialize();
+            await DesktopPrayerScheduler.instance.schedulePrayerTimers(updatedPrayerTimes);
+            debugPrint('✅ [DESKTOP] Prayer timers scheduled');
+          } catch (e) {
+            debugPrint('⚠️ [DESKTOP] Error scheduling prayer timers: $e');
+          }
         }
 
         // Update foreground service notification with fresh prayer times
@@ -415,6 +388,39 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
           await BackgroundServiceManager.instance.cacheAccuratePrayerTimes(cache);
         } catch (e) {
           debugPrint('PrayerTimesNotifier: Error caching future prayer times - $e');
+        }
+
+        // Schedule native alarms for adhan playback (Android only). Each prayer
+        // at its next occurrence (today if ahead, else tomorrow): the new alarm
+        // replaces the old one with the same request code, so no stale alarm
+        // stays armed after a change and no cancel is needed.
+        if (stale()) return;
+        if (!_isDesktop) try {
+          await PrayerAlarmService.instance.scheduleDailyPrayerAlarms(
+              nextOccurrences(days[0], days[1], DateTime.now()));
+        } catch (e) {
+          debugPrint('PrayerTimesNotifier: Error scheduling adhan alarms - $e');
+        }
+
+        // Schedule post-prayer check alarms (Android only). Never cancelled: a
+        // check whose new time + 30 min is already past keeps its old alarm.
+        if (!_isDesktop) try {
+          const notificationIds = {
+            'Fajr': 1001, 'Sunrise': 1002, 'Zuhr': 1003,
+            'Asr': 1004, 'Maghrib': 1005, 'Isha': 1006,
+          };
+          for (final prayer in postChecksToSchedule(days[0], DateTime.now())) {
+            if (stale()) return;
+            final requestCode = notificationIds[prayer.name] ?? 1000;
+            await PrayerAlarmService.instance.schedulePostPrayerCheck(
+              prayerName: prayer.name,
+              prayerNameAr: prayer.nameAr,
+              prayerTime: prayer.time,
+              requestCode: requestCode,
+            );
+          }
+        } catch (e) {
+          debugPrint('PrayerTimesNotifier: Error scheduling post-prayer checks - $e');
         }
       }
 
