@@ -1,7 +1,7 @@
 # FX-0 — Prayer settings: correct method / madhab, per-date times, full refresh
 
-Author: Alaa Eldin Tarek · Date: 2026-11-07 · Status: Approved (2026-11-07) · Findings:
-F36a, F36c, F52a, F53a, F51p · Fix-track rule: [ADR 0001](../../.project-docs/decisions/0001-fix-track-before-refactor.md)
+Author: Alaa Eldin Tarek · Date: 2026-11-07 · Status: Approved (2026-11-07) · Amended A-1 (2026-11-08: calculation
+dialog scroll + selection, § Changes 8) · Findings: F36a, F36c, F52a, F53a, F51p, F49c, F49j · Fix-track rule: [ADR 0001](../../.project-docs/decisions/0001-fix-track-before-refactor.md)
 · Decision record: [fx-0-decisions.md](fx-0-decisions.md) · Modules:
 [prayer.md](../../.project-docs/modules/prayer.md), [notifications-native.md](../../.project-docs/modules/notifications-native.md)
 · Contracts: [prefs-keys.md](../../.project-docs/contracts/prefs-keys.md),
@@ -53,6 +53,12 @@ Moonsighting Committee, verified by new tests.
    uses one UTC offset per day. An alarm can fire at a different minute than the time shown in the app. The single
    per-day offset causes a 1-hour error on DST days in zones that change clocks after the 00:05 recalculation (e.g.
    London, Toronto); Cairo changes at midnight and is not affected.
+6. **Hanafi cannot be selected on small screens, and a selection does not show (F49c, F49j; A-1).** The calculation
+   dialog lays out 14 option rows in a non-scrolling `Column`; on a 360-dp-wide phone (nova 5T, device-verified
+   2026-11-08) the list is cut off at "Singapore" and the Asr madhab section is unreachable. Every madhab entry point
+   (Settings tile, prayer settings page Method and Asr Madhab tiles) opens this dialog. The dialog is also stateless,
+   so a tapped option does not show as selected until it is reopened. Without a fix, Problem 1's fix never reaches
+   these users.
 
 ## Goals
 1. Every UI method maps to its exact `adhan` method; the stored madhab (`'Hanafi'` / `'Shafi'`) is applied as stored.
@@ -74,10 +80,15 @@ Moonsighting Committee, verified by new tests.
    general line, no technical details:
    - EN: "More accurate adhan timing when the app isn't open, including daylight-saving changes."
    - AR: "تحسين دقة توقيت الأذان عندما لا يكون التطبيق مفتوحًا، بما في ذلك أيام تغيير التوقيت الصيفي."
+8. Every method and both madhabs can be reached and tapped in the calculation dialog on any screen size, and a
+   tapped option shows as selected right away (A-1). Tests: a small-screen widget test (item 21); S29 set up through
+   the dialog on the nova 5T at normal Display and Font size.
 
 ## Non-Goals
-- New features, new UI or an in-app notice about changed times (release notes only). The one UI text change is the
-  Dubai label (§ Changes 1): its "(approximate)" qualifier becomes false, so the author ruled it in scope.
+- New features, new UI or an in-app notice about changed times (release notes only). The UI changes are exactly two:
+  the Dubai label (§ Changes 1; its "(approximate)" qualifier becomes false, so the author ruled it in scope) and the
+  calculation dialog (§ Changes 8, A-1): its middle section scrolls and a tapped option shows as selected. Rows,
+  texts, order and callbacks stay the same.
 - Prefs key renames, new prefs keys, Firestore schema changes, notification ID or channel changes, MethodChannel
   changes.
 - Umm al-Qura Ramadan Isha +30 min (package note; not applied today).
@@ -118,6 +129,11 @@ Moonsighting Committee, verified by new tests.
 - **Given**: the stored method is one of these five.
 - **When**: the user updates to the FX-0 release and opens the app.
 - **Then**: the shown times and the alarms equal that method's package times; the release notes cover the change.
+
+### CUJ 6: Hanafi user on a small screen (A-1)
+- **Given**: a 360-dp-wide phone at normal Display and Font size (nova 5T); madhab is Shafi.
+- **When**: the user opens the calculation dialog from any entry point, scrolls to Asr Madhab and taps Hanafi.
+- **Then**: Hanafi can be reached and tapped, its radio shows as selected right away, and CUJ 2 follows.
 
 ## Technical Plan (Architecture)
 ### Current flow and where it breaks
@@ -289,19 +305,33 @@ fallback if the port grows beyond the limit in item 13:
 - Kotlin JVM tests need `android/app/src/test/` and one test-only dependency, `testImplementation("junit:junit:4.13.2")`
   (Level B; the "approve B" request names exactly this). Nothing is added to `implementation`, so the release APK is
   unchanged.
+- **Dialog:** the small-screen widget test in item 21 (A-1).
+
+#### 8. Calculation dialog: scroll and selection (P6, A-1)
+- **Scroll (F49c):** the header row and the "Done" button stay fixed; the two sections between them (method header +
+  12 rows, madhab header + 2 rows) move into `Flexible(child: SingleChildScrollView(child: Column(...)))`. `Dialog`
+  already bounds the height to the screen minus its inset padding, so the middle section scrolls when it does not
+  fit and looks as today when it does (tall screens, Windows).
+- **Selection (F49j):** the dialog becomes a `StatefulWidget` holding `_method` / `_madhab`, initialised from
+  `currentMethod` / `currentMadhab`. A tap (row or radio) calls `setState` first, then the unchanged callback, so the
+  radio and the bold title follow the tap. On the prayer settings page the callback closes the dialog after the prefs
+  writes (item 11), so the update is visible mainly from the Settings entry point.
+- Unchanged: constructor fields, `onMethodChanged` / `onMadhabChanged`, `show()` signature, strings, row order, the
+  callers (`settings_screen.dart`, `prayer_screen.dart`).
 
 Neither option changes notification IDs, channels, MethodChannels or prefs key formats. The only contract change is
 the five new `prayer_calc_method` strings, committed with Dart, Kotlin and `contracts/` together.
 
 ### Delivery
 - **Branch and PR:** all work on `fix/fx-0-prayer-settings`, merged by PR (the author pushes and merges).
-- **Order:** the 13 commits in § Commit order (Detailed Implementation Plan). Every commit builds and passes its
+- **Order:** the 14 commits in § Commit order (1–13 plus 5a, A-1) (Detailed Implementation Plan). Every commit builds and passes its
   tests; the PR is merged only as a whole.
 - **Device scenarios, run before (current build, baseline) and after (FX-0 build)** on the nova 5T (API 29).
   Existing ones from `.project-docs/reference/device-checklist.md`: S01 (adhan at the shown time), S06 (post-prayer
   check about 30 min after the new time), S11 (Jumu'ah reminder still fires — regression only), S13 (widgets show
   the new times), S17 (boot reschedule), S18 (stale recalculation across midnight). New ones, added to the checklist:
-  - S29 Hanafi Asr: set Hanafi → shown Asr, widget and adhan match the package Hanafi time.
+  - S29 Hanafi Asr: set Hanafi → shown Asr, widget and adhan match the package Hanafi time. On the FX-0 build it is
+    set up through the dialog at normal Display and Font size (A-1); the base workaround is in the checklist row.
   - S30 No stale alarm: with Hanafi set and Shafi Asr already past, switch to Shafi → no Asr adhan fires today
     (check `dumpsys alarm` before and after).
   - S31 Iqama change: before today's Maghrib, change Maghrib iqama → today's Maghrib adhan screen counts down to the
@@ -417,8 +447,8 @@ The implementation may touch only these files:
 | Level | Files |
 | --- | --- |
 | B | `android/app/build.gradle.kts` (only `testImplementation("junit:junit:4.13.2")`), `tool/generate_prayer_parity_fixture.dart` (new), `test/fixtures/prayer_parity.csv` (new) |
-| C, tests | `test/core/services/prayer_calculation_test.dart` (new), `test/core/utils/prayer_refresh_test.dart` (new), `android/app/src/test/kotlin/com/aura/hala/NativePrayerCalculatorParityTest.kt` (new) |
-| C, Dart | `lib/core/models/prayer_settings.dart`, `lib/core/services/prayer_times_service.dart`, `lib/core/utils/prayer_refresh.dart` (new), `lib/core/providers/prayer_times_provider.dart`, `lib/features/prayer/prayer_screen.dart` (only `_PrayerSettingsPageState._saveCalculationSettings`), `lib/features/settings/iqama_settings_screen.dart`, `lib/features/settings/adhan_calculation_method.dart` (only the Dubai `nameEn`) |
+| C, tests | `test/core/services/prayer_calculation_test.dart` (new), `test/core/utils/prayer_refresh_test.dart` (new), `android/app/src/test/kotlin/com/aura/hala/NativePrayerCalculatorParityTest.kt` (new), `test/features/settings/prayer_calculation_settings_dialog_test.dart` (new, A-1) |
+| C, Dart | `lib/core/models/prayer_settings.dart`, `lib/core/services/prayer_times_service.dart`, `lib/core/utils/prayer_refresh.dart` (new), `lib/core/providers/prayer_times_provider.dart`, `lib/features/prayer/prayer_screen.dart` (only `_PrayerSettingsPageState._saveCalculationSettings`), `lib/features/settings/iqama_settings_screen.dart`, `lib/features/settings/adhan_calculation_method.dart` (only the Dubai `nameEn`), `lib/features/settings/prayer_calculation_settings_dialog.dart` (only § Changes 8: scrollable middle section, local selection state; A-1) |
 | C, Kotlin | `android/app/src/main/kotlin/com/aura/hala/NativePrayerCalculator.kt`; new folder `android/app/src/main/kotlin/com/aura/hala/adhan/`: the 18 `.kt` files listed in item 13 and `LICENSE` |
 | A | `.project-docs/contracts/prefs-keys.md` (exception: lands in the C contract commit, commit 4; its line-reference refresh lands in commit 13), `.project-docs/modules/prayer.md`, `.project-docs/modules/notifications-native.md`, `.project-docs/reference/device-checklist.md`, `.project-docs/reference/findings.md`, 8 folder READMEs (`lib/core/{models,services,providers,utils}`, `lib/features/{prayer,settings}`, `android/app/src/main/kotlin/com/aura/hala`, `android/app/src/main/kotlin/com/aura/hala/adhan` (new)), `docs/designs/fx-0-prayer-settings.md`, `docs/designs/README.md` |
 
@@ -442,6 +472,7 @@ Each test is committed together with the fix that makes it pass (Step 2).
 | 3 | Calculate prayer times for the requested date | C | 8 (per-date part), 4 (per-date and Umm al-Qura tests) |
 | 4 | Add five calculation methods and case-insensitive madhab (contract) | C + A | 7, 8 (mapping cases), 10 (delegation), 13 (interim Kotlin names), 15, 4 (mapping tests) |
 | 5 | Drop "approximate" from the Dubai method label | C | 14 |
+| 5a | Make calculation dialog scrollable and show selection (A-1) | C | 21 (with its widget test) |
 | 6 | Add pure prayer refresh helpers | C | 9, 5 |
 | 7 | Replace once-per-day guard with input fingerprint | C | 10 (fingerprint, generation, daily guard) |
 | 8 | Cache seven days of prayer times for native | C | 10 (`cacheDays`, `buildNativeCache`) |
@@ -729,6 +760,22 @@ commit stays green. Any test that runs `PrayerTimesNotifier` resets the static g
     the author; Alt-6 (a JVM library) is the fallback to revisit. Measured once after the port and reported in the PR.
 #### 14. `lib/features/settings/adhan_calculation_method.dart` (Modify)
 - **Proposed Changes** (commit 5): `nameEn: 'Dubai (approximate)'` (`:35`) → `'Dubai'`; `value` unchanged.
+#### 21. `lib/features/settings/prayer_calculation_settings_dialog.dart` (Modify) and its widget test (Create) — A-1
+Numbered 21 so items 1–20 keep their numbers.
+- **Proposed Changes** (commit 5a): § Changes 8. `PrayerCalculationSettingsDialog` (`:11–23`) becomes a
+  `StatefulWidget` with the same fields and constructor; its state holds `late String _method = widget.currentMethod`
+  and `late String _madhab = widget.currentMadhab`; `isSelected` / `groupValue` (`:74, :78, :116, :120`) read them; each
+  `onTap` / `onChanged` (`:80–84, :100–102, :122–126, :142–144`) does `setState(() => _x = value)` then calls the
+  callback. The method and madhab sections (`:66–146`) move into `Flexible(child: SingleChildScrollView(child:
+  Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [...])))`; header (`:41–62`) and Done button
+  (`:150–155`) stay outside. `show()` (`:181–197`) and `_buildSectionHeader` unchanged.
+- **Test** `test/features/settings/prayer_calculation_settings_dialog_test.dart` (written first): surface 360 × 640
+  logical px, `MaterialApp` with locale `en` and again `ar`; open the dialog with `currentMadhab: 'Shafi'`.
+  `scrollUntilVisible` to the Hanafi row, tap it → `onMadhabChanged` called once with `'Hanafi'`, the Hanafi radio's
+  `groupValue` is `'Hanafi'` (selected), and no overflow exception is reported. Same for one method row
+  (`'Singapore'` → callback + selected). On the base code the test fails (overflow and/or Hanafi not hittable; radio
+  unchanged). UNVERIFIED: whether `AuraButton` needs more than `MaterialApp` to render; checked when the test is
+  written.
 
 ### Step 4 — Contracts and docs (Level A; item 15 in commit 4, the rest in commit 13)
 #### 15. `.project-docs/contracts/prefs-keys.md` (Modify)
@@ -755,7 +802,9 @@ commit stays green. Any test that runs `PrayerTimesNotifier` resets the static g
 - S29–S35 (Delivery section) were added early, 2026-11-07, for the baseline run; commit 13 records the FX-0 results.
 #### 19. `.project-docs/reference/findings.md` (Modify)
 - Already recorded with the spec approval (2026-11-07): the F53a DST correction and F54a (MEDIUM; an alarm armed for
-  tomorrow reads today's `*_iqama_time`). Commit 13: mark F36a, F36c, F52a, F53a fixed with the PR.
+  tomorrow reads today's `*_iqama_time`). Commit 13: mark F36a, F36c, F52a, F53a, F49c, F49j fixed with the PR.
+  `lib/features/settings/README.md` (item 17): replace the "dialog state is fixed at open … non-scrolling `Column`"
+  invariant (A-1).
 #### 20. `docs/designs/fx-0-prayer-settings.md` (Modify) and `docs/designs/README.md` (Modify)
 - Status is Approved (2026-11-07, set with the spec commit); commit 13 adds the spec to the README list and
   updates anything the implementation changed.
@@ -772,7 +821,7 @@ Release notes (Goal 7) are not a repo file; the author pastes the text into the 
   2026-11-07); `dart format --output=none --set-exit-if-changed` on touched files.
 - **Port size**: code lines of `adhan/*.kt` (§ Terms) against the 1,650 stop rule (item 13); reported in the PR.
 - **Device**: before/after runs of S01, S06, S11, S13, S17, S18, S29–S35 on the nova 5T (API 29); results recorded
-  in the checklist. Nothing is reported as passed unless it ran.
+  in the checklist. After FX-0, S29 is set up through the dialog at normal Display and Font size (A-1, Goal 8). Nothing is reported as passed unless it ran.
 
 ---
 

@@ -23,6 +23,9 @@ Input for `/egm:egm-draft` (user runs it). Decisions by the user, 2026-11-07. Fi
 5. **Makkah +3 min Dhuhr stays** as a documented app adjustment, applied identically in Dart and Kotlin. Test rule
    (both sides): package output + documented app adjustments == app output.
 6. **F53a joins FX-0.**
+   - **A-1 (2026-11-08): F49c (HIGH) and F49j (MEDIUM) join FX-0.** Device evidence: the calculation dialog is cut
+     off at "Singapore" on the nova 5T, so Hanafi cannot be selected; the stateless dialog does not show a tap.
+     Scroll the middle section and hold the selection locally; callbacks and `show()` unchanged (spec § Changes 8).
 7. **The spec must compare two options and pick one with reasons:**
    - A) Full Kotlin parity with the package for all methods.
    - B) Dart precomputes N days (e.g. 7), each calculated for its own date (fixes F53a at the root), and stores

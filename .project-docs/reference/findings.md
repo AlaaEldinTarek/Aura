@@ -538,10 +538,17 @@ Check only when a phase touches the area:
   Related in the same flow: `AdhanPlayerService.setCustomAdhan(null)` sends nothing (`adhan_player_service.dart:134–139`),
   so "Reset" and deleting the selected reciter do not clear the native path; previewing a reciter
   (`adhan_downloads_screen.dart` play button) calls `setCustomAdhan(path)` and makes it the live adhan for the process.
-- **(c) Calculation dialog does not reflect taps and may overflow** — **Tag: fix track, LOW.**
-  `PrayerCalculationSettingsDialog` is stateless (radio stays on the value passed at open) and lays out 14
-  `ListTile`s in a non-scrolling `Column` (`prayer_calculation_settings_dialog.dart:37–157`); on small screens the
-  Asr section may be clipped. Needs a device check.
+- **(c) Calculation dialog does not scroll; Asr madhab section unreachable on small screens** — **Tag: fix track,
+  HIGH; joined FX-0 (CRITICAL group; user 2026-11-08, spec A-1).** `PrayerCalculationSettingsDialog` lays out 14
+  `ListTile`s in a non-scrolling `Column` (`prayer_calculation_settings_dialog.dart:37–157`). All madhab entry points
+  open it: Settings tile (`settings_screen.dart:100`), prayer settings page Method and Asr Madhab tiles
+  (`prayer_screen.dart:1486, :1517`). Device evidence (2026-11-08, nova 5T, base): the list is cut off at "Singapore"
+  and does not scroll, so Hanafi cannot be selected anywhere; S29 cannot be set up at normal Display/Font size.
+  Device impact VERIFIED. (Split from the old (c); the selection half is (j).)
+- **(j) Calculation dialog does not show a tap** — **Tag: fix track, MEDIUM; joined FX-0 (user 2026-11-08, spec
+  A-1).** The dialog is stateless (`:11`), so `isSelected` / `groupValue` stay on `currentMethod` / `currentMadhab`
+  passed at open (`:74, :78, :116, :120`); a tapped option does not show as selected until reopened. A Hanafi user
+  cannot see the selection take effect (Settings entry point keeps the dialog open). Code VERIFIED (static).
 - **(d) Raw values in UI** — **Tag: fix track, LOW.** Settings subtitle shows stored keys (`'$_calculationMethod ·
   $_asrMadhab'`, `settings_screen.dart:99`); minute counts (`:135, :170, :322, :348`) and the summary time (`:236`)
   are raw digits in Arabic.
