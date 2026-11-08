@@ -6,7 +6,8 @@
 - Done (Step 2): contracts/* verified Dart↔Kotlin; device-checklist.md (S01–S26 + emulator E01–E04); findings F4–F14
 - Done (EGM): all `lib/core/*` folder READMEs; features tasks, home, main (7d5682b), prayer (e87448c), quran, achievements, auth, azkar (eca7bcc), daily_content, dhikl (2cf79a7), islamic_events, onboarding (9e07c1e), profile, qibla (88a6551), settings (be29b87), splash (569d651) — all feature folders done; android kotlin (`com/aura/hala`, F51), parents `lib/core` + `lib/features`; rules + progress: INDEX.md; drift report on modules/ + all 15 modules rewritten from code (6f83153, findings F52)
 - Current task: FX-0 — spec Approved 2026-11-07, amended A-1 2026-11-08 (+F49c, F49j: dialog scroll + selection, commit 5a) (docs/designs/fx-0-prayer-settings.md; reviews in reference/reviews/fx-0/; 14-commit order on `fix/fx-0-prayer-settings`)
-- Next (FX-0): device baseline on base build — S11, S13, S17, S31, S32, S35 (S18, S34, S01, S06 PASS; S29, S30 BLOCKED; S33 FAIL/BLOCKED — 2026-11-08; rows + day plan in reference/device-checklist.md; base build stays installed) → "approve B" (JUnit line, fixture generator + CSV) → "approve phase FX-0"
+- Baseline (base build) stopped 2026-11-08: S18, S34, S01, S06 PASS; S29, S30 BLOCKED; S33 FAIL/BLOCKED (key after-fix check); S11, S13, S17, S31, S32, S35 deferred to after-fix (regression only) — reference/device-checklist.md
+- Next (FX-0): "approve B" (JUnit line only) + "approve phase FX-0" given 2026-11-08 → implement on `fix/fx-0-prayer-settings`, tests first
 - Blockers: E01–E04 BLOCKED — host is ARM64 Windows, SDK emulator is x64-only (2026-11-08; device-checklist); adb not on PATH (use SDK path)
 - Pending user: run device-checklist baseline S01–S21 + S23 + S24 and S25 + S26 + S27 + S28 and record results (S22 done 2026-11-07: FAIL → F41a device-verified)
 - Done (Step 2.5 "fill modules/*.md"): covered by the drift rewrite (6f83153). Bootstrap prompt: reference/bootstrap-prompt-v2.1.md
