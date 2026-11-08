@@ -242,7 +242,11 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
         if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
           await Permission.notification.request();
         }
-        if (mounted) Navigator.of(context).pushReplacementNamed('/home');
+        // result: true tells a waiting Login (guest flow) that onboarding
+        // finished, so it keeps guest mode (F41a).
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/home', result: true);
+        }
       }
     } catch (_) {
     } finally {

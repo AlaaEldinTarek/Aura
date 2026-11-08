@@ -213,9 +213,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       await ref.read(guestModeProvider.notifier).setGuest(true);
 
       if (mounted) {
-        await Navigator.of(context).pushNamed('/onboarding');
-        // User pressed back from onboarding — cancel guest mode
-        if (mounted) {
+        // Untyped on purpose: routes are MaterialPageRoute<dynamic>, so
+        // pushNamed<bool> would throw.
+        final result = await Navigator.of(context).pushNamed('/onboarding');
+        // Onboarding finishes with result true; anything else means the user
+        // pressed back — cancel guest mode
+        if (result != true && mounted) {
           await ref.read(guestModeProvider.notifier).setGuest(false);
         }
       }
