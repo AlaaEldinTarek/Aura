@@ -20,6 +20,7 @@ import 'package:aura_app/core/services/shared_preferences_service.dart';
 import 'package:aura_app/core/models/wird.dart';
 import 'package:aura_app/core/providers/wird_provider.dart';
 import 'khatma_celebration_screen.dart';
+import 'quran_reader_bottom_bar.dart';
 import 'package:aura_app/core/theme/app_typography.dart';
 
 class QuranReaderScreen extends ConsumerStatefulWidget {
@@ -506,7 +507,7 @@ void _togglePageBookmark() {
               Positioned(
                 key: _bottomBarKey,
                 bottom: 0, left: 0, right: 0,
-                child: _BottomBar(
+                child: QuranReaderBottomBar(
                   currentPage: _currentPage,
                   totalPages: 604,
                   lang: lang,
@@ -522,6 +523,10 @@ void _togglePageBookmark() {
                             curve: Curves.easeInOut,
                           )
                       : null,
+                  // Mobile-only zoom buttons (A− / A+) beside the page counter
+                  // (F58); pinch-to-zoom also works. Desktop has its own controls.
+                  onZoomOut: _isDesktop ? null : () => _mushafCtrl.zoom(0.8),
+                  onZoomIn: _isDesktop ? null : () => _mushafCtrl.zoom(1.25),
                 ),
               ),
 
@@ -550,17 +555,6 @@ void _togglePageBookmark() {
                 ),
               ),
 
-            // Mobile-only zoom buttons (A+ / A−) so the mushaf can be enlarged
-            // for easier reading. Pinch-to-zoom also works. Shown with the UI.
-            if (!_isDesktop && _showUI)
-              Positioned(
-                right: 16,
-                bottom: 80,
-                child: _MobileZoomControls(
-                  onZoomIn: () => _mushafCtrl.zoom(1.25),
-                  onZoomOut: () => _mushafCtrl.zoom(0.8),
-                ),
-              ),
           ],
         ),
       ),
@@ -1404,72 +1398,7 @@ class _TopBar extends StatelessWidget {
   }
 }
 
-// ── Bottom bar ────────────────────────────────────────────────────────────────
-
-class _BottomBar extends StatelessWidget {
-  final int currentPage;
-  final int totalPages;
-  final String lang;
-  final VoidCallback? onGoToPrevious;
-  final VoidCallback? onGoToNext;
-
-  const _BottomBar({
-    required this.currentPage,
-    required this.totalPages,
-    required this.lang,
-    this.onGoToPrevious,
-    this.onGoToNext,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final primary = AppConstants.getPrimary(isDark);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: (AppConstants.surface(isDark))
-            .withValues(alpha: 0.95),
-        border: Border(
-          top: BorderSide(color: AppConstants.divider(isDark)),
-        ),
-      ),
-      child: SafeArea(
-        top: false,
-        child: Row(
-          children: [
-            IconButton(
-              onPressed: onGoToPrevious,
-              icon: Icon(
-                Icons.arrow_back,
-                color: currentPage > 1 ? primary : Colors.grey,
-              ),
-            ),
-            Expanded(
-              child: Text(
-                '${NumberFormatter.withArabicNumeralsByLanguage(currentPage.toString(), lang)} / ${NumberFormatter.withArabicNumeralsByLanguage(totalPages.toString(), lang)}',
-                textAlign: TextAlign.center,
-                style: AppTypography.label.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: theme.hintColor,
-                ),
-              ),
-            ),
-            IconButton(
-              onPressed: onGoToNext,
-              icon: Icon(
-                Icons.arrow_forward,
-                color: currentPage < totalPages ? primary : Colors.grey,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// Bottom bar: quran_reader_bottom_bar.dart
 
 // ── Desktop floating controls ─────────────────────────────────────────────────
 
@@ -1562,73 +1491,6 @@ class _DesktopControls extends StatelessWidget {
               btn(Icons.arrow_forward_ios, onNextPage),
             ],
           ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Mobile zoom controls (A+ / A−) ────────────────────────────────────────────
-
-class _MobileZoomControls extends StatelessWidget {
-  final VoidCallback onZoomIn;
-  final VoidCallback onZoomOut;
-
-  const _MobileZoomControls({
-    required this.onZoomIn,
-    required this.onZoomOut,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = AppConstants.getPrimary(isDark);
-    final bg = AppConstants.surface(isDark).withValues(alpha: 0.92);
-    final border = AppConstants.border(isDark);
-
-    Widget btn(IconData icon, String label, VoidCallback onTap) {
-      return Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(label,
-                    style: TextStyle(
-                        color: primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16)),
-                const SizedBox(width: 4),
-                Icon(icon, size: 18, color: primary),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: border),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.18),
-              blurRadius: 12,
-              offset: const Offset(0, 4)),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          btn(Icons.add, 'A', onZoomIn),
-          Container(height: 1, width: 44, color: border),
-          btn(Icons.remove, 'A', onZoomOut),
         ],
       ),
     );

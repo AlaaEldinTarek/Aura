@@ -15,7 +15,8 @@ and the khatma celebration and dua screens. Data comes from `../../core/` and is
 | File | Public symbols / entry points |
 | --- | --- |
 | `quran_screen.dart` | `QuranScreen()`: route `/quran`, also bottom-nav tab page. Private tabs `_SurahListTab`, `_JuzTab`, `_BookmarksTab`; `_LastReadCard` |
-| `quran_reader_screen.dart` | `QuranReaderScreen({required suraNo, scrollToAyaNo, initialJuz, initialPage})`, always pushed via `MaterialPageRoute` (no named route). Private: `_MushafPage`, `_AyahSheet`, `_BookmarkReplaceSheet`, `_AyahMarkerColorizer`, bars and zoom controls |
+| `quran_reader_screen.dart` | `QuranReaderScreen({required suraNo, scrollToAyaNo, initialJuz, initialPage})`, always pushed via `MaterialPageRoute` (no named route). Private: `_MushafPage`, `_AyahSheet`, `_BookmarkReplaceSheet`, `_AyahMarkerColorizer`, top bar, desktop zoom controls |
+| `quran_reader_bottom_bar.dart` | `QuranReaderBottomBar({currentPage, totalPages, lang, onGoToPrevious, onGoToNext})`: reader bottom bar (prev / next, page counter with Arabic numerals in Arabic); optional `onZoomOut` / `onZoomIn` add A− / A+ around the counter (mobile only, F58) |
 | `wird_tab.dart` | `WirdTab({required lang})`, the 4th tab of `QuranScreen`. Private: `_WirdContentView`, `_BookmarkPagesSheet`, `_BookmarkListSheet`, `_RecordPagesContent` |
 | `quran_search_screen.dart` | `QuranSearchScreen()`, opened only from the `QuranScreen` AppBar (`MaterialPageRoute`) |
 | `quran_stats_screen.dart` | `QuranStatsScreen()`: route `/quran_stats` (Wird streak card) |
@@ -42,7 +43,7 @@ and the khatma celebration and dua screens. Data comes from `../../core/` and is
   close button calls `Navigator.pop` directly and skips both (F38).
 - **Desktop reader** (`!kIsWeb` and Windows/macOS/Linux): hides the shell sidebar via `desktopSidebarVisibleProvider`
   and restores it on every exit path. Drag ≥ 80 px horizontal to turn pages; keys: arrows, `+` / `-`, Esc. Vertical pan
-  only, zoom 0.5–8. Mobile: pinch zoom 1.0–6.0; page swipe is locked while zoomed.
+  only, zoom 0.5–8. Mobile: pinch zoom 1.0–6.0 or A− / A+ in the bottom bar (×0.8 / ×1.25, same limits); page swipe is locked while zoomed.
 - **Wird modes** (`settings.wirdUnit`): page mode shows `pagesRead / dailyPageGoal` and the range
   `startPage..startPage+goal−1` (clamped to 604). Juz mode shows a 30-cell grid (tap = `toggleJuzCompleted`) and the
   days-left estimate. Goals: pages 1–604, juz 1–30.

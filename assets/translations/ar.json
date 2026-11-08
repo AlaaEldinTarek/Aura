@@ -485,5 +485,8 @@
   "guest_sync_profile_subtitle": "لديك %d مهمة من جلسة الضيف. قم بمزامنتها مع حسابك.",
   "guest_sync_profile_btn": "مزامنة الآن",
   "guest_sync_profile_note": "يمكنك المزامنة في أي وقت من صفحة الملف الشخصي.",
-  "guest_sync_success": "تمت مزامنة المهام مع حسابك!"
+  "guest_sync_success": "تمت مزامنة المهام مع حسابك!",
+  "prayer_calc_method_title": "طريقة الحساب",
+  "prayer_asr_madhab_title": "مذهب العصر",
+  "prayer_calc_done": "تم"
 }

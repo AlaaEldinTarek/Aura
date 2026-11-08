@@ -14,7 +14,10 @@ import '../../core/services/platform_channel_service.dart';
 import '../../core/services/windows_startup_service.dart';
 import '../../core/widgets/setting_tile.dart';
 import '../../core/theme/app_typography.dart';
-import 'prayer_calculation_settings_dialog.dart';
+import 'adhan_calculation_method.dart';
+import 'asr_madhab_dialog.dart';
+import 'asr_madhab_selection.dart';
+import 'calculation_method_dialog.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
@@ -93,27 +96,39 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     title: isArabic ? 'الصلاة' : 'Prayer',
                   ),
                   SettingsCard(children: [
+                    // F57: one tile and one dialog per setting; Done saves.
                     SettingTile(
                       icon: Icons.calculate_outlined,
-                      title: isArabic ? 'طريقة الحساب والمذهب' : 'Calculation Method & Madhab',
-                      subtitle: '$_calculationMethod · $_asrMadhab',
-                      onTap: () => PrayerCalculationSettingsDialog.show(
-                        context: context,
-                        currentMethod: _calculationMethod,
-                        currentMadhab: _asrMadhab,
-                        onMethodChanged: (v) async {
-                          setState(() => _calculationMethod = v);
-                          final sp = await SharedPreferences.getInstance();
-                          await sp.setString(AppConstants.keyCalculationMethod, v);
-                          await _recalculatePrayerTimes();
-                        },
-                        onMadhabChanged: (v) async {
-                          setState(() => _asrMadhab = v);
-                          final sp = await SharedPreferences.getInstance();
-                          await sp.setString(AppConstants.keyAsrMadhab, v);
-                          await _recalculatePrayerTimes();
-                        },
-                      ),
+                      title: 'prayer_calc_method_title'.tr(),
+                      subtitle: AdhanCalculationMethod.fromValue(_calculationMethod)
+                          .getLocalizedName(isArabic),
+                      onTap: () async {
+                        final v = await CalculationMethodDialog.show(context,
+                            currentMethod: _calculationMethod);
+                        // Done without a change, close or back: nothing to save.
+                        if (!mounted || v == null || v == _calculationMethod) {
+                          return;
+                        }
+                        setState(() => _calculationMethod = v);
+                        final sp = await SharedPreferences.getInstance();
+                        await sp.setString(AppConstants.keyCalculationMethod, v);
+                        await _recalculatePrayerTimes();
+                      },
+                    ),
+                    SettingTile(
+                      icon: Icons.mosque_outlined,
+                      title: 'prayer_asr_madhab_title'.tr(),
+                      subtitle: AsrMadhab.fromValue(_asrMadhab)
+                          .getLocalizedName(isArabic),
+                      onTap: () async {
+                        final v = await AsrMadhabDialog.show(context,
+                            currentMadhab: _asrMadhab);
+                        if (!mounted || v == null || v == _asrMadhab) return;
+                        setState(() => _asrMadhab = v);
+                        final sp = await SharedPreferences.getInstance();
+                        await sp.setString(AppConstants.keyAsrMadhab, v);
+                        await _recalculatePrayerTimes();
+                      },
                     ),
                     SettingTileSwitch(
                       icon: Icons.volume_off_outlined,

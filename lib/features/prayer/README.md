@@ -48,8 +48,9 @@ Navigation out: `/qibla`, `/prayer_tracking`, toolkit (`/qibla`, `/azkar`, `/dhi
 - **Settings page**: reminder toggle, foreground "Prayer Notification" toggle (starts/stops the service), tracking
   reminders + daily summary time (`HH:mm`, default 21:00), adhan sound, adhan downloads, auto silent mode + duration
   (10/15/20/25/30, default 20), iqama, calculation method + Asr madhab. Most toggles only write prefs; nothing is
-  rescheduled here. Method/madhab changes (`_PrayerSettingsPageState._saveCalculationSettings`) write prefs, close
-  the dialog, then call `prayerTimesProvider.loadPrayerTimes(DateTime.now())` (FX-0).
+  rescheduled here. Method/madhab: each tile opens its own dialog (`settings/calculation_method_dialog.dart`,
+  `settings/asr_madhab_dialog.dart`, F57); only a changed value returned by Done is saved
+  (`_PrayerSettingsPageState._saveCalculationSettings` writes prefs, then `prayerTimesProvider.loadPrayerTimes(DateTime.now())`, FX-0).
 - **Calculation values**: the UI stores `AdhanCalculationMethod.value` / `AsrMadhab.value` (`'MuslimWorldLeague'`,
   `'Hanafi'` …). `prayerTimesProvider` maps them with `calculationMethodFromPref` / `asrMadhabFromPref`
   (`core/models/prayer_settings.dart`): every method has its own value and `'Hanafi'` applies (FX-0, F36a). The same

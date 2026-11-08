@@ -13,7 +13,8 @@ or logic change without an approved spec.
 | File | Public symbols / entry points |
 | --- | --- |
 | `settings_screen.dart` | `SettingsScreen()` (route `/settings`). Private: `_SettingsScreenState` (pickers for silent duration, task reminder minutes, language, theme, daily summary time) |
-| `prayer_calculation_settings_dialog.dart` | `PrayerCalculationSettingsDialog.show({context, currentMethod, currentMadhab, onMethodChanged, onMadhabChanged})` (`StatefulWidget`); callers: `settings_screen.dart`, `prayer/prayer_screen.dart` |
+| `calculation_method_dialog.dart` | `CalculationMethodDialog.show(context, currentMethod:) → Future<String?>`: 12 methods only; tap selects, Done returns the value, close/back returns null (F57) |
+| `asr_madhab_dialog.dart` | `AsrMadhabDialog.show(context, currentMadhab:) → Future<String?>`: Shafi / Hanafi only, same behavior (F57) |
 | `adhan_calculation_method.dart` | `enum AdhanCalculationMethod` (12 values, `.value` strings e.g. `'MuslimWorldLeague'`, `'UmmAlQura'`), `getLocalizedName`, `fromValue` (fallback MWL) |
 | `asr_madhab_selection.dart` | `enum AsrMadhab` (`shafi` / `hanafi`, `.value` `'Shafi'` / `'Hanafi'`), `getLocalizedName`, `fromValue` — a different type from `core/models/prayer_settings.dart` `AsrMadhab` |
 | `iqama_settings_screen.dart` | `IqamaSettingsScreen()` (route `/iqama_settings`) |
@@ -23,12 +24,13 @@ or logic change without an approved spec.
 - **Calculation method / madhab** are stored as the settings enums' `.value` strings (`calculation_method`,
   `asr_madhab` via `AppConstants.keyCalculationMethod` / `keyAsrMadhab`). `prayer_times_provider.dart` maps each to
   its own core enum value (`calculationMethodFromPref`, `asrMadhabFromPref`; FX-0). `SettingsScreen` and the prayer
-  settings page recalculate (`prayerTimesProvider.loadPrayerTimes`) after each change; the Settings tile subtitle
-  shows the raw stored strings.
-- **Calculation dialog** (A-1): `PrayerCalculationSettingsDialog` is a `StatefulWidget` holding the current
-  selection, so a tapped radio shows as selected right away (then the unchanged callback runs). The method and
-  madhab sections scroll (`Flexible` + `SingleChildScrollView`); the header and Done button stay fixed. Widget test:
-  `test/features/settings/prayer_calculation_settings_dialog_test.dart` (360 × 640, en / ar).
+  settings page save and recalculate (`prayerTimesProvider.loadPrayerTimes`) only when a dialog's Done returns a
+  changed value (F57); tile subtitles show the localized current choice.
+- **Calculation dialogs** (F57, replace the combined A-1 dialog): `CalculationMethodDialog` (12 methods) and
+  `AsrMadhabDialog` (Shafi / Hanafi) hold the selection in a `RadioGroup`; a tap only moves the radio, Done returns
+  the value, close / back return null. The list scrolls (`Flexible` + `SingleChildScrollView`, F49c); header and Done
+  stay fixed. Two tiles in `SettingsScreen` and in the prayer settings page. Widget test:
+  `test/features/settings/prayer_choice_dialogs_test.dart` (360 × 640, en / ar).
 - **Silent mode** toggle / duration write `silent_mode_enabled` / `silent_mode_duration` in Flutter prefs. Native
   reads the duration from Flutter prefs but the enabled flag from `aura_silent_mode` (findings F49).
 - **Prayer tracking** toggle writes `prayer_tracking_notifications_enabled` (read natively at fire time); the daily

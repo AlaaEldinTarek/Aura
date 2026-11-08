@@ -302,14 +302,14 @@ Check only when a phase touches the area:
   `_DesktopShell` and its nested navigator are disposed; pushed routes and sidebar collapse state are lost after each popup.
 
 ## F36 — Prayer feature issues (lib/features/prayer) — code VERIFIED (static), impact UNVERIFIED
-- **(a) Hanafi Asr never applied** — **FIXED on branch `fix/fx-0-prayer-settings` (FX-0 commit 4, 2026-11-08; unit-tested, after-fix device check pending).** **Tag: fix track, CRITICAL, first in queue (FX-0); includes the MWL fallbacks for MoonsightingCommittee / Singapore / Turkey, F36c and F52a.** `prayer_screen.dart` `_saveCalculationSettings` and `settings_screen.dart:113` store
+- **(a) Hanafi Asr never applied** — **DONE — FX-0 merged to main via PR #1 (195e284), after-fix S29 + S33 PASS 2026-11-08 (FX-0 commit 4, 2026-11-08; unit-tested, after-fix device check pending).** **Tag: fix track, CRITICAL, first in queue (FX-0); includes the MWL fallbacks for MoonsightingCommittee / Singapore / Turkey, F36c and F52a.** `prayer_screen.dart` `_saveCalculationSettings` and `settings_screen.dart:113` store
   `AsrMadhab.value` `'Hanafi'`; `prayer_times_provider.dart` `_getAsrMadhab` matches the lowercase enum
   (`prayer_settings.dart` `hanafi`) → falls back to Shafi, and sends `'shafi'` to native (`:505`). No caller of
   `setAsrMadhab`. `'MoonsightingCommittee'`, `'Singapore'`, `'Turkey'` fall back to MWL (`:531–547`). Likely user-visible.
   Likely root cause: duplicate `AsrMadhab` / method enums (F49f, linked to FX-0).
 - **(b) Prayer tab next prayer goes stale** — **Tag: fix track, HIGH.** local copy updated only in `_loadPrayerTimes` (`initState`, pull-to-refresh);
   countdown `onComplete` reloads the provider but not the local state, and the screen never watches it (`prayer_screen.dart:743–755, :401–424`).
-- **(c) Settings page method/madhab change** — **FIXED on branch `fix/fx-0-prayer-settings` (FX-0 commit 10, 2026-11-08; no unit test for the screen, after-fix device check S33 pending).** **Tag: fix track, MEDIUM, grouped with F36a (FX-0).** writes prefs then `Navigator.pop(context)` with no recalculation
+- **(c) Settings page method/madhab change** — **DONE — FX-0 merged to main via PR #1 (195e284), after-fix S29 + S33 PASS 2026-11-08 (FX-0 commit 10, 2026-11-08; no unit test for the screen, after-fix device check S33 pending).** **Tag: fix track, MEDIUM, grouped with F36a (FX-0).** writes prefs then `Navigator.pop(context)` with no recalculation
   (`prayer_screen.dart:1544–1557`; `settings_screen.dart` calls `_recalculatePrayerTimes`).
   Device evidence (2026-11-08, nova 5T, base, S33): six saves from the prayer settings page dialog (Method and Asr
   Madhab tiles; log `Saved calculation settings:` is printed only by `prayer_screen.dart`) — Qatar 12:32:38,
@@ -548,19 +548,19 @@ Check only when a phase touches the area:
   Related in the same flow: `AdhanPlayerService.setCustomAdhan(null)` sends nothing (`adhan_player_service.dart:134–139`),
   so "Reset" and deleting the selected reciter do not clear the native path; previewing a reciter
   (`adhan_downloads_screen.dart` play button) calls `setCustomAdhan(path)` and makes it the live adhan for the process.
-- **(c) Calculation dialog does not scroll; Asr madhab section unreachable on small screens** — **FIXED on branch `fix/fx-0-prayer-settings` (FX-0 commit 5a, 2026-11-08; unit-tested, after-fix device check pending).** **Tag: fix track,
+- **(c) Calculation dialog does not scroll; Asr madhab section unreachable on small screens** — **DONE — FX-0 merged to main via PR #1 (195e284), after-fix S29 + S33 PASS 2026-11-08 (FX-0 commit 5a, 2026-11-08; unit-tested, after-fix device check pending).** **Tag: fix track,
   HIGH; joined FX-0 (CRITICAL group; user 2026-11-08, spec A-1).** `PrayerCalculationSettingsDialog` lays out 14
   `ListTile`s in a non-scrolling `Column` (`prayer_calculation_settings_dialog.dart:37–157`). All madhab entry points
   open it: Settings tile (`settings_screen.dart:100`), prayer settings page Method and Asr Madhab tiles
   (`prayer_screen.dart:1486, :1517`). Device evidence (2026-11-08, nova 5T, base): the list is cut off at "Singapore"
   and does not scroll, so Hanafi cannot be selected anywhere; S29 cannot be set up at normal Display/Font size.
   Device impact VERIFIED. (Split from the old (c); the selection half is (j).)
-- **(j) Calculation dialog does not show a tap** — **FIXED on branch `fix/fx-0-prayer-settings` (FX-0 commit 5a, 2026-11-08; unit-tested, after-fix device check pending).** **Tag: fix track, MEDIUM; joined FX-0 (user 2026-11-08, spec
+- **(j) Calculation dialog does not show a tap** — **DONE — FX-0 merged to main via PR #1 (195e284), after-fix S29 + S33 PASS 2026-11-08 (FX-0 commit 5a, 2026-11-08; unit-tested, after-fix device check pending).** **Tag: fix track, MEDIUM; joined FX-0 (user 2026-11-08, spec
   A-1).** The dialog is stateless (`:11`), so `isSelected` / `groupValue` stay on `currentMethod` / `currentMadhab`
   passed at open (`:74, :78, :116, :120`); a tapped option does not show as selected until reopened. A Hanafi user
   cannot see the selection take effect (Settings entry point keeps the dialog open). Code VERIFIED (static).
-- **(k) Asr Madhab tile opens the dialog at the methods list** — **Tag: fix track, LOW; outside FX-0 (user
-  2026-11-08).** The prayer settings page's Asr Madhab tile (`prayer_screen.dart:1517`) opens the same dialog as the
+- **(k) Asr Madhab tile opens the dialog at the methods list** — **REPLACED by F57 (user 2026-11-08): split dialogs; the
+  scroll-to-madhab fix below is dropped.** ~~Tag: fix track, LOW; outside FX-0 (user 2026-11-08).~~ The prayer settings page's Asr Madhab tile (`prayer_screen.dart:1517`) opens the same dialog as the
   Method tile, starting at the 12 methods, so the madhab section is the last thing on screen (after A-1's scroll fix
   the user must still scroll past all methods). Proposed fix (not in A-1: it changes the `show()` signature, a caller
   and adds a UI behavior): optional `scrollToMadhab` flag on `show()` / constructor, `GlobalKey` on the madhab
@@ -719,7 +719,7 @@ calculator method/madhab strings equal Dart enum `.name` values (`prayer_setting
 Source: `reference/2026-11-07_DRIFT_REPORT.md` (doc drift fixed in the modules). Only bugs not already logged; the
 drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F46c, F49a, F51h/i/j/l/m/p/q. Items
 (a)–(c) re-checked in code by the main session.
-- **(a) Settings / iqama changes don't reach alarms or native data until the next resume** — **FIXED on branch `fix/fx-0-prayer-settings` (FX-0 commits 7–11, 2026-11-08; refresh helpers unit-tested, after-fix device checks S31/S33 pending).** **Tag: fix track MEDIUM
+- **(a) Settings / iqama changes don't reach alarms or native data until the next resume** — **DONE — FX-0 merged to main via PR #1 (195e284), after-fix S29 + S33 PASS 2026-11-08 (FX-0 commits 7–11, 2026-11-08; refresh helpers unit-tested, after-fix device checks S31/S33 pending).** **Tag: fix track MEDIUM
   (prayer times, adhan); joined FX-0 (user 2026-11-07: same settings → times → alarms path as F36a / F36c; the FX-0
   spec must cover recalculation AND alarm / native refresh).** `settings_screen.dart`
   `_recalculatePrayerTimes` calls `loadPrayerTimes(DateTime.now())` (`:295–300`) on the existing notifier;
@@ -782,7 +782,7 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   notification shade" — no code found.
 
 ## F53 — Prayer calculation for other dates (found while preparing FX-0, 2026-11-07) — code VERIFIED (static)
-- **(a) Times for any date other than today are today's times shifted by whole days** — **FIXED on branch `fix/fx-0-prayer-settings` (FX-0 commits 3 and 8, 2026-11-08; unit-tested, after-fix device check pending).** **Tag: fix track, joined FX-0
+- **(a) Times for any date other than today are today's times shifted by whole days** — **DONE — FX-0 merged to main via PR #1 (195e284), after-fix S29 + S33 PASS 2026-11-08 (FX-0 commits 3 and 8, 2026-11-08; unit-tested, after-fix device check pending).** **Tag: fix track, joined FX-0
   (CRITICAL group; user 2026-11-07).** `PrayerTimesService.getPrayerTimes(date:)` always
   calls `adhan.PrayerTimes.today(...)` (`prayer_times_service.dart:80`) and adds `Duration(days: daysDifference)`
   (`:94–111`). `PrayerTimesNotifier` caches days 0–2 with it (`prayer_times_provider.dart:403–423`) as
@@ -818,6 +818,55 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   Commit e4b1d5c (pushed as backup, no PR/merge) on top of 08cc443; formerly uncommitted in the removed worktree
   `.claude/worktrees/crazy-haibt` (branch `claude/crazy-haibt` deleted). Files: `task.dart`, `task_service.dart`,
   `task_card.dart`, `tasks_screen.dart`. Base is 261 commits behind main.
+
+## F56 — Alarms on Umm al-Qura after MWL was restored (2026-11-08) — CLOSED: user action, not a bug
+- **Closed 2026-11-08 (user): the user changed the method to Umm al-Qura at ~16:49 (app in foreground
+  16:49:29–16:50:38). The app correctly saved it, recalculated and re-armed all alarms (Isha 18:39 = Maghrib + 90 min);
+  FX-0 behaved as designed. Release hold removed.** Original record kept below for reference.
+- **(a) Selected method MWL, but alarms and stored method become Umm al-Qura** — ~~Tag: CRITICAL (user 2026-11-08);
+  release 1.1.0 ON HOLD until fixed.~~ Evidence (nova 5T, FX-0 build, PID 26682;
+  `reference/logcat/S33-fx0-2026-11-08.txt`, `S33-fx0-alarm.txt`, `logcat-maghrib-2026-11-08.txt`):
+  - 15:43:49 `Saved calculation settings: MuslimWorldLeague, Shafi` → recalc `muslimWorldLeague`; dumpsys 15:44: Isha
+    alarm 18:22, Maghrib 17:09, Isha post-check 18:52 (MWL).
+  - 17:37:28 (first Dart lines in the dump; main buffer starts 17:36:45): in-memory times already Umm al-Qura (Fajr 04:44,
+    Isha 18:39 = Maghrib + 90 min). Isha adhan fired 18:39:00 (`iqama=1794153240000` = 18:54). Native reschedule
+    18:39:00: Fajr 04:44, Zuhr 11:40 (+3 min Umm al-Qura Dhuhr adjustment), Isha 18:38. 18:40:01 Dart
+    `Calculation method: makkah`.
+  - Same on 1.0.1+60 (installed 20:25, new process 25195): 20:26:02 `Calculation method: makkah`, alarms Fajr 04:44 …
+    Isha 18:38; 20:26:31 `Loaded calculation settings: UmmAlQura, Shafi` (direct read of Flutter `calculation_method`).
+  - Code (static): native `prayer_calc_method` (`aura_prayer_times`) is written only from Dart arguments
+    (`MainActivity.kt:306, :670`) built from `calculation_method` (`prayer_times_provider.dart:369, :558`), so native
+    follows the Flutter pref. The value `UmmAlQura` (UI format) is written only by UI saves (`prayer_screen.dart:375,
+    :1550`, `settings_screen.dart:107`); the provider writes enum names (`:584`); no Firestore/sync writer;
+    `AdhanCalculationMethod.fromValue` falls back to MWL. Writer between 15:44 and 17:36 UNKNOWN (logs rotated); app
+    in foreground 15:44–15:55 and 16:49:29–16:50:38 (system buffer). Investigation: see log 2026-11-08.
+
+## F57 — Split the Prayer Calculation dialog (user request with screenshot, 2026-11-08) — UX
+- **(a) One dialog for method + madhab; split into two** — **Tag: MEDIUM (UX); supersedes F49k; schedule: release 1.1.0
+  (user 2026-11-08, final; spec docs/designs/fix-f57-split-dialog.md, branch `fix/ui-1.1.0`).**
+  **Status 2026-11-08: FIXED on `fix/ui-1.1.0` (2bcd95e, c8ddfa9), not merged; widget-tested; device check by user pending.** Requested behavior:
+  - Prayer settings page: "Calculation Method" tile → dialog with the 12 methods only; "Asr Madhab" tile → separate
+    dialog with Shafi / Hanafi only (today both open `PrayerCalculationSettingsDialog`, `prayer_screen.dart:1480–1535`).
+  - Settings tab: the single "Calculation Method & Madhab" tile (`settings_screen.dart:95–118`) becomes two tiles with
+    the same behavior.
+  - Each tile shows its current choice as subtitle, localized (e.g. "Muslim World League", "Shafi"; today the Settings
+    tile shows raw values `MuslimWorldLeague · Shafi`).
+  - Tapping an option selects it (radio moves); "Done" saves, recalculates (same FX-0 path) and closes. (User
+    correction 2026-11-08; replaces "tap saves and closes immediately".)
+  - All strings via `.tr()` in en.json + ar.json; stored values and keys (`calculation_method`, `asr_madhab`)
+    unchanged — no contract change.
+  - Spec: short note, no EGM review. Tests: widget tests for both dialogs (current selection shown, tap moves the
+    radio, "Done" fires the callback once with the chosen value, dialog closes).
+  - Note: today the dialog saves on every tap; "save on Done only" also prevents accidental saves.
+
+## F58 — Quran reader A+/A− zoom buttons overlap content (user report, 2026-11-08) — UI
+- **(a) A+/A− overlap** — **Tag: MEDIUM (UI); fix track, release 1.1.0 (user 2026-11-08, final; spec docs/designs/fix-f58-reader-zoom.md, branch `fix/ui-1.1.0`).** **Status 2026-11-08: FIXED on
+  `fix/ui-1.1.0` (d1f69f7, 8fab1d3), not merged; widget-tested; device check by user pending.** Device
+  VERIFIED (user screenshot 2026-11-08): nova 5T (360 dp wide, normal Display/Font size), Quran reader, Al-Ma'idah page
+  122/604 — the A+/A− box covers the right end (line start in RTL) of the last two lines (ayah 89–90). Code (static): `_MobileZoomControls` are drawn at a fixed `Positioned(right: 16,
+  bottom: 80)` over the mushaf whenever the UI is shown on mobile (`quran_reader_screen.dart:555–563`, widget
+  `:1571`); the position ignores RTL (not `PositionedDirectional`) and the mushaf/page layout. Other pages / screen
+  sizes: UNVERIFIED.
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).

@@ -485,5 +485,8 @@
   "guest_sync_profile_subtitle": "You have %d task(s) from your guest session. Sync them to your account.",
   "guest_sync_profile_btn": "Sync Now",
   "guest_sync_profile_note": "You can also do this any time from your profile.",
-  "guest_sync_success": "Tasks synced to your account!"
+  "guest_sync_success": "Tasks synced to your account!",
+  "prayer_calc_method_title": "Calculation Method",
+  "prayer_asr_madhab_title": "Asr Madhab",
+  "prayer_calc_done": "Done"
 }
