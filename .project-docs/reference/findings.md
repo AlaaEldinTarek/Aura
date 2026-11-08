@@ -842,8 +842,8 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
     in foreground 15:44–15:55 and 16:49:29–16:50:38 (system buffer). Investigation: see log 2026-11-08.
 
 ## F57 — Split the Prayer Calculation dialog (user request with screenshot, 2026-11-08) — UX
-- **(a) One dialog for method + madhab; split into two** — **Tag: MEDIUM (UX); supersedes F49k; schedule: included in
-  release 1.1.0 (F56, with which it was grouped, closed as not a bug).** Requested behavior:
+- **(a) One dialog for method + madhab; split into two** — **Tag: MEDIUM (UX); supersedes F49k; schedule: release 1.2.0
+  (user 2026-11-08; moved out of 1.1.0, which ships FX-0 + F51a only).** Requested behavior:
   - Prayer settings page: "Calculation Method" tile → dialog with the 12 methods only; "Asr Madhab" tile → separate
     dialog with Shafi / Hanafi only (today both open `PrayerCalculationSettingsDialog`, `prayer_screen.dart:1480–1535`).
   - Settings tab: the single "Calculation Method & Madhab" tile (`settings_screen.dart:95–118`) becomes two tiles with
@@ -859,11 +859,12 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   - Note: today the dialog saves on every tap; "save on Done only" also prevents accidental saves.
 
 ## F58 — Quran reader A+/A− zoom buttons overlap content (user report, 2026-11-08) — UI
-- **(a) A+/A− overlap** — **Tag: MEDIUM (UI); fix track, needs spec.** User-reported overlap of the mobile zoom
-  buttons in the Quran reader. Code (static): `_MobileZoomControls` are drawn at a fixed `Positioned(right: 16,
+- **(a) A+/A− overlap** — **Tag: MEDIUM (UI); fix track, needs spec; release 1.2.0 (user 2026-11-08).** Device
+  VERIFIED (user screenshot 2026-11-08): nova 5T (360 dp wide, normal Display/Font size), Quran reader, Al-Ma'idah page
+  122/604 — the A+/A− box covers the right end (line start in RTL) of the last two lines (ayah 89–90). Code (static): `_MobileZoomControls` are drawn at a fixed `Positioned(right: 16,
   bottom: 80)` over the mushaf whenever the UI is shown on mobile (`quran_reader_screen.dart:555–563`, widget
-  `:1571`); the position ignores RTL (not `PositionedDirectional`) and the mushaf/page layout. What exactly they cover
-  (mushaf text, page-nav buttons, bottom bar) and on which screen size: UNVERIFIED (screenshot not in docs).
+  `:1571`); the position ignores RTL (not `PositionedDirectional`) and the mushaf/page layout. Other pages / screen
+  sizes: UNVERIFIED.
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
