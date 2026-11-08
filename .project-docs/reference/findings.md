@@ -843,7 +843,8 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
 
 ## F57 — Split the Prayer Calculation dialog (user request with screenshot, 2026-11-08) — UX
 - **(a) One dialog for method + madhab; split into two** — **Tag: MEDIUM (UX); supersedes F49k; schedule: release 1.1.0
-  (user 2026-11-08, final; spec docs/designs/fix-f57-split-dialog.md, branch `fix/ui-1.1.0`).** Requested behavior:
+  (user 2026-11-08, final; spec docs/designs/fix-f57-split-dialog.md, branch `fix/ui-1.1.0`).**
+  **Status 2026-11-08: FIXED on `fix/ui-1.1.0` (2bcd95e, c8ddfa9), not merged; widget-tested; device check by user pending.** Requested behavior:
   - Prayer settings page: "Calculation Method" tile → dialog with the 12 methods only; "Asr Madhab" tile → separate
     dialog with Shafi / Hanafi only (today both open `PrayerCalculationSettingsDialog`, `prayer_screen.dart:1480–1535`).
   - Settings tab: the single "Calculation Method & Madhab" tile (`settings_screen.dart:95–118`) becomes two tiles with
@@ -859,7 +860,8 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   - Note: today the dialog saves on every tap; "save on Done only" also prevents accidental saves.
 
 ## F58 — Quran reader A+/A− zoom buttons overlap content (user report, 2026-11-08) — UI
-- **(a) A+/A− overlap** — **Tag: MEDIUM (UI); fix track, release 1.1.0 (user 2026-11-08, final; spec docs/designs/fix-f58-reader-zoom.md, branch `fix/ui-1.1.0`).** Device
+- **(a) A+/A− overlap** — **Tag: MEDIUM (UI); fix track, release 1.1.0 (user 2026-11-08, final; spec docs/designs/fix-f58-reader-zoom.md, branch `fix/ui-1.1.0`).** **Status 2026-11-08: FIXED on
+  `fix/ui-1.1.0` (d1f69f7, 8fab1d3), not merged; widget-tested; device check by user pending.** Device
   VERIFIED (user screenshot 2026-11-08): nova 5T (360 dp wide, normal Display/Font size), Quran reader, Al-Ma'idah page
   122/604 — the A+/A− box covers the right end (line start in RTL) of the last two lines (ayah 89–90). Code (static): `_MobileZoomControls` are drawn at a fixed `Positioned(right: 16,
   bottom: 80)` over the mushaf whenever the UI is shown on mobile (`quran_reader_screen.dart:555–563`, widget
