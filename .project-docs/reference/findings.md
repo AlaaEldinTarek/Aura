@@ -761,6 +761,10 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   Any screen asking for another date gets the same shifted times. Device impact UNVERIFIED (DST case: Egypt has DST).
   Correction (FX-0 spec, 2026-11-07): the shift does **not** cause a 1-hour DST error (24 h added to an absolute
   instant keeps the wall-clock time); the DST hour error is Kotlin's single per-day offset (F51p).
+  Device evidence (2026-11-08, nova 5T, base, S18/S34): app not opened across midnight; at 00:05 and 02:53
+  `NativePrayerCalc: ✅ Using cached adhan-accurate times for cached_2026-11-08` → `Fajr=04:45`; Fajr fired 04:45:00
+  vs package MWL 04:46 for 2026-11-08 — the 1-min next-day drift comes from the shifted-day cache
+  (`reference/logcat/S18-base.txt`). Device impact (drift) VERIFIED; DST case still UNVERIFIED.
 
 ## F54 — Iqama for alarms armed for another day (found in the FX-0 review, 2026-11-07) — code VERIFIED (static)
 - **(a) An adhan alarm armed for tomorrow counts down to today's iqama instant** — **MEDIUM; out of FX-0 (user
@@ -769,7 +773,11 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   only for today's prayers (`prayer_times_provider.dart:372–379`, absolute epoch ms). When the alarm fires on a later
   day (tomorrow's Fajr armed after Isha, or native-rescheduled days without an app open), the stored value is still
   the earlier day's instant, so the countdown is wrong or already past. FX-0's next-occurrence scheduling reaches this
-  path more often. Device impact UNVERIFIED. Future fix: iqama per date (FX-0 spec, Future Improvements).
+  path more often. Future fix: iqama per date (FX-0 spec, Future Improvements).
+  Device evidence (2026-11-08, nova 5T, base, S34): Fajr alarm armed the evening before fired 04:45:00 with
+  `PrayerAlarmReceiver: ✅ [ADHAN_MODE] Activated for Fajr | iqama=1794016800000 | end=1794103500021` —
+  iqama 1794016800000 = 2026-11-07 05:00 (+03), yesterday's instant, 23 h 45 min before the adhan
+  (`reference/logcat/S18-base.txt`). Device impact VERIFIED; stays MEDIUM, out of FX-0.
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
