@@ -18,6 +18,7 @@ import '../services/desktop_adhan_service.dart';
 import '../services/desktop_prayer_scheduler.dart';
 import '../services/desktop_tray_service.dart';
 import '../services/desktop_notification_service.dart';
+import '../utils/prayer_refresh.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 bool get _isDesktop =>
@@ -76,8 +77,20 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
   DateTime? _locationCacheTime;
   static const Duration _locationCacheTTL = Duration(minutes: 15);
 
-  // Track last side effects day to avoid re-running on same day
-  String? _lastSideEffectsDate;
+  // Input fingerprint of the last side-effects run: prayer-derived effects
+  // (alarms, post-checks, widgets, native data, cache) run only when it changes.
+  String? _lastFingerprint;
+
+  // Wall-clock date (yyyy-M-d) of the last daily effects run (task digest,
+  // future-record cleanup): these stay once per day.
+  String? _lastDailyEffectsDate;
+
+  // Latest side-effects run, shared by all notifier instances so a run of a
+  // disposed notifier also loses to a newer notifier's run after resume.
+  static int _generation = 0;
+
+  @visibleForTesting
+  static void resetGenerationForTest() => _generation = 0;
 
   // Wall-clock of the previous minute tick — a large gap means the machine
   // slept, which freezes Dart timers (desktop adhan timers fire late)
@@ -251,11 +264,29 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
       }
 
       // ---- SIDE EFFECTS in background (fire-and-forget) ----
-      // Only run once per day to avoid wasting resources every minute
-      final todayKey = '${date.year}-${date.month}-${date.day}';
-      if (_lastSideEffectsDate == todayKey) return; // Guard before spawning async
-      _lastSideEffectsDate = todayKey; // Set synchronously to prevent concurrent runs
-      () async {
+      // Prayer-derived effects run only when the inputs changed (fingerprint:
+      // wall-clock date, method, madhab, iqama, calculated times). Compared and
+      // stored synchronously, before the async block, to prevent concurrent runs.
+      final wallNow = DateTime.now();
+      final todayKey = '${wallNow.year}-${wallNow.month}-${wallNow.day}';
+      final fingerprint = sideEffectsFingerprint(
+        today: DateTime(wallNow.year, wallNow.month, wallNow.day),
+        method: method,
+        madhab: madhab,
+        iqama: iqamaMinutes,
+        days: [prayerTimes],
+      );
+      if (fingerprint == _lastFingerprint) return; // Guard before spawning async
+      _lastFingerprint = fingerprint;
+      final run = ++_generation;
+      // Daily effects (task digest, record cleanup) keep the once-per-day guard.
+      final runDailyEffects = _lastDailyEffectsDate != todayKey;
+      _lastDailyEffectsDate = todayKey;
+
+      // Checked before each platform write: a newer run owns the writes.
+      bool stale() => !isLatest(run, _generation);
+
+      Future<void> prayerEffects() async {
         // Schedule post-prayer check alarms (Android only)
         if (!_isDesktop) try {
           const notificationIds = {
@@ -265,6 +296,7 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
           for (final prayer in updatedPrayerTimes) {
             if (prayer.name == 'Sunrise') continue;
             if (prayer.time.isAfter(DateTime.now())) {
+              if (stale()) return;
               final requestCode = notificationIds[prayer.name] ?? 1000;
               await PrayerAlarmService.instance.schedulePostPrayerCheck(
                 prayerName: prayer.name,
@@ -277,6 +309,113 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
         } catch (e) {
           debugPrint('PrayerTimesNotifier: Error scheduling post-prayer checks - $e');
         }
+
+        // Schedule native alarms for adhan playback (Android only)
+        if (stale()) return;
+        if (!_isDesktop) try {
+          await PrayerAlarmService.instance.scheduleDailyPrayerAlarms(updatedPrayerTimes);
+        } catch (e) {
+          debugPrint('PrayerTimesNotifier: Error scheduling adhan alarms - $e');
+        }
+
+        // Desktop: schedule timer-based adhan + notifications
+        if (stale()) return;
+        if (_isDesktop) {
+          try {
+            await DesktopAdhanService.instance.initialize();
+            await DesktopPrayerScheduler.instance.schedulePrayerTimers(updatedPrayerTimes);
+            debugPrint('✅ [DESKTOP] Prayer timers scheduled');
+          } catch (e) {
+            debugPrint('⚠️ [DESKTOP] Error scheduling prayer timers: $e');
+          }
+        }
+
+        // Save to widget service for home screen widgets
+        if (stale()) return;
+        try {
+          final language = await _prefs?.getString('language') ?? 'en';
+          final localizedCityName = getLocalizedCityName(locationData.cityName, language);
+          await PrayerWidgetService.instance.savePrayerTimes(
+            prayerTimes: updatedPrayerTimes,
+            nextPrayer: nextPrayer,
+            currentPrayer: currentPrayer,
+            language: language,
+            locationName: localizedCityName,
+          );
+        } catch (e) {
+          debugPrint('PrayerTimesNotifier: Error saving to widget service - $e');
+        }
+
+        // Update foreground service notification with fresh prayer times
+        if (stale()) return;
+        try {
+          final language = await _prefs?.getString('language') ?? 'en';
+          final prayerTimesMap = <String, String>{};
+          for (final p in updatedPrayerTimes) {
+            final key = '${p.name.toLowerCase()}_time';
+            prayerTimesMap[key] = p.time.millisecondsSinceEpoch.toString();
+            // Include iqama time so PrayerAlarmReceiver can show the countdown.
+            // Key must match what PrayerAlarmReceiver reads: dhuhr_iqama_time for Zuhr.
+            if (p.iqamaTime != null && p.name != 'Sunrise') {
+              final iqamaKey = p.name == 'Zuhr'
+                  ? 'dhuhr_iqama_time'
+                  : '${p.name.toLowerCase()}_iqama_time';
+              prayerTimesMap[iqamaKey] = p.iqamaTime!.millisecondsSinceEpoch.toString();
+            }
+          }
+          await BackgroundServiceManager.instance.updatePrayerTimes(
+            prayerTimes: prayerTimesMap,
+            nextPrayerName: nextPrayer?.name,
+            nextPrayerNameAr: nextPrayer?.nameAr,
+            nextPrayerTime: nextPrayer?.time.millisecondsSinceEpoch,
+            language: language,
+            latitude: locationData.latitude,
+            longitude: locationData.longitude,
+            calculationMethod: method.name,
+            asrMadhab: madhab.name,
+          );
+        } catch (e) {
+          debugPrint('PrayerTimesNotifier: Error updating foreground service - $e');
+        }
+
+        // Cache today's + the next 2 days' adhan-accurate times so the native
+        // recalc (00:05 alarm / foreground stale-check / WorkManager backup /
+        // post-Fajr/Isha refresh) uses the exact library values instead of its
+        // approximate astronomy. TODAY must be included: the post-fire recalc
+        // in PrayerAlarmReceiver compares "isha < now" against these values —
+        // without today's cache its own astronomy can place Isha a few minutes
+        // later than the alarm that just fired, re-arming it (double adhan).
+        if (stale()) return;
+        if (!_isDesktop) try {
+          final cache = <String, String>{};
+          for (int i = 0; i <= 2; i++) {
+            final d = DateTime.now().add(Duration(days: i));
+            final dayTimes = await _prayerTimesService.getPrayerTimes(
+              date: d,
+              latitude: locationData.latitude,
+              longitude: locationData.longitude,
+              calculationMethod: method,
+              asrMadhab: madhab,
+            );
+            final mm = d.month.toString().padLeft(2, '0');
+            final dd = d.day.toString().padLeft(2, '0');
+            final prefix = 'cached_${d.year}-$mm-$dd';
+            for (final p in dayTimes) {
+              // Native reads "dhuhr"; PrayerTime.name is "Zuhr".
+              final n = p.name == 'Zuhr' ? 'dhuhr' : p.name.toLowerCase();
+              cache['${prefix}_$n'] = p.time.millisecondsSinceEpoch.toString();
+            }
+          }
+          if (stale()) return;
+          await BackgroundServiceManager.instance.cacheAccuratePrayerTimes(cache);
+        } catch (e) {
+          debugPrint('PrayerTimesNotifier: Error caching future prayer times - $e');
+        }
+      }
+
+      () async {
+        await prayerEffects();
+        if (!runDailyEffects) return;
 
         // Schedule daily task digest notification
         try {
@@ -315,39 +454,6 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
           debugPrint('PrayerTimesNotifier: Error scheduling task digest - $e');
         }
 
-        // Schedule native alarms for adhan playback (Android only)
-        if (!_isDesktop) try {
-          await PrayerAlarmService.instance.scheduleDailyPrayerAlarms(updatedPrayerTimes);
-        } catch (e) {
-          debugPrint('PrayerTimesNotifier: Error scheduling adhan alarms - $e');
-        }
-
-        // Desktop: schedule timer-based adhan + notifications
-        if (_isDesktop) {
-          try {
-            await DesktopAdhanService.instance.initialize();
-            await DesktopPrayerScheduler.instance.schedulePrayerTimers(updatedPrayerTimes);
-            debugPrint('✅ [DESKTOP] Prayer timers scheduled');
-          } catch (e) {
-            debugPrint('⚠️ [DESKTOP] Error scheduling prayer timers: $e');
-          }
-        }
-
-        // Save to widget service for home screen widgets
-        try {
-          final language = await _prefs?.getString('language') ?? 'en';
-          final localizedCityName = getLocalizedCityName(locationData.cityName, language);
-          await PrayerWidgetService.instance.savePrayerTimes(
-            prayerTimes: updatedPrayerTimes,
-            nextPrayer: nextPrayer,
-            currentPrayer: currentPrayer,
-            language: language,
-            locationName: localizedCityName,
-          );
-        } catch (e) {
-          debugPrint('PrayerTimesNotifier: Error saving to widget service - $e');
-        }
-
         // Remove any prayer records created before the prayer's Adhan+20-min window.
         // These can only exist due to bugs — the 20-min rule blocks legitimate early marking.
         try {
@@ -360,69 +466,6 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
           }
         } catch (e) {
           debugPrint('PrayerTimesNotifier: Error in prayer record cleanup - $e');
-        }
-
-        // Update foreground service notification with fresh prayer times
-        try {
-          final language = await _prefs?.getString('language') ?? 'en';
-          final prayerTimesMap = <String, String>{};
-          for (final p in updatedPrayerTimes) {
-            final key = '${p.name.toLowerCase()}_time';
-            prayerTimesMap[key] = p.time.millisecondsSinceEpoch.toString();
-            // Include iqama time so PrayerAlarmReceiver can show the countdown.
-            // Key must match what PrayerAlarmReceiver reads: dhuhr_iqama_time for Zuhr.
-            if (p.iqamaTime != null && p.name != 'Sunrise') {
-              final iqamaKey = p.name == 'Zuhr'
-                  ? 'dhuhr_iqama_time'
-                  : '${p.name.toLowerCase()}_iqama_time';
-              prayerTimesMap[iqamaKey] = p.iqamaTime!.millisecondsSinceEpoch.toString();
-            }
-          }
-          await BackgroundServiceManager.instance.updatePrayerTimes(
-            prayerTimes: prayerTimesMap,
-            nextPrayerName: nextPrayer?.name,
-            nextPrayerNameAr: nextPrayer?.nameAr,
-            nextPrayerTime: nextPrayer?.time.millisecondsSinceEpoch,
-            language: language,
-            latitude: locationData.latitude,
-            longitude: locationData.longitude,
-            calculationMethod: method.name,
-            asrMadhab: madhab.name,
-          );
-        } catch (e) {
-          debugPrint('PrayerTimesNotifier: Error updating foreground service - $e');
-        }
-
-        // Cache today's + the next 2 days' adhan-accurate times so the native
-        // recalc (00:05 alarm / foreground stale-check / WorkManager backup /
-        // post-Fajr/Isha refresh) uses the exact library values instead of its
-        // approximate astronomy. TODAY must be included: the post-fire recalc
-        // in PrayerAlarmReceiver compares "isha < now" against these values —
-        // without today's cache its own astronomy can place Isha a few minutes
-        // later than the alarm that just fired, re-arming it (double adhan).
-        if (!_isDesktop) try {
-          final cache = <String, String>{};
-          for (int i = 0; i <= 2; i++) {
-            final d = DateTime.now().add(Duration(days: i));
-            final dayTimes = await _prayerTimesService.getPrayerTimes(
-              date: d,
-              latitude: locationData.latitude,
-              longitude: locationData.longitude,
-              calculationMethod: method,
-              asrMadhab: madhab,
-            );
-            final mm = d.month.toString().padLeft(2, '0');
-            final dd = d.day.toString().padLeft(2, '0');
-            final prefix = 'cached_${d.year}-$mm-$dd';
-            for (final p in dayTimes) {
-              // Native reads "dhuhr"; PrayerTime.name is "Zuhr".
-              final n = p.name == 'Zuhr' ? 'dhuhr' : p.name.toLowerCase();
-              cache['${prefix}_$n'] = p.time.millisecondsSinceEpoch.toString();
-            }
-          }
-          await BackgroundServiceManager.instance.cacheAccuratePrayerTimes(cache);
-        } catch (e) {
-          debugPrint('PrayerTimesNotifier: Error caching future prayer times - $e');
         }
       }();
     } catch (e) {
