@@ -311,6 +311,15 @@ Check only when a phase touches the area:
   countdown `onComplete` reloads the provider but not the local state, and the screen never watches it (`prayer_screen.dart:743–755, :401–424`).
 - **(c) Settings page method/madhab change** — **Tag: fix track, MEDIUM, grouped with F36a (FX-0).** writes prefs then `Navigator.pop(context)` with no recalculation
   (`prayer_screen.dart:1544–1557`; `settings_screen.dart` calls `_recalculatePrayerTimes`).
+  Device evidence (2026-11-08, nova 5T, base, S33): six saves from the prayer settings page dialog (Method and Asr
+  Madhab tiles; log `Saved calculation settings:` is printed only by `prayer_screen.dart`) — Qatar 12:32:38,
+  Singapore 12:32:51, Egyptian 12:33:05, UmmAlQura 12:33:47, MuslimWorldLeague 12:34:25 — none followed by a
+  recalculation. The only recalc came from an app resume at 12:34:00 (status bar pulled down and released), using
+  the then-stored UmmAlQura (`Calculation method: makkah`): Isha alarm moved 18:22 → 18:39. The final MWL save had no
+  recalc, so prefs said MWL while alarms / widget / native data were still Umm al-Qura until the next resume. Qatar was
+  never calculated. Device impact VERIFIED for this path. General Settings path: not exercised in this run (no save
+  there was followed by its `loadPrayerTimes`), so F36c's note that Settings recalculates is neither confirmed nor
+  contradicted — UNVERIFIED (`reference/logcat/S33-method-2026-11-08.txt`).
 - **(d) Doc conflict** — **RESOLVED 2026-11-07** (doc rewritten from code). `modules/prayer-tracking.md` § After-midnight rules describes `_monthlyData`, a `ref.listen` guard and
   an automatic yesterday remap that no longer exist in `prayer_tracking_screen.dart` (code wins).
 
@@ -549,6 +558,13 @@ Check only when a phase touches the area:
   A-1).** The dialog is stateless (`:11`), so `isSelected` / `groupValue` stay on `currentMethod` / `currentMadhab`
   passed at open (`:74, :78, :116, :120`); a tapped option does not show as selected until reopened. A Hanafi user
   cannot see the selection take effect (Settings entry point keeps the dialog open). Code VERIFIED (static).
+- **(k) Asr Madhab tile opens the dialog at the methods list** — **Tag: fix track, LOW; outside FX-0 (user
+  2026-11-08).** The prayer settings page's Asr Madhab tile (`prayer_screen.dart:1517`) opens the same dialog as the
+  Method tile, starting at the 12 methods, so the madhab section is the last thing on screen (after A-1's scroll fix
+  the user must still scroll past all methods). Proposed fix (not in A-1: it changes the `show()` signature, a caller
+  and adds a UI behavior): optional `scrollToMadhab` flag on `show()` / constructor, `GlobalKey` on the madhab
+  header + `Scrollable.ensureVisible` after first frame; only the Asr Madhab tile passes it; widget test at 360×640.
+  Device observation (nova 5T, base); code VERIFIED (static).
 - **(d) Raw values in UI** — **Tag: fix track, LOW.** Settings subtitle shows stored keys (`'$_calculationMethod ·
   $_asrMadhab'`, `settings_screen.dart:99`); minute counts (`:135, :170, :322, :348`) and the summary time (`:236`)
   are raw digits in Arabic.
