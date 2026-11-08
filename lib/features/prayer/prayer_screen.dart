@@ -30,7 +30,8 @@ import '../../core/services/location_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/prayer_alarm_service.dart';
 import '../../core/widgets/desktop_location_dialog.dart';
-import '../settings/prayer_calculation_settings_dialog.dart';
+import '../settings/calculation_method_dialog.dart';
+import '../settings/asr_madhab_dialog.dart';
 import '../settings/adhan_calculation_method.dart';
 import '../settings/asr_madhab_selection.dart';
 import '../../core/utils/haptic_feedback.dart' as haptic;
@@ -1471,66 +1472,45 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
             },
           ),
           const Divider(height: 1),
-          // Calculation Method
+          // Calculation Method (F57: its own dialog; Done saves)
           ListTile(
             leading: Icon(Icons.calculate_outlined,
                 color: AppConstants.getPrimary(isDark)),
-            title: Text(isArabic ? 'طريقة الحساب' : 'Calculation Method'),
+            title: Text('prayer_calc_method_title'.tr()),
             subtitle: Text(
               AdhanCalculationMethod.fromValue(_calculationMethod)
                   .getLocalizedName(isArabic),
             ),
             trailing: Icon(Icons.chevron_right,
                 color: AppConstants.getPrimary(isDark)),
-            onTap: () {
-              PrayerCalculationSettingsDialog.show(
-                context: context,
-                currentMethod: _calculationMethod,
-                currentMadhab: _asrMadhab,
-                onMethodChanged: (value) {
-                  setState(() {
-                    _calculationMethod = value;
-                  });
-                  _saveCalculationSettings();
-                },
-                onMadhabChanged: (value) {
-                  setState(() {
-                    _asrMadhab = value;
-                  });
-                  _saveCalculationSettings();
-                },
-              );
+            onTap: () async {
+              final value = await CalculationMethodDialog.show(context,
+                  currentMethod: _calculationMethod);
+              // Done without a change, close or back: nothing to save.
+              if (!mounted || value == null || value == _calculationMethod) {
+                return;
+              }
+              setState(() => _calculationMethod = value);
+              await _saveCalculationSettings();
             },
           ),
           const Divider(height: 1),
-          // Asr Madhab
+          // Asr Madhab (F57: its own dialog; Done saves)
           ListTile(
             leading: Icon(Icons.mosque_outlined,
                 color: AppConstants.getPrimary(isDark)),
-            title: Text(isArabic ? 'مذهب العصر' : 'Asr Madhab'),
+            title: Text('prayer_asr_madhab_title'.tr()),
             subtitle: Text(
               AsrMadhab.fromValue(_asrMadhab).getLocalizedName(isArabic),
             ),
             trailing: Icon(Icons.chevron_right,
                 color: AppConstants.getPrimary(isDark)),
-            onTap: () {
-              PrayerCalculationSettingsDialog.show(
-                context: context,
-                currentMethod: _calculationMethod,
-                currentMadhab: _asrMadhab,
-                onMethodChanged: (value) {
-                  setState(() {
-                    _calculationMethod = value;
-                  });
-                  _saveCalculationSettings();
-                },
-                onMadhabChanged: (value) {
-                  setState(() {
-                    _asrMadhab = value;
-                  });
-                  _saveCalculationSettings();
-                },
-              );
+            onTap: () async {
+              final value = await AsrMadhabDialog.show(context,
+                  currentMadhab: _asrMadhab);
+              if (!mounted || value == null || value == _asrMadhab) return;
+              setState(() => _asrMadhab = value);
+              await _saveCalculationSettings();
             },
           ),
 
@@ -1551,8 +1531,7 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
     await prefs.setString(AppConstants.keyAsrMadhab, _asrMadhab);
     debugPrint('Saved calculation settings: $_calculationMethod, $_asrMadhab');
 
-    // Close the method dialog right after saving, then reload.
-    if (mounted) Navigator.pop(context);
+    // The dialog has already closed itself (F57); reload.
     try {
       await notifier.loadPrayerTimes(DateTime.now());
     } catch (e) {
