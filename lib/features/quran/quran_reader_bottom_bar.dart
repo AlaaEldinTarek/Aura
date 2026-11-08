@@ -3,13 +3,17 @@ import 'package:aura_app/core/constants/app_constants.dart';
 import 'package:aura_app/core/theme/app_typography.dart';
 import 'package:aura_app/core/utils/number_formatter.dart';
 
-/// Bottom bar of the Quran reader: previous / next page and the page counter.
+/// Bottom bar of the Quran reader: previous / next page and the page counter,
+/// with A− / A+ zoom buttons around the counter when zoom callbacks are given
+/// (mobile; desktop has its own floating controls) (F58).
 class QuranReaderBottomBar extends StatelessWidget {
   final int currentPage;
   final int totalPages;
   final String lang;
   final VoidCallback? onGoToPrevious;
   final VoidCallback? onGoToNext;
+  final VoidCallback? onZoomOut;
+  final VoidCallback? onZoomIn;
 
   const QuranReaderBottomBar({
     super.key,
@@ -18,6 +22,8 @@ class QuranReaderBottomBar extends StatelessWidget {
     required this.lang,
     this.onGoToPrevious,
     this.onGoToNext,
+    this.onZoomOut,
+    this.onZoomIn,
   });
 
   @override
@@ -45,6 +51,9 @@ class QuranReaderBottomBar extends StatelessWidget {
                 color: currentPage > 1 ? primary : Colors.grey,
               ),
             ),
+            if (onZoomOut != null)
+              _ZoomButton(
+                  icon: Icons.remove, color: primary, onTap: onZoomOut!),
             Expanded(
               child: Text(
                 '${NumberFormatter.withArabicNumeralsByLanguage(currentPage.toString(), lang)} / ${NumberFormatter.withArabicNumeralsByLanguage(totalPages.toString(), lang)}',
@@ -55,6 +64,8 @@ class QuranReaderBottomBar extends StatelessWidget {
                 ),
               ),
             ),
+            if (onZoomIn != null)
+              _ZoomButton(icon: Icons.add, color: primary, onTap: onZoomIn!),
             IconButton(
               onPressed: onGoToNext,
               icon: Icon(
@@ -63,6 +74,43 @@ class QuranReaderBottomBar extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// "A−" / "A+" zoom button (same look as the former floating overlay).
+class _ZoomButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ZoomButton({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('A',
+                  style: TextStyle(
+                      color: color, fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(width: 2),
+              Icon(icon, size: 18, color: color),
+            ],
+          ),
         ),
       ),
     );

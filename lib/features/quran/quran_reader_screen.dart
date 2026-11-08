@@ -523,6 +523,10 @@ void _togglePageBookmark() {
                             curve: Curves.easeInOut,
                           )
                       : null,
+                  // Mobile-only zoom buttons (A− / A+) beside the page counter
+                  // (F58); pinch-to-zoom also works. Desktop has its own controls.
+                  onZoomOut: _isDesktop ? null : () => _mushafCtrl.zoom(0.8),
+                  onZoomIn: _isDesktop ? null : () => _mushafCtrl.zoom(1.25),
                 ),
               ),
 
@@ -551,17 +555,6 @@ void _togglePageBookmark() {
                 ),
               ),
 
-            // Mobile-only zoom buttons (A+ / A−) so the mushaf can be enlarged
-            // for easier reading. Pinch-to-zoom also works. Shown with the UI.
-            if (!_isDesktop && _showUI)
-              Positioned(
-                right: 16,
-                bottom: 80,
-                child: _MobileZoomControls(
-                  onZoomIn: () => _mushafCtrl.zoom(1.25),
-                  onZoomOut: () => _mushafCtrl.zoom(0.8),
-                ),
-              ),
           ],
         ),
       ),
@@ -1498,73 +1491,6 @@ class _DesktopControls extends StatelessWidget {
               btn(Icons.arrow_forward_ios, onNextPage),
             ],
           ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Mobile zoom controls (A+ / A−) ────────────────────────────────────────────
-
-class _MobileZoomControls extends StatelessWidget {
-  final VoidCallback onZoomIn;
-  final VoidCallback onZoomOut;
-
-  const _MobileZoomControls({
-    required this.onZoomIn,
-    required this.onZoomOut,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = AppConstants.getPrimary(isDark);
-    final bg = AppConstants.surface(isDark).withValues(alpha: 0.92);
-    final border = AppConstants.border(isDark);
-
-    Widget btn(IconData icon, String label, VoidCallback onTap) {
-      return Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(label,
-                    style: TextStyle(
-                        color: primary,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16)),
-                const SizedBox(width: 4),
-                Icon(icon, size: 18, color: primary),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: border),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.18),
-              blurRadius: 12,
-              offset: const Offset(0, 4)),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          btn(Icons.add, 'A', onZoomIn),
-          Container(height: 1, width: 44, color: border),
-          btn(Icons.remove, 'A', onZoomOut),
         ],
       ),
     );
