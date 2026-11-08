@@ -3,14 +3,22 @@ package com.aura.hala
 import android.content.Context
 import android.text.format.DateFormat
 import android.util.Log
+import com.aura.hala.adhan.CalculationMethod
+import com.aura.hala.adhan.CalculationParameters
+import com.aura.hala.adhan.Coordinates
+import com.aura.hala.adhan.Madhab
+import com.aura.hala.adhan.PrayerTimes
+import com.aura.hala.adhan.data.DateComponents
+import com.aura.hala.adhan.getParameters
+import java.time.ZoneId
 import java.util.Calendar
 import java.util.Date
 import java.util.TimeZone
-import kotlin.math.*
 
 /**
  * Pure-Kotlin prayer time calculator — no external libraries.
- * Implements the standard astronomical algorithm used by the adhan library.
+ * Prefers the 7 days Flutter caches (`cached_{date}_*`); otherwise calculates
+ * with a line-by-line port of the adhan package (`adhan/`, FX-0).
  *
  * Called by PrayerForegroundService when it detects stale prayer times,
  * so alarms stay accurate even if the user never opens the app.
@@ -37,7 +45,11 @@ object NativePrayerCalculator {
 
         val lat = latF.toDouble()
         val lng = lngF.toDouble()
-        val methodName = prefs.getString("prayer_calc_method", "muslimWorldLeague") ?: "muslimWorldLeague"
+        val storedMethod = prefs.getString("prayer_calc_method", "muslimWorldLeague") ?: "muslimWorldLeague"
+        val methodName = if (methodParams(storedMethod) != null) storedMethod else {
+            Log.w(TAG, "⚠️ Unknown method '$storedMethod' — using MWL")
+            "muslimWorldLeague"
+        }
         val madhabName = prefs.getString("prayer_asr_madhab", "shafi") ?: "shafi"
 
         return try {
@@ -84,83 +96,64 @@ object NativePrayerCalculator {
 
     // ── Core calculation ──────────────────────────────────────────────────────
 
-    private data class PrayerResult(
+    /** Prayer times as epoch milliseconds. */
+    internal data class PrayerResult(
         val fajr: Long, val sunrise: Long, val dhuhr: Long,
         val asr: Long, val maghrib: Long, val isha: Long
     )
     private data class NextPrayer(val name: String, val nameAr: String, val timeMs: Long)
 
-    private fun calculate(
-        lat: Double, lng: Double, cal: Calendar,
-        methodName: String, madhabName: String
+    /**
+     * Prayer times for [year]-[month]-[day] with the adhan package logic, ported
+     * line by line in `adhan/` (FX-0): equals the package (plus the documented
+     * Umm al-Qura Dhuhr +3 min) within ±1 min, verified by
+     * NativePrayerCalculatorParityTest. Times are computed in UTC and converted
+     * with [zone] per instant. Makes no android.* calls (unit-tested on the JVM).
+     * An unknown [method] falls back to MWL; [madhab] "hanafi" → shadow 2, else Shafi.
+     */
+    internal fun calculate(
+        lat: Double, lng: Double, year: Int, month: Int, day: Int,
+        zone: TimeZone, method: String, madhab: String
     ): PrayerResult {
-        val year  = cal.get(Calendar.YEAR)
-        val month = cal.get(Calendar.MONTH) + 1
-        val day   = cal.get(Calendar.DAY_OF_MONTH)
-        val tz    = cal.timeZone.getOffset(cal.timeInMillis) / 3_600_000.0
-
-        val jd = julianDay(year, month, day)
-        val (decl, eot) = sunPosition(jd)
-
-        // Dhuhr (solar noon in local time hours)
-        val dhuhrH = 12.0 + tz - lng / 15.0 - eot
-
-        // Half-day (sunrise/sunset offset from Dhuhr)
-        val halfDay = hourAngle(lat, decl, -0.8333) // standard horizon dip
-
-        val sunriseH  = dhuhrH - halfDay
-        val sunsetH   = dhuhrH + halfDay
-        val maghribH  = sunsetH  // Maghrib = sunset (all methods here)
-
-        // Fajr / Isha angles by method
-        val (fajrAngle, ishaAngle, ishaIsFixed) = methodAngles(methodName)
-
-        // High-latitude fallback: when the sun never reaches the Fajr/Isha
-        // depression angle, hourAngle() returns 0. The OLD code reused 1/7 of the
-        // *half-day* as the hour angle, which placed Fajr AFTER sunrise (and fired a
-        // phantom "Fajr" adhan at sunrise time). Use the standard "1/7 of the night"
-        // rule instead: Fajr = sunrise − night/7, Isha = sunset + night/7 — which is
-        // always on the correct side of sunrise/sunset.
-        val nightH = 24.0 - 2.0 * halfDay              // hours from sunset to next sunrise
-        val nightSeventh = if (nightH > 0.0) nightH / 7.0 else 1.0
-
-        var fajrH: Double
-        var ishaH: Double
-        if (ishaIsFixed) {
-            // Isha = Maghrib + fixed offset (UmmAlQura: 90 min)
-            ishaH  = maghribH + ishaAngle / 60.0
-            val fajrHA = hourAngle(lat, decl, fajrAngle)
-            fajrH  = if (fajrHA == 0.0) sunriseH - nightSeventh else dhuhrH - fajrHA
-        } else {
-            val fajrHA = hourAngle(lat, decl, fajrAngle)
-            val ishaHA = hourAngle(lat, decl, ishaAngle)
-            fajrH  = if (fajrHA == 0.0) sunriseH - nightSeventh else dhuhrH - fajrHA
-            ishaH  = if (ishaHA == 0.0) sunsetH + nightSeventh else dhuhrH + ishaHA
-        }
-
-        // Hard safety clamp: a real Fajr is ALWAYS before sunrise and Isha ALWAYS
-        // after sunset. Guarantees we never emit a Fajr ≥ sunrise even on borderline
-        // angles, so the phantom-Fajr-at-sunrise bug can never recur.
-        if (fajrH >= sunriseH) fajrH = sunriseH - nightSeventh
-        if (ishaH <= sunsetH)  ishaH = sunsetH + nightSeventh
-
-        // Asr (shadow ratio: Shafi = 1, Hanafi = 2)
-        val shadowFactor = if (madhabName == "hanafi") 2.0 else 1.0
-        val asrH = dhuhrH + asrHourAngle(lat, decl, shadowFactor)
-
-        // Makkah (UmmAlQura): Dhuhr +3 min
-        val dhuhrAdj = if (methodName == "makkah" ||
-            methodName == "qatar" // FX-0 interim: replaced by the adhan port (commit 12)
-        ) dhuhrH + 3.0 / 60.0 else dhuhrH
-
-        return PrayerResult(
-            fajr    = toEpoch(cal, fajrH),
-            sunrise = toEpoch(cal, sunriseH),
-            dhuhr   = toEpoch(cal, dhuhrAdj),
-            asr     = toEpoch(cal, asrH),
-            maghrib = toEpoch(cal, maghribH),
-            isha    = toEpoch(cal, ishaH),
+        val params = methodParams(method) ?: methodParams("muslimWorldLeague")!!
+        params.madhab = if (madhab == "hanafi") Madhab.hanafi else Madhab.shafi
+        val times = PrayerTimes(
+            Coordinates(lat, lng), DateComponents(year, month, day), params,
+            ZoneId.of(zone.id)
         )
+        return PrayerResult(
+            fajr    = times.fajr.toInstant().toEpochMilli(),
+            sunrise = times.sunrise.toInstant().toEpochMilli(),
+            dhuhr   = times.dhuhr.toInstant().toEpochMilli(),
+            asr     = times.asr.toInstant().toEpochMilli(),
+            maghrib = times.maghrib.toInstant().toEpochMilli(),
+            isha    = times.isha.toInstant().toEpochMilli(),
+        )
+    }
+
+    /**
+     * Package parameters for a `prayer_calc_method` contract string (the Dart
+     * `CalculationMethod.name`, contracts/prefs-keys.md), or null if unknown.
+     * `fixedAngle` = Egyptian parameters, `proportional` = MWL parameters, as in
+     * Dart. App adjustment: Umm al-Qura (`makkah`) Dhuhr +3 min.
+     */
+    private fun methodParams(name: String): CalculationParameters? = when (name) {
+        "muslimWorldLeague"     -> CalculationMethod.muslim_world_league.getParameters()
+        "isna"                  -> CalculationMethod.north_america.getParameters()
+        "egyptian"              -> CalculationMethod.egyptian.getParameters()
+        "makkah"                -> CalculationMethod.umm_al_qura.getParameters()
+            .also { it.adjustments.dhuhr = 3 }
+        "karachi"               -> CalculationMethod.karachi.getParameters()
+        "tehran"                -> CalculationMethod.tehran.getParameters()
+        "kuwait"                -> CalculationMethod.kuwait.getParameters()
+        "fixedAngle"            -> CalculationMethod.egyptian.getParameters()
+        "proportional"          -> CalculationMethod.muslim_world_league.getParameters()
+        "qatar"                 -> CalculationMethod.qatar.getParameters()
+        "dubai"                 -> CalculationMethod.dubai.getParameters()
+        "turkey"                -> CalculationMethod.turkey.getParameters()
+        "singapore"             -> CalculationMethod.singapore.getParameters()
+        "moonsightingCommittee" -> CalculationMethod.moon_sighting_committee.getParameters()
+        else                    -> null
     }
 
     /** Prefer Flutter-cached adhan-accurate times for this date; else compute. */
@@ -169,7 +162,15 @@ object NativePrayerCalculator {
         lat: Double, lng: Double, cal: Calendar,
         methodName: String, madhabName: String
     ): PrayerResult {
-        return readCached(prefs, cal) ?: calculate(lat, lng, cal, methodName, madhabName)
+        readCached(prefs, cal)?.let { return it }
+        val y = cal.get(Calendar.YEAR)
+        val m = cal.get(Calendar.MONTH) + 1
+        val d = cal.get(Calendar.DAY_OF_MONTH)
+        Log.w(
+            TAG, "⚠️ No cached times for $y-${m.toString().padStart(2, '0')}-" +
+                "${d.toString().padStart(2, '0')} — using native fallback"
+        )
+        return calculate(lat, lng, y, m, d, cal.timeZone, methodName, madhabName)
     }
 
     /** Read cached "cached_{yyyy-MM-dd}_{name}" times for [cal]'s date, or null. */
@@ -188,81 +189,7 @@ object NativePrayerCalculator {
         return PrayerResult(fajr, sunrise, dhuhr, asr, maghrib, isha)
     }
 
-    // ── Astronomical helpers ──────────────────────────────────────────────────
-
-    private fun julianDay(year: Int, month: Int, day: Int): Double {
-        var y = year; var m = month
-        if (m <= 2) { y--; m += 12 }
-        val a = floor(y / 100.0)
-        val b = 2 - a + floor(a / 4.0)
-        return floor(365.25 * (y + 4716)) + floor(30.6001 * (m + 1)) + day + b - 1524.5
-    }
-
-    /** Returns (declination°, equationOfTime in hours) */
-    private fun sunPosition(jd: Double): Pair<Double, Double> {
-        val d = jd - 2451545.0
-        val g = (357.529 + 0.98560028 * d) % 360.0
-        val q = (280.459 + 0.98564736 * d) % 360.0
-        val l = (q + 1.915 * sin(rad(g)) + 0.020 * sin(rad(2 * g))) % 360.0
-        val e = 23.439 - 0.00000036 * d
-        val ra = deg(atan2(cos(rad(e)) * sin(rad(l)), cos(rad(l)))) / 15.0
-        val decl = deg(asin(sin(rad(e)) * sin(rad(l))))
-        val eot = q / 15.0 - normalizeHours(ra)
-        return Pair(decl, eot)
-    }
-
-    /** Hour angle for a given altitude angle (negative below horizon) */
-    private fun hourAngle(lat: Double, decl: Double, alt: Double): Double {
-        val cosH = (sin(rad(alt)) - sin(rad(lat)) * sin(rad(decl))) /
-                   (cos(rad(lat)) * cos(rad(decl)))
-        if (cosH < -1.0 || cosH > 1.0) return 0.0
-        return deg(acos(cosH)) / 15.0
-    }
-
-    /** Asr hour angle based on shadow factor (1=Shafi, 2=Hanafi) */
-    private fun asrHourAngle(lat: Double, decl: Double, factor: Double): Double {
-        val target = deg(atan(1.0 / (factor + tan(rad(abs(lat - decl))))))
-        return hourAngle(lat, decl, target)
-    }
-
-    /** (fajrAngle, ishaAngle, ishaIsFixed) — positive angles = degrees below horizon */
-    private fun methodAngles(method: String): Triple<Double, Double, Boolean> = when (method) {
-        "makkah"       -> Triple(18.5,  90.0, true)  // Isha = Maghrib + 90 min
-        "isna"         -> Triple(15.0,  15.0, false)
-        "egyptian"     -> Triple(19.5,  17.5, false)
-        "karachi"      -> Triple(18.0,  18.0, false)
-        "tehran"       -> Triple(17.7,  14.0, false)
-        "kuwait"       -> Triple(18.0,  17.5, false)
-        "fixedAngle"   -> Triple(19.5,  17.5, false)
-        "proportional" -> Triple(15.0,  15.0, false)
-        "qatar"        -> Triple(18.5,  90.0, true)  // FX-0 interim: replaced by the adhan port (commit 12)
-        "dubai"        -> Triple(18.0,  17.5, false) // FX-0 interim: replaced by the adhan port (commit 12)
-        "turkey"       -> Triple(18.0,  17.0, false) // FX-0 interim: replaced by the adhan port (commit 12)
-        "singapore"    -> Triple(18.0,  17.0, false) // FX-0 interim: replaced by the adhan port (commit 12)
-        "moonsightingCommittee" -> Triple(18.0, 17.0, false) // FX-0 interim: replaced by the adhan port (commit 12)
-        else           -> Triple(18.0,  17.0, false)  // MWL
-    }
-
     // ── Utilities ─────────────────────────────────────────────────────────────
-
-    private fun rad(d: Double) = d * PI / 180.0
-    private fun deg(r: Double) = r * 180.0 / PI
-    private fun normalizeHours(h: Double): Double {
-        var v = h % 24.0; if (v < 0) v += 24.0; return v
-    }
-
-    /** Convert fractional local hours to epoch milliseconds for the given day */
-    private fun toEpoch(baseCal: Calendar, hours: Double): Long {
-        val h = normalizeHours(hours)
-        val c = Calendar.getInstance(baseCal.timeZone).apply {
-            set(baseCal.get(Calendar.YEAR), baseCal.get(Calendar.MONTH), baseCal.get(Calendar.DAY_OF_MONTH))
-            set(Calendar.HOUR_OF_DAY, h.toInt())
-            set(Calendar.MINUTE, ((h - h.toInt()) * 60).toInt())
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-        return c.timeInMillis
-    }
 
     private fun findNext(t: PrayerResult): NextPrayer? {
         val now = System.currentTimeMillis()
