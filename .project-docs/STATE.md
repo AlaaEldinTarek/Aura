@@ -1,5 +1,5 @@
 # Project State — 2026-11-08
-- App: Aura 1.0.0+59 (MSIX 1.0.3.114) | Analyze: 423 issues (0 errors) | Tests: 140 Dart + 2 Kotlin (`./gradlew :app:testDebugUnitTest`) pass
+- App: Aura 1.0.0+59 (MSIX 1.0.3.114) | Analyze: 423 issues (0 errors) | Tests: 140 Dart + 2 Kotlin (6 on fix/locale-keys) (`./gradlew :app:testDebugUnitTest`) pass
 - Baseline commit: 75d38b9 | Flutter 3.38.7 / Dart 3.10.7 (frozen) | Android minSdk 24 / target 36 / compile 36
 - Support target: current minSdk and newer (Android 10 must keep working; test device nova 5T = API 29)
 - Phase: Fix track before refactor (ADR 0001); bootstrap Steps 0–2.5 + Step 6 report done | Refactor Steps 3–4 after CRITICAL/HIGH fixes
@@ -7,7 +7,7 @@
 - Done (EGM): all `lib/core/*` folder READMEs; features tasks, home, main (7d5682b), prayer (e87448c), quran, achievements, auth, azkar (eca7bcc), daily_content, dhikl (2cf79a7), islamic_events, onboarding (9e07c1e), profile, qibla (88a6551), settings (be29b87), splash (569d651) — all feature folders done; android kotlin (`com/aura/hala`, F51), parents `lib/core` + `lib/features`; rules + progress: INDEX.md; drift report on modules/ + all 15 modules rewritten from code (6f83153, findings F52)
 - Done: FX-0 (F36a, F36c, F52a, F53a, F51p, F49c, F49j) — merged to main 2026-11-08 via PR #1 (merge 195e284; spec docs/designs/fx-0-prayer-settings.md; PR text reference/reviews/fx-0/pr-description.md). After-fix on nova 5T: S29 PASS, S33 PASS, S30 reverse-setup observation OK. FX-0 build (f9f23ad code) is installed on the device
 - Optional FX-0 regression checks (FX-0 build): S34 tonight after Isha (ID 1001 armed for tomorrow's Fajr), S18 tomorrow morning (00:05 recalc uses `cached_2026-11-09`); others when convenient: S01, S06, S11, S13, S17, scripted S30, S31, S32, S35 — reference/device-checklist.md
-- In progress: "locale-dependent keys" (F51a) — spec docs/designs/fix-locale-keys.md approved (79fa6c9, "approve phase locale-keys"); work on `fix/locale-keys` (tests first, then fix); S27 after-fix optional
+- In progress: "locale-dependent keys" (F51a) — spec docs/designs/fix-locale-keys.md (79fa6c9); fixed on `fix/locale-keys` (c3b10ac tests, d9ff65c fix; +4 Kotlin tests); not pushed — user pushes + opens PR; S27 after-fix optional
 - Blockers: E01–E04 BLOCKED — host is ARM64 Windows, SDK emulator is x64-only (2026-11-08; device-checklist); adb not on PATH (use SDK path)
 - Pending user: run device-checklist baseline S01–S21 + S23 + S24 and S25 + S26 + S27 + S28 and record results (S22 done 2026-11-07: FAIL → F41a device-verified)
 - Done (Step 2.5 "fill modules/*.md"): covered by the drift rewrite (6f83153). Bootstrap prompt: reference/bootstrap-prompt-v2.1.md
