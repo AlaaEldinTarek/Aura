@@ -7,6 +7,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/utils/start_route.dart';
 import '../../core/widgets/aura_button.dart';
 
 bool get _isDesktop =>
@@ -35,6 +36,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
+  /// Returning users (onboarding already finished on this device) skip
+  /// onboarding (F46a).
+  Future<String> _postAuthRoute() async => resolvePostAuthRoute(
+        isFirstLaunch:
+            await ref.read(sharedPreferencesServiceProvider).isFirstLaunch(),
+      );
+
   Future<void> _signInWithEmail() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -47,8 +55,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             password: _passwordController.text,
           );
 
+      final route = await _postAuthRoute();
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/onboarding');
+        Navigator.of(context).pushReplacementNamed(route);
       }
     } catch (e) {
       if (mounted) {
@@ -67,8 +76,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       await ref.read(authStateNotifierProvider.notifier).signInWithGoogle();
 
+      final route = await _postAuthRoute();
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/onboarding');
+        Navigator.of(context).pushReplacementNamed(route);
       }
     } catch (e, st) {
       if (mounted) {
@@ -211,8 +221,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     try {
       await ref.read(guestModeProvider.notifier).setGuest(true);
+      final route = await _postAuthRoute();
 
-      if (mounted) {
+      if (mounted && route == '/home') {
+        // Returning guest: straight to Home, nothing to wait for (F46a)
+        Navigator.of(context).pushReplacementNamed('/home');
+      } else if (mounted) {
         // Untyped on purpose: routes are MaterialPageRoute<dynamic>, so
         // pushNamed<bool> would throw.
         final result = await Navigator.of(context).pushNamed('/onboarding');
