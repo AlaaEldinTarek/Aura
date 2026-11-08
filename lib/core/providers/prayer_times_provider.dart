@@ -269,12 +269,34 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
       // stored synchronously, before the async block, to prevent concurrent runs.
       final wallNow = DateTime.now();
       final todayKey = '${wallNow.year}-${wallNow.month}-${wallNow.day}';
+
+      // Seven calendar days from the wall-clock date (today … +6), each
+      // calculated for its own date. They feed the fingerprint, the native
+      // cache and tomorrow's alarms. Day 0 reuses prayerTimes when it was
+      // calculated for the wall-clock date (every live caller).
+      final cacheDates = cacheDays(wallNow);
+      final days = <List<PrayerTime>>[];
+      for (final d in cacheDates) {
+        if (days.isEmpty && normalizedDate == d) {
+          days.add(prayerTimes);
+          continue;
+        }
+        days.add(await _prayerTimesService.getPrayerTimes(
+          date: d,
+          latitude: locationData.latitude,
+          longitude: locationData.longitude,
+          calculationMethod: method,
+          asrMadhab: madhab,
+          iqamaMinutes: iqamaMinutes,
+        ));
+      }
+
       final fingerprint = sideEffectsFingerprint(
-        today: DateTime(wallNow.year, wallNow.month, wallNow.day),
+        today: cacheDates[0],
         method: method,
         madhab: madhab,
         iqama: iqamaMinutes,
-        days: [prayerTimes],
+        days: days,
       );
       if (fingerprint == _lastFingerprint) return; // Guard before spawning async
       _lastFingerprint = fingerprint;
@@ -378,7 +400,7 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
           debugPrint('PrayerTimesNotifier: Error updating foreground service - $e');
         }
 
-        // Cache today's + the next 2 days' adhan-accurate times so the native
+        // Cache seven days (today … +6) of adhan-accurate times so the native
         // recalc (00:05 alarm / foreground stale-check / WorkManager backup /
         // post-Fajr/Isha refresh) uses the exact library values instead of its
         // approximate astronomy. TODAY must be included: the post-fire recalc
@@ -387,26 +409,9 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
         // later than the alarm that just fired, re-arming it (double adhan).
         if (stale()) return;
         if (!_isDesktop) try {
-          final cache = <String, String>{};
-          for (int i = 0; i <= 2; i++) {
-            final d = DateTime.now().add(Duration(days: i));
-            final dayTimes = await _prayerTimesService.getPrayerTimes(
-              date: d,
-              latitude: locationData.latitude,
-              longitude: locationData.longitude,
-              calculationMethod: method,
-              asrMadhab: madhab,
-            );
-            final mm = d.month.toString().padLeft(2, '0');
-            final dd = d.day.toString().padLeft(2, '0');
-            final prefix = 'cached_${d.year}-$mm-$dd';
-            for (final p in dayTimes) {
-              // Native reads "dhuhr"; PrayerTime.name is "Zuhr".
-              final n = p.name == 'Zuhr' ? 'dhuhr' : p.name.toLowerCase();
-              cache['${prefix}_$n'] = p.time.millisecondsSinceEpoch.toString();
-            }
-          }
-          if (stale()) return;
+          final cache = buildNativeCache([
+            for (var i = 0; i < days.length; i++) (cacheDates[i], days[i]),
+          ]);
           await BackgroundServiceManager.instance.cacheAccuratePrayerTimes(cache);
         } catch (e) {
           debugPrint('PrayerTimesNotifier: Error caching future prayer times - $e');
