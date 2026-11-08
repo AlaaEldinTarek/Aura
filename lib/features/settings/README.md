@@ -14,6 +14,8 @@ or logic change without an approved spec.
 | --- | --- |
 | `settings_screen.dart` | `SettingsScreen()` (route `/settings`). Private: `_SettingsScreenState` (pickers for silent duration, task reminder minutes, language, theme, daily summary time) |
 | `prayer_calculation_settings_dialog.dart` | `PrayerCalculationSettingsDialog.show({context, currentMethod, currentMadhab, onMethodChanged, onMadhabChanged})` (`StatefulWidget`); callers: `settings_screen.dart`, `prayer/prayer_screen.dart` |
+| `calculation_method_dialog.dart` | `CalculationMethodDialog.show(context, currentMethod:) → Future<String?>`: 12 methods only; tap selects, Done returns the value, close/back returns null (F57) |
+| `asr_madhab_dialog.dart` | `AsrMadhabDialog.show(context, currentMadhab:) → Future<String?>`: Shafi / Hanafi only, same behavior (F57) |
 | `adhan_calculation_method.dart` | `enum AdhanCalculationMethod` (12 values, `.value` strings e.g. `'MuslimWorldLeague'`, `'UmmAlQura'`), `getLocalizedName`, `fromValue` (fallback MWL) |
 | `asr_madhab_selection.dart` | `enum AsrMadhab` (`shafi` / `hanafi`, `.value` `'Shafi'` / `'Hanafi'`), `getLocalizedName`, `fromValue` — a different type from `core/models/prayer_settings.dart` `AsrMadhab` |
 | `iqama_settings_screen.dart` | `IqamaSettingsScreen()` (route `/iqama_settings`) |
