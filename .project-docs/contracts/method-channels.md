@@ -23,7 +23,7 @@ channel name (`silent_mode`). Silent-mode automation actually runs natively from
 ## Methods — Dart → Kotlin
 | Channel | Method | Dart caller | Kotlin handler | Confidence |
 | --- | --- | --- | --- | --- |
-| adhan | `playAdhan`, `stopAdhan`, `setAdhanEnabled`, `isAdhanEnabled`, `setCustomAdhan`, `getCustomAdhan` | `adhan_player_service.dart:73,83,97,39,136,144` | `MainActivity.kt:355–385` | Verified |
+| adhan | `playAdhan`, `stopAdhan`, `previewAdhan {id: String} → bool` (false when adhan off, id invalid or file missing; stops current playback first) | `adhan_player_service.dart` | `MainActivity.kt:353–391` | Verified (settings-bridge: `setAdhanEnabled`, `isAdhanEnabled`, `setCustomAdhan`, `getCustomAdhan` removed) |
 | prayer_alarms | `schedulePrayerAlarm`, `scheduleReminderAlarm`, `testAdhanNow`, `cancelAllPrayerAlarms`, `schedulePostPrayerCheck`, `cancelPostPrayerCheck`, `markPrayerTracked`, `getNativePrayerStatuses`, `clearNativePrayerStatus`, `scheduleDailySummary`, `cancelDailySummary` | `prayer_alarm_service.dart:84,110,181,222,238,257,273,287,301,361,371`; also `main_wrapper_screen.dart:859` (reminder), `:1048` (post-check) | `MainActivity.kt:396–593` | Verified |
 | prayer_alarms | `canScheduleExactAlarms`, `openExactAlarmSettings` | `platform_channel_service.dart:28,50`, `prayer_alarm_service.dart:194,209` | `MainActivity.kt:561,569` | Verified |
 | prayer_alarms | `isIgnoringBatteryOptimizations`, `openBatteryOptimizationSettings` | `platform_channel_service.dart:17,39` | `MainActivity.kt:605,608` | Verified |

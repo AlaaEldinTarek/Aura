@@ -17,7 +17,7 @@ daily-summary notifications always English, daily summary time reverting to 21:0
 | --- | --- | --- | --- |
 | `aura_prayer_times` | 44 | PrayerForegroundService, PrayerAlarmReceiver, AdhanFullScreenActivity, StopAdhanReceiver, DailySummaryReceiver, NativePrayerCalculator, JumuahReminderReceiver, PrayerWidgets, DailyContentWidget, MainActivity (channel writes) | Verified |
 | `aura_silent_mode` | native state only | SilentModeAutomation, AdhanFullScreenActivity, ToggleSilentModeReceiver, PrayerForegroundService | Verified (native state: `is_silent_active`, `saved_ringer_mode`, `silent_end_time`; `silent_mode_enabled` moved to `FlutterSharedPreferences` — F49a fix) |
-| `aura_prefs` | 4 (`MainActivity.kt:369,375`, `AdhanPlayer.kt:180`, `PrayerBootReceiver.kt:59`) | MainActivity adhan channel (W/R `adhan_enabled`), AdhanPlayer (R `adhan_enabled`), PrayerBootReceiver (R `notifications_enabled`) | Verified. `language` reader removed (F49h fix). Custom adhan is NOT stored here (in-memory only — findings F49b) |
+| `aura_prefs` | 1 (`PrayerBootReceiver.kt:59`) | PrayerBootReceiver (R `notifications_enabled`) | Verified. `adhan_enabled` W/R removed (settings-bridge: now in `FlutterSharedPreferences`). `language` reader removed (F49h). Custom adhan path removed (F49b: resolved from `selected_adhan_id`). `notifications_enabled` has no writer (dead check — F49i, removed in commit 4) |
 | `aura_tasks_widget` | 3 (`TasksWidget.kt:19,261`, `MainActivity.kt:323`) | TasksWidget, MainActivity `updateTasksWidget` | Partial — undocumented before Step 2 |
 | `aura_focus_state` | 2 (`FocusModeService.kt:33`) | FocusModeService (`duration_minutes`, `started_at`, …) | Partial — undocumented before Step 2 |
 | `aura_focus_mode` | 1 | FocusModeReceiver (`completed_task_id`, `completed_at`) | Partial |
@@ -28,6 +28,8 @@ daily-summary notifications always English, daily summary time reverting to 21:0
 | Name | Dart location | Kotlin location | Read/Write | Dynamic? | Confidence |
 | --- | --- | --- | --- | --- | --- |
 | `silent_mode_enabled` | `shared_preferences_service.dart:201–202`, `prayer_screen.dart:1422` | `PrayerAlarmReceiver.kt`, `AdhanFullScreenActivity.kt` (via `FlutterPrefs`) | Dart W / Kotlin R | No | Verified (F49a fix) |
+| `adhan_enabled` | `adhan_player_service.dart` (`setEnabled`) | `AdhanPlayer.play`, `AdhanPlayer.previewAdhan` (via `FlutterPrefs`) | Dart W / Kotlin R | No | Verified (settings-bridge: one copy, `aura_prefs` duplicate removed) |
+| `selected_adhan_id` | `adhan_downloads_screen.dart` (select / reset / delete) | `AdhanPlayer.play` via `AdhanFiles.resolve` (via `FlutterPrefs`) | Dart W / Kotlin R | No | Verified (settings-bridge). Android reciter rule: folder `PathUtils.getDataDirectory(context)/adhans`, file `adhan_<id>.mp3`, id `[a-z0-9_]+`; anything else → built-in adhan (prayer) or nothing (preview). Android only; Windows uses `adhans/<prayerName>.mp3` |
 | `prayer_tracking_notifications_enabled` | `shared_preferences_service.dart` | `DailySummaryReceiver.kt:90`, `PrayerAlarmReceiver.kt:580`, `PrayerBootReceiver.kt:97` | Dart W / Kotlin R | No | Verified |
 | `daily_summary_time` | `shared_preferences_service.dart` | `DailySummaryReceiver.kt:151`, `PrayerBootReceiver.kt:99` | Dart W / Kotlin R | No | Verified |
 | `jumua_reminder_enabled` | `preferences_provider.dart`, `notification_service.dart` | `JumuahReminderReceiver.kt:24,105` | Dart W / Kotlin R | No | Verified |
@@ -60,11 +62,9 @@ daily-summary notifications always English, daily summary time reverting to 21:0
 - `aura_silent_mode`: `is_silent_active`, `saved_ringer_mode`, `silent_end_time` (native state only; `silent_mode_enabled`
   now read from `FlutterSharedPreferences` via `FlutterPrefs` — F49a fix).
 - `aura_tasks_widget`: `task_count`, `tasks_done`, `tasks_total`, `streak`, `language`, `task_{i}_{id|title|time|category|priority|overdue|subtaskDone|subtaskTotal}`.
-- `aura_prefs`: `adhan_enabled` (W `MainActivity.kt:369–370` via adhan channel `setAdhanEnabled`; R `MainActivity.kt:375`,
-  `AdhanPlayer.kt:180–181`). Read with no writer found (default used): `notifications_enabled`
-  (`PrayerBootReceiver.kt:59–60`, default `true`; dead check — findings F49i). `language` reader removed (F49h fix).
-  No custom adhan key: `AdhanPlayer.customAdhanPath` is an in-memory `var` set by channel
-  `setCustomAdhan` (`MainActivity.kt:379–383`) and lost when the process dies (findings F49b).
+- `aura_prefs`: `notifications_enabled` (R `PrayerBootReceiver.kt:59–60`, no writer, default `true`; dead check — F49i,
+  removed in commit 4). `adhan_enabled` W/R removed (settings-bridge). `language` reader removed (F49h).
+  `customAdhanPath` removed (F49b: resolved from `flutter.selected_adhan_id`).
 - `${packageName}_preferences`: `focus_completed_task_id`, `focus_task_was_completed`.
 
 ## Dart-only keys (FlutterSharedPreferences; no Kotlin reader found)

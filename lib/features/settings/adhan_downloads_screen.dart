@@ -42,6 +42,7 @@ class AdhanReciter {
 /// Using GitHub CDN (jsDelivr) for fast downloads
 /// Files hosted at: https://github.com/AlaaEldinTarek/aura-adhans
 /// Note: Default adhan is built into the app - use Reset button to restore it
+/// Android resolves `adhan_<id>.mp3`; see `.project-docs/contracts/prefs-keys.md`.
 final List<AdhanReciter> availableAdhans = [
   AdhanReciter(
     id: 'alafasy',
@@ -275,12 +276,7 @@ class DownloadNotifier extends StateNotifier<Map<String, DownloadInfo>> {
     return await file.exists();
   }
 
-  Future<String> getDownloadedPath(String reciterId) async {
-    final appDir = await getApplicationDocumentsDirectory();
-    final adhanDir = Directory('${appDir.path}/adhans');
-    final reciter = availableAdhans.firstWhere((r) => r.id == reciterId);
-    return '${adhanDir.path}/${reciter.fileName}';
-  }
+
 
   Future<void> checkDownloadedStatus() async {
     final updated = Map<String, DownloadInfo>.from(state);
@@ -328,12 +324,6 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
 
     if (mounted) {
       ref.read(selectedAdhanProvider.notifier).state = reciterId;
-
-      // Get the downloaded file path
-      final path = await ref.read(downloadProvider.notifier).getDownloadedPath(reciterId);
-
-      // Set as custom adhan
-      await AdhanPlayerService.instance.setCustomAdhan(path);
 
       final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -413,7 +403,6 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
           if (selectedAdhanId != null)
             TextButton.icon(
               onPressed: () async {
-                await AdhanPlayerService.instance.setCustomAdhan(null);
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.remove('selected_adhan_id');
                 if (mounted) {
@@ -667,12 +656,10 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
                     await AdhanPlayerService.instance.stopAdhan();
                   }
 
-                  // Play the new adhan
-                  final path = await ref.read(downloadProvider.notifier).getDownloadedPath(reciter.id);
-                  await AdhanPlayerService.instance.setCustomAdhan(path);
-                  await AdhanPlayerService.instance.playAdhan('Fajr');
+                  // Preview the reciter
+                  final started = await AdhanPlayerService.instance.previewAdhan(reciter.id);
 
-                  if (mounted) {
+                  if (mounted && started) {
                     ref.read(playingAdhanProvider.notifier).state = reciter.id;
                     // Clear any existing snackbars first
                     ScaffoldMessenger.of(context).clearSnackBars();
@@ -828,7 +815,6 @@ class _AdhanDownloadsScreenState extends ConsumerState<AdhanDownloadsScreen> {
         await prefs.remove('selected_adhan_id');
         if (mounted) {
           ref.read(selectedAdhanProvider.notifier).state = null;
-          await AdhanPlayerService.instance.setCustomAdhan(null);
         }
       }
 
