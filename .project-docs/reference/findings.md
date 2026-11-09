@@ -875,6 +875,15 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   the previous user's local data. Code VERIFIED (static) for "nothing is cleared"; which data is actually visible to
   the next account: UNVERIFIED (needs a device check). Open product question: clear on logout, keep, or ask.
 
+## F60 — Guest-sync dialog never shows (device S20, 2026-11-09) — UX
+- **(a) Sync dialog skipped by a load race** — **Tag: MEDIUM (pre-existing; not caused by fix-signin-onboarding; fix later).** Device VERIFIED
+  (S20, nova 5T, test user 10, 2026-11-09): `pending_guest_migration_uid` set at sign-in (`📦 2 local task(s) pending migration`), but no
+  dialog after sign-in or after a relaunch; the Profile sync card appears and works. Code (static, likely cause):
+  `_checkGuestMigration` (`main_wrapper_screen.dart:240, :542`) runs 1 s after the shell starts and `ref.read`s
+  `guestMigrationProvider` once; that first read creates the notifier, whose async `_load()` (prefs + local task count,
+  `guest_migration_provider.dart:33–47`) has not finished, so `isPending` is still false and nothing re-checks. Profile
+  `ref.watch`es the provider, so its card updates. Cause UNVERIFIED by test.
+
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
 - `ringer_mode` handler is in `MainActivity`, not `SilentModeAutomation.kt`.
