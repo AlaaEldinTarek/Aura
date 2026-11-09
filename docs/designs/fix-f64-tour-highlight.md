@@ -1,6 +1,6 @@
 # Fix: app tour highlight shifted on desktop (F64)
 
-Status: APPROVED (user 2026-11-09, "approve phase F64, option B" + RTL test/check + tooltip uses overlay size) · Level C · branch `fix/f64-tour-highlight` · finding `reference/findings.md` F64 · no EGM review
+Status: APPROVED (user 2026-11-09, "approve phase F64, option B" + RTL test/check + tooltip uses overlay size); implemented bf70e93 · Level C · branch `fix/f64-tour-highlight` · finding `reference/findings.md` F64 · no EGM review
 
 ## Problem
 Device VERIFIED (user screenshots 2026-11-09 09:54 and 13:12, Windows): the tour's yellow frame sits to the right of its
