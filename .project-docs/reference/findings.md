@@ -897,7 +897,13 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   2026-06-30, cause UNKNOWN, likely an interrupted write). Start-up logged `FormatException: Unexpected character (at character 1)`
   for SharedPreferences and EasyLocalization and the window stayed white. Renamed to `shared_preferences.json.zeroed-2026-06-30.bak`;
   the app then started. MSIX installs use a virtualized copy (not affected here). Whether Android can hit the same: UNKNOWN.
-  Log: `logcat/S36-windows-blank-2026-11-09.txt`.
+  Log: `logcat/S36-windows-blank-2026-11-09.txt`. **Status 2026-11-09: FIXED on `fix/f62-corrupt-prefs` (ac30244, c2073e2): Windows-only backup of an unreadable file before the first prefs read; 7 unit tests; device S37 PASS; Android regression PASS; not merged.**
+
+## F63 — Desktop window taller than the screen at 150% scaling (S37, 2026-11-09) — desktop UI
+- **(a) Fixed 900 × 1400 window** — **Tag: MEDIUM (pre-existing; fix later).** Device VERIFIED (user, Windows at 150% display
+  scaling, 2026-11-09): the window runs past the screen and the top is cut off, in the F62 test build and in the installed
+  MSIX Aura. Code (static, likely cause): `main.dart` opens the window with `WindowOptions(size: Size(900, 1400))` (logical),
+  i.e. 1350 × 2100 physical pixels at 150%. Screen size of the test PC: UNKNOWN. Related: modules/desktop-scaling.md.
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
