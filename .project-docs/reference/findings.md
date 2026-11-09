@@ -404,7 +404,7 @@ Check only when a phase touches the area:
 
 ## F41 — Auth screens (lib/features/auth) — code VERIFIED (static), impact UNVERIFIED
 - **(a) Guest flag reset after onboarding finishes** — **Tag: fix track, HIGH (guest data migration; user
-  2026-11-07); group "sign-in & onboarding flow" with F46a, F47f. DEVICE-VERIFIED 2026-11-07: S22 on nova 5T (API 29), base 1.0.0+59 — Login shown on relaunch.**
+  2026-11-07); group "sign-in & onboarding flow" with F46a, F47f. DEVICE-VERIFIED 2026-11-07: S22 on nova 5T (API 29), base 1.0.0+59 — Login shown on relaunch.** **Status 2026-11-09: FIXED on `fix/signin-onboarding` (7e494f2), not merged; device check S22 after-fix pending.**
   Effect (1) confirmed on device; effect (2) (migration prompt skipped) follows from code, not device-checked (S20). `_continueAsGuest` (`login_screen.dart:209–231`) awaits `pushNamed('/onboarding')` and then calls
   `setGuest(false)` if still mounted. `PreferenceScreen._finish` leaves with `pushReplacementNamed('/home')`
   (`preference_screen.dart:245`), which completes the replaced route's future while Login stays in the stack under
@@ -472,7 +472,7 @@ Check only when a phase touches the area:
 - **(a) Onboarding resets language / theme / mode to defaults on re-login** — **Tag: fix track, MEDIUM (user
   2026-11-07); group "sign-in & onboarding flow" with F41a, F47f. Not intended: 5873793 ("Stop login from resetting device
   language and theme") fixed the same effect at login. Device check S23 (not run yet). Open product question for
-  the fix spec: returning users skip onboarding entirely, or onboarding preloads saved values?** `_PreferenceScreenState` starts from `_language = 'en'`,
+  the fix spec: returning users skip onboarding entirely, or onboarding preloads saved values?** **Status 2026-11-09: FIXED on `fix/signin-onboarding` (7f3889a): returning users (`first_launch` false) skip onboarding (user decision); not merged; S23 after-fix pending.** `_PreferenceScreenState` starts from `_language = 'en'`,
   `_theme = 'system'`, `_mode = AppMode.both` (`preference_screen.dart:27–29`) instead of the saved values, and every
   sign-in routes to `/onboarding` (`login_screen.dart:51, :71`, `signup_screen.dart:56, :76`). An Arabic / dark /
   prayer-only user who signs out and back in sees English defaults; "Skip" (`:353–354`) or "Continue" through
@@ -497,7 +497,7 @@ Check only when a phase touches the area:
 - **(e) Dead code** — **Tag: P6.** `_showThemeDialog`, `_getThemeModeText`, `_showLanguageDialog`,
   `_JumuahReminderTile` have no callers (theme / language / Jumu'ah live in Settings).
 - **(f) Logout has no defined destination** — **Tag: fix track, group "sign-in & onboarding flow" (with F41a, F46a;
-  user 2026-11-07). The fix spec must define logout behavior.** `_showLogoutDialog` only calls `signOut()`
+  user 2026-11-07). The fix spec must define logout behavior.** **Status 2026-11-09: FIXED on `fix/signin-onboarding` (3552c52): logout → Login with the stack cleared when no user is signed in afterwards; local data kept (F59); not merged; S36 pending (Android + Windows).** `_showLogoutDialog` only calls `signOut()`
   (`:1035–1037`); nothing navigates (no auth listener in `main_wrapper_screen.dart`). The shell stays open on
   `guest_user` data with `is_guest == false`; the next cold start goes to `/login` (`splash_screen.dart:218–224`).
 - **(g) Firestore usage (performance — measure, don't guess)** — **Tag: P3 (repositories / caching; user
@@ -596,7 +596,7 @@ Check only when a phase touches the area:
   no caller (`initState` comment says permission is requested after onboarding); it is the only use of the
   `notification_service.dart` import.
 - **(b) Routing depends on the 2.5 s delay, not on state readiness** — **Tag: fix track LOW, group
-  "sign-in & onboarding flow" (user 2026-11-07).** `FirstLaunchNotifier` / `GuestModeNotifier` start as
+  "sign-in & onboarding flow" (user 2026-11-07).** **Status 2026-11-09: FIXED on `fix/signin-onboarding` (620a394): notifiers start as loading, Splash waits for all three inputs and navigates once; unit-tested; not merged.** `FirstLaunchNotifier` / `GuestModeNotifier` start as
   `AsyncValue.data(true)` / `data(false)` (`preferences_provider.dart:196–199, :225–228`), so the
   `guestModeAsync.isLoading` guard (`splash_screen.dart:211`) never holds during the initial read, and
   `firstLaunchProvider` is not checked at all. If the prefs reads have not finished when `splashDuration` ends, a guest
@@ -867,6 +867,37 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   bottom: 80)` over the mushaf whenever the UI is shown on mobile (`quran_reader_screen.dart:555–563`, widget
   `:1571`); the position ignores RTL (not `PositionedDirectional`) and the mushaf/page layout. Other pages / screen
   sizes: UNVERIFIED.
+
+## F59 — Logout keeps local data (user 2026-11-08, from spec fix-signin-onboarding) — privacy
+- **(a) Previous user's local data survives logout** — **Tag: MEDIUM (privacy); decide later (user 2026-11-08).**
+  Logout (`profile_screen.dart:1035–1037`; F47f fix keeps this) calls only `signOut()`; local prefs and local data
+  (tasks, prayer tracking, wird, settings) stay on the device. A second account or a guest on a shared phone may see
+  the previous user's local data. Code VERIFIED (static) for "nothing is cleared"; which data is actually visible to
+  the next account: UNVERIFIED (needs a device check). Open product question: clear on logout, keep, or ask.
+
+## F60 — Guest-sync dialog never shows (device S20, 2026-11-09) — UX
+- **(a) Sync dialog skipped by a load race** — **Tag: MEDIUM (pre-existing; not caused by fix-signin-onboarding; fix later).** Device VERIFIED
+  (S20, nova 5T, test user 10, 2026-11-09): `pending_guest_migration_uid` set at sign-in (`📦 2 local task(s) pending migration`), but no
+  dialog after sign-in or after a relaunch; the Profile sync card appears and works. Code (static, likely cause):
+  `_checkGuestMigration` (`main_wrapper_screen.dart:240, :542`) runs 1 s after the shell starts and `ref.read`s
+  `guestMigrationProvider` once; that first read creates the notifier, whose async `_load()` (prefs + local task count,
+  `guest_migration_provider.dart:33–47`) has not finished, so `isPending` is still false and nothing re-checks. Profile
+  `ref.watch`es the provider, so its card updates. Cause UNVERIFIED by test.
+
+## F61 — Bottom nav stays English after switching to Arabic (device S23, 2026-11-09) — UI
+- **(a) Nav labels not localized after a language switch** — **Tag: LOW (pre-existing; this branch changed no Settings / nav / shell code).**
+  Device VERIFIED (user, nova 5T, 2026-11-09): Settings → Arabic; bottom nav labels stay English, also after tapping another
+  tab. Switching back to English then showed the nav in **Arabic** (one change behind); a relaunch shows the right language (user, 09:40–09:43). Code (static, cause UNVERIFIED): `AuraBottomNavBar` uses `.tr()` without a
+  locale dependency (`core/widgets/bottom_nav_bar.dart:61–93`), and Settings calls `ctx.setLocale(...)` right after
+  `Navigator.pop(ctx)` on the dialog context (`settings_screen.dart:393, :405`), so the EasyLocalization locale may not change.
+
+## F62 — Damaged prefs file leaves a white window on Windows (S36 Windows, 2026-11-09) — reliability
+- **(a) No recovery from an unreadable SharedPreferences file** — **Tag: MEDIUM (pre-existing; fix later).** Device VERIFIED
+  (Windows, unpackaged release exe): `%APPDATA%\com.aura\aura_app\shared_preferences.json` was 1867 zero bytes (last write
+  2026-06-30, cause UNKNOWN, likely an interrupted write). Start-up logged `FormatException: Unexpected character (at character 1)`
+  for SharedPreferences and EasyLocalization and the window stayed white. Renamed to `shared_preferences.json.zeroed-2026-06-30.bak`;
+  the app then started. MSIX installs use a virtualized copy (not affected here). Whether Android can hit the same: UNKNOWN.
+  Log: `logcat/S36-windows-blank-2026-11-09.txt`.
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).

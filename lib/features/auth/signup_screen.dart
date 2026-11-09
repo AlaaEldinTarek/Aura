@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show defaultTargetPlatform, TargetPlatf
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/utils/start_route.dart';
 import '../../core/widgets/aura_button.dart';
 
 bool get _isDesktopSignup =>
@@ -39,6 +40,13 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     super.dispose();
   }
 
+  /// Returning users (onboarding already finished on this device) skip
+  /// onboarding (F46a).
+  Future<String> _postAuthRoute() async => resolvePostAuthRoute(
+        isFirstLaunch:
+            await ref.read(sharedPreferencesServiceProvider).isFirstLaunch(),
+      );
+
   Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) {
       return;
@@ -52,8 +60,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
             name: _nameController.text.trim(),
           );
 
+      final route = await _postAuthRoute();
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/onboarding');
+        Navigator.of(context).pushReplacementNamed(route);
       }
     } catch (e) {
       if (mounted) {
@@ -72,8 +81,9 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
     try {
       await ref.read(authStateNotifierProvider.notifier).signInWithGoogle();
 
+      final route = await _postAuthRoute();
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/onboarding');
+        Navigator.of(context).pushReplacementNamed(route);
       }
     } catch (e) {
       if (mounted) {

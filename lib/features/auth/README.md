@@ -16,15 +16,17 @@ Behavior-preserving rule: no UI or logic change without an approved spec.
 
 - Calls on `authStateNotifierProvider.notifier`: `signInWithEmail`, `signUpWithEmail(name:)`, `signInWithGoogle`
   (both screens, all platforms), `sendPasswordResetEmail`. Login also calls `guestModeProvider.notifier.setGuest`.
-- Navigation: success → `pushReplacementNamed('/onboarding')`; Login → `/signup` (push); Signup back / "Login" → pop;
-  guest → `pushNamed('/onboarding')` (awaited, see Invariants).
+- Navigation: success → `pushReplacementNamed(_postAuthRoute())`; Login → `/signup` (push); Signup back / "Login" →
+  pop; guest → `/home` (returning) or `pushNamed('/onboarding')` (awaited, see Invariants).
 
 ## Invariants
-- **After any successful sign-in or sign-up** (email or Google, new or returning user) the next screen is
-  `/onboarding` (`PreferenceScreen`), never `/home` directly.
-- **Guest flow** (`_continueAsGuest`): `setGuest(true)`, then await `pushNamed('/onboarding')`; when that route's
-  future completes and Login is still mounted, `setGuest(false)` ("back from onboarding cancels guest"). Note
-  `PreferenceScreen` leaves with `pushReplacementNamed('/home')`, which also completes that future (findings F41).
+- **After any successful sign-in or sign-up** (email or Google): `_postAuthRoute` reads `first_launch` via
+  `sharedPreferencesServiceProvider` at that moment → `resolvePostAuthRoute`: first launch on this device →
+  `/onboarding`, returning user → `/home` (F46a).
+- **Guest flow** (`_continueAsGuest`): `setGuest(true)`; returning guest → `pushReplacementNamed('/home')` (not
+  awaited); otherwise await untyped `pushNamed('/onboarding')` (routes are `MaterialPageRoute<dynamic>`, so
+  `pushNamed<bool>` would throw) and call `setGuest(false)` only if the result is not `true` (onboarding finishes with
+  `result: true`; system back cancels guest) (F41a).
 - **Validation** (both forms): email non-empty and contains `@` and `.`; password non-empty and at least
   `AppConstants.minPasswordLength` (also enforced on login); signup also requires a name and matching confirm field.
 - **Errors**: every failure shows `e.toString()` in a 3 s floating snackbar (`_showErrorSnackBar`), so text comes from

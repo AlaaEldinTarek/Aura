@@ -17,18 +17,19 @@ approved spec.
 - Asset: `assets/animations/splash_logo.json` (Lottie; `assets/animations/` is declared in `pubspec.yaml`).
 
 ## Invariants
-- **Routing table** (after the delay, once `authState` and `guestMode` are not loading), via `pushReplacementNamed`:
+- **Routing table** (`resolveSplashRoute` in `core/utils/start_route.dart`; after the delay, once auth, guest mode and
+  first launch are all loaded), via `pushReplacementNamed`, once (`_navigated` flag):
   | `is_guest` | Firebase user | first launch | Destination |
   | --- | --- | --- | --- |
   | true | any | true / false | `/onboarding` / `/home` |
   | false | signed in | true / false | `/onboarding` / `/home` |
   | false | none | any | `/login` |
-  Guest wins over a signed-in user. A missing first-launch value counts as `true`, a missing guest value as `false`.
+  Guest wins over a signed-in user. An auth error routes to `/login`; a first-launch error counts as `true`, a guest
+  error as `false`.
 - **Timing**: navigation waits only for `splashDuration`, not for the animation. The Lottie controller is set to
   1.5× the composition length and plays once (`repeat: false`). The spinner hides when navigation starts.
-- **Loading guard**: the guest and first-launch notifiers start as `data(false)` / `data(true)`, not `loading`, and
-  `firstLaunchProvider` is not checked at all; correct routing relies on their prefs reads finishing within the delay
-  (findings F50b).
+- **Loading guard**: the guest and first-launch notifiers start as `loading`; routing waits for both and for auth
+  (F50b fixed). While waiting after the delay, logo and text stay; the spinner is already hidden.
 - **Permission**: notification permission is NOT requested here (requested after onboarding, per the `initState`
   comment).
 - **Localization**: tagline is `'app_tagline'.tr()`; the brand text `Aura | هالة` is fixed in both languages.
@@ -38,5 +39,5 @@ approved spec.
 - Navigation only (`pushReplacementNamed`). No prefs or Firestore writes, no channel calls.
 
 ## Verification
-- Run: `flutter test` (no tests for this folder). Device: S22 (guest relaunch → this routing table). Known issues:
-  findings F50.
+- Run: `flutter test` (routing rules: `test/core/utils/start_route_test.dart`). Device: S22 (guest relaunch → this
+  routing table), S36 (relaunch after logout). Known issues: findings F50.

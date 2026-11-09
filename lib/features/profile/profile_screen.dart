@@ -1033,7 +1033,20 @@ class ProfileScreen extends ConsumerWidget {
     );
 
     if (confirmed == true && context.mounted) {
-        await ref.read(authStateNotifierProvider.notifier).signOut();
+      final authService = ref.read(authServiceProvider);
+      try {
+        await authService.signOut();
+      } catch (e) {
+        // signOut signs out of Firebase and Google together and throws if
+        // either fails, so the user may already be signed out.
+        debugPrint('❌ [AUTH] signOut failed: $e');
+      }
+      if (!context.mounted) return;
+      // Signed out → Login with the shell cleared (F47f); local data stays.
+      if (authService.currentUser == null) {
+        Navigator.of(context, rootNavigator: true)
+            .pushNamedAndRemoveUntil('/login', (_) => false);
+      }
     }
   }
 }
