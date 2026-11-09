@@ -10,6 +10,7 @@ import 'dart:io' show Platform;
 import '../../core/widgets/bottom_nav_bar.dart';
 import '../../core/utils/haptic_feedback.dart' as app_haptic;
 import '../../core/utils/window_size.dart';
+import 'desktop_shell_layout.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/providers/prayer_times_provider.dart';
@@ -1357,40 +1358,30 @@ class _DesktopShellState extends ConsumerState<_DesktopShell> {
     final canvasBg = isDark ? const Color(0xFF0D0E11) : const Color(0xFFEDE4D0);
     final sidebarVisible = ref.watch(desktopSidebarVisibleProvider);
 
+    // Sidebar layout (wide inline / compact rail + overlay) lives in
+    // DesktopShellLayout (F65); sidebar and content pane are unchanged.
     return Scaffold(
       backgroundColor: canvasBg,
-      body: Row(
-        children: [
-          if (sidebarVisible) ...[
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
-              curve: Curves.easeInOut,
-              width: _sidebarCollapsed ? 72.0 : 260.0,
-              clipBehavior: Clip.hardEdge,
-              decoration: const BoxDecoration(),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final isCollapsed = constraints.maxWidth < 166;
-                  return _DesktopSidebar(
-                    currentIndex: widget.currentIndex,
-                    onTap: (index) {
-                      // Pop any pushed route (e.g. /settings) so the tab's
-                      // PageView at the navigator root becomes visible again
-                      _contentNavKey.currentState?.popUntil((r) => r.isFirst);
-                      widget.onTap(index);
-                    },
-                    collapsed: isCollapsed,
-                    onToggle: () =>
-                        setState(() => _sidebarCollapsed = !_sidebarCollapsed),
-                  );
-                },
-              ),
-            ),
-            Container(
-                width: 1, color: isDark ? Colors.white10 : Colors.black12),
-          ],
-          Expanded(
-            child: LayoutBuilder(
+      body: DesktopShellLayout(
+        sidebarVisible: sidebarVisible,
+        userCollapsed: _sidebarCollapsed,
+        onToggleCollapsed: () =>
+            setState(() => _sidebarCollapsed = !_sidebarCollapsed),
+        dividerColor: isDark ? Colors.white10 : Colors.black12,
+        sidebarBuilder: (collapsed, onToggle, onItemSelected) =>
+            _DesktopSidebar(
+          currentIndex: widget.currentIndex,
+          onTap: (index) {
+            // Pop any pushed route (e.g. /settings) so the tab's
+            // PageView at the navigator root becomes visible again
+            _contentNavKey.currentState?.popUntil((r) => r.isFirst);
+            widget.onTap(index);
+            onItemSelected();
+          },
+          collapsed: collapsed,
+          onToggle: onToggle,
+        ),
+        content: LayoutBuilder(
               builder: (ctx, constraints) {
                 final mq = MediaQuery.of(ctx);
                 final scale = desktopTextScale(mq.size.width, mq.size.height);
@@ -1433,8 +1424,6 @@ class _DesktopShellState extends ConsumerState<_DesktopShell> {
                 );
               },
             ),
-          ),
-        ],
       ),
     );
   }
