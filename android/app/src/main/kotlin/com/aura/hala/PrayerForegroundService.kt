@@ -86,6 +86,19 @@ class PrayerForegroundService : Service() {
             h.post(r)
         }
 
+        fun isAutoStartAllowed(settingEnabled: Boolean, userStopped: Boolean): Boolean =
+            settingEnabled && !userStopped
+
+        fun startServiceIfAllowed(context: Context, reason: String): Boolean {
+            val settingEnabled = FlutterPrefs.getBoolean(context, "background_notification_enabled", true)
+            if (!isAutoStartAllowed(settingEnabled, userStopped = false)) {
+                Log.d(TAG, "⏭️ [FG_SERVICE] Auto-start skipped (background notification off): $reason")
+                return false
+            }
+            startService(context)
+            return true
+        }
+
         fun requestFlutterUpdateStatic(context: Context) {
             Log.d(TAG, "🔄 [REFRESH] Recalculating prayer times natively...")
             val ok = NativePrayerCalculator.calculateAndSave(context)
@@ -135,6 +148,16 @@ class PrayerForegroundService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent == null) {
+            val settingEnabled = FlutterPrefs.getBoolean(this, "background_notification_enabled", true)
+            val userStopped = getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+                .getBoolean(KEY_USER_STOPPED, false)
+            if (!isAutoStartAllowed(settingEnabled, userStopped)) {
+                Log.d(TAG, "⏭️ [FG_SERVICE] Sticky recreation skipped (background notification off)")
+                stopSelf()
+                return START_NOT_STICKY
+            }
+        }
         return START_STICKY
     }
 
@@ -771,10 +794,11 @@ class PrayerForegroundService : Service() {
         scheduleRestartIfNeeded(2_000L)
     }
 
-    /** True unless the user explicitly stopped the service from settings. */
     private fun shouldAutoRestart(): Boolean {
-        return !getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+        val settingEnabled = FlutterPrefs.getBoolean(this, "background_notification_enabled", true)
+        val userStopped = getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
             .getBoolean(KEY_USER_STOPPED, false)
+        return isAutoStartAllowed(settingEnabled, userStopped)
     }
 
     /**

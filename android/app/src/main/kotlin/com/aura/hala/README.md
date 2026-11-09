@@ -22,7 +22,8 @@ package, see its README), home-screen widgets, and full-screen activities shown 
 | `PrayerRecalcWorker.kt` | `PrayerRecalcWorker.schedule`: WorkManager unique periodic work `aura_periodic_prayer_recalc` (6 h, KEEP) |
 | `PrayerBootReceiver.kt` | `PrayerBootReceiver`: after boot / package replace (30 s delay) starts `PrayerRescheduleService`, daily summary, Jumu'ah, foreground service, daily recalc, worker |
 | `PrayerRescheduleService.kt` | `PrayerRescheduleService`: short foreground service (2000) that re-arms adhan alarms for still-future stored times |
-| `AdhanPlayer.kt` | `AdhanPlayer` (object): `play`, `stop`, `isPlaying`, `getCurrentPrayer`, `setCustomAdhan` / `getCustomAdhan` (in-memory path) |
+| `AdhanPlayer.kt` | `AdhanPlayer` (object): `play`, `stop`, `isPlaying`, `getCurrentPrayer`, `previewAdhan` (settings-bridge: reads `adhan_enabled` + `selected_adhan_id` from `FlutterPrefs`; resolves reciter via `AdhanFiles`) |
+| `AdhanFiles.kt` | `AdhanFiles` (object): `resolve(selectedId, adhansDir)` — validates id `[a-z0-9_]+`, checks `adhan_<id>.mp3` exists; `adhansDir(context)` |
 | `AdhanFullScreenActivity.kt` | `AdhanFullScreenActivity.getIntent`: lock-screen adhan UI, iqama countdown, silent-mode buttons, then launches azkar |
 | `AzkarAlarmReceiver.kt` | `AzkarAlarmReceiver.schedule` / `cancel`: post-prayer azkar alarm (rc 3000–3006, notification 9000–9006) |
 | `AzkarFullScreenActivity.kt` | `AzkarFullScreenActivity.getIntent`: hard-coded post-prayer azkar with in-memory counters |
@@ -58,9 +59,13 @@ package, see its README), home-screen widgets, and full-screen activities shown 
   `DailySummaryReceiver.PRAYER_NAMES` and the widget timeline use the raw name and match only `'Zuhr'`.
 - **Calculator inputs** (`prayer_calc_method`, `prayer_asr_madhab`) are Dart `CalculationMethod` / `AsrMadhab` enum
   `.name` values; unknown values silently fall back to Muslim World League / Shafi. Only `makkah` adds Dhuhr +3 min.
+- **Foreground service restart** (`PrayerForegroundService`): boot, daily recalc, and swipe-away restart use
+  `startServiceIfAllowed(context, reason)`, which checks `flutter.background_notification_enabled` via `FlutterPrefs`
+  and skips start when the setting is off; `shouldAutoRestart` also checks `fg_user_stopped`. `onStartCommand` with
+  null intent (START_STICKY recreation) likewise checks the setting and calls `stopSelf()` when disabled.
 - **Adhan guards** (`PrayerAlarmReceiver`): Sunrise never plays adhan; a Fajr at/after sunrise is dropped; the same
   prayer cannot fire twice within 6 h (`last_adhan_fired_<name>`, except test alarms); `AdhanPlayer.play` returns
-  early when `aura_prefs.adhan_enabled` is false and always stops the previous player first.
+  early when `flutter.adhan_enabled` is false (via `FlutterPrefs`) and always stops the previous player first.
 - **Request codes must stay unique** (PendingIntent, not notification IDs): adhan = caller code (1001–1006),
   reminder +1000, post-check +2000, silent restore 3999, azkar 3000–3006, focus 5000–5999, daily summary 7001,
   Jumu'ah 8001, foreground-service silent buttons 8001/8002 (broadcast), daily recalc 9100, test adhan 9999. Full list:
