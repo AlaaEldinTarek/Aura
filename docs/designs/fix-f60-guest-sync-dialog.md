@@ -1,6 +1,6 @@
 # Fix: guest-sync dialog never shows (F60)
 
-Status: APPROVED (user 2026-11-09, "approve phase F60, with the account check") · Level C · branch `fix/f60-guest-sync` · finding `reference/findings.md` F60 · no EGM review
+Status: APPROVED (user 2026-11-09, "approve phase F60, with the account check"); implemented 6931c81, c5c2c70 · Level C · branch `fix/f60-guest-sync` · finding `reference/findings.md` F60 · no EGM review
 
 ## Problem
 After a guest with local tasks signs in, `_syncUserData` sets `pending_guest_migration_uid` (`auth_provider.dart:133–139`).
