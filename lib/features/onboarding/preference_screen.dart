@@ -9,6 +9,8 @@ import '../../core/providers/preferences_provider.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/aura_button.dart';
 import '../../core/services/rating_service.dart';
+import '../../core/utils/app_language.dart';
+import 'package:easy_localization/easy_localization.dart' show BuildContextEasyLocalizationExtension;
 
 class PreferenceScreen extends ConsumerStatefulWidget {
   const PreferenceScreen({super.key});
@@ -230,7 +232,13 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
   Future<void> _finish() async {
     setState(() => _saving = true);
     try {
-      await ref.read(languageProvider.notifier).setLanguage(_language);
+      // Locale first, then the provider, so `.tr()` text follows (F61).
+      await applyAppLanguage(
+        _language,
+        setLocale: context.setLocale,
+        setLanguage: ref.read(languageProvider.notifier).setLanguage,
+        isMounted: () => mounted,
+      );
       if (mounted) {
         final ctx = context;
         ctx.findAncestorStateOfType<State>(); // ensure context valid
