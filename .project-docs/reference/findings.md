@@ -910,7 +910,7 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   i.e. 1350 × 2100 physical pixels at 150%. Test PC: 2880 × 1620 physical, work area 1920 × 1032 logical at 150% (VERIFIED
   2026-11-09). Related: modules/desktop-scaling.md. **Status 2026-11-09: FIXED on `fix/f63-window-size` (e662ad6, cb94e9c,
   5c260b4; A-1 item scale 5d0c597): window from the work area, max 900 × 1400, centered; scale min(w/500, h/778) clamped
-  0.9–1.8; device S39 PASS; not merged.**
+  0.9–1.8; device S39 PASS; merged to main via PR #9 (290f8f1).**
 
 ## F64 — App tour highlight shifted on desktop (user screenshots, 2026-11-09) — desktop UI
 - **(a) Highlight frame offset by the sidebar width** — **Tag: MEDIUM (pre-existing; separate fix after F63, user 2026-11-09).**
