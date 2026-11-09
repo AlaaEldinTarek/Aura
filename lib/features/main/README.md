@@ -77,7 +77,7 @@ Behavior-preserving rule: no UI or logic change without an approved spec.
   `NotificationService.showAchievementNotification`; desktop: `DesktopNotificationService` (stream, achievement,
   `recordPrayerOnTime`), `DesktopPrayerScheduler.prayerTimeStream`, `DesktopAdhanService.stop`, `windowManager`.
 - Providers: `dailyPrayerStatusProvider` (`load`, `startLiveSync`, `stopLiveSync`, `markToday`), `guestMigrationProvider`
-  (`markDialogShown`, `migrate`), and the resume invalidations above.
+  (`refresh` before the dialog check, `markDialogShown`, `migrate`), and the resume invalidations above.
 - SharedPreferences: read + remove the 3 widget hand-off keys. Native alarms through `prayer_alarms` (above).
 - Timers / overlays: the status-sync timer, popup auto-dismiss, the adhan overlay (`OverlayEntry`, 5 min) and the
   achievement toast; haptics on mobile swipe and back.

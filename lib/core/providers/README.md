@@ -17,7 +17,7 @@ widgets, the foreground service and desktop timers. Edit it carefully (CLAUDE.md
 | `daily_prayer_status_provider.dart` | `DailyPrayerStatus`, `DailyPrayerStatusNotifier` / `dailyPrayerStatusProvider` | `computeEffectiveToday`, `load`, `loadMonth`, `markDate` / `unmarkDate`, `markToday` / `unmarkToday`, `updatePrayer` / `removePrayer`, `startLiveSync` / `stopLiveSync` |
 | `preferences_provider.dart` | Notifier + provider pairs: theme mode, language, first launch, guest mode, vibration (enabled / simplified), silent mode (enabled / duration), dynamic color, task notifications, Jumu'ah reminder, task reminder minutes, app mode, prayer tracking, daily summary time; `AppMode` enum; `tabNavigationProvider` (-1), `showTutorialProvider` | one setter each (`setThemeMode`, `setLanguage`, `setEnabled`, `setMinutes`, `setMode`, `setTime`, …) |
 | `task_provider.dart` | `taskServiceProvider`, `currentUserIdProvider`, `tasksProvider` (family by `TaskFilterParams`), `allTasksProvider`, `taskWidgetSyncProvider`, `taskStatisticsProvider`, `todayTasksProvider`, `upcomingTasksProvider`, `highPriorityTasksProvider`, `TaskFilterParams` | — (stream / derived) |
-| `guest_migration_provider.dart` | `GuestMigrationState`, `GuestMigrationNotifier` / `guestMigrationProvider` | `migrate()`, `markDialogShown()` |
+| `guest_migration_provider.dart` | `GuestMigrationState`, `GuestMigrationNotifier` / `guestMigrationProvider` | `refresh()`, `migrate()`, `markDialogShown()` |
 | `wird_provider.dart` | `quranStatsProvider`, `WirdNotifier` / `wirdStateProvider` | goals, reminders, `recordPagesRead`, `markComplete` / `undoComplete`, juz + bookmark sync, khatma, `resetAllProgress` |
 | `quran_provider.dart` | `quranDataProvider`, `surahListProvider`, `juzListProvider`, `quranBookmarksProvider`, `quranReadingProgressProvider`, `quranSearchProvider`, `surahAyahsProvider` | `addBookmark`, `removeBookmark`, `replaceBookmark`, `saveProgress` |
 | `azkar_provider.dart` | `AzkarNotifier` / `azkarProvider` | `toggleItem(id, category)`, `resetDay()` |
@@ -31,7 +31,8 @@ widgets, the foreground service and desktop timers. Edit it carefully (CLAUDE.md
 - **Login prefs direction** (`AuthStateNotifier._syncUserData`): returning user → device theme/language pushed **to**
   Firestore (never pulled); new user → `createUserData` with local prefs. Each Firestore call has a 5 s timeout, and errors are swallowed
   so login still succeeds. Guest tasks are **not** auto-migrated: a `pending_guest_migration_uid` flag is set and
-  `GuestMigrationNotifier.migrate()` runs on user confirmation.
+  `GuestMigrationNotifier.migrate()` runs on user confirmation. `refresh()` re-reads the flag; the offer is pending
+  only when the signed-in uid equals the flag uid (otherwise flag and local tasks are kept; F60).
 - **Start flags** (`FirstLaunchNotifier`, `GuestModeNotifier`): start as `loading` until the first prefs read, then
   `data` (or `error`), so Splash cannot route on a default (F50b; `test/core/providers/start_flags_test.dart`).
 - **Effective prayer day** (`DailyPrayerStatusNotifier.computeEffectiveToday`): before Fajr counts as yesterday.

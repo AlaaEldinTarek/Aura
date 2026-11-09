@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/task_service.dart';
@@ -30,26 +31,54 @@ class GuestMigrationState {
 }
 
 class GuestMigrationNotifier extends StateNotifier<GuestMigrationState> {
-  GuestMigrationNotifier() : super(const GuestMigrationState()) {
-    _load();
+  // Injectable for tests (TaskService and FirebaseAuth need Firebase).
+  final Future<int> Function() _localTaskCount;
+  final String? Function() _currentUid;
+  final Future<void> Function(String uid) _migrateTasks;
+
+  GuestMigrationNotifier({
+    Future<int> Function()? localTaskCount,
+    String? Function()? currentUid,
+    Future<void> Function(String uid)? migrateTasks,
+  })  : _localTaskCount =
+            localTaskCount ?? (() => TaskService.instance.getLocalTaskCount()),
+        _currentUid =
+            currentUid ?? (() => FirebaseAuth.instance.currentUser?.uid),
+        _migrateTasks = migrateTasks ??
+            ((uid) => TaskService.instance.migrateGuestTasksToFirestore(uid)),
+        super(const GuestMigrationState()) {
+    refresh();
   }
 
-  Future<void> _load() async {
+  /// Re-reads the flag and the local task count (F60). Pending only for the
+  /// signed-in account the flag names; otherwise the flag and the local tasks
+  /// are left as they are. Keeps [GuestMigrationState.dialogShownThisSession].
+  Future<void> refresh() async {
+    final shown = state.dialogShownThisSession;
     final prefs = await SharedPreferences.getInstance();
     final uid = prefs.getString('pending_guest_migration_uid');
-    if (uid == null) return;
-    final count = await TaskService.instance.getLocalTaskCount();
-    if (count == 0) {
-      await _clearFlag();
+    if (uid == null || _currentUid() != uid) {
+      state = GuestMigrationState(dialogShownThisSession: shown);
       return;
     }
-    state = GuestMigrationState(isPending: true, uid: uid, taskCount: count);
+    final count = await _localTaskCount();
+    if (count == 0) {
+      await _clearFlag();
+      state = GuestMigrationState(dialogShownThisSession: shown);
+      return;
+    }
+    state = GuestMigrationState(
+      isPending: true,
+      uid: uid,
+      taskCount: count,
+      dialogShownThisSession: shown,
+    );
   }
 
   Future<void> migrate() async {
     final uid = state.uid;
-    if (uid == null) return;
-    await TaskService.instance.migrateGuestTasksToFirestore(uid);
+    if (uid == null || _currentUid() != uid) return;
+    await _migrateTasks(uid);
     await _clearFlag();
     state = const GuestMigrationState();
   }

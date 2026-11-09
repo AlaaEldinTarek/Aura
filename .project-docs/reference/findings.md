@@ -882,7 +882,7 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   `_checkGuestMigration` (`main_wrapper_screen.dart:240, :542`) runs 1 s after the shell starts and `ref.read`s
   `guestMigrationProvider` once; that first read creates the notifier, whose async `_load()` (prefs + local task count,
   `guest_migration_provider.dart:33–47`) has not finished, so `isPending` is still false and nothing re-checks. Profile
-  `ref.watch`es the provider, so its card updates. Cause UNVERIFIED by test.
+  `ref.watch`es the provider, so its card updates. **Status 2026-11-09: FIXED on `fix/f60-guest-sync` (6931c81, c5c2c70): `refresh()` before the dialog check; offer only for the signed-in uid named by the flag (user decision); 8 unit tests; device S20 after-fix PASS (dialog after sign-in, sync once); not merged.**
 
 ## F61 — Bottom nav stays English after switching to Arabic (device S23, 2026-11-09) — UI
 - **(a) Nav labels not localized after a language switch** — **Tag: LOW (pre-existing; this branch changed no Settings / nav / shell code).**
