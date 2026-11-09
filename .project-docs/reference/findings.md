@@ -921,7 +921,7 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   `:93`, and `:296`). Candidate fix: `Overlay.of(context, rootOverlay: true)`. Mobile: no nested navigator (not affected).
   **Status 2026-11-09: FIXED on `fix/f64-tour-highlight` (bf70e93; option B: frame and tooltip in the overlay's coordinates
   and size, the root-overlay option was rejected because it drops the desktop text scale); 6 widget tests incl. RTL and pane edge;
-  device S40 PASS (Windows LTR + Arabic, maximized; phone regression); not merged.**
+  device S40 PASS (Windows LTR + Arabic, maximized; phone regression); merged to main via PR #10 (58ccc74).**
 
 ## F65 — Desktop sidebar takes almost half of a narrow window (user screenshot, 2026-11-09) — desktop UI
 - **(a) Fixed 260 px sidebar** — **Tag: MEDIUM (pre-existing width, exposed by the narrower F63 default window; fix next, user).**
