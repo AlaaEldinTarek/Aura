@@ -49,7 +49,8 @@ or logic change without an approved spec.
 ## Side Effects
 - SharedPreferences: `calculation_method`, `asr_madhab`, `silent_mode_enabled`, `silent_mode_duration`,
   `prayer_tracking_notifications_enabled`, `daily_summary_time`, `iqama_minutes`, `selected_adhan_id`, Windows
-  startup pref; theme / language / task-reminder / Jumu'ah through their providers.
+  startup pref; theme / language / task-reminder / Jumu'ah through their providers. Language changes go through
+  `applyAppLanguage` (locale first, then the provider; F61).
 - Native: daily-summary alarm, Jumu'ah reminder, exact-alarm / battery settings intents, `setCustomAdhan` and adhan
   preview via `AdhanPlayerService` (MethodChannel), Windows startup registration.
 - Network + disk: adhan MP3 download / delete; prayer-time recalculation.

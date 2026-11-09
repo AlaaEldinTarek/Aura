@@ -15,7 +15,8 @@ approved spec.
 | `preference_screen.dart` | `PreferenceScreen()` (route `/onboarding`). Private: `_PreferenceScreenState`, step widgets `_LanguageStep`, `_ThemeStep`, `_ModeStep`, `_CarouselStep`, `_AllSetStep` (+ `_Slide`, `_Feature`, `_LangCard`, `_ThemeOpt`, `_ModeOpt`, `_SlideView`, `_SummaryItem`) |
 | `mode_selection_screen.dart` | `ModeSelectionScreen()` (route `/mode_selection` in `main.dart`; no caller found). Private: `_ModeOption` |
 
-- Writes (in `_finish`, in this order): `languageProvider.setLanguage`, `themeModeProvider.setThemeMode`,
+- Writes (in `_finish`, in this order): language via `applyAppLanguage` (EasyLocalization locale, then
+  `languageProvider.setLanguage`; F61), `themeModeProvider.setThemeMode`,
   `appModeProvider.setMode`, `firstLaunchProvider.setFirstLaunch(false)`, `RatingService.recordInstallDateIfNeeded`.
 
 ## Invariants

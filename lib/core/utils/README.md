@@ -20,6 +20,7 @@ SnackBar) and `captureAndShare` (files + share sheet). CLAUDE.md rules that live
 | `haptic_feedback.dart` | app `HapticFeedback` (shadows Flutter's): `light`, `medium`, `heavy`, `selection`, `notify`, `success`, `error`, `warning`, `buttonPress`, `toggle`, `cardTap`, `isVibrationEnabled`, `isSimplifiedMode` |
 | `share_util.dart` | top-level `captureAndShare(key, filename)` |
 | `start_route.dart` | pure start-up routing rules (spec fix-signin-onboarding): `resolveStartRoute`, `resolvePostAuthRoute`, `resolveSplashRoute` (null while auth / guest / first-launch is loading); tests in `test/core/utils/start_route_test.dart` |
+| `app_language.dart` | `applyAppLanguage(code, setLocale:, setLanguage:, isMounted:)`: EasyLocalization locale first (awaited), mounted check, then `languageProvider` (F61; used by Settings and onboarding); tests in `test/core/utils/app_language_test.dart`, `test/features/settings/language_switch_test.dart` |
 
 ### Invariants
 - **Arabic numerals**: `withArabicNumerals` maps ASCII `0–9` to Arabic-Indic `٠–٩`; `withArabicNumeralsByLanguage`

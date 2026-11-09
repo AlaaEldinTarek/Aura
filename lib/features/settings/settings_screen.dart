@@ -14,6 +14,7 @@ import '../../core/services/platform_channel_service.dart';
 import '../../core/services/windows_startup_service.dart';
 import '../../core/widgets/setting_tile.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/utils/app_language.dart';
 import 'adhan_calculation_method.dart';
 import 'asr_madhab_dialog.dart';
 import 'asr_madhab_selection.dart';
@@ -374,6 +375,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  /// Locale first, then the provider, using the screen context (stays mounted
+  /// while the dialog closes) — F61.
+  Future<void> _applyLanguage(BuildContext context, String code) =>
+      applyAppLanguage(
+        code,
+        setLocale: context.setLocale,
+        setLanguage: ref.read(languageProvider.notifier).setLanguage,
+        isMounted: () => context.mounted,
+      );
+
   void _showLanguageDialog(BuildContext context, bool isArabic, bool isDark) {
     showDialog(
       context: context,
@@ -389,8 +400,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               activeColor: AppConstants.getPrimary(isDark),
               onChanged: (v) async {
                 if (v != null) {
-                  await ref.read(languageProvider.notifier).setLanguage(v);
-                  if (ctx.mounted) { Navigator.pop(ctx); ctx.setLocale(const Locale('en')); }
+                  await _applyLanguage(context, v);
+                  if (ctx.mounted) Navigator.pop(ctx);
                 }
               },
             ),
@@ -401,8 +412,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               activeColor: AppConstants.getPrimary(isDark),
               onChanged: (v) async {
                 if (v != null) {
-                  await ref.read(languageProvider.notifier).setLanguage(v);
-                  if (ctx.mounted) { Navigator.pop(ctx); ctx.setLocale(const Locale('ar')); }
+                  await _applyLanguage(context, v);
+                  if (ctx.mounted) Navigator.pop(ctx);
                 }
               },
             ),
