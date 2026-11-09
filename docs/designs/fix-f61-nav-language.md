@@ -1,6 +1,6 @@
 # Fix: translated text stays one language behind after a language switch (F61)
 
-Status: APPROVED (user 2026-11-09, "approve phase F61" with two spec additions) · Level C · branch `fix/f61-nav-language` · finding `reference/findings.md` F61 · no EGM review
+Status: APPROVED (user 2026-11-09, "approve phase F61" with two spec additions); implemented 46ee725, e0026de · Level C · branch `fix/f61-nav-language` · finding `reference/findings.md` F61 · no EGM review
 
 ## Problem
 Device VERIFIED (user, nova 5T, 2026-11-09): Settings → Arabic → the bottom nav stays English (also after tapping a
