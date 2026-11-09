@@ -35,4 +35,9 @@ No prefs key, route, Firestore path, translation or Kotlin changes. `profile_scr
 | "Later" → relaunch → dialog again | Not run (user skipped) |
 | Different account → no offer | Not run on device (no second account); covered by unit tests |
 
+**Not verified on device:**
+- "Different account → no offer" is covered by unit tests only (`different uid`, `not signed in`); there is no second
+  account on the test phone.
+- "Later → relaunch → dialog again" was not run.
+
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
