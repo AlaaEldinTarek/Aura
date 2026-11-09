@@ -40,6 +40,7 @@ Native names used here are contracts: [method-channels](/.project-docs/contracts
 | `desktop_adhan_service.dart` | `DesktopAdhanService`: `playAdhan`, `stop`, `setEnabled` |
 | `desktop_tray_service.dart` | `DesktopTrayService`: tray icon/menu, `updateNextPrayer`, `setAdhanPlaying`, hide-to-tray |
 | `windows_startup_service.dart` | `WindowsStartupService` (static): auto-start registry entry |
+| `prefs_file_recovery.dart` | top-level `backUpUnreadablePrefsFile(dir, {now})`: renames an unreadable `shared_preferences.json` to `.unreadable-<yyyyMMdd-HHmmss>.bak` (F62; called once from `main.dart` on Windows); tests in `test/core/services/prefs_file_recovery_test.dart` |
 | `quran_service.dart` | `QuranService` (static): Quran data, surah/juz/page lookup, `searchAyahs` |
 | `quran_svg_service.dart` | `QuranSvgService` (static): Mushaf SVG page fetch + disk/memory cache |
 | `quran_bookmark_service.dart` | `QuranBookmarkService` (static): bookmarks, reading progress |

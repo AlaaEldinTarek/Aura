@@ -23,6 +23,10 @@ Add-AppxPackage -Path "build\windows\x64\runner\Release\aura_app.msix" -ForceApp
   (`"<exe>" --startup`). Pref `windows_startup_enabled` defaults to **true** (F52m); `registerIfEnabled()` runs every
   launch (exe path changes per MSIX update). With `--startup`, `main.dart` starts hidden, tray only. Toggle: Settings →
   Desktop.
+- Start-up prefs guard (F62): before the first prefs read (`registerIfEnabled`), `main.dart` calls
+  `backUpUnreadablePrefsFile(getApplicationSupportDirectory())` (`prefs_file_recovery.dart`). An unreadable
+  `shared_preferences.json` is renamed to `.unreadable-<timestamp>.bak` and logged `⚠️ [PREFS]`, so start-up reaches
+  `runApp`; healthy files are untouched. Windows only. The window's X hides to the tray (process keeps running).
 - Sleep-aware timers: only the prayer minute tick (prayer.md § Next-prayer logic) — gap > 3 min reschedules prayer timers.
 - Tray, adhan, scheduler: `desktop_tray_service.dart`, `DesktopAdhanService`, `DesktopPrayerScheduler`
   (folder view `lib/core/services/README.md`).

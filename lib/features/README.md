@@ -3,7 +3,7 @@
 ## Overview
 One folder per screen group (16 folders, each with its own README). Features own no data: they read Riverpod
 providers and call services from [`../core/README.md`](../core/README.md). Routes are declared in `lib/main.dart`
-(`_generateRoute`); the desktop shell builds the same screens in its nested navigator in `main/`. Cross-feature
+(`_generateRoute`; on Windows `main()` first backs up an unreadable prefs file, F62, before any prefs read); the desktop shell builds the same screens in its nested navigator in `main/`. Cross-feature
 imports exist only in `main/main_wrapper_screen.dart` (hosts the tabs and desktop routes), `prayer/prayer_screen.dart`
 (reuses the calculation dialogs and enums from `settings/`) and `quran/quran_reader_screen.dart`
 (`desktopSidebarVisibleProvider` from `main/`) — VERIFIED by grep of relative and package imports, 2026-11-07.

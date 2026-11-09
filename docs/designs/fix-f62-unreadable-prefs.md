@@ -1,6 +1,6 @@
 # Fix: unreadable prefs file leaves a white window on Windows (F62)
 
-Status: APPROVED (user 2026-11-09, "approve phase F62" with two spec additions + byte-for-byte test) · Level C · branch `fix/f62-corrupt-prefs` · finding `reference/findings.md` F62 · no EGM review
+Status: APPROVED (user 2026-11-09, "approve phase F62" with two spec additions + byte-for-byte test); implemented ac30244, c2073e2 · Level C · branch `fix/f62-corrupt-prefs` · finding `reference/findings.md` F62 · no EGM review
 
 ## Problem
 On Windows, `shared_preferences_windows` (2.4.1) stores prefs in `<ApplicationSupport>\shared_preferences.json`
