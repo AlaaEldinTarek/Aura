@@ -34,6 +34,10 @@ No prefs key, UI, text, `main.dart`, Kotlin or `pubspec.*` changes.
 | Windows (unpackaged release) | PASS: sidebar followed each switch at once |
 | Onboarding: choose Arabic during onboarding | Not run |
 
+**Not verified on device:** the onboarding language path. Onboarding `_finish` calls the same `applyAppLanguage`
+helper, whose order (locale first, mounted check, then provider) is covered by the unit and widget tests; the onboarding
+call site itself has no test of its own and was not checked on a device.
+
 ## Known issue, not caused by this fix
 - **F63 (MEDIUM):** at 150% Windows display scaling the window is taller than the screen and the top is cut off.
 
