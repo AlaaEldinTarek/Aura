@@ -45,9 +45,3 @@ Future<Rect?> currentWorkArea() async {
     return null;
   }
 }
-
-/// Top-left position that centers [size] in [workArea].
-Offset centeredIn(Rect workArea, Size size) => Offset(
-      workArea.left + (workArea.width - size.width) / 2,
-      workArea.top + (workArea.height - size.height) / 2,
-    );

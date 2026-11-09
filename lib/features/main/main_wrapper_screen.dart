@@ -9,6 +9,7 @@ import 'package:window_manager/window_manager.dart';
 import 'dart:io' show Platform;
 import '../../core/widgets/bottom_nav_bar.dart';
 import '../../core/utils/haptic_feedback.dart' as app_haptic;
+import '../../core/utils/window_size.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/providers/prayer_times_provider.dart';
@@ -444,8 +445,12 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       }
       await windowManager.setTitleBarStyle(TitleBarStyle.normal);
       await windowManager.setAlwaysOnTop(false);
-      await windowManager.setMinimumSize(const Size(400, 600));
-      await windowManager.setSize(const Size(900, 1400));
+      // Size from the current monitor's work area, max 900 x 1400; the
+      // minimum never exceeds it (F63). center() uses the same work area.
+      final size = adaptiveWindowSize(await currentWorkArea());
+      await windowManager
+          .setMinimumSize(fitMinimumSize(const Size(400, 600), size));
+      await windowManager.setSize(size);
       await windowManager.center();
       if (_popupWasVisible) {
         await windowManager.setSkipTaskbar(false);

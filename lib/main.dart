@@ -40,6 +40,7 @@ import 'core/services/desktop_notification_service.dart';
 import 'core/services/desktop_tray_service.dart';
 import 'core/services/windows_startup_service.dart';
 import 'core/services/prefs_file_recovery.dart';
+import 'core/utils/window_size.dart';
 import 'features/tasks/task_form_screen.dart';
 import 'features/tasks/task_stats_screen.dart';
 import 'core/models/task.dart';
@@ -80,11 +81,17 @@ void main(List<String> args) async {
   if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
     await windowManager.ensureInitialized();
 
+    // Size from the work area of the monitor under the cursor, max 900 x 1400
+    // (F63). `center: true` centers on that same monitor's work area.
+    final workArea = await currentWorkArea();
+    final windowSize = adaptiveWindowSize(workArea);
+    debugPrint('📐 [DESKTOP] Work area: $workArea, window: $windowSize');
+
     if (isStartup) {
       // Start hidden – only the tray icon will be visible
       await windowManager.waitUntilReadyToShow(
-        const WindowOptions(
-          size: Size(900, 1400),
+        WindowOptions(
+          size: windowSize,
           center: true,
           title: 'Aura | هالة',
           backgroundColor: Colors.transparent,
@@ -94,8 +101,8 @@ void main(List<String> args) async {
       );
     } else {
       await windowManager.waitUntilReadyToShow(
-        const WindowOptions(
-          size: Size(900, 1400),
+        WindowOptions(
+          size: windowSize,
           center: true,
           title: 'Aura | هالة',
           backgroundColor: Colors.transparent,

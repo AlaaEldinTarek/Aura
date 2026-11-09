@@ -66,26 +66,6 @@ void main() {
     });
   });
 
-  group('centeredIn', () {
-    test('centers in the work area, including a monitor offset', () {
-      void expectOffset(Offset o, double x, double y) {
-        expect(o.dx, closeTo(x, 0.001));
-        expect(o.dy, closeTo(y, 0.001));
-      }
-
-      expectOffset(
-          centeredIn(
-              const Rect.fromLTWH(0, 0, 1280, 672), const Size(500, 604.8)),
-          390,
-          33.6);
-      expectOffset(
-          centeredIn(
-              const Rect.fromLTWH(1920, 40, 1280, 672), const Size(500, 604.8)),
-          2310,
-          73.6);
-    });
-  });
-
   group('fitMinimumSize', () {
     test('minimum smaller than the window is kept', () {
       expectSize(fitMinimumSize(const Size(400, 600), const Size(500, 604.8)),
