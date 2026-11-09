@@ -15,7 +15,7 @@ SnackBar) and `captureAndShare` (files + share sheet). CLAUDE.md rules that live
 | `date_formatter.dart` | `DateFormatter`: `formatDate`, `formatDateWithMonth`, `getDayName`, `formatTimeRange`, `formatTime`, `formatTime24`, `isToday`, `isTomorrow`, `getRelativeDateString` |
 | `time_formatter.dart` | `TimeFormatter`: `formatDuration`, `formatRemaining`, `formatTime12h`, `formatTime24h`, `parseTime` |
 | `hijri_date.dart` | `HijriDate`: `toHijri(date)`, `getMonthNameAr` / `getMonthNameEn`, `formatAr` / `formatEn` |
-| `prayer_time_rules.dart` | top-level `getPrayerDate`, `isPrayerTimeReached`, `canMarkPrayer`, `getPrayerDisplayName` |
+| `prayer_time_rules.dart` | top-level `getPrayerDate`, `isPrayerTimeReached`, `canMarkPrayer`, `getPrayerDisplayName`, `nativePrayerKey` (native key base: Zuhr/Dhuhr → `dhuhr`, else lowercase) |
 | `prayer_refresh.dart` | pure helpers for the prayer-times refresh (no Flutter imports): `sideEffectsFingerprint`, `cacheDays` (calendar days), `buildNativeCache` (`cached_{yyyy-MM-dd}_{name}`), `nextOccurrences`, `postChecksToSchedule`, `isLatest`; tests in `test/core/utils/prayer_refresh_test.dart` |
 | `haptic_feedback.dart` | app `HapticFeedback` (shadows Flutter's): `light`, `medium`, `heavy`, `selection`, `notify`, `success`, `error`, `warning`, `buttonPress`, `toggle`, `cardTap`, `isVibrationEnabled`, `isSimplifiedMode` |
 | `share_util.dart` | top-level `captureAndShare(key, filename)` |

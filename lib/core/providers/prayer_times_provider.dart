@@ -19,6 +19,7 @@ import '../services/desktop_prayer_scheduler.dart';
 import '../services/desktop_tray_service.dart';
 import '../services/desktop_notification_service.dart';
 import '../utils/prayer_refresh.dart';
+import '../utils/prayer_time_rules.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 bool get _isDesktop =>
@@ -347,14 +348,10 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
           final language = await _prefs?.getString('language') ?? 'en';
           final prayerTimesMap = <String, String>{};
           for (final p in updatedPrayerTimes) {
-            final key = '${p.name.toLowerCase()}_time';
+            final key = '${nativePrayerKey(p.name)}_time';
             prayerTimesMap[key] = p.time.millisecondsSinceEpoch.toString();
-            // Include iqama time so PrayerAlarmReceiver can show the countdown.
-            // Key must match what PrayerAlarmReceiver reads: dhuhr_iqama_time for Zuhr.
             if (p.iqamaTime != null && p.name != 'Sunrise') {
-              final iqamaKey = p.name == 'Zuhr'
-                  ? 'dhuhr_iqama_time'
-                  : '${p.name.toLowerCase()}_iqama_time';
+              final iqamaKey = '${nativePrayerKey(p.name)}_iqama_time';
               prayerTimesMap[iqamaKey] = p.iqamaTime!.millisecondsSinceEpoch.toString();
             }
           }
@@ -540,7 +537,7 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
       final language = await _prefs?.getString('language') ?? 'en';
       final prayerTimesMap = <String, String>{};
       for (final p in updatedPrayerTimes) {
-        final key = '${p.name.toLowerCase()}_time';
+        final key = '${nativePrayerKey(p.name)}_time';
         prayerTimesMap[key] = p.time.millisecondsSinceEpoch.toString();
       }
       await BackgroundServiceManager.instance.updatePrayerTimes(

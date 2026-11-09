@@ -117,6 +117,8 @@ class PrayerForegroundService : Service() {
 
             editor.apply()
 
+            val sortedKeys = prayerTimesMap.keys.sorted()
+            Log.d(TAG, "🕌 [FG_SERVICE] Prayer time keys: $sortedKeys")
             Log.d(TAG, "Prayer times updated from Flutter: next prayer = $nextPrayer at $nextTime")
         }
     }

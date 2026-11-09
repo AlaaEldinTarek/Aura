@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/prayer_time.dart';
+import '../utils/prayer_time_rules.dart';
 import 'background_service_manager.dart';
 
 /// Service for managing home screen widget data
@@ -37,8 +38,8 @@ class PrayerWidgetService {
       // Build prayer times map
       final Map<String, String> prayerTimesMap = {};
       for (final prayer in prayerTimes) {
-        final timeKey = _getTimeKey(prayer.name);
-        prayerTimesMap[timeKey] = prayer.time.millisecondsSinceEpoch.toString();
+        prayerTimesMap['${nativePrayerKey(prayer.name)}_time'] =
+            prayer.time.millisecondsSinceEpoch.toString();
       }
 
       // Get theme mode from SharedPreferences
@@ -48,8 +49,8 @@ class PrayerWidgetService {
       final Map<String, String> iqamaTimesMap = {};
       for (final prayer in prayerTimes) {
         if (prayer.iqamaTime != null) {
-          final key = _getIqamaKey(prayer.name);
-          iqamaTimesMap[key] = prayer.iqamaTime!.millisecondsSinceEpoch.toString();
+          iqamaTimesMap['${nativePrayerKey(prayer.name)}_iqama_time'] =
+              prayer.iqamaTime!.millisecondsSinceEpoch.toString();
         }
       }
 
@@ -90,37 +91,4 @@ class PrayerWidgetService {
     }
   }
 
-  /// Get the storage key for an iqama time
-  String _getIqamaKey(String prayerName) {
-    switch (prayerName.toLowerCase()) {
-      case 'fajr': return 'fajr_iqama_time';
-      case 'dhuhr':
-      case 'zuhr': return 'dhuhr_iqama_time';
-      case 'asr': return 'asr_iqama_time';
-      case 'maghrib': return 'maghrib_iqama_time';
-      case 'isha': return 'isha_iqama_time';
-      default: return '${prayerName.toLowerCase()}_iqama_time';
-    }
-  }
-
-  /// Get the storage key for a prayer time
-  String _getTimeKey(String prayerName) {
-    switch (prayerName.toLowerCase()) {
-      case 'fajr':
-        return 'fajr_time';
-      case 'sunrise':
-        return 'sunrise_time';
-      case 'dhuhr':
-      case 'zuhr':
-        return 'dhuhr_time';
-      case 'asr':
-        return 'asr_time';
-      case 'maghrib':
-        return 'maghrib_time';
-      case 'isha':
-        return 'isha_time';
-      default:
-        return '${prayerName.toLowerCase()}_time';
-    }
-  }
 }

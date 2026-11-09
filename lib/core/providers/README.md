@@ -52,9 +52,7 @@ widgets, the foreground service and desktop timers. Edit it carefully (CLAUDE.md
   On desktop, a wall-clock gap of more than 3 min (sleep) re-runs `DesktopPrayerScheduler.schedulePrayerTimers`.
 - **Platform split**: `_isDesktop` (Windows/macOS/Linux) uses the desktop services. Every other platform uses the
   Android-native paths (`PrayerAlarmService`, `BackgroundServiceManager`).
-- **Dhuhr/Zuhr keys**: iqama key for Zuhr is `dhuhr_iqama_time`; the accurate-times cache maps Zuhr → `dhuhr`
-  (`cached_YYYY-MM-DD_<name>`, today + 2 days). ⚠ The foreground-service map uses `'${name.toLowerCase()}_time'`, which
-  gives **`zuhr_time`** (in `loadPrayerTimes`). See findings F15.
+- **Dhuhr/Zuhr keys**: all Dart senders build native keys with `nativePrayerKey` (`prayer_time_rules.dart`); Zuhr → `dhuhr`.
 - Post-prayer check request codes are 1001–1006 (Sunrise skipped, future prayers only). Native adds +2000.
 - Calculation method defaults to `muslimWorldLeague` (legacy names mapped); Asr madhab defaults to `shafi`; location is cached 15 min.
 - Theme/language setters: save locally → set state → refresh widgets → Firestore `updateUserFields` only if logged in
