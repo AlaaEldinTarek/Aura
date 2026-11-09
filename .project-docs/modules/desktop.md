@@ -27,6 +27,9 @@ Add-AppxPackage -Path "build\windows\x64\runner\Release\aura_app.msix" -ForceApp
   `backUpUnreadablePrefsFile(getApplicationSupportDirectory())` (`prefs_file_recovery.dart`). An unreadable
   `shared_preferences.json` is renamed to `.unreadable-<timestamp>.bak` and logged `⚠️ [PREFS]`, so start-up reaches
   `runApp`; healthy files are untouched. Windows only. The window's X hides to the tray (process keeps running).
+- Window size (F63): from the work area of the monitor under the cursor (`window_size.dart`), max 900 × 1400, centered;
+  logged `📐 [DESKTOP] Work area: x,y WxH, window: WxH` (logical px; screen_retriever reports logical on Windows,
+  VERIFIED 2026-11-09). Details: desktop-scaling.md.
 - Sleep-aware timers: only the prayer minute tick (prayer.md § Next-prayer logic) — gap > 3 min reschedules prayer timers.
 - Tray, adhan, scheduler: `desktop_tray_service.dart`, `DesktopAdhanService`, `DesktopPrayerScheduler`
   (folder view `lib/core/services/README.md`).

@@ -770,7 +770,7 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   (`main.dart:22`); named route `/khatma_dua` never pushed by name; dead variable `y` in `WirdService.undoComplete`
   (`:198`); duplicate INTERNET permission (`AndroidManifest.xml:3, :37`); tracked junk folders under
   `android/app/src/main/res/` named after shell commands (`drawable" && mv …`, `layout" && cp …`); stale comments:
-  `main_wrapper_screen.dart:59` ("1.8×", formula gives 1.53), `AdhanFullScreenActivity.kt:300` ("Stop Vibrate" closes),
+  `main_wrapper_screen.dart:59` ("1.8×", formula gives 1.53; formula and comment replaced by F63 A-1, 2026-11-09), `AdhanFullScreenActivity.kt:300` ("Stop Vibrate" closes),
   `task_provider.dart:23–25` ("autoDispose"), `PrayerAlarmReceiver.kt:587–590` (placeholder times), `FocusModeReceiver`
   KDoc (fullScreenIntent).
 - **(p) Dart and native `proportional` differ** — **Tag: P3 (two calc engines; memory "next-prayer architecture").**
@@ -907,7 +907,18 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
 - **(a) Fixed 900 × 1400 window** — **Tag: MEDIUM (pre-existing; fix later).** Device VERIFIED (user, Windows at 150% display
   scaling, 2026-11-09): the window runs past the screen and the top is cut off, in the F62 test build and in the installed
   MSIX Aura. Code (static, likely cause): `main.dart` opens the window with `WindowOptions(size: Size(900, 1400))` (logical),
-  i.e. 1350 × 2100 physical pixels at 150%. Screen size of the test PC: UNKNOWN. Related: modules/desktop-scaling.md.
+  i.e. 1350 × 2100 physical pixels at 150%. Test PC: 2880 × 1620 physical, work area 1920 × 1032 logical at 150% (VERIFIED
+  2026-11-09). Related: modules/desktop-scaling.md. **Status 2026-11-09: FIXED on `fix/f63-window-size` (e662ad6, cb94e9c,
+  5c260b4; A-1 item scale 5d0c597): window from the work area, max 900 × 1400, centered; scale min(w/500, h/778) clamped
+  0.9–1.8; device S39 PASS; not merged.**
+
+## F64 — App tour highlight shifted on desktop (user screenshots, 2026-11-09) — desktop UI
+- **(a) Highlight frame offset by the sidebar width** — **Tag: MEDIUM (pre-existing; separate fix after F63, user 2026-11-09).**
+  Device VERIFIED (user screenshots 09:54 and 13:12, Windows): the tour's yellow frame sits right of its target by about the
+  sidebar width (full and icon-only sidebar) and is clipped at the right edge; the sidebar is not dimmed. Code (static, likely
+  cause): `showTutorial` inserts into `Overlay.of(context)` (`tutorial_overlay.dart:339`), on desktop the nested content
+  navigator's overlay right of the sidebar, while the target rect uses window coordinates (`box.localToGlobal(Offset.zero)`,
+  `:93`, and `:296`). Candidate fix: `Overlay.of(context, rootOverlay: true)`. Mobile: no nested navigator (not affected).
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).

@@ -4,11 +4,14 @@ Goal: UI looks good at any window size (~500×800 to maximized 1920×1080+).
 
 ## Scale calculation (`lib/features/main/main_wrapper_screen.dart`, `_DesktopShellState`)
 ```dart
-double _desktopTextScale(double w, double h) =>
-    (w / 500 * 0.7 + h / 1556 * 0.3).clamp(0.9, 3.0);
+// lib/core/utils/window_size.dart (F63 A-1; replaced (w/500*0.7 + h/1556*0.3).clamp(0.9, 3.0))
+double desktopTextScale(double w, double h) => min(w / 500, h / 778).clamp(0.9, 1.8);
 ```
-- Input is `MediaQuery.of(ctx).size` (whole window incl. sidebar), not the `LayoutBuilder` constraints. The code comment
-  "900×1400 → 1.8×" is wrong (gives 1.53, F52o).
+- Input is `MediaQuery.of(ctx).size` (whole window incl. sidebar), not the `LayoutBuilder` constraints. The limiting side
+  decides: 597 × 929 → ~1.19, maximized 1920 × 1000 → ~1.29 (was ~2.9), 900 × 1400 → 1.8 (was 1.53).
+- Window size (F63): `adaptiveWindowSize(currentWorkArea())` — 90% of the work height of the monitor under the cursor,
+  width 0.64 × height (min 500 when it fits), max 900 × 1400, centered on that work area; same rule after a desktop
+  notification popup closes (minimum capped by `fitMinimumSize`).
 
 ## How it's applied (inside a `LayoutBuilder` in the desktop shell)
 ```dart
