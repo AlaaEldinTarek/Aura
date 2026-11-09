@@ -66,6 +66,33 @@ void main() {
     });
   });
 
+  group('desktopTextScale (A-1)', () {
+    test('tuned point 900 x 1400 stays 1.8', () {
+      expect(desktopTextScale(900, 1400), closeTo(1.8, 0.01));
+    });
+    test('new default 597 x 929 -> ~1.19', () {
+      expect(desktopTextScale(597, 929), closeTo(1.194, 0.01));
+    });
+    test('maximized 1920 x 1000 -> ~1.29, not ~2.9', () {
+      expect(desktopTextScale(1920, 1000), closeTo(1.285, 0.01));
+    });
+    test('500 x 778 -> 1.0', () {
+      expect(desktopTextScale(500, 778), closeTo(1.0, 0.001));
+    });
+    test('tiny window -> 0.9 floor; huge window -> 1.8 cap', () {
+      expect(desktopTextScale(300, 400), 0.9);
+      expect(desktopTextScale(3840, 2000), 1.8);
+    });
+    test('wider window at the same height does not exceed the height limit',
+        () {
+      const h = 1000.0;
+      final limit = (h / 778).clamp(0.9, 1.8);
+      for (final w in [600.0, 900.0, 1400.0, 1920.0, 3000.0]) {
+        expect(desktopTextScale(w, h), lessThanOrEqualTo(limit + 1e-9));
+      }
+    });
+  });
+
   group('fitMinimumSize', () {
     test('minimum smaller than the window is kept', () {
       expectSize(fitMinimumSize(const Size(400, 600), const Size(500, 604.8)),

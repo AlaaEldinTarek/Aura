@@ -25,6 +25,13 @@ Size adaptiveWindowSize(Rect? workArea) {
   return Size(width, height);
 }
 
+/// Desktop item/text scale for a window of [width] × [height] (F63 A-1).
+/// The limiting side decides (vertical scroll layout), so a wide or
+/// maximized window does not inflate everything: 900 × 1400 → 1.8 (the tuned
+/// point, also the cap), 500 × 778 → 1.0, floor 0.9.
+double desktopTextScale(double width, double height) =>
+    math.min(width / 500.0, height / 778.0).clamp(0.9, 1.8).toDouble();
+
 /// [desiredMin] capped to [window], so a minimum never exceeds the window.
 Size fitMinimumSize(Size desiredMin, Size window) => Size(
       math.min(desiredMin.width, window.width),

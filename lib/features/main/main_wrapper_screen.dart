@@ -56,15 +56,6 @@ import '../../core/widgets/aura_button.dart';
 /// Desktop-only: controls sidebar visibility (false = hidden, e.g. during Quran reading)
 final desktopSidebarVisibleProvider = StateProvider<bool>((ref) => true);
 
-/// Compute desktop text scale from window dimensions.
-/// Tuned so 900×1400 → 1.8×, scales smoothly for any window size.
-double _desktopTextScale(double windowWidth, double windowHeight) {
-  // Width drives ~70% of scale, height ~30% — matches vertical-scroll app layout
-  final sw = windowWidth / 500.0; // 900px → 1.80
-  final sh = windowHeight / 1556.0; // 1400px → 0.90
-  return (sw * 0.7 + sh * 0.3).clamp(0.9, 3.0);
-}
-
 /// Main wrapper screen with TabController
 class MainWrapperScreen extends ConsumerStatefulWidget {
   const MainWrapperScreen({super.key, this.initialIndex = 0});
@@ -1402,7 +1393,7 @@ class _DesktopShellState extends ConsumerState<_DesktopShell> {
             child: LayoutBuilder(
               builder: (ctx, constraints) {
                 final mq = MediaQuery.of(ctx);
-                final scale = _desktopTextScale(mq.size.width, mq.size.height);
+                final scale = desktopTextScale(mq.size.width, mq.size.height);
                 final iconSize = (24.0 * scale).clamp(18.0, 52.0);
                 final chipPadH = (8.0 * scale).clamp(6.0, 20.0);
                 final chipPadV = (4.0 * scale).clamp(2.0, 12.0);
