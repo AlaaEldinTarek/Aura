@@ -541,6 +541,10 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
 
   Future<void> _checkGuestMigration() async {
     if (!mounted) return;
+    // Re-read the flag before deciding (F60): the provider may be new (its
+    // first load not finished) or stale from before this sign-in.
+    await ref.read(guestMigrationProvider.notifier).refresh();
+    if (!mounted) return;
     final migration = ref.read(guestMigrationProvider);
     if (!migration.isPending || migration.dialogShownThisSession) return;
     ref.read(guestMigrationProvider.notifier).markDialogShown();
