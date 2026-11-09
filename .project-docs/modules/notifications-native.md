@@ -36,18 +36,19 @@ code): CLAUDE.md Rules.
   if ahead, else tomorrow from cached day +1), replacing the old alarm with the same `PendingIntent`; no cancel call.
   Post-prayer checks (request code + 2000) are never cancelled: a check whose new time + 30 min is already past keeps
   its old alarm. A prayer moved later after it fired is guarded only by the 6-hour duplicate guard.
-- `AdhanPlayer.kt` — singleton MediaPlayer, per-prayer / custom audio, vibration. Only `play()` is `@Synchronized`
-  (`stop` / `releasePlayer` / `isPlaying` are not; F51 backlog).
+- `AdhanPlayer.kt` — singleton MediaPlayer, per-prayer audio + reciter via `AdhanFiles.resolve` (reads `selected_adhan_id`
+  from `FlutterPrefs`), vibration. `previewAdhan(context, id)` plays without storing. Only `play()` is `@Synchronized`
+  (`stop` / `releasePlayer` / `isPlaying` are not; F51 backlog). `AdhanFiles.kt` — validates reciter id `[a-z0-9_]+`.
 - `AdhanFullScreenActivity.kt` — over lock screen. Pulse during adhan; then iqama countdown (polls
   `AdhanPlayer.isPlaying()` every 500 ms, reads `adhan_iqama_time`). Exits: ✕, Back, auto-finish at iqama (or 3 s when
   none) → launches `AzkarFullScreenActivity`; volume keys stop audio. "Stop Vibrate"/"Keep Vibrate" only when the
-  vibrate window is active and `aura_silent_mode.silent_mode_enabled` (F49a); "Keep Vibrate" is a no-op, "Stop
+  vibrate window is active and `FlutterPrefs.getBoolean("silent_mode_enabled")` (F49a fixed); "Keep Vibrate" is a no-op, "Stop
   Vibrate" does not close the screen.
 - `AzkarAlarmReceiver.kt` (iqama + 10 min, or adhan + 15 min; IDs 9001–9006) → `AzkarFullScreenActivity.kt`
   (post-prayer azkar counters; extra items at Fajr/Maghrib). Double launch: F51j.
 - `JumuahReminderReceiver.kt` — see Jumu'ah below.
 - `PrayerBootReceiver.kt` — after boot/update: `PrayerRescheduleService` (dataSync foreground service), recalc worker,
-  `rescheduleJumuahReminder()`, foreground service (F51i, F51l).
+  `rescheduleJumuahReminder()`, foreground service via `startServiceIfAllowed` (F51i fixed; F51l).
 - `ToggleSilentModeReceiver.kt` (also contains `SilentOffReceiver`) — vibrate-window actions.
   `StopAdhanReceiver.kt` — declared, nothing sends `STOP_ADHAN` (F51q).
 - `NativeNotificationReceiver.kt`, `TaskReminderReceiver.kt` — native delivery for Flutter-scheduled notifications
