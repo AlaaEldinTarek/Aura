@@ -893,7 +893,7 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   **Cause confirmed 2026-11-09 (spec fix-f61-nav-language):** the provider changed `MaterialApp.locale` before `setLocale`, and
   easy_localization's delegate installs the controller's old translations (never reloads). **Status: FIXED on `fix/f61-nav-language`
   (46ee725, e0026de): `applyAppLanguage` in Settings and onboarding; 6 tests (widget test reproduces the bug); device S38 PASS
-  on the phone and Windows; not merged.**
+  on the phone and Windows; merged to main via PR #8 (84ee960).**
 
 ## F62 — Damaged prefs file leaves a white window on Windows (S36 Windows, 2026-11-09) — reliability
 - **(a) No recovery from an unreadable SharedPreferences file** — **Tag: MEDIUM (pre-existing; fix later).** Device VERIFIED
