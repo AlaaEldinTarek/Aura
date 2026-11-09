@@ -893,7 +893,7 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
 
 ## F62 — Damaged prefs file leaves a white window on Windows (S36 Windows, 2026-11-09) — reliability
 - **(a) No recovery from an unreadable SharedPreferences file** — **Tag: MEDIUM (pre-existing; fix later).** Device VERIFIED
-  (Windows, unpackaged release exe): `%APPDATA%\com.auraura_app\shared_preferences.json` was 1867 zero bytes (last write
+  (Windows, unpackaged release exe): `%APPDATA%\com.aura\aura_app\shared_preferences.json` was 1867 zero bytes (last write
   2026-06-30, cause UNKNOWN, likely an interrupted write). Start-up logged `FormatException: Unexpected character (at character 1)`
   for SharedPreferences and EasyLocalization and the window stayed white. Renamed to `shared_preferences.json.zeroed-2026-06-30.bak`;
   the app then started. MSIX installs use a virtualized copy (not affected here). Whether Android can hit the same: UNKNOWN.
