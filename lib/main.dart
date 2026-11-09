@@ -7,6 +7,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:dynamic_color/dynamic_color.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:path_provider/path_provider.dart' show getApplicationSupportDirectory;
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_constants.dart';
 import 'core/services/shared_preferences_service.dart';
@@ -38,6 +39,7 @@ import 'core/services/offline_queue_service.dart';
 import 'core/services/desktop_notification_service.dart';
 import 'core/services/desktop_tray_service.dart';
 import 'core/services/windows_startup_service.dart';
+import 'core/services/prefs_file_recovery.dart';
 import 'features/tasks/task_form_screen.dart';
 import 'features/tasks/task_stats_screen.dart';
 import 'core/models/task.dart';
@@ -57,6 +59,22 @@ void main(List<String> args) async {
   WidgetsFlutterBinding.ensureInitialized();
 
   final isStartup = !kIsWeb && Platform.isWindows && args.contains('--startup');
+
+  // Windows: move an unreadable prefs file aside before the first prefs read
+  // (registerIfEnabled below), or start-up never reaches runApp (F62).
+  // getApplicationSupportDirectory resolves the same folder the
+  // shared_preferences_windows plugin uses.
+  if (!kIsWeb && Platform.isWindows) {
+    try {
+      final backup =
+          await backUpUnreadablePrefsFile(await getApplicationSupportDirectory());
+      if (backup != null) {
+        debugPrint('⚠️ [PREFS] Unreadable prefs file backed up: $backup');
+      }
+    } catch (e) {
+      debugPrint('❌ [PREFS] Prefs file check failed: $e');
+    }
+  }
 
   // Desktop window setup
   if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) {
