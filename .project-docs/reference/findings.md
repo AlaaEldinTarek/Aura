@@ -919,6 +919,16 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   cause): `showTutorial` inserts into `Overlay.of(context)` (`tutorial_overlay.dart:339`), on desktop the nested content
   navigator's overlay right of the sidebar, while the target rect uses window coordinates (`box.localToGlobal(Offset.zero)`,
   `:93`, and `:296`). Candidate fix: `Overlay.of(context, rootOverlay: true)`. Mobile: no nested navigator (not affected).
+  **Status 2026-11-09: FIXED on `fix/f64-tour-highlight` (bf70e93; option B: frame and tooltip in the overlay's coordinates
+  and size, the root-overlay option was rejected because it drops the desktop text scale); 6 widget tests incl. RTL and pane edge;
+  device S40 PASS (Windows LTR + Arabic, maximized; phone regression); not merged.**
+
+## F65 — Desktop sidebar takes almost half of a narrow window (user screenshot, 2026-11-09) — desktop UI
+- **(a) Fixed 260 px sidebar** — **Tag: MEDIUM (pre-existing width, exposed by the narrower F63 default window; fix next, user).**
+  Device VERIFIED (user screenshot 14:19, Windows 150%, window 597 × 929 logical): the expanded sidebar is ~260 of ~585 px
+  (~44%). Code (static): `_DesktopShellState` uses `width: _sidebarCollapsed ? 72.0 : 260.0` (`main_wrapper_screen.dart:1368`),
+  not scaled and not tied to the window width; only the ☰ toggle collapses it (state not persisted). At the old 900-px default
+  it was ~29%.
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).

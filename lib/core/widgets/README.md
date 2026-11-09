@@ -20,7 +20,7 @@ the exceptions that read providers or call services are listed under Side Effect
 | `permission_dialog.dart` | `PermissionDialogHandler(onDone)` + static `permissionsDone` future |
 | `desktop_location_dialog.dart` | `showDesktopLocationDialog(context, ref)` |
 | `bottom_nav_bar.dart` | `AuraBottomNavBar(currentIndex, onTap)`, static `navBarKey` |
-| `tutorial_overlay.dart` | `TutorialStep(targetKey, titleKey, bodyKey)`, `TutorialOverlay`, `showTutorial(context, steps, onDone)` |
+| `tutorial_overlay.dart` | `TutorialStep(targetKey, titleKey, bodyKey)`, `TutorialOverlay`, `showTutorial(context, steps, onDone)`. Frame and tooltip are measured in the overlay the tour is drawn in (desktop: the content pane right of the sidebar; F64); tests in `test/core/widgets/tutorial_overlay_test.dart` |
 | `setting_tile.dart` | `SettingTile`, `SettingTileSwitch`, `SettingsSectionHeader`, `SettingsCard` |
 | `greeting_widget.dart` | `GreetingWidget(userName, onTap)`, `SimpleGreeting(userName, style)` |
 | `share_card.dart` | `ShareCard(repaintKey, type, count, lang)`, `ShareCardType` {prayerStreak, taskStreak, wirdStreak, khatm} |

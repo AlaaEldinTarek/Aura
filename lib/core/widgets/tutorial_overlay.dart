@@ -85,12 +85,23 @@ class _TutorialOverlayState extends State<TutorialOverlay>
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final step = widget.steps[widget.currentIndex];
     final isLast = widget.currentIndex == widget.steps.length - 1;
-    final screenSize = MediaQuery.of(context).size;
+    // Measure in the overlay the tour is drawn in (F64): on desktop that is
+    // the content pane's overlay, right of the sidebar, not the whole window.
+    final overlayBox =
+        Overlay.maybeOf(context)?.context.findRenderObject() as RenderBox?;
+    final hasOverlayBox = overlayBox != null && overlayBox.hasSize;
+    // Copy the size: a RenderBox's own Size object must not be handed to
+    // another render object (debug size-ownership check).
+    final screenSize = hasOverlayBox
+        ? Size(overlayBox.size.width, overlayBox.size.height)
+        : MediaQuery.of(context).size;
 
     final box = step.targetKey.currentContext?.findRenderObject() as RenderBox?;
     Rect targetRect = Rect.zero;
     if (box != null) {
-      targetRect = box.localToGlobal(Offset.zero) & box.size;
+      targetRect = box.localToGlobal(Offset.zero,
+              ancestor: hasOverlayBox ? overlayBox : null) &
+          box.size;
     }
 
     final isDesktop = !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
