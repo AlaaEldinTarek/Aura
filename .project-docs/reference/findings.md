@@ -39,10 +39,11 @@ Created 2026-11-06 from analyzer run at 75d38b9 and the CLAUDE.md relocation.
   maps to 1 would replace/cancel the digest (or vice versa).
 
 ## F9 — Dart channel `com.aura.hala/silent_mode` has no Kotlin handler — VERIFIED (static)
-- **Tag: fix track, group "Dart->native settings bridge"** (with F49a, F49b, F15; see F49).
+- **Tag: P6 cleanup (moved from settings-bridge group, spec 2026-11-09; see F49).** Unused channel with no handler;
+  silent mode works natively via prefs (contracts/prefs-keys.md).
 - `silent_mode_service.dart:14` invokes `setEnabled`/`setDuration`/`cancelAll`; no Kotlin registers `silent_mode`
   (calls would throw `MissingPluginException`, caught). No importer of `silent_mode_service.dart` found in `lib/`/`test/`
-  → likely dead code (UNVERIFIED; "not found" ≠ unused). Silent mode works natively via prefs (contracts/prefs-keys.md).
+  → likely dead code (UNVERIFIED; "not found" ≠ unused).
 
 ## F10 — Kotlin handlers with no Dart caller found — UNVERIFIED (possibly dead)
 - `ringer_mode`: `getRingerMode`, `setRingerMode` (`MainActivity.kt:206,210`); `app_control`: `openUrl` (:227);
@@ -580,7 +581,8 @@ Check only when a phase touches the area:
   `aura_prefs.language`; no code writes `language` to `aura_prefs` (writers are `aura_prayer_times`,
   `aura_tasks_widget`, focus state), so its messages (`:142, :222, :238`) are always English. The same file's
   `getLanguagePreference` (`:373`) reads `aura_prayer_times` correctly. Found while correcting (g); impact UNVERIFIED.
-- **(i) Boot receiver's `aura_prefs.notifications_enabled` check has no effect** — **Tag: P6 cleanup.** VERIFIED
+- **(i) Boot receiver's `aura_prefs.notifications_enabled` check has no effect** — **Tag: joined settings-bridge group
+  (spec 2026-11-09, §8); was P6 cleanup.** VERIFIED
   (static): `PrayerBootReceiver.kt:59–65` skips `PrayerRescheduleService` (adhan alarms) when the flag is false, but
   nothing writes it, so it is always `true`. No user choice is lost after reboot: the Dart toggle
   `prayer_notifications_enabled` ("Remind 10 minutes before", `prayer_screen.dart:1262–1270`) only gates the Dart
@@ -931,6 +933,44 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   it was ~29%.
   **Status 2026-11-09: DONE (PR #11, 5d37798; device check S41 pending).** Fix: `DesktopShellLayout` (8d7650f, 2f46d25):
   below 800 px a 72-px icon rail, ☰ opens the 260-px sidebar as an overlay from the start edge; 8 widget tests incl. RTL.
+
+## F66 — "Adhan off" only stops the sound (found during the settings-bridge spec, 2026-11-09) — prayer / adhan
+- **(a) Rest of the adhan still runs with adhan off** — **Tag: UNKNOWN severity; intended behavior undecided (user
+  2026-11-09); outside the "Dart->native settings bridge" group (listed there as a Non-Goal).** Code VERIFIED (static,
+  main @ c5a848e): the only fire-time check of `adhan_enabled` is in `AdhanPlayer.play`, which returns before any sound
+  (`AdhanPlayer.kt:179–186`). `PrayerAlarmReceiver` still runs the rest of the fire path: vibrate mode
+  (`PrayerAlarmReceiver.kt:514–517`, gated only by silent mode), the prayer notification (`:527`), the full-screen
+  adhan screen (`:531–534`) and adhan mode in the foreground service (`:542–560`). Device impact UNVERIFIED. Needs a
+  user decision on what "adhan off" should stop before any fix.
+- **Open question for the same decision (user 2026-11-09):** should previewing a reciter play when adhan is off? Today
+  preview goes through `AdhanPlayer.play`, so it is silent when adhan is off; after the settings-bridge fix
+  `previewAdhan` keeps that (returns `false`, the button stays in its play state, no message).
+- **Second open question for the same decision (user 2026-11-09, review A1):** should a reciter preview be able to
+  interrupt a prayer adhan? Today it can: preview goes through `AdhanPlayer.play`, which calls `stop()` first
+  (`AdhanPlayer.kt:190`), so tapping preview while the prayer adhan plays stops it and plays the preview. The
+  settings-bridge fix keeps this (`previewAdhan` uses the same stop-then-play sequence). Related, also pre-existing:
+  after a prayer adhan stops a preview, the downloads screen still shows the stop button; tapping it sends `stopAdhan`
+  and stops the prayer adhan.
+
+## F67 — Native code reads the app language from a channel-pushed copy (found during the settings-bridge spec, 2026-11-09)
+- **(a) 16 native `language` reads use copies, not the Dart setting** — **Tag: fix track LOW (later, user 2026-11-09);
+  outside the "Dart->native settings bridge" group, which keeps the copy (its contract lists it as a known
+  channel-pushed duplicate).** Code VERIFIED (static, main @ c5a848e): the setting is `flutter.language`
+  (`shared_preferences_service.dart:84`). Kotlin reads `getString("language", …)` 16 times in 12 files
+  (`AdhanFullScreenActivity`, `AzkarAlarmReceiver`, `AzkarFullScreenActivity`, `DailyContentWidget`,
+  `DailySummaryReceiver`, `JumuahReminderReceiver`, `PrayerAlarmReceiver` ×2, `PrayerForegroundService` ×2,
+  `PrayerWidgets`, `StopAdhanReceiver`, `TasksWidget` ×2, `ToggleSilentModeReceiver` ×2), from copies that Dart pushes
+  over channels: `aura_prayer_times` via `updatePrayerWidgets` (`MainActivity.kt:285`) and `updatePrayerTimes`
+  (`PrayerForegroundService.kt:116`), `aura_tasks_widget` (`MainActivity.kt:330`), focus state
+  (`FocusModeService.kt:241`). Proposed later fix: read `flutter.language` through `FlutterPrefs` everywhere.
+- **When Dart pushes the language (static):** immediately on change — `LanguageNotifier.setLanguage`
+  (`preferences_provider.dart:124–152`, reached from Settings and onboarding via `applyAppLanguage` and from Profile
+  `:990, :1002`) calls `PrayerWidgetService.savePrayerTimes` (both prayer channels) and
+  `TaskWidgetService.refreshWidget`. Also on every prayer-times refresh (`prayer_times_provider.dart:319, :347, :526,
+  :540`). Gaps: the immediate push is skipped when no prayer times are loaded yet (`:137`), and push errors are only
+  logged (`:150–151`); in both cases native keeps the old language until the next refresh.
+  `SharedPreferencesService.restorePreferences` (`shared_preferences_service.dart:269–276`) writes the language without
+  a push, but has no caller found. Device timing UNVERIFIED.
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
