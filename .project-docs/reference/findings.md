@@ -929,6 +929,8 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   (~44%). Code (static): `_DesktopShellState` uses `width: _sidebarCollapsed ? 72.0 : 260.0` (`main_wrapper_screen.dart:1368`),
   not scaled and not tied to the window width; only the ☰ toggle collapses it (state not persisted). At the old 900-px default
   it was ~29%.
+  **Status 2026-11-09: DONE (PR #11, 5d37798; device check S41 pending).** Fix: `DesktopShellLayout` (8d7650f, 2f46d25):
+  below 800 px a 72-px icon rail, ☰ opens the 260-px sidebar as an overlay from the start edge; 8 widget tests incl. RTL.
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
