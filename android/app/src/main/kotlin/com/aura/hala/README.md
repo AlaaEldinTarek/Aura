@@ -49,8 +49,10 @@ package, see its README), home-screen widgets, and full-screen activities shown 
 - **Never launch `MainActivity` from native code** at adhan time or for stale times; only notification tap
   `PendingIntent`s open it. Stale/missing times → `NativePrayerCalculator.calculateAndSave()` (`DailyRecalcReceiver`,
   `PrayerRecalcWorker`, `PrayerForegroundService`, `PrayerAlarmReceiver` after Fajr/Isha).
-- **Flutter settings** are read only through `FlutterPrefs`. Native state lives in `aura_prayer_times`,
-  `aura_silent_mode`, `aura_prefs`, `aura_tasks_widget`; `${packageName}_preferences` is Focus Mode only.
+- **Flutter settings** are read only through `FlutterPrefs` (`silent_mode_enabled`, and after the settings-bridge fix
+  also `adhan_enabled`, `selected_adhan_id`, `background_notification_enabled`). Native state lives in `aura_prayer_times`,
+  `aura_silent_mode` (native state only: `is_silent_active`, `saved_ringer_mode`, `silent_end_time`),
+  `aura_tasks_widget`; `${packageName}_preferences` is Focus Mode only.
 - **Dhuhr/Zuhr**: ID maps (`getNotificationId` & co., `AzkarAlarmReceiver`, `AdhanPlayer` files) accept both; the
   prefs key is always `dhuhr_time` and the cache key `cached_{date}_dhuhr`. Status keys, `updateNextPrayer`,
   `DailySummaryReceiver.PRAYER_NAMES` and the widget timeline use the raw name and match only `'Zuhr'`.

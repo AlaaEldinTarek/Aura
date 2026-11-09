@@ -139,7 +139,7 @@ class ToggleSilentModeReceiver : BroadcastReceiver() {
         sharedPrefs.edit().putBoolean(KEY_IS_SILENT_ACTIVE, false).apply()
 
         // Show toast
-        val language = getLanguage(context)
+        val language = getLanguagePreference(context)
         val isArabic = language == "ar"
         val message = if (isArabic) {
             "تم إلغاء الوضع الصامت"
@@ -219,7 +219,7 @@ class ToggleSilentModeReceiver : BroadcastReceiver() {
         prayerNameAr: String,
         noDndPermission: Boolean
     ) {
-        val language = getLanguage(context)
+        val language = getLanguagePreference(context)
         val isArabic = language == "ar"
 
         val message = if (isArabic) {
@@ -235,7 +235,7 @@ class ToggleSilentModeReceiver : BroadcastReceiver() {
      * Show toast when Keep Silent is activated (permanent vibrate mode)
      */
     private fun showKeepSilentToast(context: Context) {
-        val language = getLanguage(context)
+        val language = getLanguagePreference(context)
         val isArabic = language == "ar"
 
         val message = if (isArabic) {
@@ -247,11 +247,8 @@ class ToggleSilentModeReceiver : BroadcastReceiver() {
         android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_LONG).show()
     }
 
-    /**
-     * Get language preference
-     */
-    private fun getLanguage(context: Context): String {
-        val sharedPrefs = context.getSharedPreferences("aura_prefs", Context.MODE_PRIVATE)
+    private fun getLanguagePreference(context: Context): String {
+        val sharedPrefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
         return sharedPrefs.getString("language", "en") ?: "en"
     }
 

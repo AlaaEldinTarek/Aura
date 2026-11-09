@@ -16,8 +16,8 @@ daily-summary notifications always English, daily summary time reverting to 21:0
 | File | Sites | Used by | Confidence |
 | --- | --- | --- | --- |
 | `aura_prayer_times` | 44 | PrayerForegroundService, PrayerAlarmReceiver, AdhanFullScreenActivity, StopAdhanReceiver, DailySummaryReceiver, NativePrayerCalculator, JumuahReminderReceiver, PrayerWidgets, DailyContentWidget, MainActivity (channel writes) | Verified |
-| `aura_silent_mode` | 8 (+`ToggleSilentModeReceiver.PREFS_NAME`) | SilentModeAutomation, PrayerAlarmReceiver, AdhanFullScreenActivity, ToggleSilentModeReceiver, PrayerForegroundService | Verified (native only; `silent_mode_enabled` has no writer — findings F49a) |
-| `aura_prefs` | 5 (`MainActivity.kt:369,375`, `AdhanPlayer.kt:180`, `PrayerBootReceiver.kt:59`, `ToggleSilentModeReceiver.kt:254`) | MainActivity adhan channel (W/R `adhan_enabled`), AdhanPlayer (R `adhan_enabled`), PrayerBootReceiver (R `notifications_enabled`), ToggleSilentModeReceiver (R `language`) | Verified. Custom adhan is NOT stored here (in-memory only — findings F49b) |
+| `aura_silent_mode` | native state only | SilentModeAutomation, AdhanFullScreenActivity, ToggleSilentModeReceiver, PrayerForegroundService | Verified (native state: `is_silent_active`, `saved_ringer_mode`, `silent_end_time`; `silent_mode_enabled` moved to `FlutterSharedPreferences` — F49a fix) |
+| `aura_prefs` | 4 (`MainActivity.kt:369,375`, `AdhanPlayer.kt:180`, `PrayerBootReceiver.kt:59`) | MainActivity adhan channel (W/R `adhan_enabled`), AdhanPlayer (R `adhan_enabled`), PrayerBootReceiver (R `notifications_enabled`) | Verified. `language` reader removed (F49h fix). Custom adhan is NOT stored here (in-memory only — findings F49b) |
 | `aura_tasks_widget` | 3 (`TasksWidget.kt:19,261`, `MainActivity.kt:323`) | TasksWidget, MainActivity `updateTasksWidget` | Partial — undocumented before Step 2 |
 | `aura_focus_state` | 2 (`FocusModeService.kt:33`) | FocusModeService (`duration_minutes`, `started_at`, …) | Partial — undocumented before Step 2 |
 | `aura_focus_mode` | 1 | FocusModeReceiver (`completed_task_id`, `completed_at`) | Partial |
@@ -27,6 +27,7 @@ daily-summary notifications always English, daily summary time reverting to 21:0
 ## Cross-boundary keys — `FlutterSharedPreferences` (Dart name; stored as `flutter.<name>`)
 | Name | Dart location | Kotlin location | Read/Write | Dynamic? | Confidence |
 | --- | --- | --- | --- | --- | --- |
+| `silent_mode_enabled` | `shared_preferences_service.dart:201–202`, `prayer_screen.dart:1422` | `PrayerAlarmReceiver.kt`, `AdhanFullScreenActivity.kt` (via `FlutterPrefs`) | Dart W / Kotlin R | No | Verified (F49a fix) |
 | `prayer_tracking_notifications_enabled` | `shared_preferences_service.dart` | `DailySummaryReceiver.kt:90`, `PrayerAlarmReceiver.kt:580`, `PrayerBootReceiver.kt:97` | Dart W / Kotlin R | No | Verified |
 | `daily_summary_time` | `shared_preferences_service.dart` | `DailySummaryReceiver.kt:151`, `PrayerBootReceiver.kt:99` | Dart W / Kotlin R | No | Verified |
 | `jumua_reminder_enabled` | `preferences_provider.dart`, `notification_service.dart` | `JumuahReminderReceiver.kt:24,105` | Dart W / Kotlin R | No | Verified |
@@ -41,7 +42,7 @@ daily-summary notifications always English, daily summary time reverting to 21:0
 | --- | --- | --- | --- | --- | --- |
 | `fajr_time`, `sunrise_time`, `dhuhr_time`, `asr_time`, `maghrib_time`, `isha_time` (Dart builds every key with `nativePrayerKey`, `prayer_time_rules.dart`; an orphan `zuhr_time` may exist on old installs, no reader) | channel `updatePrayerTimes` | W `NativePrayerCalculator.kt:73–78` + MainActivity; R receivers/widgets, `JumuahReminderReceiver.kt:32` | both W, Kotlin R | No | Verified |
 | `next_prayer_name`, `next_prayer_name_ar`, `next_prayer_time` | channel `updatePrayerWidgets` | W `MainActivity.kt:293–295`, `NativePrayerCalculator.kt:82`; R ×8 | both W, Kotlin R | No | Verified (cached scalar — see memory "next-prayer architecture") |
-| `language`, `location_name`, `themeMode` | `prayer_widget_service.dart` args | W `MainActivity.kt:285–287`; R ×20 (`language`), `DailyContentWidget.kt:80` (`themeMode`) | Dart→Kotlin | No | Verified |
+| `language`, `location_name`, `themeMode` | `prayer_widget_service.dart` args | W `MainActivity.kt:285–287`; R: 14 × `aura_prayer_times`, 2 × `aura_tasks_widget` (`language`; search `getString("language"` on c5a848e, after F49h), `DailyContentWidget.kt:80` (`themeMode`) | Dart→Kotlin | No | Verified. `language` is a known channel-pushed duplicate of `flutter.language` (F67) |
 | `{prayer}_iqama_time` (fajr/dhuhr/asr/maghrib/isha) | built with `nativePrayerKey` + `_iqama_time` | W `MainActivity.kt:297–299` (map passthrough); R `PrayerAlarmReceiver.kt:545–549` | Dart→Kotlin | Yes | Verified |
 | `cached_{yyyy-MM-dd}_{name}` | `prayer_times_provider.dart` → `buildNativeCache` (`prayer_refresh.dart`) → `BackgroundServiceManager.cacheAccuratePrayerTimes` (`background_service_manager.dart:121–127`) | W `MainActivity.kt:698–704` (drops old `cached_*`); R `NativePrayerCalculator.kt:177–190` (`readCached`) | Dart→Kotlin | Yes | Verified. Days today … +6 (FX-0; 42 keys); `{name}` = fajr, sunrise, dhuhr, asr, maghrib, isha |
 | `prayer_latitude`, `prayer_longitude`, `prayer_calc_method`, `prayer_asr_madhab` | channel args | 3 sites each | Dart→Kotlin | No | Partial (Dart arg site per key not mapped) |
@@ -56,14 +57,13 @@ daily-summary notifications always English, daily summary time reverting to 21:0
   cleared by `startService`, so boot ignores it — findings F51i).
 - `aura_focus_state` (`FocusModeService`): write-only, no reader. `aura_focus_mode` (`FocusModeReceiver`): written
   only on a dead path, no reader (findings F51q).
-- `aura_silent_mode`: `is_silent_active`, `saved_ringer_mode`, `silent_end_time`. `silent_mode_enabled` is read
-  (`PrayerAlarmReceiver.kt:497–498`, `AdhanFullScreenActivity.kt:292–294`, default `true`) but no Kotlin or Dart code
-  writes it here; the Dart toggle writes `flutter.silent_mode_enabled` in `FlutterSharedPreferences` (findings F49a).
+- `aura_silent_mode`: `is_silent_active`, `saved_ringer_mode`, `silent_end_time` (native state only; `silent_mode_enabled`
+  now read from `FlutterSharedPreferences` via `FlutterPrefs` — F49a fix).
 - `aura_tasks_widget`: `task_count`, `tasks_done`, `tasks_total`, `streak`, `language`, `task_{i}_{id|title|time|category|priority|overdue|subtaskDone|subtaskTotal}`.
 - `aura_prefs`: `adhan_enabled` (W `MainActivity.kt:369–370` via adhan channel `setAdhanEnabled`; R `MainActivity.kt:375`,
   `AdhanPlayer.kt:180–181`). Read with no writer found (default used): `notifications_enabled`
-  (`PrayerBootReceiver.kt:59–60`, default `true`; dead check — findings F49i), `language` (`ToggleSilentModeReceiver.kt:254–255`, default `"en"` —
-  findings F49h). No custom adhan key: `AdhanPlayer.customAdhanPath` is an in-memory `var` set by channel
+  (`PrayerBootReceiver.kt:59–60`, default `true`; dead check — findings F49i). `language` reader removed (F49h fix).
+  No custom adhan key: `AdhanPlayer.customAdhanPath` is an in-memory `var` set by channel
   `setCustomAdhan` (`MainActivity.kt:379–383`) and lost when the process dies (findings F49b).
 - `${packageName}_preferences`: `focus_completed_task_id`, `focus_task_was_completed`.
 

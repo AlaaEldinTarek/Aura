@@ -494,8 +494,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             dedupPrefs.edit().putLong(dedupKey, currentTime).apply()
         }
 
-        val defaultPrefs = context.getSharedPreferences("aura_silent_mode", Context.MODE_PRIVATE)
-        val silentModeEnabled = defaultPrefs.getBoolean("silent_mode_enabled", true)
+        val silentModeEnabled = FlutterPrefs.getBoolean(context, "silent_mode_enabled", true)
         Log.d(TAG, "🔧 [SETTINGS] Silent mode enabled: $silentModeEnabled")
 
         // Play adhan audio (except Sunrise — no adhan for sunrise)
