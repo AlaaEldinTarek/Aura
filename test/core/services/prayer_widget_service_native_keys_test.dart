@@ -8,11 +8,9 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late Map<String, dynamic>? capturedWidgetArgs;
-  late Map<String, dynamic>? capturedServiceArgs;
 
   setUp(() {
     capturedWidgetArgs = null;
-    capturedServiceArgs = null;
     SharedPreferences.setMockInitialValues({});
 
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -30,9 +28,7 @@ void main() {
         .setMockMethodCallHandler(
       const MethodChannel('com.aura.hala/background_service'),
       (call) async {
-        if (call.method == 'updatePrayerTimes') {
-          capturedServiceArgs = Map<String, dynamic>.from(call.arguments as Map);
-        }
+        if (call.method == 'updatePrayerTimes') {}
         return null;
       },
     );

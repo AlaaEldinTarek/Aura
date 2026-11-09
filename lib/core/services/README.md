@@ -76,7 +76,7 @@ Native names used here are contracts: [method-channels](/.project-docs/contracts
   auto-start is on by default and re-registered on every launch (the MSIX path changes).
   `getBestLocation` order: manual → cached desktop IP location → Mecca default (desktop), GPS (mobile). See findings F17.
 - **Prefs init**: `SharedPreferencesService.getInstance()` must complete before the sync `instance` is used.
-- Every MethodChannel call is wrapped in try/catch, except `AdhanPlayerService.setCustomAdhan`.
+- Every MethodChannel call is wrapped in try/catch.
 
 ### Side Effects
 - **MethodChannels**: `prayer_alarms` (NotificationService ×2 objects, PrayerAlarmService, PlatformChannelService),
