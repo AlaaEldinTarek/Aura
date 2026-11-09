@@ -887,7 +887,7 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
 ## F61 — Bottom nav stays English after switching to Arabic (device S23, 2026-11-09) — UI
 - **(a) Nav labels not localized after a language switch** — **Tag: LOW (pre-existing; this branch changed no Settings / nav / shell code).**
   Device VERIFIED (user, nova 5T, 2026-11-09): Settings → Arabic; bottom nav labels stay English, also after tapping another
-  tab. Whether a relaunch fixes it: UNVERIFIED. Code (static, cause UNVERIFIED): `AuraBottomNavBar` uses `.tr()` without a
+  tab. Switching back to English then showed the nav in **Arabic** (one change behind); a relaunch shows the right language (user, 09:40–09:43). Code (static, cause UNVERIFIED): `AuraBottomNavBar` uses `.tr()` without a
   locale dependency (`core/widgets/bottom_nav_bar.dart:61–93`), and Settings calls `ctx.setLocale(...)` right after
   `Navigator.pop(ctx)` on the dialog context (`settings_screen.dart:393, :405`), so the EasyLocalization locale may not change.
 
