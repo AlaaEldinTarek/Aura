@@ -85,7 +85,13 @@ void main(List<String> args) async {
     // (F63). `center: true` centers on that same monitor's work area.
     final workArea = await currentWorkArea();
     final windowSize = adaptiveWindowSize(workArea);
-    debugPrint('📐 [DESKTOP] Work area: $workArea, window: $windowSize');
+    // Explicit numbers: Rect/Size print as "Instance of" in release builds.
+    final area = workArea == null
+        ? 'unknown'
+        : '${workArea.left.toStringAsFixed(0)},${workArea.top.toStringAsFixed(0)} '
+            '${workArea.width.toStringAsFixed(0)}x${workArea.height.toStringAsFixed(0)}';
+    debugPrint('📐 [DESKTOP] Work area: $area, window: '
+        '${windowSize.width.toStringAsFixed(0)}x${windowSize.height.toStringAsFixed(0)}');
 
     if (isStartup) {
       // Start hidden – only the tray icon will be visible
