@@ -891,6 +891,14 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   locale dependency (`core/widgets/bottom_nav_bar.dart:61–93`), and Settings calls `ctx.setLocale(...)` right after
   `Navigator.pop(ctx)` on the dialog context (`settings_screen.dart:393, :405`), so the EasyLocalization locale may not change.
 
+## F62 — Damaged prefs file leaves a white window on Windows (S36 Windows, 2026-11-09) — reliability
+- **(a) No recovery from an unreadable SharedPreferences file** — **Tag: MEDIUM (pre-existing; fix later).** Device VERIFIED
+  (Windows, unpackaged release exe): `%APPDATA%\com.auraura_app\shared_preferences.json` was 1867 zero bytes (last write
+  2026-06-30, cause UNKNOWN, likely an interrupted write). Start-up logged `FormatException: Unexpected character (at character 1)`
+  for SharedPreferences and EasyLocalization and the window stayed white. Renamed to `shared_preferences.json.zeroed-2026-06-30.bak`;
+  the app then started. MSIX installs use a virtualized copy (not affected here). Whether Android can hit the same: UNKNOWN.
+  Log: `logcat/S36-windows-blank-2026-11-09.txt`.
+
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
 - `ringer_mode` handler is in `MainActivity`, not `SilentModeAutomation.kt`.
