@@ -30,6 +30,11 @@ Add-AppxPackage -Path "build\windows\x64\runner\Release\aura_app.msix" -ForceApp
 - Window size (F63): from the work area of the monitor under the cursor (`window_size.dart`), max 900 × 1400, centered;
   logged `📐 [DESKTOP] Work area: x,y WxH, window: WxH` (logical px; screen_retriever reports logical on Windows,
   VERIFIED 2026-11-09). Details: desktop-scaling.md.
+- Sidebar layout (F65): `DesktopShellLayout` (`lib/features/main/desktop_shell_layout.dart`). Window width < 800 logical
+  px (`kCompactSidebarBelow`): 72-px icon rail; ☰ opens the 260-px sidebar as an overlay from the start edge (left LTR,
+  right RTL) with a scrim; content does not move. Closes on scrim, item, ☰, `Esc`, or the window becoming ≥ 800.
+  ≥ 800 (and maximized): inline 260 / 72 sidebar, ☰ toggles inline. Open/collapsed state in memory only (no prefs).
+  Device check S41 pending.
 - Sleep-aware timers: only the prayer minute tick (prayer.md § Next-prayer logic) — gap > 3 min reschedules prayer timers.
 - Tray, adhan, scheduler: `desktop_tray_service.dart`, `DesktopAdhanService`, `DesktopPrayerScheduler`
   (folder view `lib/core/services/README.md`).

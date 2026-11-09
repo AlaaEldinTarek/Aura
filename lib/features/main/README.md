@@ -1,7 +1,8 @@
 # Main Shell Blueprint
 
 ## System Overview
-The app shell after login/onboarding: one file, `main_wrapper_screen.dart`. It hosts the 5 tabs, the mobile bottom
+The app shell after login/onboarding: `main_wrapper_screen.dart`, plus the desktop sidebar layout in
+`desktop_shell_layout.dart` (F65). It hosts the 5 tabs, the mobile bottom
 nav or the desktop sidebar, and the desktop nested navigator with its route table. It also runs the app-level
 lifecycle work: resume refresh, widget intent hand-off, native navigation callbacks, untracked-prayer prompt,
 achievement toasts and desktop popups/adhan overlay. It owns no data; everything goes through `../../core/` services
@@ -16,6 +17,7 @@ Behavior-preserving rule: no UI or logic change without an approved spec.
 | File | Public symbols / entry points |
 | --- | --- |
 | `main_wrapper_screen.dart` | `MainWrapperScreen({int initialIndex = 0})`; `desktopSidebarVisibleProvider` (`StateProvider<bool>`, set by `quran_reader_screen.dart`). Private: `_DesktopShell` (+ `_generateDesktopRoute`), `_DesktopSidebar`, `_AdhanOverlay`, `_NotifPopup` (data), `_AchievementToast` (scale from `desktopTextScale`, `core/utils/window_size.dart`) |
+| `desktop_shell_layout.dart` | `kCompactSidebarBelow` (800), `useCompactSidebar(windowWidth)`, `DesktopShellLayout` (sidebar/content layout of `_DesktopShell`; owns only the in-memory overlay-open flag) |
 
 - **MethodChannel `com.aura.hala/navigation`** — Dart → native: `setCurrentRoute {route: '/home' | '/tab/<i>'}` on
   every tab change. Native → Dart (handler registered on Android only): `navigateToRoute {route}`,
@@ -39,9 +41,12 @@ Behavior-preserving rule: no UI or logic change without an approved spec.
   current index, then sets state, the `TabController`, `jumpToPage` and `_updateCurrentRoute`.
 - **Back** (`_onWillPop`, `PopScope(canPop: false)`): on a non-Home tab it goes to Home (not the previous tab); on
   Home a second press within 2 s calls `SystemNavigator.pop()`, otherwise it shows `press_again_to_exit`.
-- **Layout split** (`_isDesktop` = Windows/macOS/Linux): desktop → `_DesktopShell` (sidebar 72/260 px, collapses
-  under 166 px, hidden when `desktopSidebarVisibleProvider` is false; content has a scaled text scaler of 0.9–1.8 (`desktopTextScale`, F63 A-1)
-  and a nested `Navigator`; a sidebar tap pops to the first route). Mobile → `Scaffold` + `AuraBottomNavBar`.
+- **Layout split** (`_isDesktop` = Windows/macOS/Linux): desktop → `_DesktopShell` (layout via `DesktopShellLayout`,
+  F65: window ≥ 800 px → inline sidebar 72/260 px toggled by ☰; < 800 px → 72-px rail, ☰ opens the 260-px sidebar as an
+  overlay from the start edge, closed by scrim, item, ☰, `Esc` or the window becoming wide; `_DesktopSidebar` shows its
+  collapsed look under 166 px; hidden when `desktopSidebarVisibleProvider` is false; content has a scaled text scaler of
+  0.9–1.8 (`desktopTextScale`, F63 A-1, from the window size, so the sidebar layout does not change it) and a nested
+  `Navigator`; a sidebar tap pops to the first route, then closes the overlay). Mobile → `Scaffold` + `AuraBottomNavBar`.
   Desktop sidebar rules: Home and Profile always shown; Prayer hidden in `tasksOnly`; Quran only in
   `both`/`prayerOnly`; Tasks hidden in `prayerOnly`.
 - **Resume order** (`didChangeAppLifecycleState`): `_checkUntrackedPrayers` → read the Fajr time → invalidate
@@ -96,7 +101,8 @@ Behavior-preserving rule: no UI or logic change without an approved spec.
 - Task completion and prayer statuses (via services/providers); guest-to-account migration.
 
 ## System Verification
-- Run: `flutter test` (no tests for this folder yet). Manual checks: `.project-docs/reference/device-checklist.md`
+- Run: `flutter test` (`test/features/main/desktop_shell_layout_test.dart`, 8 cases; nothing else in this folder is
+  tested). Manual checks: S41 (desktop sidebar layout, pending); `.project-docs/reference/device-checklist.md`
   S06–S10 (statuses, pickers, summary route), S14–S15 (widget tab / task hand-off), S20 (guest migration),
   S21; desktop popups and adhan overlay: `.project-docs/modules/desktop.md`.
 - Known issues: findings F34 (verified) and F35 (scout backlog).

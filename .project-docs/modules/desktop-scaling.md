@@ -9,6 +9,10 @@ double desktopTextScale(double w, double h) => min(w / 500, h / 778).clamp(0.9, 
 ```
 - Input is `MediaQuery.of(ctx).size` (whole window incl. sidebar), not the `LayoutBuilder` constraints. The limiting side
   decides: 597 × 929 → ~1.19, maximized 1920 × 1000 → ~1.29 (was ~2.9), 900 × 1400 → 1.8 (was 1.53).
+- Sidebar layout does not change the scale (F65): below 800 px wide the shell shows a 72-px rail and the full sidebar
+  as an overlay (`DesktopShellLayout`, desktop.md); the content pane builder is unchanged and `MediaQuery.size` is the
+  window, so rail, inline sidebar and overlay give the same scale for the same window (widget test
+  `desktop_shell_layout_test.dart`).
 - Window size (F63): `adaptiveWindowSize(currentWorkArea())` — 90% of the work height of the monitor under the cursor,
   width 0.64 × height (min 500 when it fits), max 900 × 1400, centered on that work area; same rule after a desktop
   notification popup closes (minimum capped by `fitMinimumSize`).

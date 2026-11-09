@@ -27,9 +27,9 @@ device-checklist S41, STATE, log). No prefs key, translation, Kotlin or `pubspec
 
 ## Verification (run post-merge on main (5d37798))
 - `flutter test`: 234 pass (incl. 8 in `test/features/main/desktop_shell_layout_test.dart`: 800 threshold, compact LTR
-  (overlay does not move content), item tap and `Esc` close the overlay, compact RTL, wide inline toggle, overlay closes
-  when the window becomes wide, sidebar hidden, item scale the same with rail, inline sidebar and overlay). Scrim tap has
-  no test.
+  (overlay does not move content; scrim tap closes it), item tap, `Esc` and the expanded ☰ close the overlay, compact
+  RTL, wide inline toggle, overlay closes when the window becomes wide, sidebar hidden, item scale the same with rail,
+  inline sidebar and overlay).
 - `flutter analyze`: 418 issues, 0 errors, 0 new vs base (none in the F65 files).
 - `dart format`: the two new files clean; `main_wrapper_screen.dart` was already unformatted at base 4701f7c.
 
