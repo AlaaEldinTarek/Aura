@@ -897,7 +897,7 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   2026-06-30, cause UNKNOWN, likely an interrupted write). Start-up logged `FormatException: Unexpected character (at character 1)`
   for SharedPreferences and EasyLocalization and the window stayed white. Renamed to `shared_preferences.json.zeroed-2026-06-30.bak`;
   the app then started. MSIX installs use a virtualized copy (not affected here). Whether Android can hit the same: UNKNOWN.
-  Log: `logcat/S36-windows-blank-2026-11-09.txt`. **Status 2026-11-09: FIXED on `fix/f62-corrupt-prefs` (ac30244, c2073e2): Windows-only backup of an unreadable file before the first prefs read; 7 unit tests; device S37 PASS; Android regression PASS; not merged.**
+  Log: `logcat/S36-windows-blank-2026-11-09.txt`. **Status 2026-11-09: FIXED on `fix/f62-corrupt-prefs` (ac30244, c2073e2): Windows-only backup of an unreadable file before the first prefs read; 7 unit tests; device S37 PASS; Android regression PASS; merged to main via PR #7 (1feac74).**
 
 ## F63 — Desktop window taller than the screen at 150% scaling (S37, 2026-11-09) — desktop UI
 - **(a) Fixed 900 × 1400 window** — **Tag: MEDIUM (pre-existing; fix later).** Device VERIFIED (user, Windows at 150% display
