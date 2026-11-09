@@ -15,7 +15,7 @@ Behavior-preserving rule: no UI or logic change without an approved spec.
 ### Interface
 | File | Public symbols / entry points |
 | --- | --- |
-| `main_wrapper_screen.dart` | `MainWrapperScreen({int initialIndex = 0})`; `desktopSidebarVisibleProvider` (`StateProvider<bool>`, set by `quran_reader_screen.dart`). Private: `_DesktopShell` (+ `_generateDesktopRoute`), `_DesktopSidebar`, `_AdhanOverlay`, `_NotifPopup` (data), `_AchievementToast`, `_desktopTextScale` |
+| `main_wrapper_screen.dart` | `MainWrapperScreen({int initialIndex = 0})`; `desktopSidebarVisibleProvider` (`StateProvider<bool>`, set by `quran_reader_screen.dart`). Private: `_DesktopShell` (+ `_generateDesktopRoute`), `_DesktopSidebar`, `_AdhanOverlay`, `_NotifPopup` (data), `_AchievementToast` (scale from `desktopTextScale`, `core/utils/window_size.dart`) |
 
 - **MethodChannel `com.aura.hala/navigation`** — Dart → native: `setCurrentRoute {route: '/home' | '/tab/<i>'}` on
   every tab change. Native → Dart (handler registered on Android only): `navigateToRoute {route}`,
@@ -40,7 +40,7 @@ Behavior-preserving rule: no UI or logic change without an approved spec.
 - **Back** (`_onWillPop`, `PopScope(canPop: false)`): on a non-Home tab it goes to Home (not the previous tab); on
   Home a second press within 2 s calls `SystemNavigator.pop()`, otherwise it shows `press_again_to_exit`.
 - **Layout split** (`_isDesktop` = Windows/macOS/Linux): desktop → `_DesktopShell` (sidebar 72/260 px, collapses
-  under 166 px, hidden when `desktopSidebarVisibleProvider` is false; content has a scaled text scaler of 0.9–3.0
+  under 166 px, hidden when `desktopSidebarVisibleProvider` is false; content has a scaled text scaler of 0.9–1.8 (`desktopTextScale`, F63 A-1)
   and a nested `Navigator`; a sidebar tap pops to the first route). Mobile → `Scaffold` + `AuraBottomNavBar`.
   Desktop sidebar rules: Home and Profile always shown; Prayer hidden in `tasksOnly`; Quran only in
   `both`/`prayerOnly`; Tasks hidden in `prayerOnly`.

@@ -9,6 +9,7 @@ import 'package:window_manager/window_manager.dart';
 import 'dart:io' show Platform;
 import '../../core/widgets/bottom_nav_bar.dart';
 import '../../core/utils/haptic_feedback.dart' as app_haptic;
+import '../../core/utils/window_size.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/providers/prayer_times_provider.dart';
@@ -54,15 +55,6 @@ import '../../core/widgets/aura_button.dart';
 
 /// Desktop-only: controls sidebar visibility (false = hidden, e.g. during Quran reading)
 final desktopSidebarVisibleProvider = StateProvider<bool>((ref) => true);
-
-/// Compute desktop text scale from window dimensions.
-/// Tuned so 900×1400 → 1.8×, scales smoothly for any window size.
-double _desktopTextScale(double windowWidth, double windowHeight) {
-  // Width drives ~70% of scale, height ~30% — matches vertical-scroll app layout
-  final sw = windowWidth / 500.0; // 900px → 1.80
-  final sh = windowHeight / 1556.0; // 1400px → 0.90
-  return (sw * 0.7 + sh * 0.3).clamp(0.9, 3.0);
-}
 
 /// Main wrapper screen with TabController
 class MainWrapperScreen extends ConsumerStatefulWidget {
@@ -444,8 +436,12 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       }
       await windowManager.setTitleBarStyle(TitleBarStyle.normal);
       await windowManager.setAlwaysOnTop(false);
-      await windowManager.setMinimumSize(const Size(400, 600));
-      await windowManager.setSize(const Size(900, 1400));
+      // Size from the current monitor's work area, max 900 x 1400; the
+      // minimum never exceeds it (F63). center() uses the same work area.
+      final size = adaptiveWindowSize(await currentWorkArea());
+      await windowManager
+          .setMinimumSize(fitMinimumSize(const Size(400, 600), size));
+      await windowManager.setSize(size);
       await windowManager.center();
       if (_popupWasVisible) {
         await windowManager.setSkipTaskbar(false);
@@ -1397,7 +1393,7 @@ class _DesktopShellState extends ConsumerState<_DesktopShell> {
             child: LayoutBuilder(
               builder: (ctx, constraints) {
                 final mq = MediaQuery.of(ctx);
-                final scale = _desktopTextScale(mq.size.width, mq.size.height);
+                final scale = desktopTextScale(mq.size.width, mq.size.height);
                 final iconSize = (24.0 * scale).clamp(18.0, 52.0);
                 final chipPadH = (8.0 * scale).clamp(6.0, 20.0);
                 final chipPadV = (4.0 * scale).clamp(2.0, 12.0);
