@@ -1,6 +1,23 @@
 # Fix: desktop window taller than the screen (F63)
 
-Status: APPROVED (user 2026-11-09, "approve phase F63") · Level C · branch `fix/f63-window-size` · finding `reference/findings.md` F63 · no EGM review
+Status: APPROVED (user 2026-11-09, "approve phase F63"); amended A-1 2026-11-09 (desktop item scale, user chose "add to
+F63") · Level C · branch `fix/f63-window-size` · finding `reference/findings.md` F63 · no EGM review
+
+## Amendment A-1 — desktop item scale (user 2026-11-09)
+- Problem (device VERIFIED, user, S39 run: maximized window shows items far too big): `_desktopTextScale`
+  (`main_wrapper_screen.dart:61–66`, unchanged since 7db4702) is `(w/500 × 0.7 + h/1556 × 0.3).clamp(0.9, 3.0)`, so width
+  drives 70%: 900 × 1400 → 1.8 (the tuned point); 597 × 929 (new default on the test PC) → ≈ 1.01; maximized ≈ 1920 × 1000
+  → ≈ 2.89. Pre-existing (not caused by the window-size change), but it decides how the new sizes look.
+- Fix: new pure `double desktopTextScale(double width, double height)` in `lib/core/utils/window_size.dart`:
+  `min(width / 500, height / 778).clamp(0.9, 1.8)` — the limiting side decides (the app is a vertical scroll layout),
+  never above the tuned 1.8. `_desktopTextScale` in `main_wrapper_screen.dart` is replaced by a call to it (same call
+  site, `:1405`); everything derived from the scale (density, icon / chip / list / card sizes) is unchanged.
+- Results: 900 × 1400 → 1.8 (same as today); 597 × 929 → ≈ 1.19; 1920 × 1000 → ≈ 1.29; 500 × 778 → 1.0; very small
+  windows → 0.9 (floor); 3840 × 2000 → 1.8 (cap).
+- Tests (added to `test/core/utils/window_size_test.dart`): the six results above; scale never above 1.8 or below 0.9;
+  for a fixed height, a wider window never increases the scale beyond the height limit.
+- Device: S39 adds "maximize → items are moderately larger than the default window, not huge; layout not clipped".
+- Docs: `.project-docs/modules/desktop-scaling.md` (scale calculation section).
 
 User decisions (2026-11-09): size the window **from the screen** (no fixed size), using the **work area** (without the
 taskbar) of the monitor the window opens on, centered there; **never larger than today's 900 × 1400**; the **minimum
