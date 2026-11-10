@@ -734,9 +734,9 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
 - **(e) Two 8 AM task digests** — **Tag: fix track LOW.** `scheduleDailyTaskSummary` (3999, native repeating,
   `task_service.dart:730`) and `scheduleDailyTaskDigest` (4001, plugin, `prayer_times_provider.dart:308`) both target 8:00
   with different text (see F8, F20c).
-- **(f) Focus Mode promises an exit that does not exist** — **Tag: fix track HIGH (user 2026-11-07: user locked
-  in with a promised escape that doesn't exist).** `task_form_screen.dart:1209–1210` says "exit by pressing volume up 3 times";
-  `FocusModeActivity.onKeyDown` handles only BACK/HOME/APP_SWITCH/RECENT_APPS (`FocusModeActivity.kt:221–240`).
+- **(f) Focus Mode promises an exit that does not exist** — **DONE (5cedaf3, S44 PASS 2026-11-10).** Implemented
+  volume-up ×3 exit detector, shared `performExit(isEarly)`, elapsed-time subtitle, updated hint text. Spec
+  `docs/designs/fix-focus-exit.md`.
 - **(g) Wird data loss / divergence** — **Tag: fix track MEDIUM (data).** `recordPagesRead` adds nothing to
   `wird_total_pages_read` when the day was already completed (`wird_service.dart:100–112`; promotes the F20 backlog item;
   feeds `wird_khatma` / `wird_pages_*`). `syncFromFirestore` replaces local settings / streak / totals with the cloud copy
@@ -961,6 +961,37 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   logged (`:150–151`); in both cases native keeps the old language until the next refresh.
   `SharedPreferencesService.restorePreferences` (`shared_preferences_service.dart:269–276`) writes the language without
   a push, but has no caller found. Device timing UNVERIFIED.
+
+## F68 — Silent-mode notification with action buttons removed (user report, 2026-11-10) — VERIFIED (static + git)
+- **Tag: fix track MEDIUM (adhan/silent).** Before commit `6514f26` ("Redesign full-screen adhan"),
+  `PrayerAlarmReceiver.showPrayerNotification()` posted the adhan notification (IDs 1001–1006, channel
+  `prayer_times`) with `setAutoCancel(false)`, `BigTextStyle`, vibration pattern, and action buttons ("Stop
+  Vibrate" / "Vibrate Always" via `DISMISS_SILENT` / `EXTEND_SILENT` to `ToggleSilentModeReceiver`) when
+  `silentModeEnabled && isSilentActive`. The notification stayed in the shade and let the user change the
+  silent-mode choice after dismissing the full-screen activity.
+  Commit `6514f26` stripped `showPrayerNotification` to a minimal 3-second auto-dismiss with zero action buttons
+  (commit message: "All controls now live in the full-screen UI"). The buttons were moved to
+  `AdhanFullScreenActivity` (works) and as `addAction` calls in `PrayerForegroundService.showAdhanModeNotification`
+  (invisible — `setCustomBigContentView` without `DecoratedCustomViewStyle` hides `addAction` buttons).
+  Net result: no working silent-mode notification exists in the shade after the adhan screen is dismissed.
+  **Pre-existing:** `6514f26` is 305 commits before the settings-bridge branch point; `fix/settings-bridge` did
+  not change `showPrayerNotification` (zero diff confirmed). Not a regression from PR #12.
+  Device: nova 5T, Android 10 (API 29).
+- **Why the buttons were removed (from `6514f26` diff + commit message):** it was a UI consolidation during the
+  adhan redesign, not a fix for a specific problem. The commit assumed the full-screen activity's buttons were
+  sufficient. There was no separate silent-mode notification — the buttons lived on the same adhan notification
+  (same IDs 1001–1006). The redesign stripped that notification to a minimal full-screen-intent trigger
+  (`setTimeoutAfter(3000)`, `setAutoCancel(true)`) and moved all controls into the activity. The oversight: the
+  full-screen activity is ephemeral — once dismissed, the user has no way to cancel or keep vibration for the
+  rest of the silent period (up to 20 min). The foreground service `addAction` calls were added as a fallback
+  but are invisible due to the custom-view issue. **Spec constraint:** the fix must not re-introduce the old
+  problem of overloading the adhan notification (which now serves only as a `setFullScreenIntent` trigger with a
+  3-second lifespan). A separate notification avoids coupling with the adhan notification lifecycle.
+- **Fix plan (spec needed, Level C):** add a new, separate standard notification (no custom layout) with two
+  action buttons ("Stop Vibration" / "Keep Vibration"). It appears when the app activates silent mode and
+  disappears when silent mode ends or when the user presses either button. Remove the dead `addAction` calls
+  from `PrayerForegroundService.showAdhanModeNotification()`. The foreground service custom layout and the
+  full-screen activity stay unchanged. Needs new notification ID + channel assignment (contracts update).
 
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
