@@ -364,27 +364,13 @@ class MainActivity : FlutterFragmentActivity() {
                     AdhanPlayer.stop()
                     result.success(true)
                 }
-                "setAdhanEnabled" -> {
-                    val enabled = call.argument<Boolean>("enabled") ?: true
-                    val prefs = getSharedPreferences("aura_prefs", Context.MODE_PRIVATE)
-                    prefs.edit().putBoolean("adhan_enabled", enabled).apply()
-                    Log.d("AdhanChannel", "Adhan enabled set to $enabled")
-                    result.success(true)
-                }
-                "isAdhanEnabled" -> {
-                    val prefs = getSharedPreferences("aura_prefs", Context.MODE_PRIVATE)
-                    val enabled = prefs.getBoolean("adhan_enabled", true)
-                    result.success(enabled)
-                }
-                "setCustomAdhan" -> {
-                    val path = call.argument<String>("path")
-                    AdhanPlayer.setCustomAdhan(path)
-                    Log.d("AdhanChannel", "Custom adhan set to: $path")
-                    result.success(true)
-                }
-                "getCustomAdhan" -> {
-                    val path = AdhanPlayer.getCustomAdhan()
-                    result.success(path)
+                "previewAdhan" -> {
+                    val id = call.argument<String>("id")
+                    if (id == null) {
+                        result.success(false)
+                    } else {
+                        result.success(AdhanPlayer.previewAdhan(this, id))
+                    }
                 }
                 else -> result.notImplemented()
             }

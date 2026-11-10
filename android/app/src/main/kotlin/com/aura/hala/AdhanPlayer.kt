@@ -28,9 +28,6 @@ object AdhanPlayer {
     private var lastVolumeIndex: Int = -1
     private var mediaSession: MediaSessionCompat? = null
 
-    // Synchronization lock to prevent double adhan playback
-    private val playbackLock = Any()
-
     // Adhan audio file names (should be in assets/audio/ or res/raw/)
     private val adhanFiles = mapOf(
         "Fajr" to "adhan_fajr.mp3",
@@ -42,27 +39,6 @@ object AdhanPlayer {
     )
 
     private val defaultAdhan = "adhan_default.mp3"
-
-    // Custom adhan file path (set by user selection)
-    private var customAdhanPath: String? = null
-
-    /**
-     * Set a custom adhan file path
-     * @param path Full path to the adhan file
-     */
-    fun setCustomAdhan(path: String?) {
-        customAdhanPath = path
-        if (path != null) {
-            Log.d(TAG, "✅ [CUSTOM ADHAN] Set to: $path")
-        } else {
-            Log.d(TAG, "🔄 [CUSTOM ADHAN] Cleared - using built-in")
-        }
-    }
-
-    /**
-     * Get the current custom adhan path
-     */
-    fun getCustomAdhan(): String? = customAdhanPath
 
     /**
      * Register volume change receiver to catch volume button presses on lock screen
@@ -165,6 +141,13 @@ object AdhanPlayer {
 
     private var appContext: Context? = null
 
+    private fun prepareOutput(context: Context) {
+        stop()
+        appContext = context.applicationContext
+        registerVolumeReceiver(context.applicationContext)
+        setupMediaSession(context.applicationContext)
+    }
+
     /**
      * Play adhan for the specified prayer
      * @param context Application context
@@ -176,9 +159,7 @@ object AdhanPlayer {
         Log.d(TAG, "🎵 [ADHAN PLAY] Requested for: $prayerName")
         Log.d(TAG, "🔒 [LOCK] Acquired playback lock")
 
-        // Check if adhan is enabled
-        val prefs = context.getSharedPreferences("aura_prefs", Context.MODE_PRIVATE)
-        val adhanEnabled = prefs.getBoolean("adhan_enabled", true)
+        val adhanEnabled = FlutterPrefs.getBoolean(context, "adhan_enabled", true)
 
         if (!adhanEnabled) {
             Log.w(TAG, "❌ [ADHAN] DISABLED - Not playing for $prayerName")
@@ -186,28 +167,21 @@ object AdhanPlayer {
         }
         Log.d(TAG, "✅ [ADHAN] Enabled - Proceeding with playback")
 
-        // Stop any currently playing adhan
-        stop()
+        prepareOutput(context)
 
-        // Save context for cleanup
-        appContext = context.applicationContext
-
-        // Register volume receiver to catch volume button presses (speaker fallback)
-        registerVolumeReceiver(context.applicationContext)
-        // Media session intercepts volume keys on ALL outputs (Bluetooth/AirPods/wired)
-        setupMediaSession(context.applicationContext)
-
-        // Check for custom adhan
-        if (customAdhanPath != null) {
-            Log.d(TAG, "📁 [CUSTOM ADHAN] Path: $customAdhanPath")
+        // Resolve selected reciter
+        val selectedId = FlutterPrefs.getString(context, "selected_adhan_id", "")
+        val reciterFile = AdhanFiles.resolve(selectedId, AdhanFiles.adhansDir(context))
+        if (reciterFile != null) {
+            Log.d(TAG, "📁 [CUSTOM ADHAN] Resolved: ${reciterFile.path}")
             vibrate(context)
-            if (playCustomAdhan(context, customAdhanPath!!, prayerName)) {
+            if (playCustomAdhan(context, reciterFile.path, prayerName)) {
                 Log.d(TAG, "✅ [ADHAN] Custom adhan playing successfully")
                 return
             }
             Log.w(TAG, "⚠️ [CUSTOM ADHAN] Failed, falling back to built-in")
         } else {
-            Log.d(TAG, "📦 [BUILT-IN ADHAN] No custom adhan set")
+            Log.d(TAG, "📦 [BUILT-IN ADHAN] No custom adhan set (id='$selectedId')")
         }
 
         // Vibrate before playing adhan
@@ -239,6 +213,22 @@ object AdhanPlayer {
         Log.d(TAG, "✅ [ADHAN PLAY] play() method COMPLETED for $prayerName - playedSuccessfully=$playedSuccessfully")
         Log.d(TAG, "🔓 [LOCK] Releasing playback lock")
         Log.d(TAG, "═════════════════════════════════════")
+    }
+
+    @Synchronized
+    fun previewAdhan(context: Context, id: String): Boolean {
+        if (!FlutterPrefs.getBoolean(context, "adhan_enabled", true)) {
+            Log.w(TAG, "❌ [PREVIEW] Adhan disabled — not previewing")
+            return false
+        }
+        val file = AdhanFiles.resolve(id, AdhanFiles.adhansDir(context))
+        if (file == null) {
+            Log.w(TAG, "⚠️ [PREVIEW] Reciter '$id' not resolved — not previewing")
+            return false
+        }
+        prepareOutput(context)
+        vibrate(context)
+        return playCustomAdhan(context, file.path, "Fajr")
     }
 
     /**

@@ -3,6 +3,7 @@
 // (test/core/utils/prayer_refresh_test.dart).
 import '../models/prayer_settings.dart';
 import '../models/prayer_time.dart';
+import 'prayer_time_rules.dart';
 
 /// Input fingerprint for the prayer-derived side effects.
 ///
@@ -38,9 +39,6 @@ List<DateTime> cacheDays(DateTime now, {int count = 7}) => [
     ];
 
 /// Native cache entries: `cached_{yyyy-MM-dd}_{name}` → epoch ms as string.
-///
-/// `Zuhr` is written as `dhuhr` (native key). Contract:
-/// .project-docs/contracts/prefs-keys.md.
 Map<String, String> buildNativeCache(List<(DateTime, List<PrayerTime>)> days) {
   final cache = <String, String>{};
   for (final (d, dayTimes) in days) {
@@ -48,8 +46,7 @@ Map<String, String> buildNativeCache(List<(DateTime, List<PrayerTime>)> days) {
     final dd = d.day.toString().padLeft(2, '0');
     final prefix = 'cached_${d.year}-$mm-$dd';
     for (final p in dayTimes) {
-      // Native reads "dhuhr"; PrayerTime.name is "Zuhr".
-      final n = p.name == 'Zuhr' ? 'dhuhr' : p.name.toLowerCase();
+      final n = nativePrayerKey(p.name);
       cache['${prefix}_$n'] = p.time.millisecondsSinceEpoch.toString();
     }
   }

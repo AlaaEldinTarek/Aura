@@ -55,7 +55,7 @@ Native names used here are contracts: [method-channels](/.project-docs/contracts
 - **Guest** (`'guest_user'`): tasks and prayer records stay in local prefs and never touch Firestore
   (`TaskService`, `PrayerTrackingService`); dhikr, achievements and wird cloud sync are skipped. Guest migration
   (`migrateGuestTasksToFirestore`) batch-writes under new ids, then clears local data; on failure local data is kept.
-- **Prayer names**: canonical `'Zuhr'`; native/widget keys map it to `dhuhr` (`PrayerWidgetService` key helpers).
+- **Prayer names**: canonical `'Zuhr'`; native keys built with `nativePrayerKey` (Zuhr → `dhuhr`).
   Several ID/request-code maps match only `'Zuhr'` (a `'Dhuhr'` name falls back to 0/1000).
 - **Platform split**: Android-only code paths are guarded (`_isAndroid` / `defaultTargetPlatform`); desktop
   (`isDesktop`) uses the `Desktop*` services and Dart timers. `NotificationService.initialize` returns early on desktop, so the plugin is never initialized there.
@@ -76,7 +76,7 @@ Native names used here are contracts: [method-channels](/.project-docs/contracts
   auto-start is on by default and re-registered on every launch (the MSIX path changes).
   `getBestLocation` order: manual → cached desktop IP location → Mecca default (desktop), GPS (mobile). See findings F17.
 - **Prefs init**: `SharedPreferencesService.getInstance()` must complete before the sync `instance` is used.
-- Every MethodChannel call is wrapped in try/catch, except `AdhanPlayerService.setCustomAdhan`.
+- Every MethodChannel call is wrapped in try/catch.
 
 ### Side Effects
 - **MethodChannels**: `prayer_alarms` (NotificationService ×2 objects, PrayerAlarmService, PlatformChannelService),

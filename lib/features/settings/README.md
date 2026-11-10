@@ -42,8 +42,8 @@ or logic change without an approved spec.
   0–60, saved as `"Fajr:15,Zuhr:15,…"` in `iqama_minutes`; read by `PrayerTimesService.loadIqamaMinutes`. Each save
   calls `prayerTimesProvider.loadPrayerTimes(DateTime.now())`, so countdowns and native iqama keys update (FX-0).
 - **Adhan downloads**: files go to `<app documents>/adhans/<fileName>` with Dio (30 s connect / 120 s receive);
-  selection is `selected_adhan_id` in prefs plus `AdhanPlayerService.setCustomAdhan(path)`. Native keeps that path in
-  memory only; `setCustomAdhan(null)` sends nothing; preview also calls `setCustomAdhan` (findings F49).
+  selection writes `selected_adhan_id` to prefs; native resolves the file at play time via `AdhanFiles.resolve`
+  (settings-bridge fix). Preview uses `AdhanPlayerService.previewAdhan(id)` without changing the live adhan.
 - **Localization / numbers**: inline EN/AR strings throughout; several minute counts and times are raw digits.
 
 ## Side Effects
@@ -51,8 +51,8 @@ or logic change without an approved spec.
   `prayer_tracking_notifications_enabled`, `daily_summary_time`, `iqama_minutes`, `selected_adhan_id`, Windows
   startup pref; theme / language / task-reminder / Jumu'ah through their providers. Language changes go through
   `applyAppLanguage` (locale first, then the provider; F61).
-- Native: daily-summary alarm, Jumu'ah reminder, exact-alarm / battery settings intents, `setCustomAdhan` and adhan
-  preview via `AdhanPlayerService` (MethodChannel), Windows startup registration.
+- Native: daily-summary alarm, Jumu'ah reminder, exact-alarm / battery settings intents, adhan
+  preview via `AdhanPlayerService.previewAdhan` (MethodChannel), Windows startup registration.
 - Network + disk: adhan MP3 download / delete; prayer-time recalculation.
 
 ## Verification

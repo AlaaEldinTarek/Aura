@@ -34,16 +34,6 @@ class AdhanPlayerService {
     _isEnabled = prefs.getBool('adhan_enabled') ?? true;
     _vibrationEnabled = prefs.getBool('adhan_vibration_enabled') ?? true;
 
-    // Check with native side
-    try {
-      final nativeEnabled = await _channel.invokeMethod('isAdhanEnabled');
-      if (nativeEnabled is bool) {
-        _isEnabled = nativeEnabled;
-      }
-    } catch (e) {
-      debugPrint('AdhanPlayerService: Could not check native state: $e');
-    }
-
     _isInitialized = true;
     debugPrint('AdhanPlayerService: Initialized (enabled: $_isEnabled)');
   }
@@ -92,13 +82,6 @@ class AdhanPlayerService {
     _isEnabled = enabled;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('adhan_enabled', enabled);
-
-    try {
-      await _channel.invokeMethod('setAdhanEnabled', {'enabled': enabled});
-    } catch (e) {
-      debugPrint('AdhanPlayerService: Error setting enabled state: $e');
-    }
-
     debugPrint('AdhanPlayerService: Enabled set to $enabled');
   }
 
@@ -130,22 +113,18 @@ class AdhanPlayerService {
     return newState;
   }
 
-  /// Set custom adhan file path
-  Future<void> setCustomAdhan(String? path) async {
-    if (path != null) {
-      await _channel.invokeMethod('setCustomAdhan', {'path': path});
-      debugPrint('AdhanPlayerService: Custom adhan set to $path');
+  /// Preview a reciter by id (plays through native AdhanPlayer).
+  Future<bool> previewAdhan(String id) async {
+    if (!_isEnabled) return false;
+    if (_isAndroid && _vibrationEnabled && (await Vibration.hasVibrator() ?? false)) {
+      await Vibration.vibrate(duration: 500, amplitude: 255);
     }
-  }
-
-  /// Get custom adhan file path
-  Future<String?> getCustomAdhan() async {
     try {
-      final path = await _channel.invokeMethod('getCustomAdhan');
-      return path as String?;
+      final result = await _channel.invokeMethod('previewAdhan', {'id': id});
+      return result == true;
     } catch (e) {
-      debugPrint('AdhanPlayerService: Error getting custom adhan: $e');
-      return null;
+      debugPrint('AdhanPlayerService: Error previewing adhan: $e');
+      return false;
     }
   }
 

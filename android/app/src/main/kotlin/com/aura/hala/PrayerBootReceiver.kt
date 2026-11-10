@@ -55,16 +55,6 @@ class PrayerBootReceiver : BroadcastReceiver() {
     private fun reschedulePrayerAlarms(context: Context) {
         Log.d(TAG, "Rescheduling prayer alarms")
 
-        // Check if notifications are enabled
-        val sharedPrefs = context.getSharedPreferences("aura_prefs", Context.MODE_PRIVATE)
-        val notificationsEnabled = sharedPrefs.getBoolean("notifications_enabled", true)
-
-        if (!notificationsEnabled) {
-            Log.d(TAG, "Notifications are disabled, skipping alarm reschedule")
-            return
-        }
-
-        // Start the prayer reschedule service
         val serviceIntent = Intent(context, PrayerRescheduleService::class.java)
 
         try {
@@ -86,8 +76,9 @@ class PrayerBootReceiver : BroadcastReceiver() {
 
     private fun restartForegroundService(context: Context) {
         try {
-            PrayerForegroundService.startService(context)
-            Log.d(TAG, "✅ Prayer foreground service restarted after boot")
+            if (PrayerForegroundService.startServiceIfAllowed(context, "boot")) {
+                Log.d(TAG, "✅ Prayer foreground service restarted after boot")
+            }
         } catch (e: Exception) {
             Log.e(TAG, "❌ Failed to restart prayer foreground service: ${e.message}")
         }

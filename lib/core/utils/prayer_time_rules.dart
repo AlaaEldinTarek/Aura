@@ -63,6 +63,14 @@ bool canMarkPrayer({
   return true;
 }
 
+/// The native (Android) prefs key base for a prayer name.
+///
+/// Zuhr and Dhuhr both map to `dhuhr`; every other name is lower-cased.
+String nativePrayerKey(String name) {
+  final lower = name.toLowerCase();
+  return lower == 'zuhr' ? 'dhuhr' : lower;
+}
+
 const _prayerNamesAr = {
   'Fajr': 'الفجر',
   'Zuhr': 'الظهر',

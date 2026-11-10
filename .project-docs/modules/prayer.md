@@ -8,7 +8,8 @@ Verified against code 2026-11-07 (reference/2026-11-07_DRIFT_REPORT.md); FX-0 ch
   prayer, side effects (alarms, widgets, native data); minute tick (edit carefully)
 - `lib/core/utils/prayer_refresh.dart` — pure refresh helpers (fingerprint, 7 cache days, native cache keys, next
   occurrences, post-checks to schedule, generation gate); unit-tested
-- `lib/core/services/location_service.dart`, `geocoding_service`, `lib/core/utils/prayer_time_rules.dart`, `hijri_date`
+- `lib/core/services/location_service.dart`, `geocoding_service`, `lib/core/utils/prayer_time_rules.dart` (`nativePrayerKey`:
+  canonical Dart→native key mapping, maps zuhr→dhuhr; F15 fix), `hijri_date`
 - `lib/core/models/prayer_time`, `prayer_settings`; UI pickers `lib/features/settings/adhan_calculation_method.dart`,
   `asr_madhab_selection.dart`
 - Native recalculation without the app: `NativePrayerCalculator.kt` (notifications-native.md)

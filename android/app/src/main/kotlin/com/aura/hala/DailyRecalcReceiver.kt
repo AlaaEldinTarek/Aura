@@ -70,7 +70,7 @@ class DailyRecalcReceiver : BroadcastReceiver() {
         if (ok) {
             Log.d(TAG, "✅ New day's prayer times computed natively")
             // Refresh the foreground-service notification immediately
-            PrayerForegroundService.startService(context)
+            PrayerForegroundService.startServiceIfAllowed(context, "daily_recalc")
         } else {
             Log.w(TAG, "⚠️ Recalc skipped (no cached coordinates) — will refresh on next app open")
         }
