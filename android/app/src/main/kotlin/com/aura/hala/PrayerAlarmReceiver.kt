@@ -725,6 +725,57 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
 
         // Schedule auto-restore
         scheduleSilentModeRestore(context, silentEndTime)
+
+        // Post the control notification so the user can stop/keep vibration from the shade
+        postSilentModeNotification(context, prayerName, prayerNameAr)
+    }
+
+    private fun postSilentModeNotification(context: Context, prayerName: String, prayerNameAr: String) {
+        val timesPrefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+        val language = timesPrefs.getString("language", "en") ?: "en"
+        val isArabic = language == "ar"
+
+        val title = if (isArabic) "هالة — وضع الاهتزاز" else "Aura — Vibrate Mode"
+        val text = if (isArabic) prayerNameAr else prayerName
+
+        val stopLabel = if (isArabic) "إيقاف الاهتزاز" else "Stop Vibration"
+        val keepLabel = if (isArabic) "إبقاء الاهتزاز" else "Keep Vibration"
+
+        val dismissIntent = Intent(context, ToggleSilentModeReceiver::class.java).apply {
+            action = "com.aura.hala.DISMISS_SILENT"
+            putExtra(EXTRA_PRAYER_NAME, prayerName)
+            putExtra(EXTRA_PRAYER_NAME_AR, prayerNameAr)
+        }
+        val dismissPI = PendingIntent.getBroadcast(
+            context, 8100, dismissIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val extendIntent = Intent(context, ToggleSilentModeReceiver::class.java).apply {
+            action = "com.aura.hala.EXTEND_SILENT"
+            putExtra(EXTRA_PRAYER_NAME, prayerName)
+            putExtra(EXTRA_PRAYER_NAME_AR, prayerNameAr)
+        }
+        val extendPI = PendingIntent.getBroadcast(
+            context, 8101, extendIntent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+
+        val builder = NotificationCompat.Builder(context, "silent_mode_control")
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setOngoing(false)
+            .setAutoCancel(false)
+            .addAction(0, stopLabel, dismissPI)
+            .addAction(0, keepLabel, extendPI)
+
+        try {
+            NotificationManagerCompat.from(context).notify(8100, builder.build())
+            Log.d(TAG, "🔕 [SILENT_NOTIF] Posted notification 8100 for $prayerName")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [SILENT_NOTIF] Failed to post notification 8100: ${e.message}")
+        }
     }
 
     /**
