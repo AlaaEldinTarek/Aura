@@ -1,6 +1,7 @@
 # Contract — notification IDs & channels
 Verified 2026-11-06 at 4aa1022 by static grep (Step 2). Do NOT modify IDs. All IDs share one Android NotificationManager
 (same package, null tag), so Dart `flutter_local_notifications` and Kotlin `NotificationManagerCompat` IDs collide if equal.
+Added 2026-11-11: ID 8100 (silent-mode control notification, channel `silent_mode_control`) — F68, PR #17.
 
 ## Notification IDs
 | ID / range | Purpose | Dart location | Kotlin location | Dynamic? | Confidence |
