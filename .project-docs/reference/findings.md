@@ -370,6 +370,7 @@ Check only when a phase touches the area:
   (`quran_bookmark_service.dart:6–7`), the Wird completed-juz / khatm keys (`wird_service.dart`) and tutorial flag names
   (`app_constants.dart:118–123`).
 - Not a bug: "Reset All Progress" (key `wird_reset_today`) wiping all Wird progress is labelled and confirmed as such.
+- **Status 2026-11-11 — F38a + F38c: spec drafted, NOT fixed.** Design `docs/designs/fix-quran-khatma-wird.md` on branch `fix/quran-khatma-wird`, commits `953ec7a` and `2eed355` (design text only; no code or test changes). Design Status is Draft (no "approve phase" for Level C). Nothing in this section has been confirmed on a device; the "code VERIFIED (static)" tag above still means code reading only. Device checks S45 (F38a) and S46 (F38c) are written and not run.
 
 ## F39 — Quran scout backlog (lib/features/quran) — UNVERIFIED (backlog, tagged)
 Check only when a phase touches the area:
