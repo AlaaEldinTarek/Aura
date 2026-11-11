@@ -745,13 +745,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
             // Refresh when prayer time is reached - wrap in microtask to avoid modifying during build
             Future.microtask(() async {
               if (mounted) {
-                debugPrint(
-                    '🔔 [COUNTDOWN] Prayer time reached! Refreshing prayer times...');
-                // Do a full refresh to ensure next day's prayers are loaded if needed
-                await ref
-                    .read(prayerTimesProvider.notifier)
-                    .loadPrayerTimes(DateTime.now());
-                debugPrint('🔔 [COUNTDOWN] Prayer times refreshed');
+                await _loadPrayerTimes();
               }
             });
           },
