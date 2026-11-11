@@ -70,3 +70,16 @@ Windows/MSIX build: `.project-docs/modules/desktop.md`.
 - Never read logs unless asked about a date. Never reread a file already in context unless it changed.
 - Files >300 lines: search first, read only relevant ranges. Broad exploration: Explore subagent, conclusions + paths only.
 - Long EGM output goes to files; chat gets a short pointer. Concise responses; diffs/changed sections only.
+
+## Token check (before every new step)
+Before starting a new step, check these and tell me in ONE short line only if something applies (say nothing if all is fine):
+
+- New fix group starting, or the previous group was just merged → remind me to type `/clear`. Everything needed is in
+  STATE.md and the log.
+- Session is long and we're mid-task → remind me to type `/compact`.
+- **Review size**: a small fix (no "edit carefully" files, no native contracts) gets ONE lightweight review. A large or
+  risky fix gets the full EGM review. Never run `/code-review` in addition to EGM unless I ask.
+- **Commands**: never use `--info`/`--debug` or dump full verbose output; report pass/fail and error lines only. Read
+  only the needed line ranges of large files.
+- **Model**: if the next step is simple (docs commit, git housekeeping, small text edits), remind me I can switch to a
+  lighter model with `/model`. For specs, reviews and risky code, suggest the stronger model.
