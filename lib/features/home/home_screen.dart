@@ -1673,7 +1673,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
       // If this was the last today task, increment streak + celebrate
       if (wasLastTask) {
-        await _incrementStreak();
+        await TaskService.instance.incrementTaskStreak();
         setState(() {});
         Future.delayed(const Duration(milliseconds: 800), () {
           if (mounted) _showCelebration();
@@ -1708,16 +1708,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   // ─── Task Streak ──────────────────────────────────────────────────────────
 
-  static const _streakKey = 'task_streak_count';
-  static const _streakDateKey = 'task_streak_date';
-
   Future<int> _getStreak() async {
     final prefs = await SharedPreferences.getInstance();
-    final count = prefs.getInt(_streakKey) ?? 0;
-    final lastDate = prefs.getString(_streakDateKey);
+    final count = prefs.getInt('task_streak_count') ?? 0;
+    final lastDate = prefs.getString('task_streak_date');
     if (lastDate == null) return 0;
 
-    // If last date is not today or yesterday, streak is broken
     final now = DateTime.now();
     final today =
         '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
@@ -1726,30 +1722,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
         '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
 
     if (lastDate != today && lastDate != yesterdayStr) {
-      // Streak broken
-      await prefs.setInt(_streakKey, 0);
+      await prefs.setInt('task_streak_count', 0);
       return 0;
     }
     return count;
-  }
-
-  Future<void> _incrementStreak() async {
-    final prefs = await SharedPreferences.getInstance();
-    final now = DateTime.now();
-    final today =
-        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
-    final lastDate = prefs.getString(_streakDateKey);
-
-    if (lastDate == today) return; // Already counted today
-
-    final count = prefs.getInt(_streakKey) ?? 0;
-    final yesterday = now.subtract(const Duration(days: 1));
-    final yesterdayStr =
-        '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
-
-    final newCount = (lastDate == yesterdayStr) ? count + 1 : 1;
-    await prefs.setInt(_streakKey, newCount);
-    await prefs.setString(_streakDateKey, today);
   }
 
   Widget _buildDailyProgressRing(BuildContext context, bool isDark,

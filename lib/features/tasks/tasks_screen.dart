@@ -2199,6 +2199,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
         });
 
         if (shouldCelebrate) {
+          await TaskService.instance.incrementTaskStreak();
           Future.delayed(const Duration(milliseconds: 800), () {
             if (mounted) _showCelebration();
           });

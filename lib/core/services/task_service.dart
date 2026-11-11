@@ -748,6 +748,30 @@ class TaskService {
     _localTasksController = null;
     _isInitialized = false;
   }
+
+  // ─── Task Streak ──────────────────────────────────────────────────────────
+
+  static const _streakKey = 'task_streak_count';
+  static const _streakDateKey = 'task_streak_date';
+
+  Future<void> incrementTaskStreak() async {
+    final prefs = await SharedPreferences.getInstance();
+    final now = DateTime.now();
+    final today =
+        '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
+    final lastDate = prefs.getString(_streakDateKey);
+
+    if (lastDate == today) return; // Already counted today
+
+    final count = prefs.getInt(_streakKey) ?? 0;
+    final yesterday = now.subtract(const Duration(days: 1));
+    final yesterdayStr =
+        '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
+
+    final newCount = (lastDate == yesterdayStr) ? count + 1 : 1;
+    await prefs.setInt(_streakKey, newCount);
+    await prefs.setString(_streakDateKey, today);
+  }
 }
 
 class TaskStatistics {

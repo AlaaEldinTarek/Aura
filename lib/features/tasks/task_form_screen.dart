@@ -226,12 +226,15 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
   }
 
   Future<void> _selectDueDate() async {
+    final now = DateTime.now();
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDueDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: (_selectedDueDate != null && _selectedDueDate!.isAfter(now))
+          ? _selectedDueDate!
+          : now,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
       helpText: isArabic ? 'اختر التاريخ' : 'Select Date',
       confirmText: isArabic ? 'تم' : 'OK',
       cancelText: isArabic ? 'إلغاء' : 'Cancel',
