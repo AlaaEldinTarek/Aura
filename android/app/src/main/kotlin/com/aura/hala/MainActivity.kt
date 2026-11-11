@@ -155,6 +155,20 @@ class MainActivity : FlutterFragmentActivity() {
             }
             notificationManager.createNotificationChannel(trackingChannel)
             Log.d("MainActivity", "✅ [CHANNEL] prayer_tracking channel created")
+
+            // Silent-mode control notification (vibrate-window action buttons)
+            val silentChannel = NotificationChannel(
+                "silent_mode_control",
+                "Silent Mode Control",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Controls for the vibrate-during-prayer silent mode"
+                setSound(null, null)
+                enableVibration(false)
+                setShowBadge(false)
+            }
+            notificationManager.createNotificationChannel(silentChannel)
+            Log.d("MainActivity", "✅ [CHANNEL] silent_mode_control channel created")
         } else {
             Log.d("MainActivity", "⏭️ [CHANNEL] SDK < O, notification channel not needed")
         }

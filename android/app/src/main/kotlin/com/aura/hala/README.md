@@ -14,13 +14,13 @@ package, see its README), home-screen widgets, and full-screen activities shown 
 ## Interface
 | File | Main API (what other files use) |
 | --- | --- |
-| `MainActivity.kt` | `MainActivity` (`FlutterFragmentActivity`): registers all channels in `configureFlutterEngine` (`adhan`, `prayer_alarms`, `background_service`, `widgets`, `navigation`, `focus_mode`, `ringer_mode`, `app_control`); creates channels `prayer_times` (HIGH) and `prayer_tracking` (DEFAULT); turns launch extras into `navigation` calls and `widget_navigate_to_tab`; schedules `PrayerRecalcWorker`. All members private |
+| `MainActivity.kt` | `MainActivity` (`FlutterFragmentActivity`): registers all channels in `configureFlutterEngine` (`adhan`, `prayer_alarms`, `background_service`, `widgets`, `navigation`, `focus_mode`, `ringer_mode`, `app_control`); creates channels `prayer_times` (HIGH), `prayer_tracking` (DEFAULT), and `silent_mode_control` (DEFAULT, no sound/vibration, F68); turns launch extras into `navigation` calls and `widget_navigate_to_tab`; schedules `PrayerRecalcWorker`. All members private |
 | `PrayerAlarmReceiver.kt` | `PrayerAlarmReceiver`: adhan / 45-min reminder / post-prayer check receiver. Companion: `schedulePrayerAlarm`, `scheduleReminderAlarm`, `scheduleDelayedReminder`, `schedulePostPrayerCheck`, `cancelPostPrayerCheck`, `cancelAllAlarms`, `markPrayerTracked`, ID helpers `getNotificationId` / `getReminderNotificationId` / `getPostCheckNotificationId`, `EXTRA_*` and `ACTION_*` constants |
 | `PrayerForegroundService.kt` | `PrayerForegroundService`: persistent next-prayer notification (9999). Companion: `startService`, `stopService`, `updatePrayerTimes`, `nudge`, `getInstance`, `requestFlutterUpdateStatic` (despite the name: native recalc only) |
 | `NativePrayerCalculator.kt` | `NativePrayerCalculator.calculateAndSave(context)`: uses Dart's `cached_{date}_*` times (today … +6) when all 6 exist, else `calculate(lat, lng, y, m, d, zone, method, madhab)` (adhan port in `adhan/`, logs the fallback); saves `*_time` + `next_prayer_*`; schedules adhan alarms. Unknown method → MWL with a warning |
 | `DailyRecalcReceiver.kt` | `DailyRecalcReceiver.schedule`: 00:05 daily recalc (`DAILY_RECALC`, rc 9100), then starts the foreground service |
 | `PrayerRecalcWorker.kt` | `PrayerRecalcWorker.schedule`: WorkManager unique periodic work `aura_periodic_prayer_recalc` (6 h, KEEP) |
-| `PrayerBootReceiver.kt` | `PrayerBootReceiver`: after boot / package replace (30 s delay) starts `PrayerRescheduleService`, daily summary, Jumu'ah, foreground service, daily recalc, worker |
+| `PrayerBootReceiver.kt` | `PrayerBootReceiver`: on boot clears stale silent-mode state (restores `saved_ringer_mode`, writes `is_silent_active = false`); then after 30 s delay starts `PrayerRescheduleService`, daily summary, Jumu'ah, foreground service, daily recalc, worker |
 | `PrayerRescheduleService.kt` | `PrayerRescheduleService`: short foreground service (2000) that re-arms adhan alarms for still-future stored times |
 | `AdhanPlayer.kt` | `AdhanPlayer` (object): `play`, `stop`, `isPlaying`, `getCurrentPrayer`, `previewAdhan` (settings-bridge: reads `adhan_enabled` + `selected_adhan_id` from `FlutterPrefs`; resolves reciter via `AdhanFiles`) |
 | `AdhanFiles.kt` | `AdhanFiles` (object): `resolve(selectedId, adhansDir)` — validates id `[a-z0-9_]+`, checks `adhan_<id>.mp3` exists; `adhansDir(context)` |
@@ -28,7 +28,7 @@ package, see its README), home-screen widgets, and full-screen activities shown 
 | `AzkarAlarmReceiver.kt` | `AzkarAlarmReceiver.schedule` / `cancel`: post-prayer azkar alarm (rc 3000–3006, notification 9000–9006) |
 | `AzkarFullScreenActivity.kt` | `AzkarFullScreenActivity.getIntent`: hard-coded post-prayer azkar with in-memory counters |
 | `StopAdhanReceiver.kt` | `StopAdhanReceiver` (action `STOP_ADHAN`): stops audio, re-posts the adhan notification |
-| `ToggleSilentModeReceiver.kt` | `ToggleSilentModeReceiver` (`ENABLE_SILENT` / `DISMISS_SILENT` / `EXTEND_SILENT`) and `SilentOffReceiver` (rc 3999 restore) |
+| `ToggleSilentModeReceiver.kt` | `ToggleSilentModeReceiver` (`ENABLE_SILENT` / `DISMISS_SILENT` / `EXTEND_SILENT`; cancels notification 8100 on `DISMISS_SILENT` / `EXTEND_SILENT`) and `SilentOffReceiver` (rc 3999 restore; cancels notification 8100). Companion: `cancelSilentModeNotification(context)` |
 | `SilentModeAutomation.kt` | `SilentModeScheduler` (object): `cancelAll`, `cancelSilentOffAlarm`, `triggerSilentMode` (no-op) |
 | `DailySummaryReceiver.kt` | `DailySummaryReceiver.schedule(ctx, "HH:mm")` / `cancel`: untracked-prayer summary (7001), prunes old status keys |
 | `JumuahReminderReceiver.kt` | `JumuahReminderReceiver.schedule` / `cancel`: Friday reminder 30 min before stored `dhuhr_time` (8001) |

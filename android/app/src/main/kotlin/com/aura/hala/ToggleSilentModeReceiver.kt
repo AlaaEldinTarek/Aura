@@ -29,6 +29,15 @@ class ToggleSilentModeReceiver : BroadcastReceiver() {
         private const val KEY_SILENT_END_TIME = "silent_end_time"
         private const val KEY_IS_SILENT_ACTIVE = "is_silent_active"
 
+        fun cancelSilentModeNotification(context: Context) {
+            try {
+                NotificationManagerCompat.from(context).cancel(8100)
+                Log.d(TAG, "🔕 [SILENT_NOTIF] Cancelled notification 8100")
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ [SILENT_NOTIF] cancel failed: ${e.message}")
+            }
+        }
+
         // Default silent mode duration (20 minutes)
         private const val DEFAULT_SILENT_DURATION_MINUTES = 20
 
@@ -137,6 +146,7 @@ class ToggleSilentModeReceiver : BroadcastReceiver() {
 
         // Mark silent mode as inactive
         sharedPrefs.edit().putBoolean(KEY_IS_SILENT_ACTIVE, false).apply()
+        cancelSilentModeNotification(context)
 
         // Show toast
         val language = getLanguagePreference(context)
@@ -203,6 +213,7 @@ class ToggleSilentModeReceiver : BroadcastReceiver() {
 
         // Update silent end time to 0 (indicates permanent mode)
         sharedPrefs.edit().putLong(KEY_SILENT_END_TIME, 0).apply()
+        cancelSilentModeNotification(context)
 
         // Show toast
         showKeepSilentToast(context)
@@ -329,6 +340,7 @@ class SilentOffReceiver : BroadcastReceiver() {
         // Mark silent mode as inactive
         val sharedPrefs = context.getSharedPreferences("aura_silent_mode", Context.MODE_PRIVATE)
         sharedPrefs.edit().putBoolean("is_silent_active", false).apply()
+        ToggleSilentModeReceiver.cancelSilentModeNotification(context)
 
         // Clear adhan mode — foreground service goes back to normal countdown
         context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)

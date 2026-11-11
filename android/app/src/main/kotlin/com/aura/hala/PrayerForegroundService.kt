@@ -589,38 +589,6 @@ class PrayerForegroundService : Service() {
             .setCustomContentView(contentView)
             .setCustomBigContentView(contentView)
 
-        // ── Action buttons ─────────────────────────────────────────────
-        val silentPrefs = getSharedPreferences("aura_silent_mode", Context.MODE_PRIVATE)
-        val isSilentActive = silentPrefs.getBoolean("is_silent_active", false)
-
-        if (isSilentActive) {
-            val stopLabel = if (isArabic) "إيقاف الاهتزاز" else "Stop Vibration"
-            val keepLabel = if (isArabic) "إبقاء الاهتزاز" else "Keep Vibration"
-
-            val dismissIntent = Intent(this, ToggleSilentModeReceiver::class.java).apply {
-                action = "com.aura.hala.DISMISS_SILENT"
-                putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME, prayerName)
-                putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME_AR, prayerNameAr)
-            }
-            val dismissPI = PendingIntent.getBroadcast(
-                this, 8001, dismissIntent,
-                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-            )
-
-            val extendIntent = Intent(this, ToggleSilentModeReceiver::class.java).apply {
-                action = "com.aura.hala.EXTEND_SILENT"
-                putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME, prayerName)
-                putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME_AR, prayerNameAr)
-            }
-            val extendPI = PendingIntent.getBroadcast(
-                this, 8002, extendIntent,
-                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-            )
-
-            builder.addAction(android.R.drawable.ic_media_play, stopLabel, dismissPI)
-            builder.addAction(android.R.drawable.ic_media_pause, keepLabel, extendPI)
-        }
-
         Log.d(TAG, "📱 [ADHAN_MODE] $prayerName | iqamaArrived=$isIqamaArrived | time=$timeText")
     }
 

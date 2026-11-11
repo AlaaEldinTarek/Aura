@@ -3,6 +3,7 @@ package com.aura.hala
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.media.AudioManager
 import android.util.Log
 
 /**
@@ -35,6 +36,28 @@ class PrayerBootReceiver : BroadcastReceiver() {
             ACTION_EMUI_BOOT,
             ACTION_MY_PACKAGE_REPLACED -> {
                 Log.d(TAG, "Restarting prayer alarms after boot")
+
+                // Android persists ringerMode across reboots; restore it if silent mode was active.
+                val silentPrefs = context.getSharedPreferences("aura_silent_mode", Context.MODE_PRIVATE)
+                if (silentPrefs.getBoolean("is_silent_active", false)) {
+                    val savedRingerMode = silentPrefs.getInt("saved_ringer_mode", AudioManager.RINGER_MODE_NORMAL)
+                    try {
+                        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+                        audioManager.ringerMode = savedRingerMode
+                        Log.d(TAG, "🔕 [SILENT] Restored ringer mode to $savedRingerMode on boot")
+                    } catch (e: SecurityException) {
+                        // Do Not Disturb access may be missing on some OEM skins; still clear the flag below.
+                        Log.e(TAG, "❌ [SILENT] Failed to restore ringer mode (DND access missing): ${e.message}")
+                    } catch (e: Exception) {
+                        Log.e(TAG, "❌ [SILENT] Failed to restore ringer mode: ${e.message}")
+                    }
+                    // Always clear the flag, even if the ringer restore failed.
+                    silentPrefs.edit()
+                        .putBoolean("is_silent_active", false)
+                        .putLong("silent_end_time", 0)
+                        .apply()
+                    Log.d(TAG, "🔕 [SILENT] Cleared stale silent-mode state on boot")
+                }
 
                 // Wait a bit for the system to fully start
                 android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
