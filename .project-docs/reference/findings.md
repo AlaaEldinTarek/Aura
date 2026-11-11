@@ -101,9 +101,7 @@ Created 2026-11-06 from analyzer run at 75d38b9 and the CLAUDE.md relocation.
 
 ## F20 — Scout-reported issues in lib/core/services
 Verified 2026-11-06 (read-only, user picked these three):
-- **F20a streak counts missed/excused prayers — DONE — FX-1 merged on fix/streak-prayer-missed (651a9c2), device PASS nova 5T 2026-11-11.** `_streakFromRecords` (`prayer_tracking_service.dart:477–500`)
-  and `_calculateBestStreak` (`:524–544`) count distinct `prayerName` per day (`>= 5`) with no status filter.
-  **Tag: likely user-visible bug → fix track** (with F7, F15, F19; needs an approved spec; do not fix during refactor phases).
+- **F20a streak counts missed/excused prayers — DONE — PR #16 merged (e09b83d), device PASS nova 5T 2026-11-11.** Spec docs/designs/fix-streak-prayer-missed.md.
 - **F20b recurring-task duplicates — NOT CONFIRMED (toggle path).** Guest `_completeRecurringTask`
   (`task_service.dart:560–590`) skips the existing-child check, but un-completing runs `_deleteChildTasks` (`:519–523`)
   first, so repeated toggles leave one next instance. Concurrent double-tap race: UNVERIFIED.
