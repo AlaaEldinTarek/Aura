@@ -15,6 +15,30 @@ import 'khatma_celebration_screen.dart';
 import 'package:aura_app/core/theme/app_typography.dart';
 import 'package:aura_app/core/theme/app_spacing.dart';
 
+/// Computes the counted-pages set for page-mode "Choose One" (F38c).
+///
+/// Same color already linked: existing counted pages plus the chosen page;
+/// `alreadyCounted` is true when the chosen page was already in the set.
+/// Not linked, or a different color: all pages of the chosen color plus the
+/// chosen page (the current bookmarks become the baseline); never already
+/// counted.
+@visibleForTesting
+({Set<int> counted, bool alreadyCounted}) countedPagesAfterChooseOne({
+  required String? linkedColor,
+  required Set<int> existingCounted,
+  required String chosenColor,
+  required int chosenPage,
+  required Set<int> colorPages,
+}) {
+  if (linkedColor == chosenColor) {
+    return (
+      counted: {...existingCounted, chosenPage},
+      alreadyCounted: existingCounted.contains(chosenPage),
+    );
+  }
+  return (counted: {...colorPages, chosenPage}, alreadyCounted: false);
+}
+
 class WirdTab extends ConsumerWidget {
   final String lang;
 
