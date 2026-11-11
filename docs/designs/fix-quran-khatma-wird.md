@@ -1,7 +1,7 @@
 # Fix Quran Khatma Prompt and Wird "Choose One" Bookmark (F38a + F38c)
 
 *   **Author:** Alaa Eldin Tarek
-*   **Status:** Draft
+*   **Status:** Approved (design only; behavior and UNVERIFIED items remain open until phase 5)
 *   **Date:** 2026-11-12
 
 --------------------------------------------------------------------------------
