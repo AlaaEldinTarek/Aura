@@ -35,20 +35,20 @@ Closing audit: every "applied" claim in section 2 was re-checked against the des
 | I3 (phases) | Five phases with checks; note that call-site wiring is covered only by S45/S46. | Confirmed (lines 224–232). |
 | I2, K2, W2, K5 (tests) | Helper cases with inputs and outputs; invariant and negative-control tests; best-effort service tests with probe and fallback; negative control uses the real service call. | Confirmed (lines 255–271). |
 | W3 (tests contradict) | The "tests must fail on old behavior" sentence is gone; note at line 232 says call-site wiring is untested. **[corrected at close]** The earlier report said the design states which tests fail on old code; it does not. No automated test fails on the old call site, because the call site is untested. The helper tests cannot "fail on old code" (the helper is new) and the service-level tests do not depend on the call site. | Resolved by removal, not by the earlier claim. |
-| I4, K1, W1 | Import stated explicitly; nullable handling; helper placement; local `pages` kept. | Confirmed (lines 240–243). |
+| I4, K1, W1 | Import stated explicitly; nullable handling; helper placement; local `pages` kept. | Import part corrected 2026-11-12: the explicit import was wrong and was dropped in `59f6c63` (no new import needed; see section 3, I4). The rest (nullable handling, helper placement, local `pages`) was confirmed at the time. |
 | I5, K3, K4, W5, W6, R6–R8 | Items split per file; replacement text; README edits limited to two sentences; `_isDesktop` kept; S45/S46 rows with the six checklist columns; log file named. | Confirmed (lines 245–304). |
 | W4, K8, K9, R9 | Baseline re-run; format check on named files; coverage claim stated with its gate. | Confirmed (lines 222, 308–312). |
 | C4, C5 | Negative control labelled; both sheets share the color-filtered source. | Confirmed (lines 242, 267). |
 
 ## 3. CONTEST — not overruled
 
-The user did not walk these in the interactive breakdown; per the resolve rules, contests are bypassed unless overruled. They stand as contested.
+The user did not walk these in the interactive breakdown; per the resolve rules, contests are bypassed unless overruled. They stand as contested, except I4 (part), which was wrong and is withdrawn in its row.
 
 | Finding | Evidence |
 | --- | --- |
 | **D7** "no testing section" | False for the file: `### Verification Plan` (line 306) and item 4, the test file (line 255). The reviewer was given lines 1–164 only. The user asked about this and was told it is false. |
 | **D10** `quran-wird.md` may not exist | The file exists (`.project-docs/modules/quran-wird.md`). |
-| **I4 (part)** "`material.dart` already re-exports `visibleForTesting`" | Flutter SDK `packages/flutter/lib/widgets.dart:18` is `export 'foundation.dart' show Brightness, UniqueKey;`; `wird_tab.dart` imports only `material.dart`. The plan adds an explicit import. Not checked: whether `material.dart` exports `foundation.dart` separately (the explicit import is safe either way). |
+| **I4 (part)** "`material.dart` already re-exports `visibleForTesting`" | **Withdrawn: the reviewer's import claim was correct.** `material.dart` already provides `visibleForTesting` through `framework.dart` → `widgets.dart` → `material.dart` (`material.dart:200`, `widgets.dart:63`, `framework.dart:26–34`). The earlier contest was wrong, because it checked only `widgets.dart` line 18. The design was corrected in `59f6c63` (no new import). |
 
 ## 4. DECLINE (Nit, recorded, not applied)
 
@@ -61,7 +61,7 @@ The user did not walk these in the interactive breakdown; per the resolve rules,
 
 *   Escalated: 4, all resolved by the user (2 with edits, 2 no change).
 *   Proposed fixes: 20 rows; 19 applied (the two rows that were partial at close are complete after section 6A), 1 resolved by removal (W3).
-*   Contested: 3 (stand).
+*   Contested: 3; 2 stand (D7, D10); 1 withdrawn as wrong (I4, part: the import claim).
 *   Declined: 4 recorded.
 *   Remaining unaddressed: section 6.
 
@@ -90,7 +90,7 @@ Applied 2026-11-11 on the user's instruction; design line numbers as of the edit
 Related rows in section 2 (S5/S6/S7 and M1–M6) are now fully applied.
 
 ## Handoff
-Escalated 4 (all resolved); proposed-fix rows 20 (17 confirmed, 1 resolved by removal, 2 partial); contested 3 (stand); declined 4; remaining open: section 6 items 7–10 (no second reviewer pass, UNVERIFIED items, spec not approved, nothing committed). Former items 1–6 are applied (section 6A).
+Escalated 4 (all resolved); proposed-fix rows 20 (17 confirmed, 1 resolved by removal, 2 partial); contested 3 (2 stand, 1 withdrawn as wrong: the I4 import claim); declined 4; remaining open: section 6 items 7–10 (no second reviewer pass, UNVERIFIED items, spec not approved, nothing committed). Former items 1–6 are applied (section 6A).
 
 (Superseded in part by section 7: the design is now committed, so "nothing committed" in item 10 no longer holds for the design file.)
 
