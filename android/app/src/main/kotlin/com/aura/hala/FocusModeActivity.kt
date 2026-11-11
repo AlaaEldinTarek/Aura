@@ -62,7 +62,9 @@ class FocusModeActivity : AppCompatActivity() {
     private var pulseAnimator: ObjectAnimator? = null
     private var totalDurationMs: Long = 0
     private var isTimerFinished = false
+    private var volumeExitInProgress = false
     private var startedAtMs: Long = 0
+    private val volumeExitDetector = VolumeExitDetector()
 
     private lateinit var wakeLock: PowerManager.WakeLock
 
@@ -220,6 +222,13 @@ class FocusModeActivity : AppCompatActivity() {
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         if (!isTimerFinished) {
+            if (keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+                if (event?.repeatCount != 0) return true
+                if (volumeExitDetector.recordPress()) {
+                    performExit(isEarly = true)
+                }
+                return true
+            }
             when (keyCode) {
                 KeyEvent.KEYCODE_BACK,
                 KeyEvent.KEYCODE_HOME,
@@ -231,12 +240,13 @@ class FocusModeActivity : AppCompatActivity() {
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
-        if (!isTimerFinished) {
+        if (!isTimerFinished || volumeExitInProgress) {
             when (keyCode) {
+                KeyEvent.KEYCODE_VOLUME_UP -> return true
                 KeyEvent.KEYCODE_BACK,
                 KeyEvent.KEYCODE_HOME,
                 KeyEvent.KEYCODE_APP_SWITCH,
-                KeyEvent.KEYCODE_RECENT_APPS -> return true
+                KeyEvent.KEYCODE_RECENT_APPS -> if (!isTimerFinished) return true
             }
         }
         return super.onKeyUp(keyCode, event)
@@ -371,34 +381,39 @@ class FocusModeActivity : AppCompatActivity() {
     }
 
     private fun onCountdownComplete() {
+        performExit(isEarly = false)
+    }
+
+    private fun performExit(isEarly: Boolean) {
+        volumeExitInProgress = isEarly
         isTimerFinished = true
         isActivityVisible = true
 
-        Log.d(TAG, "[FOCUS] Countdown complete!")
-
+        Log.d(TAG, if (isEarly) "[FOCUS] Volume-up x3 detected -- early exit" else "[FOCUS] Countdown complete!")
 
         try { stopLockTask() } catch (_: Exception) {}
-        // Allow touch input so user can interact with buttons
         FocusModeService.allowTouch(this)
-
-        // 3. Restore sound IMMEDIATELY
         restoreSoundMode()
-
-        // 2. Stop the monitoring service (no more relaunch)
         FocusModeService.stop(this)
+        countDownTimer?.cancel()
 
-        // 3. Update timer display to show completion
         try {
-            findViewById<TextView>(R.id.focusTimerText)?.text = if (isArabic) "تم!" else "Done!"
+            val timerLabel = if (isEarly) {
+                if (isArabic) "تم الخروج" else "Exited"
+            } else {
+                if (isArabic) "تم!" else "Done!"
+            }
+            findViewById<TextView>(R.id.focusTimerText)?.text = timerLabel
             findViewById<ProgressBar>(R.id.focusProgressBar)?.progress = 100
         } catch (_: Exception) {}
 
-        // 4. Show completion prompt after brief delay
         Handler(Looper.getMainLooper()).postDelayed({
+            volumeExitInProgress = false
             showCompletionPrompt()
         }, 800)
 
         stopPulseAnimation()
+        if (isEarly) volumeExitDetector.reset()
     }
 
     // --- Completion Prompt ---
@@ -414,11 +429,16 @@ class FocusModeActivity : AppCompatActivity() {
         completionTitle?.text = if (isArabic) "انتهت جلسة التركيز!" else "Focus Session Complete!"
 
         val completionSubtitle = findViewById<TextView>(R.id.completionSubtitle)
-        val minStr = if (isArabic) toArabicNumerals(durationMinutes.toString()) else durationMinutes.toString()
-        completionSubtitle?.text = if (isArabic) {
-            "أحسنت! بقيت مركزاً لمدة $minStr دقيقة."
+        val elapsedMinutes = (System.currentTimeMillis() - startedAtMs) / 60_000
+        completionSubtitle?.text = if (elapsedMinutes < 1) {
+            if (isArabic) "أحسنت! بقيت مركزاً لأقل من دقيقة." else "Great job! You stayed focused for less than a minute."
         } else {
-            "Great job! You stayed focused for $durationMinutes minutes."
+            val minStr = if (isArabic) toArabicNumerals(elapsedMinutes.toString()) else elapsedMinutes.toString()
+            if (isArabic) {
+                "أحسنت! بقيت مركزاً لمدة $minStr دقيقة."
+            } else {
+                "Great job! You stayed focused for $elapsedMinutes minutes."
+            }
         }
 
         val completionQuestion = findViewById<TextView>(R.id.completionQuestion)
@@ -570,10 +590,10 @@ class FocusModeActivity : AppCompatActivity() {
         val durStr = if (isArabic) toArabicNumerals(durationMinutes.toString()) else durationMinutes.toString()
         durationLabel?.text = if (isArabic) "$durStr دقيقة" else "$durationMinutes min"
 
-        exitHint?.text = if (isArabic) "لن يمكنك الخروج حتى ينتهي المؤقت" else "You cannot exit until timer ends"
+        exitHint?.text = if (isArabic) "اضغط على زر رفع الصوت ${toArabicNumerals("3")} مرات بسرعة للخروج" else "Press volume up 3 times quickly to exit"
 
         closeBtn?.apply {
-            text = if (isArabic) "مقفل حتى انتهاء الوقت" else "Locked until timer ends"
+            text = if (isArabic) "ارفع الصوت ${toArabicNumerals("3")} مرات للخروج" else "Volume Up x3 to Exit"
             isEnabled = false
             alpha = 0.4f
             setOnClickListener {

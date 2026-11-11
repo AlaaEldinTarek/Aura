@@ -202,11 +202,14 @@ class FocusModeService : Service() {
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         if (!isTimerFinished && isRunning) {
+            Log.d(TAG, "[FOCUS] onTaskRemoved: restart (isTimerFinished=$isTimerFinished, isRunning=$isRunning)")
             try {
                 val restartIntent = buildRestartIntent()
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(restartIntent)
                 else startService(restartIntent)
             } catch (_: Exception) {}
+        } else {
+            Log.d(TAG, "[FOCUS] onTaskRemoved: skip restart (isTimerFinished=$isTimerFinished, isRunning=$isRunning)")
         }
         super.onTaskRemoved(rootIntent)
     }
@@ -219,11 +222,14 @@ class FocusModeService : Service() {
         isRunning = false
 
         if (!isTimerFinished) {
+            Log.d(TAG, "[FOCUS] onDestroy: restart (isTimerFinished=$isTimerFinished)")
             try {
                 val restartIntent = buildRestartIntent()
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) startForegroundService(restartIntent)
                 else startService(restartIntent)
             } catch (_: Exception) {}
+        } else {
+            Log.d(TAG, "[FOCUS] onDestroy: skip restart (isTimerFinished=$isTimerFinished)")
         }
         super.onDestroy()
     }
