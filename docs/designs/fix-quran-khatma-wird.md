@@ -55,11 +55,11 @@ Not affected. The juz-mode "Choose One" calls `markJuzFromBookmarks`, which merg
 ## Goals
 
 *   The close button runs the same logic as system back and Esc: the khatma prompt on page 604 in page mode with today's wird not done, otherwise the "Close Reader?" confirmation.
-*   "Choose One" in page mode adds exactly one page of progress, whatever the number of bookmarks of that color.
-*   On first link (or when switching to a different color), the existing bookmarks of that color are marked as counted without adding progress. After that, bookmarks added later still auto-count.
-*   When the color is already linked, "Choose One" keeps every page already counted and adds only the chosen page to the set. Other bookmarks of that color that were not synced yet are counted by the auto-sync as new bookmarks (existing behavior).
+*   When no sync is running and the counted set is current, "Choose One" in page mode adds one page of progress, whatever the number of bookmarks of that color.
+*   When no sync is running and the counted set is current: on first link (or when switching to a different color), the existing bookmarks of that color are marked as counted without adding progress. After that, bookmarks added later still auto-count.
+*   When no sync is running and the counted set is current, and the color is already linked, "Choose One" keeps every page already counted and adds only the chosen page to the set. Other bookmarks of that color that were not synced yet are counted by the auto-sync as new bookmarks (existing behavior).
 *   "Choose One" on a page that is already counted never adds it again, when the same color is already linked and the Wird state is loaded or, when it is not yet loaded, `initialState` is used. The counted set read can be stale (see Risks), so this is not a guarantee against every re-count. The user sees a snackbar saying so.
-*   The two calls in the page-mode "Choose One" handler are awaited in a fixed order, so no auto-sync runs between them against a stale counted set.
+*   The two calls in the page-mode "Choose One" handler are awaited in a fixed order, so the state change from the first call cannot start an auto-sync that sees the chosen page as new. This holds when no sync is running and the counted set is current (see Risks (a) and (b)).
 *   Desktop sidebar visibility behaves as today in every close path, including "Keep Reading".
 
 ## Non-Goals
@@ -67,7 +67,7 @@ Not affected. The juz-mode "Choose One" calls `markJuzFromBookmarks`, which merg
 *   Repairing Wird progress already inflated by F38c. The stored data cannot show which pages were counted by mistake.
 *   Changing `WirdService.setLinkedBookmarkColor`, `WirdNotifier`, or the stored shape of `WirdSettings`.
 *   Changing the "Use all" flow. Re-running "Use all" on an already-counted color may add the page count again (UNVERIFIED); not investigated.
-*   **Juz mode, mode-switch case (UNVERIFIED):** if a color was linked in page mode and the user then switches to juz mode, `linkedBookmarkColor` stays set. A juz-mode "Choose One" merges only the chosen page, so other pages of that color may look new and the auto-sync may mark juz from them. This looks like the same bug family. It is not fixed or reproduced here; it needs its own finding.
+*   **Juz mode, mode-switch case (UNVERIFIED):** Scenario: switching from page mode to juz mode after pages were counted in page mode, then adding pages in juz mode. Code reading suggests this is not a bug; not verified.
 *   Other unawaited writes in the Wird code (F39), and the auto-sync's own read-modify-write, which can still overlap with the awaited calls (see Risks).
 *   A baseline field or per-color counted map. Known limit: switching to another color and back replaces the counted set, so pages of the first color are counted again. Follow-up only.
 *   Other F38/F39 items: `scrollToAyaNo` (F38b), stats weekday labels (F38d), stats average unit (F38e).
@@ -91,25 +91,25 @@ Not affected. The juz-mode "Choose One" calls `markJuzFromBookmarks`, which merg
 
 *   **Given**: Page mode, 5 red bookmarks (pages 10, 50, 100, 200, 300), red not linked, no pages read today.
 *   **When**: The user opens Add from Bookmarks → red → Choose One → page 100.
-*   **Then**: Today's `pagesRead` is 1. Red is linked. `countedBookmarkPages` is `[10, 50, 100, 200, 300]`. After the next rebuild, `pagesRead` is still 1.
+*   **Then**: When no sync is running and the counted set is current: today's `pagesRead` is 1. Red is linked. `countedBookmarkPages` is `[10, 50, 100, 200, 300]`. After the next rebuild, `pagesRead` is still 1.
 
 ### CUJ 4: Choose One with the color already linked
 
 *   **Given**: Red is linked, `countedBookmarkPages` is `[10, 50]`, red also has bookmarks on page 100 and page 200, neither synced yet (the auto-sync has not run since they were added).
 *   **When**: The user chooses page 100.
-*   **Then**: `countedBookmarkPages` becomes `[10, 50, 100]`. Page 100 adds one page. Page 200 is not in the set, so the auto-sync counts it once as a new bookmark. Pages 10 and 50 are not counted again. On a device this state is almost unreachable, because the auto-sync runs when the Wird tab opens; the case is covered by unit test only.
+*   **Then**: When no sync is running and the counted set is current: `countedBookmarkPages` becomes `[10, 50, 100]`. Page 100 adds one page. Page 200 is not in the set, so the auto-sync counts it once as a new bookmark. Pages 10 and 50 are not counted again. On a device this state is almost unreachable, because the auto-sync runs when the Wird tab opens; the case is covered by unit test only.
 
 ### CUJ 5: A bookmark added later still auto-counts
 
 *   **Given**: CUJ 3 finished.
 *   **When**: The user adds a new red bookmark on page 400.
-*   **Then**: The auto-sync counts page 400 once, and only page 400.
+*   **Then**: When no sync is running and the counted set is current, the auto-sync counts page 400 once, and only page 400.
 
 ### CUJ 6: Choose One on an already-counted page
 
 *   **Given**: Red is linked and `countedBookmarkPages` contains page 100.
 *   **When**: The user chooses page 100 via Choose One.
-*   **Then**: Progress does not change. `countedBookmarkPages` does not change. A snackbar says the page is already counted.
+*   **Then**: When the guard fires, this handler writes nothing: progress and `countedBookmarkPages` do not change from it, and a snackbar shows "This page was already added". The guard decides from the counted set it reads, so it can fire while a sync is running (the sync can still change progress), and a stale set can make it miss (Risks (a)/(b)).
 
 ## Proposed Architecture
 
@@ -137,11 +137,11 @@ Fix at the call site. In the page-mode branch of `onSelect`:
 2.  If `alreadyCounted`, show the snackbar and stop. No writes.
 3.  Otherwise: `await setLinkedBookmarkColor(color.name, counted)`, then `await recordPagesRead(1, chosen page)`, then the existing "added" snackbar.
 
-**Why the link goes first.** Each provider method reloads state, and a state change re-runs `build()`, which runs the auto-sync. If `recordPagesRead` ran first and the color was already linked, the sync could see the chosen page as new (it is not in the old counted set yet) and add it a second time. Linking first puts the chosen page into `countedBookmarkPages` before any sync can see it.
+**Why the link goes first.** Each provider method reloads state, and a state change re-runs `build()`, which runs the auto-sync. If `recordPagesRead` ran first and the color was already linked, the sync could see the chosen page as new (it is not in the old counted set yet) and add it a second time. Linking first puts the chosen page into `countedBookmarkPages` before the sync that the link's own state change triggers, when no sync is running and the counted set is current (Risks (a) and (b)).
 
 **Why first link and later choices differ.** The first link baselines the bookmarks that exist now; the user picked one page to count. After that, bookmarks that are not in the counted set are bookmarks added since, and auto-counting them is the feature (CUJ 4, CUJ 5).
 
-The existing counted pages and linked color come from the current Wird state, read as `ref.read(wirdStateProvider).valueOrNull ?? widget.initialState` at the top of the page-mode (`else`) branch of `onSelect` in `_showBookmarkListSheet` (`wird_tab.dart`, the branch that today calls `recordPagesRead(1, bm.page)` at line 649). This is the same fallback `build()` uses (`wird_tab.dart:144`) and `_launchWirdTutorial` (`:75`). `initialState` is the state the content view was built with: `WirdTab` builds `_WirdContentView` only when the provider has data (`:27–31`), so the fallback is never null and the helper never receives an invented empty set. Both reads are snapshots and can be stale (see Risks).
+The existing counted pages and linked color come from the current Wird state, read as `ref.read(wirdStateProvider).valueOrNull ?? widget.initialState` at the top of the page-mode (`else`) branch of `onSelect` in `_showBookmarkListSheet` (`wird_tab.dart`, the branch that today calls `recordPagesRead(1, bm.page)` at line 649). This is the same fallback `build()` uses (`wird_tab.dart:144`) and `_launchWirdTutorial` (`:75`). `WirdTab` builds `_WirdContentView` only when the provider has data and passes a new `initialState` on every provider data change (`:25–31`), so `widget.initialState` is as current as the provider. The `??` fallback is therefore defensive and effectively unreachable; it is kept so the helper never receives an invented empty set. The read is a snapshot and can be stale in the cases in Risks (a) and (b).
 
 The juz-mode branch and the "Use all" flow are unchanged.
 
@@ -189,7 +189,7 @@ auto-sync (build): currentPages \ counted → later bookmarks only
 ## Risks & Mitigations
 
 *   **Auto-sync overlap (accepted, not yet device-checked).** In the already-linked case with other unsynced bookmarks (CUJ 4), the state change from `setLinkedBookmarkColor` can start an auto-sync while `recordPagesRead` runs. Both read and write the progress history without a lock, so one progress increment could be lost. The effect is an undercount. There is no double-count when a sync is idle (the chosen page is already in the counted set before any sync runs); two cases can still re-count pages: (a) a sync already running at tap time can write back an older counted set that the next sync counts again, and (b) a stale provider snapshot can do the same. The window is short. The overlap case cannot be reproduced on a device (see S46); it is argued from the code, not tested.
-*   **Tap before the Wird state loads (defensive fallback).** If the provider has no data at tap time, "Choose One" reads `widget.initialState` instead (see F38c). That snapshot can also be stale (case 2b above). In practice the state cannot be missing while the sheet is open, because `WirdTab` builds the content view only when the provider has data.
+*   **Tap before the Wird state loads (defensive fallback, effectively unreachable).** If the provider has no data at tap time, "Choose One" reads `widget.initialState` instead (see F38c). `WirdTab` builds the content view only when the provider has data and passes a new `initialState` on every data change, so the state cannot be missing while the sheet is open and `initialState` is as current as the provider. Like the provider read, it can be stale (Risks (b)).
 *   **Guard message wording.** The guard message says 'already added' but also fires for pages that were only baselined; the wording is kept for this fix and may be revisited after native review.
 *   **Close dialog on every close.** The close button now shows "Close Reader?" on non-604 pages. This is decided (below) and follows system back.
 *   **Repeated close taps.** While a dialog is open its modal barrier blocks taps on the close button, so the handler should not stack dialogs. UNVERIFIED; S45 includes a rapid double tap.
@@ -266,7 +266,7 @@ Note: the tests exercise the helper and the service. The wiring of the call site
         4.  Linked to `red`, existing `{10,50,100}` → `counted` `{10,50,100}`, `alreadyCounted` true.
         5.  Linked to `red`, existing `{10,50}`, color pages `{10,50,100,200}` → `counted` `{10,50,100}`; `colorPages.difference(counted)` is `{200}`.
         6.  Not linked, empty color pages → `counted` `{100}`.
-        7.  Tap before state loads (existing counted pages taken from `initialState`): linked to `red`, existing `{10,50,100}` → `counted` `{10,50,100}`, `alreadyCounted` true, so an already-counted page is not re-counted. Unit-only: the `?? widget.initialState` fallback itself sits in the widget and is not exercised by this helper test, and on a device the provider cannot be non-data while the sheet is open (`WirdTab` shows a spinner or error and disposes the content view), so there is no device step, as with S46 step 3.
+        7.  Stale counted set (known limit; pins Risks (a)/(b); update this expectation when the stale-set path is fixed): linked to `red`, existing `{10,50}` (stale: the stored set already holds 100 and 200), color pages `{10,50,100,200}`, chosen page 200 → `counted` `{10,50,200}`, `alreadyCounted` false. The helper only sees its inputs, so it cannot tell that 200 is already stored; the page would be added again and 100 dropped from the stored set. Known limit; pins Risks (a)/(b); update this expectation when the stale-set path is fixed. The `?? widget.initialState` fallback sits in the widget and has no unit test; it has no device step either, because the provider cannot be non-data while the sheet is open (as with S46 step 3).
     *   **Invariant checks** (plain set difference, the same operation the auto-sync does): after case 1, `colorPages.difference(counted)` is empty; with a new bookmark on page 400 it is `{400}`.
     *   **Negative control (labelled as pinning the old behavior)**: with the old rule `counted = {100}`, `colorPages.difference(counted)` has 4 pages. This uses set difference, not the helper.
     *   **Service-level, best effort** (`TestWidgetsFlutterBinding.ensureInitialized()`, `SharedPreferences.setMockInitialValues({})`, `WirdService.instance`; read progress with `(await WirdService.instance.getFullState()).todayProgress?.pagesRead`; default daily goal is 5):
@@ -310,7 +310,7 @@ Note: the tests exercise the helper and the service. The wiring of the call site
 ### Verification Plan
 
 *   **Baseline**: before the first edit, `flutter test` and `flutter analyze` on the current HEAD; record both counts.
-*   **Unit Tests**: `flutter test test/features/quran/wird_choose_one_test.dart`, then `flutter test`. Expected: baseline plus the tests added (seven helper, two invariant/control, up to two service-level).
+*   **Unit Tests**: `flutter test test/features/quran/wird_choose_one_test.dart`, then `flutter test`. Expected: baseline plus the tests added (seven helper, two invariant checks, one negative control, up to two service-level).
 *   **Static Analysis & Linting**: `flutter analyze`: no issues beyond the recorded baseline (compare counts). `dart format --output=none --set-exit-if-changed` on the three touched `.dart` files only (`wird_tab.dart`, `quran_reader_screen.dart`, the new test); if a file was unformatted before the edit, do not reformat it, and say so in the log.
 *   **Coverage**: The helper and its branches are covered by unit tests. There is no automated coverage for the close button or for the `onSelect` wiring; F38a and F38c are not marked fixed until S45 and S46 pass. This stays UNVERIFIED until they run.
 *   **E2E/Integration (device)**: S45 and S46 above, on the nova 5T. Not yet run.
