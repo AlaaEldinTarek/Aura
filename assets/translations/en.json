@@ -313,6 +313,7 @@
   "wird_bookmark_unique_pages": "%d unique pages",
   "wird_bookmark_no_bookmarks": "No bookmarks with this color",
   "wird_bookmark_added": "Added %d pages from bookmarks",
+  "wird_bookmark_already_counted": "This page was already added",
   "wird_record_mode_count": "Page Count",
   "wird_record_mode_range": "Page Range",
   "wird_page_from": "From page",
