@@ -103,8 +103,8 @@ void main() {
       expect(summary.isComplete, isFalse);
     });
 
-    test('is complete when all prayers are onTime or excused', () {
-      // excused is treated as "not missed" — counts toward completion
+    test('is not complete when any prayer is excused', () {
+      // excused is not prayed — does not count toward completion
       final prayers = <String, PrayerStatus>{
         'Fajr': PrayerStatus.onTime,
         'Dhuhr': PrayerStatus.onTime,
@@ -117,7 +117,7 @@ void main() {
         prayers: prayers,
       );
 
-      expect(summary.isComplete, isTrue);
+      expect(summary.isComplete, isFalse);
     });
   });
 

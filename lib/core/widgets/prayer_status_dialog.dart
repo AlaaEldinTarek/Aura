@@ -54,7 +54,7 @@ Future<PrayerStatus?> showPrayerStatusDialog({
           ),
         ),
         SimpleDialogOption(
-          onPressed: () => Navigator.pop(dialogContext, PrayerStatus.excused),
+          onPressed: () => Navigator.pop(dialogContext, PrayerStatus.missed),
           child: Row(
             children: [
               const Icon(Icons.cancel, color: Colors.red),

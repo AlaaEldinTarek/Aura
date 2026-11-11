@@ -345,6 +345,7 @@ class PrayerTrackingService {
               missed++;
               break;
             case PrayerStatus.excused:
+              missed++;
               break;
           }
         }
@@ -478,6 +479,7 @@ class PrayerTrackingService {
     final now = DateTime.now();
     final Map<String, Set<String>> prayersByDay = {};
     for (final record in records) {
+      if (record.status != PrayerStatus.onTime && record.status != PrayerStatus.late) continue;
       final dayKey = '${record.date.year}-${record.date.month}-${record.date.day}';
       prayersByDay.putIfAbsent(dayKey, () => {}).add(record.prayerName);
     }
@@ -524,6 +526,7 @@ class PrayerTrackingService {
       final Map<String, Set<String>> prayersByDay = {};
       for (final doc in snapshot.docs) {
         final record = PrayerRecord.fromFirestore(doc);
+        if (record.status != PrayerStatus.onTime && record.status != PrayerStatus.late) continue;
         final dayKey = '${record.date.year}-${record.date.month}-${record.date.day}';
         prayersByDay.putIfAbsent(dayKey, () => {}).add(record.prayerName);
       }

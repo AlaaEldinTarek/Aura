@@ -267,7 +267,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
 
         final snackBarColor = chosenStatus == PrayerStatus.late
             ? Colors.orange
-            : chosenStatus == PrayerStatus.excused
+            : chosenStatus == PrayerStatus.missed
                 ? Colors.red
                 : Colors.green;
         final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(

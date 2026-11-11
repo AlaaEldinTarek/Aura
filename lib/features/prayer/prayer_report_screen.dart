@@ -121,7 +121,6 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
 
       int completedOnTime = 0;
       int completedLate = 0;
-      int totalExcused = 0;
 
       for (final record in records) {
         prayerTotal[record.prayerName] = (prayerTotal[record.prayerName] ?? 0);
@@ -132,12 +131,10 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
           } else {
             completedLate++;
           }
-        } else if (record.status == PrayerStatus.excused) {
-          totalExcused++;
         }
       }
 
-      final totalMissed = ((kPrayerNames.length * 30) - completedOnTime - completedLate - totalExcused).clamp(0, kPrayerNames.length * 30);
+      final totalMissed = ((kPrayerNames.length * 30) - completedOnTime - completedLate).clamp(0, kPrayerNames.length * 30);
       final totalPrayers = completedOnTime + completedLate + totalMissed;
       final completionRate = totalPrayers > 0 ? (completedOnTime + completedLate) / totalPrayers : 0.0;
       final onTimeRate = totalPrayers > 0 ? completedOnTime / totalPrayers : 0.0;
@@ -191,7 +188,7 @@ class _PrayerReportScreenState extends State<PrayerReportScreen>
           _totalOnTime = completedOnTime;
           _totalLate = completedLate;
           _totalMissed = totalMissed;
-          _totalExcused = totalExcused;
+          _totalExcused = 0;
           _completionRate = completionRate;
           _onTimeRate = onTimeRate;
           _prayerCompleted.clear();
