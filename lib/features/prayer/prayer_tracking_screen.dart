@@ -89,7 +89,7 @@ class _PrayerTrackingScreenState extends ConsumerState<PrayerTrackingScreen> {
       DateTime day, DailyPrayerStatus tracking, List<PrayerTime> times) {
     final s = _displayStatuses(day, tracking, times);
     if (s.length < kPrayerNames.length) return false;
-    return s.values.every((st) => st != PrayerStatus.missed);
+    return s.values.every((st) => st == PrayerStatus.onTime || st == PrayerStatus.late);
   }
 
   @override

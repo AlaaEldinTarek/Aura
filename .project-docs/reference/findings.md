@@ -101,7 +101,7 @@ Created 2026-11-06 from analyzer run at 75d38b9 and the CLAUDE.md relocation.
 
 ## F20 — Scout-reported issues in lib/core/services
 Verified 2026-11-06 (read-only, user picked these three):
-- **F20a streak counts missed/excused prayers — VERIFIED.** `_streakFromRecords` (`prayer_tracking_service.dart:477–500`)
+- **F20a streak counts missed/excused prayers — DONE — FX-1 merged on fix/streak-prayer-missed (651a9c2), device PASS nova 5T 2026-11-11.** `_streakFromRecords` (`prayer_tracking_service.dart:477–500`)
   and `_calculateBestStreak` (`:524–544`) count distinct `prayerName` per day (`>= 5`) with no status filter.
   **Tag: likely user-visible bug → fix track** (with F7, F15, F19; needs an approved spec; do not fix during refactor phases).
 - **F20b recurring-task duplicates — NOT CONFIRMED (toggle path).** Guest `_completeRecurringTask`
@@ -113,7 +113,8 @@ Verified 2026-11-06 (read-only, user picked these three):
   start get no digest and counts are frozen at schedule time.
   **Tag: likely user-visible bug → fix track** (with F7, F15, F19; needs an approved spec; do not fix during refactor phases).
 
-### FX-1 — Prayer status ignored/misread in prayer counting (fix item linking F20a + F25)
+### FX-1 — Prayer status ignored/misread in prayer counting (fix item linking F20a + F25) — DONE
+- **DONE — FX-1 merged on fix/streak-prayer-missed (651a9c2) 2026-11-11; device PASS nova 5T (Zuhr_2026-11-11: stored missed, snackbar red, streak excludes day, calendar excludes day).** Spec docs/designs/fix-streak-prayer-missed.md. Existing `excused` records kept as-is; treated as not-prayed by new counting logic.
 - Shared root: missed-vs-excused semantics are not applied consistently when counting prayers (VERIFIED in code).
 - Distinct sub-causes, must be fixed together: F20a — streak functions ignore status entirely (even `missed` counts);
   F25 — in-app "Missed" writes `excused`, which summary / Prayer screen / statistics treat as not-missed. Fixing F20a
@@ -172,7 +173,7 @@ Check only when a phase touches the area:
   or after midnight before Fajr on Saturday (`prayer_time_rules.dart:78`).
 - `TimeFormatter.parseTime` ignores AM/PM and Arabic digits (`time_formatter.dart:86`).
 
-## F25 — In-app "Missed" is stored as `excused` and counted as prayed — code VERIFIED, likely user-visible
+## F25 — In-app "Missed" is stored as `excused` and counted as prayed — DONE
 - `showPrayerStatusDialog` "Missed" / لم أصلّ option returns `PrayerStatus.excused`
   (`lib/core/widgets/prayer_status_dialog.dart:57, :63`; callers `home_screen.dart:1640`, `prayer_screen.dart:246`,
   `prayer_tracking_screen.dart:608`). Notification / desktop paths store `missed` (`notification_service.dart:125`,
@@ -181,7 +182,7 @@ Check only when a phase touches the area:
   it as missed (`prayer_tracking_service.dart:344–348`); `DailyPrayerSummary.completedCount` counts it as completed
   (`prayer_record.dart:148`); streaks count it (F20a); `PrayerCard` still shows a red "Missed" badge.
 - Fixing it touches stored data semantics (existing `excused` records) → needs spec + user decision.
-- **Tag: likely user-visible bug → fix track, HIGH priority.** Linked with F20a as one fix item **FX-1** (below).
+- **Tag: likely user-visible bug → fix track, HIGH priority. DONE — FX-1 merged on fix/streak-prayer-missed (651a9c2), device PASS nova 5T 2026-11-11.** Linked with F20a as one fix item **FX-1** (above).
 
 ## F26 — Prayer screen list does not show Jumu'ah on Fridays — code VERIFIED
 - `prayer_screen.dart:805` passes `PrayerTime` to `PrayerCard`, which renders `nameAr` / `name` directly

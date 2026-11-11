@@ -145,13 +145,13 @@ class DailyPrayerSummary {
     required this.prayers,
   });
 
-  int get completedCount => prayers.values.where((s) => s != PrayerStatus.missed).length;
+  int get completedCount => prayers.values.where((s) => s == PrayerStatus.onTime || s == PrayerStatus.late).length;
   int get totalCount => prayers.length;
   double get completionRate => totalCount > 0 ? completedCount / totalCount : 0;
 
   bool get isComplete =>
       prayers.length >= kPrayerNames.length &&
-      prayers.values.every((s) => s != PrayerStatus.missed);
+      prayers.values.every((s) => s == PrayerStatus.onTime || s == PrayerStatus.late);
 }
 
 /// Prayer statistics for a period
