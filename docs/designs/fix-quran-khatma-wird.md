@@ -8,7 +8,7 @@
 
 ## Overview
 
-Two bugs in the Quran feature record the wrong data. The reader's top-bar close button skips the page-604 khatma prompt, so a finished khatma can go unrecorded. The Wird tab's "Choose One" bookmark action counts every bookmark of that color as read, so Wird progress, streak and totals come out too high. Neither fix changes a stored data format. The only UI addition is one snackbar message for the new "already counted" guard.
+Two bugs in the Quran feature record the wrong data. The reader's top-bar close button skips the page-604 khatma prompt, so a finished khatma can go unrecorded. The Wird tab's "Choose One" bookmark action counts every bookmark of that color as read, so Wird progress, streak and totals come out too high. Neither fix changes a stored data format. The UI changes are one snackbar message for the new "already counted" guard, and the close button now shows the "Close Reader?" prompt on non-604 pages, as system back already does.
 
 ## Background
 
@@ -55,12 +55,12 @@ Not affected. The juz-mode "Choose One" calls `markJuzFromBookmarks`, which merg
 ## Goals
 
 *   The close button runs the same logic as system back and Esc: the khatma prompt on page 604 in page mode with today's wird not done, otherwise the "Close Reader?" confirmation.
-*   When no sync is running and the counted set is current, in page mode this handler ("Choose One") adds one page of progress, whatever the number of bookmarks of that color. The auto-sync can add further pages for other unsynced bookmarks (Goal 4, CUJ 4). In the already-linked case the sync started by the link's own state change can overlap `recordPagesRead` and lose an increment (see Risks, "Auto-sync overlap").
+*   When no sync is running and the counted set is current, and the color is not already linked (first link or a color switch), in page mode this handler ("Choose One") adds one page of progress, whatever the number of bookmarks of that color. The single-page guarantee does not apply when the color is already linked: there the count can be lower because of the link-revert and overlap risks (see Risks, "Auto-sync overlap" and "Sync reverts the color link"), and the auto-sync can add further pages for other unsynced bookmarks (Goal 4, CUJ 4). When the guard fires (Goal 5), this handler adds nothing.
 *   When no sync is running and the counted set is current: on first link (or when switching to a different color), the existing bookmarks of that color are marked as counted without adding progress. After that, bookmarks added later still auto-count.
 *   When no sync is running and the counted set is current, and the color is already linked, "Choose One" keeps every page already counted and adds only the chosen page to the set. Other bookmarks of that color that were not synced yet are counted by the auto-sync as new bookmarks (existing behavior).
 *   "Choose One" on a page that is already counted does not add it again when no sync is running, the counted set is current, and the same color is already linked (the Wird state, or `initialState` if it is not yet loaded, is the source of the set). The counted set read can be stale (see Risks), so this is not a guarantee against every re-count. The user sees a snackbar saying so.
 *   The two calls in the page-mode "Choose One" handler are awaited in a fixed order, so the state change from the first call cannot start an auto-sync that sees the chosen page as new. This holds when no sync is running and the counted set is current (see Risks (a) and (b)).
-*   Desktop sidebar visibility behaves as today in every close path, including "Keep Reading".
+*   On desktop the sidebar returns after every path that closes the reader. The close button does not behave as today: it used to set the sidebar visible and pop at once, and now it goes through the handler, so after "Keep Reading" the sidebar stays hidden, as with system back and Esc.
 
 ## Non-Goals
 
@@ -97,7 +97,7 @@ Not affected. The juz-mode "Choose One" calls `markJuzFromBookmarks`, which merg
 
 *   **Given**: Red is linked, `countedBookmarkPages` is `[10, 50]`, red also has bookmarks on page 100 and page 200, neither synced yet (the auto-sync has not run since they were added).
 *   **When**: The user chooses page 100.
-*   **Then**: When no sync is running and the counted set is current: `countedBookmarkPages` becomes `[10, 50, 100]`. Page 100 adds one page. Page 200 is not in the set, so the auto-sync counts it once as a new bookmark. Pages 10 and 50 are not counted again. The count of pages added can come out lower if the sync started by the link overlaps `recordPagesRead` (see Risks, "Auto-sync overlap"). On a device this state is almost unreachable, because the auto-sync runs when the Wird tab opens. Only the set arithmetic is covered, by unit helper case 5; the progress outcome ("page 100 adds one page", "pages 10 and 50 are not counted again") has no automated test and no device step.
+*   **Then**: The single-page guarantee does not apply when the color is already linked: there the count can be lower because of the link-revert and overlap risks (see Risks, "Auto-sync overlap" and "Sync reverts the color link"). When no sync is running and the counted set is current: `countedBookmarkPages` becomes `[10, 50, 100]`. Page 100 adds one page. Page 200 is not in the set, so the auto-sync counts it once as a new bookmark. Pages 10 and 50 are not counted again. On a device this state is almost unreachable, because the auto-sync runs when the Wird tab opens. Only the set arithmetic is covered, by unit helper case 5; the progress outcome ("page 100 adds one page", "pages 10 and 50 are not counted again") has no automated test and no device step.
 
 ### CUJ 5: A bookmark added later still auto-counts
 
@@ -159,7 +159,7 @@ auto-sync (build): currentPages \ counted → later bookmarks only
 ### Alternative A: Merge inside `WirdService.setLinkedBookmarkColor`
 
 *   **Pros**: Every caller is protected from the replace behavior.
-*   **Cons**: Changes shared service behavior that "Use all" also uses. "Use all" on a color whose bookmarks were removed since would keep stale pages in the counted set. The grep found one wrong caller out of two.
+*   **Cons**: Changes shared service behavior that "Use all" also uses. "Use all" on a color whose bookmarks were removed since would keep stale pages in the counted set. The grep found one wrong caller out of two. A merge in the service also cannot fix the first-link case by itself: it gives `existing ∪ {chosen}`, which is only `{chosen}` when nothing is counted yet (the original bug), so the first-link fix still requires the call site to compute the color's pages.
 *   **Reason for Rejection**: The shared change adds risk for the "Use all" flow to protect callers that do not exist. The footgun stays in the service; this design accepts that.
 
 ### Alternative B: "Choose One" does not link the color
@@ -212,6 +212,9 @@ None. Decided 2026-11-11:
 ## Follow-ups (not part of this fix)
 
 *   A service-level merge in `WirdService.syncBookmarkPages`, so an overlapping sync cannot undo a new color link (Risks, "Sync reverts the color link"). It needs its own finding and spec; `WirdService` is out of scope here (Non-Goals).
+*   A baseline field or per-color counted map, so switching to another color and back does not replace the counted set (Non-Goals, "A baseline field or per-color counted map").
+*   A service-level merge of the counted set (Alternative D), which would remove Risk (b) (stale provider read). Risk (b) is accepted as a known limit for this fix.
+*   Re-running "Use all" on an already-counted color may add the page count again (Non-Goals). This follows from `recordPagesRead(pageCount, …)` being called without a check against the counted set (`wird_tab.dart:1047–1049`).
 
 ## Non-Functional Requirements
 
@@ -310,7 +313,7 @@ Note: the tests exercise the helper and the service. The wiring of the call site
 
 *   **Type / Scope**: Docs, Level A. Table columns: `# | Scenario | Steps | Expected (from code) | Filter | Result (base)`.
 *   **Proposed Changes**: Add two rows after S43 (S44 is only in the results log; S45 and S46 are unused):
-    *   **S45**, "Reader close button runs the khatma prompt (F38a)", Filter `F-APP`. Steps: (1) page mode, today's wird not done: open the reader, jump to page 604, tap the top-bar close button; try "Keep Reading", "Not Yet" and "Yes, I'm Done!" (in separate runs); (2) page 100: tap close → "Close Reader?"; (3) tap close, then try to tap it again at once; (4) system back gives the same dialogs; (5) Windows: sidebar returns after Close and stays hidden after Keep Reading. Expected: base closes at once with no prompt; after fix the dialogs appear, "Yes" records one khatma and shows the celebration, "Not Yet" records none, dialogs do not stack.
+    *   **S45**, "Reader close button runs the khatma prompt (F38a)", Filter `F-APP`. Steps 1–4 and 6 run on the nova 5T; step 5 (desktop sidebar) runs on Windows. Steps: (1) page mode, today's wird not done: open the reader, jump to page 604, tap the top-bar close button; try "Keep Reading" and "Not Yet" (separate runs; neither records anything); (2) page 100: tap close → "Close Reader?"; (3) tap close, then try to tap it again at once; (4) on page 604 with today's wird not done, system back gives the same dialogs as the close button; (5) Windows: sidebar returns after Close and stays hidden after Keep Reading; (6) last: on page 604 with today's wird not done, tap close → "Yes, I'm Done!". "Yes" calls `recordPageKhatma()` and `markComplete()`: it writes a khatma and marks the day complete, so the page-604 prompt cannot appear again that day. It must therefore run after all the dialog steps. Expected: base closes at once with no prompt; after fix the dialogs appear, "Keep Reading" stays in the reader, "Not Yet" records none, dialogs do not stack, and step 6 "Yes" records one khatma and shows the celebration.
     *   **S46**, "Choose One counts exactly one page (F38c)", Filter `F-APP`. Steps: (1) page mode, 4+ bookmarks of one unlinked color (red), Wird → Add from Bookmarks → red → Choose One → pick one; leave and reopen the tab; (2) add one new red bookmark; (3) with red linked and synced, Add from Bookmarks → green (3+ green bookmarks) → Choose One → pick one (this links green); (4) re-link red: Add from Bookmarks → red → Choose One → pick a red page; (5) with red linked and synced, Add from Bookmarks → red → Choose One → pick a red page that is already counted. Expected: base counts all bookmarks of the color; after fix step 1 adds exactly 1 page and stays at 1, step 2 adds exactly 1, step 3 adds exactly 1 page, green becomes the linked color and its other bookmarks do not add pages, step 4 adds exactly 1 page (even if the picked page was counted before, because the guard applies only to the same linked color; known limit), red becomes the linked color again and its other bookmarks do not add pages, step 5 changes nothing and shows the snackbar "This page was already added" (Arabic UI: "تمت إضافة هذه الصفحة بالفعل"); no other step shows that snackbar. Not reproducible on device: the already-linked case where other bookmarks of the color are still unsynced; only its set arithmetic is covered, by unit helper case 5 (the progress outcome is untested).
     *   Record results only after the checks run.
 
@@ -325,7 +328,7 @@ Note: the tests exercise the helper and the service. The wiring of the call site
 *   **Unit Tests**: `flutter test test/features/quran/wird_choose_one_test.dart`, then `flutter test`. Expected: baseline plus the tests added (seven helper, two invariant checks, one negative control, up to two service-level).
 *   **Static Analysis & Linting**: `flutter analyze`: no issues beyond the recorded baseline (compare counts). `dart format --output=none --set-exit-if-changed` on the three touched `.dart` files only (`wird_tab.dart`, `quran_reader_screen.dart`, the new test); if a file was unformatted before the edit, do not reformat it, and say so in the log.
 *   **Coverage**: The helper and its branches are covered by unit tests. There is no automated coverage for the close button or for the `onSelect` wiring; F38a and F38c are not marked fixed until S45 and S46 pass. This stays UNVERIFIED until they run.
-*   **E2E/Integration (device)**: S45 and S46 above, on the nova 5T. Not yet run.
+*   **E2E/Integration (device)**: S45 and S46 above. S45 steps 1–4 and 6 and all of S46 run on the nova 5T; S45 step 5 (desktop sidebar) runs on Windows. Not yet run.
 *   **Review**: Small fix, no "edit carefully" files, no native contracts: one lightweight EGM review (done: `.project-docs/reference/reviews/quran-khatma-wird/`).
 
 --------------------------------------------------------------------------------
