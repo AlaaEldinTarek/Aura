@@ -695,8 +695,8 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
             await notifier.setLinkedBookmarkColor(color.name, choice.counted);
             await notifier.recordPagesRead(1, bm.page);
             if (!mounted) return;
-            final tsSnack3 = MediaQuery.textScalerOf(context);
-            final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
+            final tsSnack3 = MediaQuery.textScalerOf(this.context);
+            final snackCtrl = ScaffoldMessenger.of(this.context).showSnackBar(
               SnackBar(
                 content: Text('wird_bookmark_added'.tr().replaceAll('%d', '1')),
                 duration: const Duration(seconds: 2),
