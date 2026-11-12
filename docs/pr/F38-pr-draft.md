@@ -6,7 +6,7 @@ Branch `fix/quran-khatma-wird`. Design: `docs/designs/fix-quran-khatma-wird.md` 
 
 ## 1. What changed in code
 
-Four code commits (`5dd30d0`, `98c637a`, `95f79d2`, `8911357`) touch code, tests or translations; the rest of the branch is docs (design, reviews, STATE, log, device checklist). The five non-docs files changed against `main` are `lib/features/quran/wird_tab.dart`, `lib/features/quran/quran_reader_screen.dart`, `test/features/quran/wird_choose_one_test.dart`, `assets/translations/en.json` and `assets/translations/ar.json`. Check with `git diff --name-only main..HEAD -- lib test assets pubspec.yaml pubspec.lock`.
+Four code commits (`5dd30d0`, `98c637a`, `95f79d2`, `8911357`) touch code, tests or translations; the rest of the branch is docs (design, reviews, STATE, log, device checklist). The five non-docs files changed against `main` are `lib/features/quran/wird_tab.dart`, `lib/features/quran/quran_reader_screen.dart`, `test/features/quran/wird_choose_one_test.dart`, `assets/translations/en.json` and `assets/translations/ar.json`. The other 13 changed files are documentation under `docs/` and `.project-docs/`. Check with `git diff --name-only main..HEAD -- lib test assets pubspec.yaml pubspec.lock`.
 
 *   **Phase 1, helper and unit tests (`5dd30d0`).** `countedPagesAfterChooseOne` in `lib/features/quran/wird_tab.dart` (+24, `@visibleForTesting`) and `test/features/quran/wird_choose_one_test.dart` (new, 12 tests: helper cases 1-7, 2 invariants, 1 negative control, 2 service-level).
 *   **Phase 2, Choose One call site and string (`98c637a`, `95f79d2`).**
