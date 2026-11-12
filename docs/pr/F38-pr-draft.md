@@ -4,20 +4,21 @@ F38a (reader close button) and F38c (Wird "Choose One") are fixed and device-ver
 
 ## 1. What changed in code
 
-Four code commits (`5dd30d0`, `98c637a`, `95f79d2`, `8911357`) touch code, tests or translations; the rest of the branch is docs (design, reviews, module docs, STATE, findings, log, device checklist). The five non-docs files changed against `main` are `lib/features/quran/wird_tab.dart`, `lib/features/quran/quran_reader_screen.dart`, `test/features/quran/wird_choose_one_test.dart`, `assets/translations/en.json` and `assets/translations/ar.json`. The other 17 changed files are documentation, including `lib/features/quran/README.md`, `.project-docs/` and `docs/`. Check with `git diff --name-only main..HEAD -- lib test assets pubspec.yaml pubspec.lock`.
+Five commits (`5dd30d0`, `98c637a`, `95f79d2`, `8911357` and the test-only `7c23c77`) touch code, tests or translations; the rest of the branch is docs (design, reviews, module docs, STATE, findings, log, device checklist). The five non-docs files changed against `main` are `lib/features/quran/wird_tab.dart`, `lib/features/quran/quran_reader_screen.dart`, `test/features/quran/wird_choose_one_test.dart`, `assets/translations/en.json` and `assets/translations/ar.json`. The other 17 changed files are documentation, including `lib/features/quran/README.md`, `.project-docs/` and `docs/`. Check with `git diff --name-only main..HEAD -- lib test assets pubspec.yaml pubspec.lock`.
 
-*   **Phase 1, helper and unit tests (`5dd30d0`).** `countedPagesAfterChooseOne` in `lib/features/quran/wird_tab.dart` (+24, `@visibleForTesting`) and `test/features/quran/wird_choose_one_test.dart` (new, 12 tests: helper cases 1-7, 2 invariants, 1 negative control, 2 service-level).
+*   **Phase 1, helper and unit tests (`5dd30d0`).** `countedPagesAfterChooseOne` in `lib/features/quran/wird_tab.dart` (+24, `@visibleForTesting`) and `test/features/quran/wird_choose_one_test.dart` (new in `5dd30d0` with 12 tests: helper cases 1-7, 2 invariants, 1 negative control, 2 service-level; `7c23c77` adds helper case 3b, 13 in total).
 *   **Phase 2, Choose One call site and string (`98c637a`, `95f79d2`).**
     *   `98c637a`: page-mode "Choose One" now links the color with the full set of its pages (so only later bookmarks auto-count) and records exactly one page; the link is awaited before the page is recorded. Choosing a page that is already counted for the same linked color shows the new snackbar and changes nothing. New key `wird_bookmark_already_counted` in `en.json` and `ar.json`. The juz branch is unchanged.
     *   `95f79d2`: clears two analyzer infos introduced by `98c637a` (uses `this.context` after the `mounted` check).
 *   **Phase 3, close button (`8911357`).** The reader's top-bar close button calls `Navigator.of(context).maybePop()` instead of `Navigator.pop`, so it runs the `PopScope` handler like system back and Esc. Behavior change: the close button now shows "Close Reader?" on non-604 pages, and on page 604 in page mode with today's wird not done it shows the khatma prompt.
 *   **Phase 4, docs (`c7bc1da`).** `.project-docs/modules/quran-wird.md`, `.project-docs/modules/wird.md` and `lib/features/quran/README.md` describe the `maybePop` close button and the new Choose One rule.
+*   **Review follow-up (`7c23c77`), test and docs only, no production code.** New test 3b pins the color-switch limit (a page counted under the old color is added again under the new one). Test 7 is relabelled as a known limit and its consequence is documented; its assertions are unchanged. The design's Risks section records the partial failure between the two Choose One writes as an accepted risk (owner decision 2026-11-13).
 *   **Phase 5, records.** F38a and F38c are marked fixed in `STATE.md` and `.project-docs/reference/findings.md`; the device results are in `.project-docs/reference/device-checklist.md` and the 2026-11-12 and 2026-11-13 logs.
 
 ## 2. Tests
 
-*   `flutter test`: 272 pass (baseline 260, +12 new tests), as of phase 3.
-*   `flutter analyze`: 419 issues, unchanged from the baseline, as of phase 3.
+*   `flutter test`: 273 pass (baseline 260, +13 new tests), run on `7c23c77`.
+*   `flutter analyze`: 419 issues, unchanged from the baseline, run on `7c23c77`.
 *   `wird_tab.dart` already failed `dart format` before this branch; it was not reformatted.
 
 ## 3. Device verified
@@ -29,6 +30,6 @@ Four code commits (`5dd30d0`, `98c637a`, `95f79d2`, `8911357`) touch code, tests
 
 ## Known limits (from the design)
 
-Not fixed here: overlapping or stale syncs can still re-count or lose a page, a sync can revert the color link, "Use all" re-counts an already-counted color, and a repeated close tap has no device check (accepted risk). Progress already inflated by F38c is not repaired. The S46 pass covers the current color model only, not the future reserved-color design (not part of this PR).
+Not fixed here: overlapping or stale syncs can still re-count or lose a page, a sync can revert the color link, "Use all" re-counts an already-counted color, and a repeated close tap has no device check (accepted risk), and a failure between the two Choose One writes is not rolled back (accepted risk, owner decision 2026-11-13). Progress already inflated by F38c is not repaired. The S46 pass covers the current color model only, not the future reserved-color design (not part of this PR).
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
