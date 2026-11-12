@@ -43,6 +43,22 @@ void main() {
       expect(r.alreadyCounted, isFalse);
     });
 
+    test(
+        '3b. linked to a different color, page counted under the old color: '
+        'guard does not fire', () {
+      // Known limit (design Risks, "Color switch"): a page counted under the
+      // old color is added again when it is chosen under the new color.
+      final r = countedPagesAfterChooseOne(
+        linkedColor: 'green',
+        existingCounted: {100},
+        chosenColor: 'red',
+        chosenPage: 100,
+        colorPages: colorPages,
+      );
+      expect(r.counted, colorPages);
+      expect(r.alreadyCounted, isFalse);
+    });
+
     test('4. same color linked, page already counted: guard fires', () {
       final r = countedPagesAfterChooseOne(
         linkedColor: 'red',
@@ -82,10 +98,14 @@ void main() {
 
     test(
         '7. stale counted set (known limit, pins Risks (a)/(b)): '
-        'guard misses and 100 is dropped', () {
+        'guard misses and page 100 is dropped', () {
       // The stored set already holds 100 and 200, but the helper only sees
-      // the stale input {10, 50}. Update this expectation when the stale-set
-      // path is fixed.
+      // the stale input {10, 50}.
+      // Consequence: page 100 is a current bookmark, so the next auto-sync
+      // counts it again (+1 page). This test pins today's behavior, not the
+      // desired one. When the stale-set path is fixed (design Follow-ups:
+      // service-level merge), change the expectations to keep 100 and flag
+      // alreadyCounted for the already-stored page.
       final r = countedPagesAfterChooseOne(
         linkedColor: 'red',
         existingCounted: {10, 50},

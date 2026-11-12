@@ -201,6 +201,7 @@ auto-sync (build): currentPages \ counted → later bookmarks only
 *   **Inflated data stays.** Progress already inflated by F38c is not repaired. No user communication is planned.
 *   **Rollback.** Revert the commits. Settings already written with a larger counted set stay as stored. That is benign: those pages are counted once. A rolled-back build brings the bug back.
 *   **Color switch.** Switching to another color and back via "Choose One" baselines that color's pages and adds only the chosen one; a page counted under the old color can be added again if it is the chosen page. Whole-color re-counting happens only through "Use all", a Non-Goal (see Non-Goals).
+*   **Partial failure between the two Choose One writes (accepted, owner decision 2026-11-13).** The handler awaits `setLinkedBookmarkColor` and then `recordPagesRead` with no `try`/`catch`. If the second call throws after the first succeeded, the color stays linked and the counted set already contains the chosen page, but no progress was added; a retry on that page is then blocked by the already-counted guard (CUJ 6), so the page stays uncounted. If the first call throws, nothing is written. Both calls write the same SharedPreferences store, so this needs a storage error between two writes and is very rare. Not handled in this fix: a rollback would need a new error string (English and Arabic) and a spec amendment. Follow-up if it is ever observed.
 
 ## Open Questions
 
