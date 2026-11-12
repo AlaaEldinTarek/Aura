@@ -46,7 +46,7 @@ Verified against code 2026-11-07 (reference/2026-11-07_DRIFT_REPORT.md). Parent:
 ## "Add from Bookmarks" dialog
 - `_BookmarkPagesSheet` lists colors with bookmarks. Tapping a color → `AlertDialog` ("Add New" / "Choose One").
   "Add New" → `onUseAll` (marks all pages of that color). "Choose One" pops the dialog; `onChooseOne` pops the sheet and
-  opens `_BookmarkListSheet` (DraggableScrollableSheet); `onSelect` pops once. Page-mode "Choose One" bug: F38c.
+  opens `_BookmarkListSheet` (DraggableScrollableSheet); `onSelect` pops once. Page-mode "Choose One" links the color. On first link or a color change the counted set is every page of that color, and only the chosen page is added to today's progress. When the color is already linked the counted set is the existing counted pages plus the chosen page. It awaits the link before `recordPagesRead`, and does not add an already-counted page twice when no sync is running and the counted set is current.
 
 ## Achievements & tutorial
 - `AchievementCategory.quran`: `wird_first` (1 day), `wird_streak_7`, `wird_streak_30`, `wird_streak_100`,

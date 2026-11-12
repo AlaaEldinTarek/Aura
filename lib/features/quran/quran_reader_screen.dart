@@ -495,10 +495,7 @@ void _togglePageBookmark() {
                   primary: primary,
                   onBookmarkToggle: _togglePageBookmark,
                   onClose: () {
-                    if (_isDesktop) {
-                      ref.read(desktopSidebarVisibleProvider.notifier).state = true;
-                    }
-                    Navigator.pop(context);
+                    Navigator.of(context).maybePop();
                   },
                 ),
               ),

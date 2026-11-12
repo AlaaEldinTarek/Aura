@@ -40,7 +40,7 @@ and the khatma celebration and dua screens. Data comes from `../../core/` and is
   `#231f20` is replaced, and dark mode uses pre-inverted colors because the page is RGB-inverted.
 - **Reader back**: `PopScope(canPop: false)`. At page 604 in Wird page mode, with today not completed, a khatma prompt
   appears ("yes" → `recordPageKhatma` + `markComplete` → celebration). Otherwise a "Close Reader?" confirm. The top-bar
-  close button calls `Navigator.pop` directly and skips both (F38).
+  close button calls `Navigator.maybePop()` and runs the same back path.
 - **Desktop reader** (`!kIsWeb` and Windows/macOS/Linux): hides the shell sidebar via `desktopSidebarVisibleProvider`
   and restores it on every exit path. Drag ≥ 80 px horizontal to turn pages; keys: arrows, `+` / `-`, Esc. Vertical pan
   only, zoom 0.5–8. Mobile: pinch zoom 1.0–6.0 or A− / A+ in the bottom bar (×0.8 / ×1.25, same limits); page swipe is locked while zoomed.
@@ -51,8 +51,10 @@ and the khatma celebration and dua screens. Data comes from `../../core/` and is
   `resetJuzForKhatma` → celebration. Page-mode khatma only happens in the reader back prompt.
 - **Bookmark auto-sync**: runs inside `build()` when `linkedBookmarkColor` is set. Pages of that color not in
   `countedBookmarkPages` are synced (page mode: `syncBookmarkPages`; juz mode: mark juz 1..maxJuz). `_syncInProgress`
-  guards re-entry. "Choose one" in page mode resets the counted set to that one page, so the next build counts all
-  other pages of that color too (F38).
+  guards re-entry. "Choose one" in page mode links the color. On first link or a color change the counted set is
+  every page of that color, and only the chosen page is added to today's progress. When the color is already linked
+  the counted set is the existing counted pages plus the chosen page. It awaits the link before `recordPagesRead`, and
+  does not add an already-counted page twice when no sync is running and the counted set is current.
 - **"Reset All Progress"** (`wird_reset_today` key) calls `resetAllProgress` after a confirm. It wipes streak,
   totals, history, completed juz and khatma count and keeps settings. That is the intended behavior (the key name is
   misleading).

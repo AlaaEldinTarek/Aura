@@ -15,6 +15,30 @@ import 'khatma_celebration_screen.dart';
 import 'package:aura_app/core/theme/app_typography.dart';
 import 'package:aura_app/core/theme/app_spacing.dart';
 
+/// Computes the counted-pages set for page-mode "Choose One" (F38c).
+///
+/// Same color already linked: existing counted pages plus the chosen page;
+/// `alreadyCounted` is true when the chosen page was already in the set.
+/// Not linked, or a different color: all pages of the chosen color plus the
+/// chosen page (the current bookmarks become the baseline); never already
+/// counted.
+@visibleForTesting
+({Set<int> counted, bool alreadyCounted}) countedPagesAfterChooseOne({
+  required String? linkedColor,
+  required Set<int> existingCounted,
+  required String chosenColor,
+  required int chosenPage,
+  required Set<int> colorPages,
+}) {
+  if (linkedColor == chosenColor) {
+    return (
+      counted: {...existingCounted, chosenPage},
+      alreadyCounted: existingCounted.contains(chosenPage),
+    );
+  }
+  return (counted: {...colorPages, chosenPage}, alreadyCounted: false);
+}
+
 class WirdTab extends ConsumerWidget {
   final String lang;
 
@@ -646,10 +670,33 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
             );
             Future.delayed(const Duration(seconds: 2), snackCtrl.close);
           } else {
-            ref.read(wirdStateProvider.notifier).recordPagesRead(1, bm.page);
-            ref.read(wirdStateProvider.notifier).setLinkedBookmarkColor(color.name, pages);
-            final tsSnack3 = MediaQuery.textScalerOf(context);
-            final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
+            final settings = (ref.read(wirdStateProvider).valueOrNull ?? widget.initialState).settings;
+            final choice = countedPagesAfterChooseOne(
+              linkedColor: settings.linkedBookmarkColor,
+              existingCounted: settings.countedBookmarkPages.toSet(),
+              chosenColor: color.name,
+              chosenPage: bm.page,
+              colorPages: bookmarks.map((b) => b.page).toSet(),
+            );
+            if (choice.alreadyCounted) {
+              final tsSnackDup = MediaQuery.textScalerOf(context);
+              final dupCtrl = ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('wird_bookmark_already_counted'.tr()),
+                  duration: const Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                  margin: EdgeInsets.only(bottom: tsSnackDup.scale(82.0), left: tsSnackDup.scale(16.0), right: tsSnackDup.scale(16.0)),
+                ),
+              );
+              Future.delayed(const Duration(seconds: 2), dupCtrl.close);
+              return;
+            }
+            final notifier = ref.read(wirdStateProvider.notifier);
+            await notifier.setLinkedBookmarkColor(color.name, choice.counted);
+            await notifier.recordPagesRead(1, bm.page);
+            if (!mounted) return;
+            final tsSnack3 = MediaQuery.textScalerOf(this.context);
+            final snackCtrl = ScaffoldMessenger.of(this.context).showSnackBar(
               SnackBar(
                 content: Text('wird_bookmark_added'.tr().replaceAll('%d', '1')),
                 duration: const Duration(seconds: 2),
