@@ -29,7 +29,7 @@ Verified against code 2026-11-07 (reference/2026-11-07_DRIFT_REPORT.md). Wird (d
 - Back: `PopScope(canPop: false, onPopInvokedWithResult: ...)` wraps the `Scaffold`. On page 604 with page-mode wird not
   completed → khatma dialog (yes → `recordPageKhatma()`, `markComplete()`, `pushReplacement` to
   `KhatmaCelebrationScreen`); otherwise "Close Reader?" `AlertDialog` ("Keep Reading" / "Close", "Your progress is
-  saved."). The top-bar close button bypasses this (F38a).
+  saved."). The top-bar close button calls `Navigator.maybePop()`, so it runs the same handler as back and Esc.
 - Uses `import 'dart:ui' as ui show TextDirection;` (see ui-kit.md § TextDirection conflict).
 
 ## Bookmarks
