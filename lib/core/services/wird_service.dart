@@ -8,6 +8,17 @@ import '../models/wird.dart';
 import 'notification_service.dart';
 import 'desktop_notification_service.dart';
 
+/// Result of [WirdService.creditPages].
+class CreditResult {
+  /// True when this call completed the day and so gave today's streak credit.
+  final bool grantedStreakCredit;
+
+  /// Today's saved entry after the call.
+  final WirdProgress progress;
+
+  const CreditResult({required this.grantedStreakCredit, required this.progress});
+}
+
 class WirdService {
   WirdService._({DateTime Function()? now}) : _now = now ?? DateTime.now;
 
@@ -121,6 +132,110 @@ class WirdService {
 
     _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
     return todayProgress;
+  }
+
+  /// Credits [pages] to today's entry for a marker move (or a khatma) and
+  /// returns whether the move gave today's streak credit.
+  ///
+  /// [fromPage] is the marker page before the move; it becomes the entry's
+  /// `startPage` when this creates today's entry. [toPage] always becomes
+  /// `currentPage`. Until P4b it also mirrors the pages into
+  /// `wird_total_pages_read`, so achievements keep working.
+  Future<CreditResult> creditPages(
+    int pages, {
+    required int fromPage,
+    required int toPage,
+  }) async {
+    final settings = await getSettings();
+    var history = await _loadHistory();
+    final today = _todayKey();
+
+    var entry = history.where((p) => p.dateKey == today).firstOrNull ??
+        WirdProgress(date: _now(), startPage: fromPage, currentPage: toPage);
+
+    final wasCompleted = entry.isCompleted;
+    final newPagesRead = entry.pagesRead + pages;
+    final nowCompleted = newPagesRead >= settings.dailyPageGoal || entry.manualCredit;
+
+    entry = entry.copyWith(
+      pagesRead: newPagesRead,
+      currentPage: toPage,
+      isCompleted: nowCompleted,
+    );
+    history = [
+      for (final p in history)
+        if (p.dateKey != today) p,
+      entry,
+    ];
+    await _saveHistory(history);
+
+    final prefs = await _prefs;
+    final granted = nowCompleted && !wasCompleted;
+    if (granted) {
+      await _incrementStreak();
+      await prefs.setInt(_totalDaysKey, (prefs.getInt(_totalDaysKey) ?? 0) + 1);
+    }
+    // Mirror (removed in P4b): same condition as recordPagesRead. The pages are
+    // added unless the day was already complete before this call.
+    if (!wasCompleted) {
+      await prefs.setInt(_totalPagesKey, (prefs.getInt(_totalPagesKey) ?? 0) + pages);
+    }
+
+    _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
+    return CreditResult(grantedStreakCredit: granted, progress: entry);
+  }
+
+  /// Takes back [pages] from the entry for [dateKey] (an undone marker move).
+  /// Does nothing when there is no entry for that date. If [removeCredit] is
+  /// true and the day goes from complete to not complete, today's streak
+  /// credit and day count are rolled back.
+  Future<void> removePages(
+    int pages, {
+    required String dateKey,
+    required bool removeCredit,
+    required int restoreCurrentPage,
+  }) async {
+    final settings = await getSettings();
+    var history = await _loadHistory();
+    final existing = history.where((p) => p.dateKey == dateKey).firstOrNull;
+    if (existing == null) return;
+
+    final wasCompleted = existing.isCompleted;
+    final newPagesRead = existing.pagesRead - pages < 0 ? 0 : existing.pagesRead - pages;
+    final nowCompleted = newPagesRead >= settings.dailyPageGoal || existing.manualCredit;
+
+    final entry = existing.copyWith(
+      pagesRead: newPagesRead,
+      currentPage: restoreCurrentPage,
+      isCompleted: nowCompleted,
+    );
+    history = [for (final p in history) p.dateKey == dateKey ? entry : p];
+    await _saveHistory(history);
+
+    final prefs = await _prefs;
+    if (removeCredit && wasCompleted && !nowCompleted) {
+      await _rollbackStreakCredit(prefs, _todayKey());
+      final days = (prefs.getInt(_totalDaysKey) ?? 0) - 1;
+      await prefs.setInt(_totalDaysKey, days < 0 ? 0 : days);
+    }
+    // Mirror (removed in P4b).
+    final total = (prefs.getInt(_totalPagesKey) ?? 0) - pages;
+    await prefs.setInt(_totalPagesKey, total < 0 ? 0 : total);
+
+    _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
+  }
+
+  /// Undoes today's streak credit. Acts only when the streak date is [today].
+  /// The day count is changed by the callers, not here.
+  Future<void> _rollbackStreakCredit(SharedPreferences prefs, String today) async {
+    if (prefs.getString(_streakDateKey) != today) return;
+    final count = prefs.getInt(_streakCountKey) ?? 0;
+    if (count > 0) await prefs.setInt(_streakCountKey, count - 1);
+    if (count <= 1) {
+      await prefs.remove(_streakDateKey);
+    } else {
+      await prefs.setString(_streakDateKey, _yesterdayKey());
+    }
   }
 
   Future<void> markDayComplete() async {

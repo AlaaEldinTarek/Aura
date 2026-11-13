@@ -73,6 +73,8 @@ daily-summary notifications always English, daily summary time reverting to 21:0
 - Wird: `wird_settings` (JSON), `wird_streak_count`, `wird_streak_date`, `wird_total_pages_read`,
   `wird_total_days_completed`, `wird_progress_history` (JSON, pruned to 90 days), `wird_completed_juz` (JSON list),
   `wird_khatm_count`, `wird_khatm_dates` (JSON list) — all in `wird_service.dart`.
+- Wird marker: `wird_marker` (JSON, the marker record; mirrors `users/{uid}/wird/marker`) and `wird_marker_undo` (JSON,
+  one-step undo record, local only, never synced) — both in `wird_marker_service.dart`.
 - Auth / guest: `is_guest` (`AppConstants.keyIsGuest`; via `SharedPreferencesService.isGuest` / `setGuest`; written by
   `login_screen.dart` and `auth_provider.dart`, read by Splash routing and `_syncUserData`), `pending_guest_migration_uid`
   (String uid; written in `auth_provider.dart` `_syncUserData` when a guest with local tasks signs in; read and removed by `guest_migration_provider.dart`).
