@@ -9,8 +9,16 @@ import 'notification_service.dart';
 import 'desktop_notification_service.dart';
 
 class WirdService {
-  WirdService._();
+  WirdService._({DateTime Function()? now}) : _now = now ?? DateTime.now;
+
+  /// Test constructor: lets a test control the clock. Production code uses [instance].
+  @visibleForTesting
+  WirdService.forTesting({DateTime Function()? now}) : _now = now ?? DateTime.now;
+
   static final WirdService instance = WirdService._();
+
+  /// Every date in this service comes from here, so tests can fix the day.
+  final DateTime Function() _now;
 
   static const _settingsKey = 'wird_settings';
   static const _streakCountKey = 'wird_streak_count';
@@ -65,7 +73,7 @@ class WirdService {
     final settings = await getSettings();
     var history = await _loadHistory();
     final today = _todayKey();
-    final now = DateTime.now();
+    final now = _now();
 
     WirdProgress todayProgress;
     try {
@@ -119,7 +127,7 @@ class WirdService {
     final settings = await getSettings();
     var history = await _loadHistory();
     final today = _todayKey();
-    final now = DateTime.now();
+    final now = _now();
 
     WirdProgress todayProgress;
     try {
@@ -195,7 +203,7 @@ class WirdService {
       if (currentCount <= 1) {
         await prefs.remove(_streakDateKey);
       } else {
-        final y = DateTime.now().subtract(const Duration(days: 1));
+        final y = _now().subtract(const Duration(days: 1));
         await prefs.setString(_streakDateKey, _yesterdayKey());
       }
     }
@@ -248,7 +256,7 @@ class WirdService {
     // Update today's progress
     var history = await _loadHistory();
     final today = _todayKey();
-    final now = DateTime.now();
+    final now = _now();
 
     WirdProgress todayProgress;
     try {
@@ -413,7 +421,7 @@ class WirdService {
     var history = list.map((e) => WirdProgress.fromJson(Map<String, dynamic>.from(e))).toList();
 
     // Prune to 90 days
-    final cutoff = DateTime.now().subtract(const Duration(days: 90));
+    final cutoff = _now().subtract(const Duration(days: 90));
     history = history.where((p) => p.date.isAfter(cutoff)).toList();
     return history;
   }
@@ -565,7 +573,7 @@ class WirdService {
   Future<List<int>> getWeeklyPageData() async {
     final history = await _loadHistory();
     final map = <String, WirdProgress>{for (final p in history) p.dateKey: p};
-    final now = DateTime.now();
+    final now = _now();
     return List.generate(7, (i) {
       final day = now.subtract(Duration(days: 6 - i));
       final key = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
@@ -577,7 +585,7 @@ class WirdService {
   Future<List<int>> getWeeklyJuzData() async {
     final history = await _loadHistory();
     final map = <String, WirdProgress>{for (final p in history) p.dateKey: p};
-    final now = DateTime.now();
+    final now = _now();
     return List.generate(7, (i) {
       final day = now.subtract(Duration(days: 6 - i));
       final key = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
@@ -595,7 +603,7 @@ class WirdService {
     };
     int best = 0;
     int current = 0;
-    final now = DateTime.now();
+    final now = _now();
     for (int i = 89; i >= 0; i--) {
       final day = now.subtract(Duration(days: i));
       final key = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
@@ -612,12 +620,12 @@ class WirdService {
   // ── Helpers ──────────────────────────────────────────────────────────────
 
   String _todayKey() {
-    final now = DateTime.now();
+    final now = _now();
     return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
   }
 
   String _yesterdayKey() {
-    final y = DateTime.now().subtract(const Duration(days: 1));
+    final y = _now().subtract(const Duration(days: 1));
     return '${y.year}-${y.month.toString().padLeft(2, '0')}-${y.day.toString().padLeft(2, '0')}';
   }
 }
