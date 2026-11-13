@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/wird.dart';
 import '../models/wird_marker.dart';
+import '../services/wird_marker_logic.dart' show kLastQuranPage;
 import '../services/wird_marker_service.dart';
 import '../services/wird_service.dart';
 
@@ -62,6 +63,8 @@ class WirdNotifier extends StateNotifier<AsyncValue<WirdState>> {
                   )
                 : WirdMarkerService.instance),
         super(const AsyncValue.loading()) {
+    // One listener, attached here and not in _init (refresh() calls _init again).
+    _marker.revision.addListener(_onMarkerRevision);
     _init();
   }
 
@@ -82,7 +85,7 @@ class WirdNotifier extends StateNotifier<AsyncValue<WirdState>> {
         await _wird.syncFromFirestore(uid);
       }
       if (!mounted) return;
-      final data = await _wird.getFullState();
+      final data = await _marker.compose(await _wird.getFullState());
       if (!mounted) return;
       state = AsyncValue.data(data);
       // Marker sync never blocks start-up and never throws.
@@ -96,7 +99,7 @@ class WirdNotifier extends StateNotifier<AsyncValue<WirdState>> {
   Future<void> setDailyPageGoal(int goal) async {
     final current = state.value;
     if (current == null) return;
-    final clamped = goal.clamp(1, 604);
+    final clamped = goal.clamp(1, kLastQuranPage);
     final newSettings = current.settings.copyWith(dailyPageGoal: clamped);
     await _wird.updateSettings(newSettings);
     state = AsyncValue.data(current.copyWith(settings: newSettings));
@@ -155,41 +158,53 @@ class WirdNotifier extends StateNotifier<AsyncValue<WirdState>> {
     state = AsyncValue.data(updatedState);
   }
 
-  // ── Wird marker actions (P3: not yet used by any screen) ───────────────
-
-  Future<void> _reloadLocal() async {
-    final updated = await _wird.getFullState();
+  /// Reloads from local storage: the service state composed with the marker
+  /// and undo records. Never reads the cloud.
+  Future<void> _reload() async {
+    final updated = await _marker.compose(await _wird.getFullState());
     if (!mounted) return;
     state = AsyncValue.data(updated);
   }
 
+  void _onMarkerRevision() {
+    if (mounted) unawaited(_reload());
+  }
+
+  @override
+  void dispose() {
+    _marker.revision.removeListener(_onMarkerRevision);
+    super.dispose();
+  }
+
+  // ── Wird marker actions ─────────────────────────────────────────────────
+
   Future<PlaceOutcome> placeMarker(int page, int color) async {
     final outcome = await _marker.placeMarker(page, color);
-    await _reloadLocal();
+    await _reload();
     return outcome;
   }
 
   Future<MoveOutcome> moveMarker(int target) async {
     final outcome = await _marker.moveMarker(target);
-    await _reloadLocal();
+    await _reload();
     return outcome;
   }
 
   Future<UndoOutcome> undoMove() async {
     final outcome = await _marker.undoMove();
-    await _reloadLocal();
+    await _reload();
     return outcome;
   }
 
   Future<KhatmaOutcome> completeKhatma() async {
     final outcome = await _marker.completeKhatma();
-    await _reloadLocal();
+    await _reload();
     return outcome;
   }
 
   Future<void> restartWird() async {
     await _marker.restartWird();
-    await _reloadLocal();
+    await _reload();
   }
 
   Future<void> refresh() async {
@@ -215,7 +230,7 @@ class WirdNotifier extends StateNotifier<AsyncValue<WirdState>> {
 
   Future<void> toggleJuzCompleted(int juzNo) async {
     await _wird.toggleJuzCompleted(juzNo);
-    final updatedState = await _wird.getFullState();
+    final updatedState = await _marker.compose(await _wird.getFullState());
     if (!mounted) return;
     state = AsyncValue.data(updatedState);
   }
@@ -236,7 +251,7 @@ class WirdNotifier extends StateNotifier<AsyncValue<WirdState>> {
     final newSettings = current.settings.copyWith(countedBookmarkPages: updatedCounted);
     await _wird.updateSettings(newSettings);
 
-    final updatedState = await _wird.getFullState();
+    final updatedState = await _marker.compose(await _wird.getFullState());
     if (!mounted) return toMark.length;
     state = AsyncValue.data(updatedState);
     return toMark.length;
@@ -244,7 +259,7 @@ class WirdNotifier extends StateNotifier<AsyncValue<WirdState>> {
 
   Future<void> setLinkedBookmarkColor(String colorName, Set<int> initialPages) async {
     await _wird.setLinkedBookmarkColor(colorName, initialPages);
-    final updatedState = await _wird.getFullState();
+    final updatedState = await _marker.compose(await _wird.getFullState());
     if (!mounted) return;
     state = AsyncValue.data(updatedState);
   }
@@ -253,7 +268,7 @@ class WirdNotifier extends StateNotifier<AsyncValue<WirdState>> {
   Future<int> syncBookmarkPages(Set<int> currentBookmarkPages) async {
     final added = await _wird.syncBookmarkPages(currentBookmarkPages);
     if (added > 0) {
-      final updatedState = await _wird.getFullState();
+      final updatedState = await _marker.compose(await _wird.getFullState());
       if (!mounted) return added;
       state = AsyncValue.data(updatedState);
     }
@@ -261,8 +276,10 @@ class WirdNotifier extends StateNotifier<AsyncValue<WirdState>> {
   }
 
   Future<void> resetAllProgress() async {
-    await _wird.resetAllProgress();
-    final updatedState = await _wird.getFullState();
+    // Wipes streak, totals, history, juz and legacy khatma data, then saves a
+    // restarted marker record (a tombstone when there was none).
+    await _marker.resetAll();
+    final updatedState = await _marker.compose(await _wird.getFullState());
     if (!mounted) return;
     state = AsyncValue.data(updatedState);
   }
@@ -271,7 +288,7 @@ class WirdNotifier extends StateNotifier<AsyncValue<WirdState>> {
   Future<int> resetJuzForKhatma() async {
     final count = await _wird.recordKhatma();
     await _wird.resetAllJuz();
-    final updatedState = await _wird.getFullState();
+    final updatedState = await _marker.compose(await _wird.getFullState());
     if (!mounted) return count;
     state = AsyncValue.data(updatedState);
     return count;
@@ -280,7 +297,7 @@ class WirdNotifier extends StateNotifier<AsyncValue<WirdState>> {
   /// Records a khatma without resetting juz (used for page mode completion). Returns new khatm count.
   Future<int> recordPageKhatma() async {
     final count = await _wird.recordKhatma();
-    final updatedState = await _wird.getFullState();
+    final updatedState = await _marker.compose(await _wird.getFullState());
     if (!mounted) return count;
     state = AsyncValue.data(updatedState);
     return count;

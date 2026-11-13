@@ -18,6 +18,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../models/wird.dart';
 import '../models/wird_marker.dart';
 import 'wird_marker_logic.dart';
 import 'wird_service.dart';
@@ -200,6 +201,11 @@ class WirdMarkerService {
     await prefs.remove(undoKey);
     revision.value++;
   }
+
+  /// Builds the state the UI shows: the service state [base] plus the local
+  /// marker and undo records (see `composeWirdState`). Local reads only.
+  Future<WirdState> compose(WirdState base) async =>
+      composeWirdState(base, await load(), await loadUndo(), _today());
 
   /// Khatma count of the local record. 0 with no record. No cloud call.
   Future<int> khatmaCountLocal() async => (await load())?.khatmaCount ?? 0;

@@ -1,6 +1,7 @@
-// P3 cases only: the clock seam, creditPages and removePages. The cases for
-// markDayComplete, undoComplete, toggleJuzCompleted (P4a) and for the end of
-// the wird_total_pages_read mirror (P4b) are added in those phases.
+// P3 cases: the clock seam, creditPages and removePages. P4a cases:
+// markDayComplete, undoComplete and toggleJuzCompleted (completion rule,
+// manualCredit). The cases for the end of the wird_total_pages_read mirror are
+// added in P4b.
 import 'dart:convert';
 
 import 'package:aura_app/core/models/wird.dart';
@@ -405,6 +406,280 @@ void main() {
       await s.removePages(1,
           dateKey: _today, removeCredit: false, restoreCurrentPage: 1);
       await pumpEventQueue();
+    });
+  });
+
+  group('P4a: Mark Complete and Undo complete', () {
+    // Juz mode goal 1: seeded directly, because updateSettings would schedule
+    // platform reminders.
+    Map<String, Object> juzSettings({int goal = 1}) => {
+          'wird_settings': jsonEncode(
+              WirdSettings(wirdUnit: WirdUnit.juz, dailyJuzGoal: goal)
+                  .toJson()),
+        };
+
+    test('markDayComplete on a new day: streak only, no pages, manualCredit',
+        () async {
+      final s = _service();
+      await s.markDayComplete();
+      final e = await _todayEntry();
+      expect(e!['isCompleted'], isTrue);
+      expect(e['manualCredit'], isTrue);
+      expect(e['pagesRead'], 0);
+      expect(e['startPage'], 1);
+      expect(e['currentPage'], 1);
+      final p = await _prefs();
+      expect(p.getInt('wird_streak_count'), 1);
+      expect(p.getString('wird_streak_date'), _today);
+      expect(p.getInt('wird_total_days_completed'), 1);
+      expect(p.getInt('wird_total_pages_read') ?? 0, 0,
+          reason: 'a manual completion adds no pages');
+    });
+
+    test('markDayComplete keeps the fields of an incomplete entry', () async {
+      _seed({
+        'wird_progress_history': jsonEncode([
+          {
+            ..._entry(pagesRead: 2, startPage: 31, currentPage: 33),
+            'juzCompletedToday': [4]
+          }
+        ]),
+      });
+      final s = _service();
+      await s.markDayComplete();
+      final e = await _todayEntry();
+      expect(e!['pagesRead'], 2);
+      expect(e['startPage'], 31);
+      expect(e['currentPage'], 33);
+      expect(e['juzCompletedToday'], [4]);
+      expect(e['isCompleted'], isTrue);
+      expect(e['manualCredit'], isTrue);
+    });
+
+    test('markDayComplete does nothing on a day already complete by pages',
+        () async {
+      final s = _service();
+      await s.creditPages(5, fromPage: 1, toPage: 6);
+      await s.markDayComplete();
+      final e = await _todayEntry();
+      expect(e!.containsKey('manualCredit'), isFalse,
+          reason: 'no manualCredit set');
+      final p = await _prefs();
+      expect(p.getInt('wird_streak_count'), 1);
+      expect(p.getInt('wird_total_days_completed'), 1);
+    });
+
+    test('markDayComplete twice gives one credit', () async {
+      final s = _service();
+      await s.markDayComplete();
+      await s.markDayComplete();
+      final p = await _prefs();
+      expect(p.getInt('wird_streak_count'), 1);
+      expect(p.getInt('wird_total_days_completed'), 1);
+    });
+
+    test('markDayComplete works in juz mode with no juz and adds no juz',
+        () async {
+      _seed(juzSettings());
+      final s = _service();
+      await s.markDayComplete();
+      final e = await _todayEntry();
+      expect(e!['isCompleted'], isTrue);
+      expect(e['manualCredit'], isTrue);
+      expect(e['juzCompletedToday'], isEmpty);
+    });
+
+    test('undoComplete does nothing on a day completed by pages', () async {
+      final s = _service();
+      await s.creditPages(5, fromPage: 1, toPage: 6);
+      await s.undoComplete();
+      final e = await _todayEntry();
+      expect(e!['isCompleted'], isTrue);
+      expect(e['pagesRead'], 5);
+      expect((await _prefs()).getInt('wird_streak_count'), 1);
+    });
+
+    test(
+        'undoComplete after Mark Complete rolls back the credit and leaves pages alone',
+        () async {
+      _seed({
+        'wird_progress_history':
+            jsonEncode([_entry(pagesRead: 2, currentPage: 3)]),
+      });
+      final s = _service();
+      await s.markDayComplete();
+      await s.undoComplete();
+      final e = await _todayEntry();
+      expect(e!['isCompleted'], isFalse);
+      expect(e['pagesRead'], 2, reason: 'pages are untouched');
+      expect(e['manualCredit'] ?? false, isFalse);
+      final p = await _prefs();
+      expect(p.getInt('wird_streak_count'), 0);
+      expect(p.containsKey('wird_streak_date'), isFalse);
+      expect(p.getInt('wird_total_days_completed'), 0);
+    });
+
+    test('undoComplete keeps the day complete when pages still reach the goal',
+        () async {
+      final s = _service();
+      await s.creditPages(3, fromPage: 1, toPage: 4);
+      await s.markDayComplete();
+      await s.creditPages(3, fromPage: 4, toPage: 7); // 6 pages >= goal 5
+      await s.undoComplete();
+      final e = await _todayEntry();
+      expect(e!['isCompleted'], isTrue);
+      expect(e['manualCredit'] ?? false, isFalse);
+      final p = await _prefs();
+      expect(p.getInt('wird_streak_count'), 1, reason: 'streak untouched');
+      expect(p.getInt('wird_total_days_completed'), 1);
+    });
+
+    test(
+        'undoComplete in juz mode keeps the day complete when juz reach the goal',
+        () async {
+      _seed(juzSettings());
+      final s = _service();
+      await s.markDayComplete();
+      await s.toggleJuzCompleted(1); // juz goal 1 reached
+      await s.undoComplete();
+      final e = await _todayEntry();
+      expect(e!['isCompleted'], isTrue);
+      expect((await _prefs()).getInt('wird_streak_count'), 1);
+    });
+
+    test('undoComplete in juz mode with no juz rolls back', () async {
+      _seed(juzSettings());
+      final s = _service();
+      await s.markDayComplete();
+      await s.undoComplete();
+      expect((await _todayEntry())!['isCompleted'], isFalse);
+      expect((await _prefs()).getInt('wird_streak_count'), 0);
+    });
+
+    test(
+        'undoComplete rolls the streak back to yesterday when it was longer than 1',
+        () async {
+      _seed({'wird_streak_count': 4, 'wird_streak_date': _yesterday});
+      final s = _service();
+      await s.markDayComplete();
+      expect((await _prefs()).getInt('wird_streak_count'), 5);
+      await s.undoComplete();
+      final p = await _prefs();
+      expect(p.getInt('wird_streak_count'), 4);
+      expect(p.getString('wird_streak_date'), _yesterday);
+    });
+
+    test('undoComplete leaves the streak when streakDate is not today (guard)',
+        () async {
+      _seed({
+        'wird_progress_history':
+            jsonEncode([_entry(isCompleted: true, manualCredit: true)]),
+        'wird_streak_count': 3,
+        'wird_streak_date': _yesterday,
+        'wird_total_days_completed': 4,
+      });
+      final s = _service();
+      await s.undoComplete();
+      final p = await _prefs();
+      expect(p.getInt('wird_streak_count'), 3);
+      expect(p.getInt('wird_total_days_completed'), 3);
+    });
+  });
+
+  group('P4a: toggleJuzCompleted', () {
+    Map<String, Object> juzSettings({int goal = 1}) => {
+          'wird_settings': jsonEncode(
+              WirdSettings(wirdUnit: WirdUnit.juz, dailyJuzGoal: goal)
+                  .toJson()),
+        };
+
+    test('reaching the goal gives the credit, unchecking takes it back',
+        () async {
+      _seed(juzSettings());
+      final s = _service();
+      await s.toggleJuzCompleted(1);
+      var p = await _prefs();
+      expect(p.getInt('wird_streak_count'), 1);
+      expect(p.getInt('wird_total_days_completed'), 1);
+      await s.toggleJuzCompleted(1);
+      p = await _prefs();
+      expect(p.getInt('wird_streak_count'), 0);
+      expect(p.containsKey('wird_streak_date'), isFalse);
+      expect(p.getInt('wird_total_days_completed'), 0);
+    });
+
+    test('unchecking rolls a longer streak back to yesterday', () async {
+      _seed({
+        ...juzSettings(),
+        'wird_streak_count': 2,
+        'wird_streak_date': _yesterday
+      });
+      final s = _service();
+      await s.toggleJuzCompleted(1);
+      await s.toggleJuzCompleted(1);
+      final p = await _prefs();
+      expect(p.getInt('wird_streak_count'), 2);
+      expect(p.getString('wird_streak_date'), _yesterday);
+    });
+
+    test('on a manually credited day, unchecking a juz keeps the streak',
+        () async {
+      _seed(juzSettings());
+      final s = _service();
+      await s.markDayComplete();
+      await s.toggleJuzCompleted(1);
+      await s.toggleJuzCompleted(1);
+      final e = await _todayEntry();
+      expect(e!['isCompleted'], isTrue);
+      expect(e['manualCredit'], isTrue);
+      final p = await _prefs();
+      expect(p.getInt('wird_streak_count'), 1);
+      expect(p.getInt('wird_total_days_completed'), 1);
+    });
+
+    test(
+        'the guard: streakDate other than today leaves the streak, the day count drops',
+        () async {
+      _seed({
+        ...juzSettings(),
+        'wird_progress_history': jsonEncode([
+          {
+            ..._entry(isCompleted: true),
+            'juzCompletedToday': [1]
+          }
+        ]),
+        'wird_completed_juz': jsonEncode([1]),
+        'wird_streak_count': 3,
+        'wird_streak_date': _yesterday,
+        'wird_total_days_completed': 4,
+      });
+      final s = _service();
+      await s.toggleJuzCompleted(1); // uncheck
+      final p = await _prefs();
+      expect(p.getInt('wird_streak_count'), 3);
+      expect(p.getInt('wird_total_days_completed'), 3);
+    });
+  });
+
+  group('P4a: resetAllProgress', () {
+    test('clears juz and legacy khatma fields and the history', () async {
+      _seed({
+        'wird_completed_juz': jsonEncode([1, 2]),
+        'wird_khatm_count': 2,
+        'wird_khatm_dates': jsonEncode(['2026-01-01']),
+        'wird_progress_history':
+            jsonEncode([_entry(pagesRead: 5, isCompleted: true)]),
+        'wird_streak_count': 2,
+        'wird_streak_date': _today,
+      });
+      final s = _service();
+      await s.resetAllProgress();
+      final p = await _prefs();
+      expect(jsonDecode(p.getString('wird_completed_juz')!), isEmpty);
+      expect(p.getInt('wird_khatm_count'), 0);
+      expect(jsonDecode(p.getString('wird_khatm_dates')!), isEmpty);
+      expect(await _history(), isEmpty);
+      expect(p.getInt('wird_streak_count'), 0);
     });
   });
 

@@ -776,6 +776,41 @@ void main() {
       expect(await svc.loadUndo(), isNull);
     });
 
+    test('placeMarker at page 604 works (604 is a legal marker page)',
+        () async {
+      expect(await svc.placeMarker(604, 0xFF1E88E5), isA<Placed>());
+      final r = (await svc.load())!;
+      expect(r.markerPage, 604);
+      expect(r.startPage, 604);
+      expect(await svc.progressTotalLocal(), 0);
+      // From 604 there is no forward move; the khatma counts exactly one page.
+      expect((await svc.moveMarker(604) as MoveFailed).failure,
+          MarkerFailure.notForward);
+      final k = await svc.completeKhatma() as Completed;
+      expect(k.pagesAdded, 1);
+    });
+
+    test('placeMarker at page 1 works', () async {
+      expect(await svc.placeMarker(1, 0xFF1E88E5), isA<Placed>());
+      expect((await svc.load())!.markerPage, 1);
+    });
+
+    test('a move then undo after a manual completion keeps the credit',
+        () async {
+      await svc.placeMarker(31, 0xFF1E88E5);
+      await wird.markDayComplete();
+      await svc.moveMarker(33); // 2 pages: below the goal, no new credit
+      expect((await svc.loadUndo())!.grantedStreakCredit, isFalse);
+      await svc.undoMove();
+      final today = (await wird.getTodayProgress())!;
+      expect(today.isCompleted, isTrue);
+      expect(today.manualCredit, isTrue);
+      expect(today.pagesRead, 0);
+      final p = await _prefs();
+      expect(p.getInt('wird_streak_count'), 1);
+      expect(p.getInt('wird_total_days_completed'), 1);
+    });
+
     test('placeMarker fails MARKER_EXISTS when a marker exists', () async {
       await svc.placeMarker(31, 0xFF1E88E5);
       final out = await svc.placeMarker(50, 0xFF00838F);
