@@ -259,7 +259,7 @@ pushIfNewer(uid, record):             # used by undo; one Source.server read, th
 *   **Close prompt:** the `showWirdPrompt` condition (`quran_reader_screen.dart:313-316`) becomes "page mode, marker exists, current page is 604". The dialog title is "Count N pages as read?" with N = `604 - m + 1` (Arabic numerals through `NumberFormatter`). The body says the khatma completes and cannot be undone. When the marker is already on page 604 the body uses a second text: the marker is already on page 604, so only this page is counted. Yes calls the provider's khatma action, then shows `KhatmaCelebrationScreen` with the combined count. The old call pair `recordPageKhatma` plus `markComplete` is removed.
     *   **No goal gate (decided 2026-11-13).** The current condition `!wirdAlreadyDone` (`quran_reader_screen.dart:316`) is removed, so the prompt shows on every close at page 604 with a marker, even if today's goal is met or the marker is already on 604. A kept gate would make page 604 uncountable for a user who already met today's goal.
     *   **"Keep reading" stays.** The dialog keeps its three buttons (`quran_reader_screen.dart:331-344`): keep reading (stay in the reader, change nothing), No (close the reader, change nothing) and Yes. Only the title, body and Yes text change, and they state the page count.
-*   **Replace-bookmark dialog** (`quran_reader_screen.dart:244-292`): kept for red, green and orange. **Decided 2026-11-13:** the title becomes "Bookmark" and the question becomes "Add another bookmark or replace one?", so neither mentions the Wird or "using" a color. The strings are new in English and Arabic, and the product owner reviews the Arabic. The old `wird_bookmark_mode_*` strings (and `wird_bookmark_pages_title`, if nothing else uses it) are removed after a search shows no other use.
+*   **Replace-bookmark dialog** (`quran_reader_screen.dart:244-292`): kept for red, green and orange. **Decided 2026-11-13:** the title becomes "Bookmark" and the question becomes "Add another bookmark or replace one?", so neither mentions the Wird or "using" a color. The strings are new in English and Arabic, and the Arabic was reviewed by the product owner (native Arabic speaker) on 2026-11-14. The old `wird_bookmark_mode_*` strings (and `wird_bookmark_pages_title`, if nothing else uses it) are removed after a search shows no other use.
 *   **Wird tab:** remove the bookmark auto-sync block (`wird_tab.dart:171-213`), `_syncInProgress`, the manual page entry dialog and its callers, and the choose-one helper `countedPagesAfterChooseOne` (`wird_tab.dart:26`). "Add from Bookmarks" opens a list of ordinary bookmarks (all colors), then the 12-color grid, then sets the marker. With no bookmarks it shows the empty state with an "Open reader" button. New controls: "Undo last move" (separate from the existing "undo complete" control, which stays and is shown only when today's entry has `manualCredit`; the `_showUndo` flag is removed), "Restart Wird" with its dialog, and a relocated "Reset All Progress" with its own dialog. Each dialog lists exactly what it deletes.
     *   **Undo placement (decided 2026-11-13):** two entry points that call the same provider method `undoMove()`. After each move, the reader shows a snackbar with an "Undo" action. The Wird tab shows an "Undo last move" button all day while a valid undo record exists for today. Both share one connection check ("Connect to undo" when a signed-in user is offline) and one result message. The snackbar layout is checked on a phone and a Windows window.
     *   **Placement (decided 2026-11-13):** "Restart Wird" and "Reset All Progress" are the last two rows of `_buildSettingsSection` (`wird_tab.dart:1200`), separated by a divider, with Reset All Progress last and in red, in both modes. The two existing copies of the reset button (`wird_tab.dart:530`, `:1074`) are removed. "Restart Wird" is hidden in juz mode, because juz mode has no marker.
@@ -848,10 +848,10 @@ After `APPLY_CLOUD` or `DISCARD_LOCAL` the undo record is cleared when it no lon
 
 #### 14. `assets/translations/en.json` and `assets/translations/ar.json` (Modify)
 
-*   **Type / Scope**: Strings. New and changed keys in P4a (`quran_stats_avg_daily` in P4b), removed keys in P5. Every key is in both files. The Arabic text below is a draft for the product owner to review. A `%d` is filled after `.tr()`: the code replaces `%d` with the number passed through `NumberFormatter.withArabicNumeralsByLanguage`, so Arabic shows Arabic digits; no string contains a literal digit.
+*   **Type / Scope**: Strings. New and changed keys in P4a (`quran_stats_avg_daily` in P4b), removed keys in P5. Every key is in both files. The Arabic text below was reviewed by the product owner (native Arabic speaker) on 2026-11-14 (P4a strings). A `%d` is filled after `.tr()`: the code replaces `%d` with the number passed through `NumberFormatter.withArabicNumeralsByLanguage`, so Arabic shows Arabic digits; no string contains a literal digit.
 *   **Proposed Changes**: New keys:
 
-| Key | English | Arabic (draft) |
+| Key | English | Arabic |
 | --- | --- | --- |
 | `wird_marker_move_here` | Move Wird marker here | انقل علامة الورد إلى هنا |
 | `wird_marker_confirm_title` | Count %d pages as read? | هل تحتسب %d صفحة كمقروءة؟ |
@@ -882,7 +882,7 @@ After `APPLY_CLOUD` or `DISCARD_LOCAL` the undo record is cleared when it no lon
 *   The snackbar "Undo" action reuses the existing key `wird_undo` ("Undo", `en.json:304`). The earlier draft key `wird_undo_action` is dropped as a duplicate.
 *   Changed text, same key (the Arabic is replaced too; the old Arabic values were not read for this spec):
 
-| Key | English | Arabic (draft) |
+| Key | English | Arabic |
 | --- | --- | --- |
 | `khatma_finished_title` | Count %d pages as read? | هل تحتسب %d صفحة كمقروءة؟ |
 | `khatma_finished_body` | This completes your khatma. It cannot be undone. | بهذا تكون قد أتممت ختمة. لا يمكن التراجع عن هذا. |
@@ -890,9 +890,9 @@ After `APPLY_CLOUD` or `DISCARD_LOCAL` the undo record is cleared when it no lon
 | `wird_reset_confirm_body` | This permanently deletes your streak, all history, completed juz, totals, khatmas and your Wird marker. Your settings are kept. This cannot be undone. | سيتم حذف تتابع الأيام وكل السجل والأجزاء المكتملة والإجماليات والختمات وعلامة الورد نهائياً. تبقى إعداداتك كما هي. لا يمكن التراجع عن هذا. |
 | `quran_stats_avg_daily` | Average per completed day | المتوسط لكل يوم مكتمل |
 
-*   Tutorial strings that describe the removed controls (P4a; the existing English and Arabic values of the four keys below were read from `en.json` and `ar.json`; the new Arabic is a draft for the owner):
+*   Tutorial strings that describe the removed controls (P4a; the existing English and Arabic values of the four keys below were read from `en.json` and `ar.json`; the new Arabic was reviewed by the product owner (native Arabic speaker) on 2026-11-14):
 
-| Key | English | Arabic (draft) |
+| Key | English | Arabic |
 | --- | --- | --- |
 | `tutorial_wird_body` | Set your daily reading goal in pages or Juz. Track your streak and today's progress, and place a Wird marker in the reader to count the pages you pass. | حدد هدف قراءتك اليومي بالصفحات أو الأجزاء. تتبع سلسلتك وتقدم اليوم، وضع علامة الورد في المصحف لتُحتسب الصفحات التي تتجاوزها. |
 | `tutorial_wird_progress_body` | The ring shows how many pages you have read today out of your daily goal. Move your Wird marker in the reader to count pages, or mark the day complete. | تُبيّن الدائرة عدد الصفحات التي قرأتها اليوم من هدفك اليومي. حرّك علامة الورد في المصحف لاحتساب الصفحات، أو اعتبر اليوم مكتملاً. |
