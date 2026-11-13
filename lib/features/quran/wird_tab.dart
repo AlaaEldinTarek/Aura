@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:aura_app/core/constants/app_constants.dart';
 import 'package:aura_app/core/models/wird.dart';
-import 'package:aura_app/core/models/quran_models.dart';
+import 'package:aura_app/core/models/wird_marker.dart';
+import 'package:aura_app/core/providers/auth_provider.dart' show isLoggedInProvider;
+import 'package:aura_app/core/providers/connectivity_provider.dart' show isOnlineProvider;
 import 'package:aura_app/core/providers/wird_provider.dart';
 import 'package:aura_app/core/providers/quran_provider.dart';
 import 'package:aura_app/core/utils/number_formatter.dart';
@@ -12,6 +14,7 @@ import 'package:aura_app/core/widgets/tutorial_overlay.dart';
 import 'package:aura_app/core/services/shared_preferences_service.dart';
 import 'quran_reader_screen.dart';
 import 'khatma_celebration_screen.dart';
+import 'wird_marker_widgets.dart';
 import 'package:aura_app/core/theme/app_typography.dart';
 import 'package:aura_app/core/theme/app_spacing.dart';
 
@@ -69,8 +72,7 @@ class _WirdContentView extends ConsumerStatefulWidget {
 }
 
 class _WirdContentViewState extends ConsumerState<_WirdContentView> {
-  bool _showUndo = true;
-  bool _syncInProgress = false;
+  bool _undoBusy = false;
   bool _khatmaHandled = false;
 
   final _streakKey = GlobalKey();
@@ -146,8 +148,10 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
 
   Future<void> _handleJuzKhatma() async {
     if (!mounted) return;
-    final count = await ref.read(wirdStateProvider.notifier).resetJuzForKhatma();
+    final legacyCount = await ref.read(wirdStateProvider.notifier).resetJuzForKhatma();
     if (!mounted) return;
+    // The reloaded state holds the combined count (juz + page-mode khatmas).
+    final count = ref.read(wirdStateProvider).valueOrNull?.khatmCount ?? legacyCount;
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -167,50 +171,6 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
     final wirdAsync = ref.watch(wirdStateProvider);
     final state = wirdAsync.valueOrNull ?? widget.initialState;
     final isJuzMode = state.settings.wirdUnit == WirdUnit.juz;
-
-    // Auto-sync: watch bookmarks and sync any new pages not yet counted
-    final linkedColor = state.settings.linkedBookmarkColor;
-    if (linkedColor != null && !_syncInProgress) {
-      final bookmarkColor = BookmarkColor.values.firstWhere(
-        (c) => c.name == linkedColor,
-        orElse: () => BookmarkColor.green,
-      );
-      final bookmarks = ref.watch(quranBookmarksProvider).valueOrNull ?? [];
-      final currentPages = bookmarks
-          .where((b) => b.color == bookmarkColor)
-          .map((b) => b.page)
-          .toSet();
-      final counted = state.settings.countedBookmarkPages.toSet();
-      final newPages = currentPages.difference(counted);
-      if (newPages.isNotEmpty) {
-        _syncInProgress = true;
-        if (isJuzMode) {
-          final juzList = ref.watch(juzListProvider).valueOrNull ?? [];
-          if (juzList.isNotEmpty) {
-            // Mark all juz 1..maxJuz sequentially (bookmark in juz 4 implies juz 1-4 done)
-            final maxJuz = currentPages.map((page) {
-              return juzList.lastWhere((j) => j.startPage <= page, orElse: () => juzList.first).juzNo;
-            }).reduce((a, b) => a > b ? a : b);
-            final toMark = Set<int>.from(List.generate(maxJuz, (i) => i + 1));
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (!mounted) return;
-              ref.read(wirdStateProvider.notifier).markJuzFromBookmarks(toMark, currentPages).then((_) {
-                if (mounted) setState(() => _syncInProgress = false);
-              });
-            });
-          } else {
-            _syncInProgress = false;
-          }
-        } else {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (!mounted) return;
-            ref.read(wirdStateProvider.notifier).syncBookmarkPages(currentPages).then((_) {
-              if (mounted) setState(() => _syncInProgress = false);
-            });
-          });
-        }
-      }
-    }
 
     // Detect when all 30 juz are completed — trigger khatma celebration
     // Also scroll to first uncompleted juz whenever completed list changes
@@ -269,7 +229,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
           SizedBox(key: _progressKey, child: _buildJuzProgressCard(context, state, primary, isDark, allCompletedJuz, juzReadToday, dailyJuzGoal, isCompleted)),
           SizedBox(height: gapS),
           if (isCompleted)
-            _buildCompletedBanner(context, primary, isDark)
+            _buildCompletedBanner(context, state, primary, isDark)
           else ...[
             SizedBox(key: _actionsKey, child: _buildJuzActions(context, state, primary)),
             SizedBox(height: gapS),
@@ -279,7 +239,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
           SizedBox(key: _progressKey, child: _buildProgressCard(context, state, primary, isDark, pagesRead, goal, isCompleted, progressRatio)),
           SizedBox(height: gapS),
           if (isCompleted)
-            _buildCompletedBanner(context, primary, isDark)
+            _buildCompletedBanner(context, state, primary, isDark)
           else ...[
             SizedBox(key: _actionsKey, child: _buildActionButtons(context, state, primary, progress)),
             SizedBox(height: gapS),
@@ -296,41 +256,105 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
 
   // ── Completed Banner ──────────────────────────────────────────────────────
 
-  Widget _buildCompletedBanner(BuildContext context, Color primary, bool isDark) {
+  Widget _buildCompletedBanner(BuildContext context, WirdState state, Color primary, bool isDark) {
     final ts = MediaQuery.textScalerOf(context);
+    final offline = ref.watch(isLoggedInProvider) && !ref.watch(isOnlineProvider);
     return Container(
       padding: EdgeInsets.all(ts.scale(16.0)),
       decoration: BoxDecoration(
         color: Colors.green.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.check_circle, color: Colors.green),
-          SizedBox(width: ts.scale(12.0)),
-          Expanded(
-            child: Text(
-              'wird_completed_today'.tr(),
-              style: AppTypography.label.copyWith(color: Colors.green),
-            ),
-          ),
-          if (_showUndo)
-            TextButton(
-              onPressed: () {
-                ref.read(wirdStateProvider.notifier).undoComplete();
-                setState(() => _showUndo = false);
-              },
-              style: TextButton.styleFrom(
-                foregroundColor: Colors.orange,
-                padding: EdgeInsets.symmetric(horizontal: ts.scale(12.0)),
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.green),
+              SizedBox(width: ts.scale(12.0)),
+              Expanded(
+                child: Text(
+                  'wird_completed_today'.tr(),
+                  style: AppTypography.label.copyWith(color: Colors.green),
+                ),
               ),
-              child: Text('wird_undo'.tr()),
-            ),
+              // One controller: shown only when today was completed by "Mark Complete".
+              if (state.todayProgress?.manualCredit == true)
+                TextButton(
+                  onPressed: () => ref.read(wirdStateProvider.notifier).undoComplete(),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.orange,
+                    padding: EdgeInsets.symmetric(horizontal: ts.scale(12.0)),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text('wird_undo'.tr()),
+                ),
+            ],
+          ),
+          // A move that completes the goal still needs its undo (page mode only).
+          WirdUndoMoveButton(
+            state: state,
+            offline: offline,
+            busy: _undoBusy,
+            onPressed: _undoLastMove,
+          ),
         ],
       ),
     );
+  }
+
+  /// Undoes the last marker move and shows the result (one mapping, shared with
+  /// the reader snackbar).
+  Future<void> _undoLastMove() async {
+    if (_undoBusy) return;
+    setState(() => _undoBusy = true);
+    try {
+      final outcome = await ref.read(wirdStateProvider.notifier).undoMove();
+      if (mounted) showUndoOutcome(context, outcome);
+    } finally {
+      if (mounted) setState(() => _undoBusy = false);
+    }
+  }
+
+  /// Bookmark pick sheet, then the color grid, then the marker is placed.
+  /// Cancelling either sheet changes nothing.
+  Future<void> _addFromBookmarks() async {
+    final page = await WirdBookmarkPickSheet.show(
+      context,
+      onOpenReader: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const QuranReaderScreen(suraNo: 1, initialPage: 1)),
+      ),
+    );
+    if (page == null || !mounted) return;
+    final color = await WirdColorGridSheet.show(context);
+    if (color == null || !mounted) return;
+    final outcome =
+        await ref.read(wirdStateProvider.notifier).placeMarker(page, color.toARGB32());
+    if (outcome is PlaceFailed) debugPrint('⚠️ [WIRD] Marker not placed: ${outcome.failure}');
+  }
+
+  Future<void> _confirmRestart(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('wird_restart_confirm_title'.tr()),
+        content: Text('wird_restart_confirm_body'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('cancel'.tr()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text('wird_restart'.tr()),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await ref.read(wirdStateProvider.notifier).restartWird();
   }
 
   // ── Juz Progress Card ─────────────────────────────────────────────────────
@@ -487,10 +511,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
           children: [
             Expanded(
               child: OutlinedButton.icon(
-                onPressed: () {
-                  ref.read(wirdStateProvider.notifier).markComplete();
-                  setState(() => _showUndo = true);
-                },
+                onPressed: () => ref.read(wirdStateProvider.notifier).markComplete(),
                 icon: Icon(Icons.check, size: ts.scale(18.0)),
                 // scaleDown shrinks the label at large system fonts instead of
                 // truncating it to "Mark ...".
@@ -510,28 +531,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                 ),
               ),
             ),
-            SizedBox(width: ts.scale(8.0)),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => _showBookmarkPagesSheetJuz(context, state),
-                icon: Icon(Icons.bookmark_outline, size: ts.scale(18.0)),
-                label: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text('wird_add_from_bookmarks'.tr()),
-                ),
-              ),
-            ),
           ],
-        ),
-        SizedBox(height: ts.scale(4.0)),
-        SizedBox(
-          width: double.infinity,
-          child: TextButton.icon(
-            onPressed: () => _confirmReset(context),
-            icon: Icon(Icons.refresh, size: ts.scale(16.0), color: Colors.red.shade400),
-            label: Text('wird_reset_today'.tr(),
-                style: TextStyle(color: Colors.red.shade400)),
-          ),
         ),
       ],
     );
@@ -580,135 +580,6 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
     );
     if (confirmed != true || !mounted) return;
     await ref.read(wirdStateProvider.notifier).resetAllProgress();
-    setState(() => _showUndo = false);
-  }
-
-  // ── Bookmark Pages Sheet (Juz mode) ───────────────────────────────────────
-
-  void _showBookmarkPagesSheetJuz(BuildContext context, WirdState state) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => _BookmarkPagesSheet(
-        lang: widget.lang,
-        onUseAll: (pageCount, lastPage, colorName, allPages) async {
-          final juzList = ref.read(juzListProvider).valueOrNull ?? [];
-          if (juzList.isEmpty) {
-            Navigator.pop(context);
-            return;
-          }
-          final maxJuz = allPages.map((page) {
-            return juzList.lastWhere((j) => j.startPage <= page, orElse: () => juzList.first).juzNo;
-          }).reduce((a, b) => a > b ? a : b);
-          final toMark = Set<int>.from(List.generate(maxJuz, (i) => i + 1));
-          Navigator.pop(context);
-          final added = await ref.read(wirdStateProvider.notifier).markJuzFromBookmarks(toMark, allPages);
-          if (!mounted) return;
-          final msg = added > 0
-              ? 'wird_bookmark_juz_marked'.tr().replaceAll('%d', added.toString())
-              : 'wird_bookmark_no_new_juz'.tr();
-          final tsSnack = MediaQuery.textScalerOf(context);
-          final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(msg),
-              duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
-              margin: EdgeInsets.only(bottom: tsSnack.scale(82.0), left: tsSnack.scale(16.0), right: tsSnack.scale(16.0)),
-            ),
-          );
-          Future.delayed(const Duration(seconds: 2), snackCtrl.close);
-        },
-        onChooseOne: (color, colorBookmarks) {
-          Navigator.pop(context);
-          _showBookmarkListSheet(context, color, colorBookmarks, isJuzMode: true);
-        },
-      ),
-    );
-  }
-
-  // ── Bookmark List Sheet (individual bookmark selection) ───────────────────
-
-  void _showBookmarkListSheet(
-    BuildContext context,
-    BookmarkColor color,
-    List<QuranBookmark> bookmarks, {
-    required bool isJuzMode,
-  }) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => _BookmarkListSheet(
-        lang: widget.lang,
-        color: color,
-        bookmarks: bookmarks,
-        onSelect: (bm) async {
-          Navigator.pop(context);
-          final pages = {bm.page};
-          if (isJuzMode) {
-            final juzList = ref.read(juzListProvider).valueOrNull ?? [];
-            if (juzList.isEmpty) return;
-            final juzNo = juzList.lastWhere((j) => j.startPage <= bm.page, orElse: () => juzList.first).juzNo;
-            final toMark = Set<int>.from(List.generate(juzNo, (i) => i + 1));
-            final added = await ref.read(wirdStateProvider.notifier).markJuzFromBookmarks(toMark, pages);
-            if (!mounted) return;
-            final msg = added > 0
-                ? 'wird_bookmark_juz_marked'.tr().replaceAll('%d', added.toString())
-                : 'wird_bookmark_no_new_juz'.tr();
-            final tsSnack2 = MediaQuery.textScalerOf(context);
-            final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(msg),
-                duration: const Duration(seconds: 2),
-                behavior: SnackBarBehavior.floating,
-                margin: EdgeInsets.only(bottom: tsSnack2.scale(82.0), left: tsSnack2.scale(16.0), right: tsSnack2.scale(16.0)),
-              ),
-            );
-            Future.delayed(const Duration(seconds: 2), snackCtrl.close);
-          } else {
-            final settings = (ref.read(wirdStateProvider).valueOrNull ?? widget.initialState).settings;
-            final choice = countedPagesAfterChooseOne(
-              linkedColor: settings.linkedBookmarkColor,
-              existingCounted: settings.countedBookmarkPages.toSet(),
-              chosenColor: color.name,
-              chosenPage: bm.page,
-              colorPages: bookmarks.map((b) => b.page).toSet(),
-            );
-            if (choice.alreadyCounted) {
-              final tsSnackDup = MediaQuery.textScalerOf(context);
-              final dupCtrl = ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('wird_bookmark_already_counted'.tr()),
-                  duration: const Duration(seconds: 2),
-                  behavior: SnackBarBehavior.floating,
-                  margin: EdgeInsets.only(bottom: tsSnackDup.scale(82.0), left: tsSnackDup.scale(16.0), right: tsSnackDup.scale(16.0)),
-                ),
-              );
-              Future.delayed(const Duration(seconds: 2), dupCtrl.close);
-              return;
-            }
-            final notifier = ref.read(wirdStateProvider.notifier);
-            await notifier.setLinkedBookmarkColor(color.name, choice.counted);
-            await notifier.recordPagesRead(1, bm.page);
-            if (!mounted) return;
-            final tsSnack3 = MediaQuery.textScalerOf(this.context);
-            final snackCtrl = ScaffoldMessenger.of(this.context).showSnackBar(
-              SnackBar(
-                content: Text('wird_bookmark_added'.tr().replaceAll('%d', '1')),
-                duration: const Duration(seconds: 2),
-                behavior: SnackBarBehavior.floating,
-                margin: EdgeInsets.only(bottom: tsSnack3.scale(82.0), left: tsSnack3.scale(16.0), right: tsSnack3.scale(16.0)),
-              ),
-            );
-            Future.delayed(const Duration(seconds: 2), snackCtrl.close);
-          }
-        },
-      ),
-    );
   }
 
   // ── Juz Grid ──────────────────────────────────────────────────────────────
@@ -973,6 +844,31 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                       '${NumberFormatter.withArabicNumeralsByLanguage(remaining.toString(), widget.lang)} ${'wird_pages_remaining'.tr()}',
                       style: AppTypography.caption.copyWith(color: secondaryColor),
                     ),
+                  if (state.marker?.markerPage != null) ...[
+                    SizedBox(height: ts.scale(6.0)),
+                    Row(
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: Color(state.marker!.color ?? kWirdMarkerPalette.first.toARGB32()),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        SizedBox(width: ts.scale(6.0)),
+                        Flexible(
+                          child: Text(
+                            'wird_marker_page_label'.tr().replaceAll(
+                                '%d',
+                                NumberFormatter.withArabicNumeralsByLanguage(
+                                    state.marker!.markerPage.toString(), widget.lang)),
+                            style: AppTypography.caption.copyWith(color: secondaryColor),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -1036,106 +932,37 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
           ],
         ),
         SizedBox(height: ts.scale(8.0)),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () => _showRecordPagesDialog(context, currentPage),
-                icon: Icon(Icons.edit_note, size: ts.scale(18.0)),
-                label: FittedBox(fit: BoxFit.scaleDown, child: Text('wird_record_pages'.tr())),
-              ),
-            ),
-            SizedBox(width: ts.scale(8.0)),
-            Expanded(
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  ref.read(wirdStateProvider.notifier).markComplete();
-                  setState(() => _showUndo = true);
-                },
-                icon: Icon(Icons.check, size: ts.scale(18.0)),
-                label: FittedBox(fit: BoxFit.scaleDown, child: Text('wird_mark_complete'.tr())),
-              ),
-            ),
-          ],
-        ),
-        SizedBox(height: ts.scale(8.0)),
         SizedBox(
           width: double.infinity,
           child: OutlinedButton.icon(
-            onPressed: () => _showBookmarkPagesSheet(context),
-            icon: Icon(Icons.bookmark_outline, size: ts.scale(18.0)),
-            label: Text('wird_add_from_bookmarks'.tr()),
+            onPressed: () => ref.read(wirdStateProvider.notifier).markComplete(),
+            icon: Icon(Icons.check, size: ts.scale(18.0)),
+            label: FittedBox(fit: BoxFit.scaleDown, child: Text('wird_mark_complete'.tr())),
           ),
         ),
-        SizedBox(height: ts.scale(4.0)),
-        SizedBox(
-          width: double.infinity,
-          child: TextButton.icon(
-            onPressed: () => _confirmReset(context),
-            icon: Icon(Icons.refresh, size: ts.scale(16.0), color: Colors.red.shade400),
-            label: Text('wird_reset_today'.tr(),
-                style: TextStyle(color: Colors.red.shade400)),
-          ),
+        WirdUndoMoveButton(
+          state: state,
+          offline: ref.watch(isLoggedInProvider) && !ref.watch(isOnlineProvider),
+          busy: _undoBusy,
+          onPressed: _undoLastMove,
         ),
-      ],
-    );
-  }
-
-  // ── Bookmark Pages Sheet ──────────────────────────────────────────────────
-
-  void _showBookmarkPagesSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (_) => _BookmarkPagesSheet(
-        lang: widget.lang,
-        onUseAll: (pageCount, lastPage, colorName, allPages) {
-          ref.read(wirdStateProvider.notifier).recordPagesRead(pageCount, lastPage);
-          ref.read(wirdStateProvider.notifier).setLinkedBookmarkColor(colorName, allPages);
-          Navigator.pop(context);
-          final tsSnack4 = MediaQuery.textScalerOf(context);
-          final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('wird_bookmark_added'.tr().replaceAll('%d', pageCount.toString())),
-              duration: const Duration(seconds: 2),
-              behavior: SnackBarBehavior.floating,
-              margin: EdgeInsets.only(bottom: tsSnack4.scale(82.0), left: tsSnack4.scale(16.0), right: tsSnack4.scale(16.0)),
+        SizedBox(height: ts.scale(8.0)),
+        if (state.marker?.markerPage == null)
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _addFromBookmarks,
+              icon: Icon(Icons.bookmark_outline, size: ts.scale(18.0)),
+              label: Text('wird_add_from_bookmarks'.tr()),
             ),
-          );
-          Future.delayed(const Duration(seconds: 2), snackCtrl.close);
-        },
-        onChooseOne: (color, colorBookmarks) {
-          Navigator.pop(context);
-          _showBookmarkListSheet(context, color, colorBookmarks, isJuzMode: false);
-        },
-      ),
-    );
-  }
-
-  // ── Record Pages Dialog (two modes) ───────────────────────────────────────
-
-  void _showRecordPagesDialog(BuildContext context, int currentPage) {
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        return StatefulBuilder(
-          builder: (ctx, setDialogState) {
-            return AlertDialog(
-              title: Text('wird_record_pages'.tr()),
-              content: _RecordPagesContent(
-                lang: widget.lang,
-                currentPage: currentPage,
-                onConfirm: (additionalPages, newPage) {
-                  ref.read(wirdStateProvider.notifier).recordPagesRead(additionalPages, newPage);
-                  Navigator.pop(ctx);
-                },
-              ),
-            );
-          },
-        );
-      },
+          )
+        else
+          Text(
+            'wird_marker_restart_hint'.tr(),
+            textAlign: TextAlign.center,
+            style: AppTypography.caption,
+          ),
+      ],
     );
   }
 
@@ -1352,434 +1179,17 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
               ),
             ),
           ],
-        ],
-      ),
-    );
-  }
-}
-
-// ── Bookmark Pages Bottom Sheet ─────────────────────────────────────────────
-
-class _BookmarkPagesSheet extends ConsumerWidget {
-  final String lang;
-  final void Function(int pageCount, int lastPage, String colorName, Set<int> allPages) onUseAll;
-  final void Function(BookmarkColor color, List<QuranBookmark> colorBookmarks) onChooseOne;
-
-  const _BookmarkPagesSheet({
-    required this.lang,
-    required this.onUseAll,
-    required this.onChooseOne,
-  });
-
-  static const _bookmarkColors = {
-    BookmarkColor.red: Color(0xFFE53935),
-    BookmarkColor.orange: Color(0xFFFB8C00),
-    BookmarkColor.green: Color(0xFF43A047),
-  };
-
-  static const _colorNameKeys = {
-    BookmarkColor.red: 'wird_bookmark_color_red',
-    BookmarkColor.orange: 'wird_bookmark_color_orange',
-    BookmarkColor.green: 'wird_bookmark_color_green',
-  };
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final bookmarksAsync = ref.watch(quranBookmarksProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final ts = MediaQuery.textScalerOf(context);
-
-    void showModeDialog(BookmarkColor color, Set<int> uniquePages, List<QuranBookmark> allBookmarks) {
-      final displayColor = _bookmarkColors[color]!;
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Row(
-            children: [
-              Container(
-                width: ts.scale(14.0), height: ts.scale(14.0),
-                decoration: BoxDecoration(color: displayColor, shape: BoxShape.circle),
-              ),
-              SizedBox(width: ts.scale(8.0)),
-              Text(_colorNameKeys[color]!.tr()),
-            ],
-          ),
-          content: Text('wird_bookmark_mode_desc'.tr()),
-          actionsAlignment: MainAxisAlignment.spaceEvenly,
-          actions: [
-            OutlinedButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                final maxPage = uniquePages.reduce((a, b) => a > b ? a : b);
-                onUseAll(uniquePages.length, maxPage, color.name, uniquePages);
-              },
-              child: Text('wird_bookmark_mode_new'.tr()),
-            ),
-            FilledButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                final colorBookmarks = allBookmarks
-                    .where((b) => b.color == color)
-                    .toList()
-                  ..sort((a, b) => b.page.compareTo(a.page));
-                onChooseOne(color, colorBookmarks);
-              },
-              child: Text('wird_bookmark_mode_update'.tr()),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Padding(
-      padding: EdgeInsets.fromLTRB(ts.scale(16.0), ts.scale(8.0), ts.scale(16.0), ts.scale(24.0)),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: ts.scale(40.0), height: 4,
-            decoration: BoxDecoration(
-              color: AppConstants.textDisabled(isDark),
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          SizedBox(height: ts.scale(16.0)),
-          Text('wird_bookmark_pages_title'.tr(), style: AppTypography.headingS),
-          SizedBox(height: ts.scale(16.0)),
-          bookmarksAsync.when(
-            loading: () => Padding(
-              padding: EdgeInsets.all(ts.scale(24.0)),
-              child: const CircularProgressIndicator(),
-            ),
-            error: (_, __) => Padding(
-              padding: EdgeInsets.all(ts.scale(24.0)),
-              child: Text('wird_bookmark_no_bookmarks'.tr()),
-            ),
-            data: (bookmarks) {
-              return Column(
-                children: BookmarkColor.values.map((color) {
-                  final uniquePages = bookmarks
-                      .where((b) => b.color == color)
-                      .map((b) => b.page)
-                      .toSet();
-                  final count = uniquePages.length;
-                  final displayColor = _bookmarkColors[color]!;
-                  final hasPages = count > 0;
-
-                  return Padding(
-                    padding: EdgeInsets.only(bottom: ts.scale(8.0)),
-                    child: Opacity(
-                      opacity: hasPages ? 1.0 : 0.4,
-                      child: InkWell(
-                        onTap: hasPages ? () => showModeDialog(color, uniquePages, bookmarks) : null,
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: EdgeInsets.all(ts.scale(12.0)),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: displayColor.withValues(alpha: 0.3)),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: ts.scale(36.0), height: ts.scale(36.0),
-                                decoration: BoxDecoration(
-                                  color: displayColor.withValues(alpha: 0.2),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(Icons.bookmark, color: displayColor, size: ts.scale(20.0)),
-                              ),
-                              SizedBox(width: ts.scale(12.0)),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(_colorNameKeys[color]!.tr(), style: AppTypography.label),
-                                    Text(
-                                      hasPages
-                                          ? 'wird_bookmark_unique_pages'.tr().replaceAll('%d', count.toString())
-                                          : 'wird_bookmark_no_bookmarks'.tr(),
-                                      style: AppTypography.caption.copyWith(
-                                        color: AppConstants.textSecondary(isDark),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (hasPages)
-                                Icon(Icons.chevron_right, color: displayColor),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                }).toList(),
-              );
-            },
+          // Last two rows: Restart Wird (page mode, with a marker), then Reset All
+          // Progress (red, always last, both modes).
+          const Divider(height: 1),
+          WirdRestartTile(state: state, onPressed: () => _confirmRestart(context)),
+          ListTile(
+            leading: Icon(Icons.refresh, color: Colors.red.shade400, size: ts.scale(20.0)),
+            title: Text('wird_reset_today'.tr(), style: TextStyle(color: Colors.red.shade400)),
+            onTap: () => _confirmReset(context),
           ),
         ],
       ),
-    );
-  }
-}
-
-// ── Bookmark List Sheet ─────────────────────────────────────────────────────
-
-class _BookmarkListSheet extends StatelessWidget {
-  final String lang;
-  final BookmarkColor color;
-  final List<QuranBookmark> bookmarks;
-  final void Function(QuranBookmark bookmark) onSelect;
-
-  const _BookmarkListSheet({
-    required this.lang,
-    required this.color,
-    required this.bookmarks,
-    required this.onSelect,
-  });
-
-  static const _bookmarkColors = {
-    BookmarkColor.red: Color(0xFFE53935),
-    BookmarkColor.orange: Color(0xFFFB8C00),
-    BookmarkColor.green: Color(0xFF43A047),
-  };
-
-  static const _colorNameKeys = {
-    BookmarkColor.red: 'wird_bookmark_color_red',
-    BookmarkColor.orange: 'wird_bookmark_color_orange',
-    BookmarkColor.green: 'wird_bookmark_color_green',
-  };
-
-  @override
-  Widget build(BuildContext context) {
-    final ts = MediaQuery.textScalerOf(context);
-    final displayColor = _bookmarkColors[color]!;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final secondary = AppConstants.textSecondary(isDark);
-
-    return DraggableScrollableSheet(
-      initialChildSize: 0.55,
-      minChildSize: 0.3,
-      maxChildSize: 0.9,
-      expand: false,
-      builder: (_, scrollController) => Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.fromLTRB(ts.scale(16.0), ts.scale(12.0), ts.scale(16.0), 0),
-            child: Column(
-              children: [
-                Center(
-                  child: Container(
-                    width: ts.scale(40.0), height: 4,
-                    decoration: BoxDecoration(
-                      color: AppConstants.textDisabled(isDark),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                SizedBox(height: ts.scale(12.0)),
-                Row(
-                  children: [
-                    Container(
-                      width: ts.scale(12.0), height: ts.scale(12.0),
-                      decoration: BoxDecoration(color: displayColor, shape: BoxShape.circle),
-                    ),
-                    SizedBox(width: ts.scale(8.0)),
-                    Text(
-                      _colorNameKeys[color]!.tr(),
-                      style: AppTypography.headingS,
-                    ),
-                    const Spacer(),
-                    Text(
-                      'wird_bookmark_unique_pages'.tr().replaceAll('%d', bookmarks.length.toString()),
-                      style: AppTypography.caption.copyWith(color: secondary),
-                    ),
-                  ],
-                ),
-                SizedBox(height: ts.scale(10.0)),
-                const Divider(height: 1),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              controller: scrollController,
-              itemCount: bookmarks.length,
-              itemBuilder: (_, i) {
-                final bm = bookmarks[i];
-                final name = lang == 'ar' ? bm.suraNameAr : bm.suraNameEn;
-                return ListTile(
-                  leading: Container(
-                    width: ts.scale(46.0), height: ts.scale(46.0),
-                    decoration: BoxDecoration(
-                      color: displayColor.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Center(
-                      child: Text(
-                        NumberFormatter.withArabicNumeralsByLanguage(bm.page.toString(), lang),
-                        style: AppTypography.label.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: displayColor,
-                        ),
-                      ),
-                    ),
-                  ),
-                  title: Text(name, style: AppTypography.label),
-                  subtitle: Text(
-                    '${'ayah'.tr()} ${NumberFormatter.withArabicNumeralsByLanguage(bm.ayaNo.toString(), lang)}',
-                    style: AppTypography.caption.copyWith(color: secondary),
-                  ),
-                  trailing: Icon(Icons.add_circle_outline, color: displayColor),
-                  onTap: () => onSelect(bm),
-                );
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Record Pages Dialog Content ─────────────────────────────────────────────
-
-class _RecordPagesContent extends StatefulWidget {
-  final String lang;
-  final int currentPage;
-  final void Function(int additionalPages, int newPage) onConfirm;
-
-  const _RecordPagesContent({
-    required this.lang,
-    required this.currentPage,
-    required this.onConfirm,
-  });
-
-  @override
-  State<_RecordPagesContent> createState() => _RecordPagesContentState();
-}
-
-class _RecordPagesContentState extends State<_RecordPagesContent> {
-  bool _isRangeMode = false;
-  final _countController = TextEditingController(text: '1');
-  final _fromController = TextEditingController();
-  final _toController = TextEditingController();
-  String? _error;
-
-  @override
-  void dispose() {
-    _countController.dispose();
-    _fromController.dispose();
-    _toController.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    if (_isRangeMode) {
-      final from = int.tryParse(_fromController.text);
-      final to = int.tryParse(_toController.text);
-      if (from == null || to == null || from < 1 || to > 604 || from > to) {
-        setState(() => _error = 'wird_page_range_invalid'.tr());
-        return;
-      }
-      final additionalPages = to - from + 1;
-      widget.onConfirm(additionalPages, to);
-    } else {
-      final pages = int.tryParse(_countController.text) ?? 0;
-      if (pages > 0) {
-        widget.onConfirm(pages, widget.currentPage + pages);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ts = MediaQuery.textScalerOf(context);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Mode toggle
-        Row(
-          children: [
-            ChoiceChip(
-              label: Text('wird_record_mode_count'.tr()),
-              selected: !_isRangeMode,
-              onSelected: (_) => setState(() { _isRangeMode = false; _error = null; }),
-            ),
-            SizedBox(width: ts.scale(8.0)),
-            ChoiceChip(
-              label: Text('wird_record_mode_range'.tr()),
-              selected: _isRangeMode,
-              onSelected: (_) => setState(() { _isRangeMode = true; _error = null; }),
-            ),
-          ],
-        ),
-        SizedBox(height: ts.scale(16.0)),
-
-        if (_isRangeMode) ...[
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _fromController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'wird_page_from'.tr(),
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-              ),
-              SizedBox(width: ts.scale(12.0)),
-              Expanded(
-                child: TextField(
-                  controller: _toController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: 'wird_page_to'.tr(),
-                    border: const OutlineInputBorder(),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ] else ...[
-          TextField(
-            controller: _countController,
-            keyboardType: TextInputType.number,
-            decoration: InputDecoration(
-              labelText: 'wird_pages_read'.tr(),
-              border: const OutlineInputBorder(),
-            ),
-          ),
-        ],
-
-        if (_error != null) ...[
-          SizedBox(height: ts.scale(8.0)),
-          Text(_error!, style: AppTypography.caption.copyWith(color: Colors.red)),
-        ],
-        SizedBox(height: ts.scale(4.0)),
-        Text(
-          'wird_page_range_hint'.tr(),
-          style: AppTypography.labelS.copyWith(color: Colors.grey.shade600),
-        ),
-        SizedBox(height: ts.scale(8.0)),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text('cancel'.tr()),
-            ),
-            SizedBox(width: ts.scale(8.0)),
-            FilledButton(
-              onPressed: _submit,
-              child: Text('ok'.tr()),
-            ),
-          ],
-        ),
-      ],
     );
   }
 }
