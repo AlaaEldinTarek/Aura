@@ -434,3 +434,158 @@ class WirdBookmarkPickSheet extends ConsumerWidget {
     );
   }
 }
+
+// ── Start entry points (spec amendment 2026-11-14, P4a-2) ───────────────────
+
+/// What the reader's verse sheet offers for the Wird marker.
+enum VerseSheetMarkerAction { none, set, move }
+
+/// Page mode with no marker: set it here. Page mode with a marker: move it,
+/// only when the tapped page is ahead. Juz mode: nothing.
+VerseSheetMarkerAction verseSheetMarkerAction({
+  required WirdUnit unit,
+  required int? markerPage,
+  required int ayahPage,
+}) {
+  if (unit != WirdUnit.page) return VerseSheetMarkerAction.none;
+  if (markerPage == null) return VerseSheetMarkerAction.set;
+  return ayahPage > markerPage
+      ? VerseSheetMarkerAction.move
+      : VerseSheetMarkerAction.none;
+}
+
+/// N in "Start your Wird from page N?": the page the reader would open at.
+int startSheetPage(WirdState state, WirdProgress? progress) => wirdReadingPage(
+    state, progress?.currentPage, wirdRangeStart(state, progress?.startPage));
+
+/// The sheet title with N in Arabic numerals when the language is Arabic.
+String startSheetTitle(String template, int page, String lang) =>
+    template.replaceAll(
+        '%d', NumberFormatter.withArabicNumeralsByLanguage('$page', lang));
+
+/// What the user chose on the start sheet.
+sealed class StartSheetResult {
+  const StartSheetResult();
+}
+
+/// "Start here": place the marker with [color].
+class StartHere extends StartSheetResult {
+  final Color color;
+  const StartHere(this.color);
+}
+
+/// "Choose another page": open the reader, no marker.
+class ChooseAnotherPage extends StartSheetResult {
+  const ChooseAnotherPage();
+}
+
+/// "Just read": open the reader, no marker.
+class JustRead extends StartSheetResult {
+  const JustRead();
+}
+
+/// "Start your Wird from page N?" with the 12-color grid. [readingMode] is the
+/// Start Reading sheet (three buttons); otherwise the reader's sheet (Start here
+/// and Cancel). Returns null when dismissed or cancelled.
+class WirdStartSheet extends StatefulWidget {
+  final int page;
+  final bool readingMode;
+
+  const WirdStartSheet(
+      {super.key, required this.page, required this.readingMode});
+
+  static Future<StartSheetResult?> show(BuildContext context,
+          {required int page, required bool readingMode}) =>
+      showModalBottomSheet<StartSheetResult>(
+        context: context,
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (_) => WirdStartSheet(page: page, readingMode: readingMode),
+      );
+
+  @override
+  State<WirdStartSheet> createState() => _WirdStartSheetState();
+}
+
+class _WirdStartSheetState extends State<WirdStartSheet> {
+  Color? _selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = Localizations.localeOf(context).languageCode;
+    final theme = Theme.of(context);
+    return SafeArea(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              startSheetTitle(
+                  'wird_start_sheet_title'.tr(), widget.page, lang),
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            Text('wird_marker_choose_color'.tr(),
+                style: theme.textTheme.bodySmall),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 14,
+              runSpacing: 14,
+              children: [
+                for (final (i, c) in kWirdMarkerPalette.indexed)
+                  GestureDetector(
+                    key: ValueKey('wird_start_swatch_$i'),
+                    onTap: () => setState(() => _selected = c),
+                    child: Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: c,
+                        shape: BoxShape.circle,
+                        border: _selected?.toARGB32() == c.toARGB32()
+                            ? Border.all(color: Colors.white, width: 3)
+                            : null,
+                        boxShadow: _selected?.toARGB32() == c.toARGB32()
+                            ? [
+                                BoxShadow(
+                                    color: c, blurRadius: 4, spreadRadius: 1)
+                              ]
+                            : null,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 20),
+            FilledButton(
+              onPressed: _selected == null
+                  ? null
+                  : () => Navigator.pop(context, StartHere(_selected!)),
+              child: Text('wird_start_here'.tr()),
+            ),
+            if (widget.readingMode) ...[
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: () =>
+                    Navigator.pop(context, const ChooseAnotherPage()),
+                child: Text('wird_choose_another_page'.tr()),
+              ),
+              TextButton(
+                onPressed: () => Navigator.pop(context, const JustRead()),
+                child: Text('wird_just_read'.tr()),
+              ),
+            ] else
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('cancel'.tr()),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}

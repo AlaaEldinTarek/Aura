@@ -855,4 +855,75 @@ void main() {
       await pumpEventQueue();
     });
   });
+
+  group('first placement from the start entry points (P4a-2)', () {
+    test('placeMarker works on a fresh install: no pages counted', () async {
+      expect(await svc.placeMarker(12, 0xFF00838F), isA<Placed>());
+      final r = (await svc.load())!;
+      expect(r.markerPage, 12);
+      expect(r.startPage, 12);
+      expect(r.color, 0xFF00838F);
+      expect(r.cycle, 0);
+      expect(r.version, 1);
+      expect(await svc.progressTotalLocal(), 0);
+      expect(await wird.getTodayProgress(), isNull);
+    });
+
+    test('placeMarker works after Restart: cycle kept, version raised',
+        () async {
+      await svc.placeMarker(31, 0xFF1E88E5);
+      await svc.restartWird();
+      final afterRestart = (await svc.load())!;
+      expect(afterRestart.markerPage, isNull);
+      final out = await svc.placeMarker(12, 0xFF00838F);
+      expect(out, isA<Placed>());
+      final r = (await svc.load())!;
+      expect(r.markerPage, 12);
+      expect(r.startPage, 12);
+      expect(r.cycle, afterRestart.cycle);
+      expect(r.version, afterRestart.version + 1);
+      expect(r.runningTotal, 0);
+    });
+
+    test('placeMarker fails with MARKER_EXISTS when a marker exists and changes nothing',
+        () async {
+      await svc.placeMarker(31, 0xFF1E88E5);
+      final before = await svc.load();
+      final out = await svc.placeMarker(40, 0xFF00838F);
+      expect((out as PlaceFailed).failure, MarkerFailure.markerExists);
+      expect(await svc.load(), before);
+    });
+
+    test('placeMarker clears a stale undo record', () async {
+      await svc.saveUndo(const WirdUndoRecord(
+        previousPage: 5,
+        pagesAdded: 2,
+        dateKey: _today,
+        grantedStreakCredit: false,
+        cycle: 0,
+        versionAfterMove: 1,
+      ));
+      expect(await svc.loadUndo(), isNotNull);
+      await svc.placeMarker(12, 0xFF00838F);
+      expect(await svc.loadUndo(), isNull);
+    });
+
+    test('a guest placement has no owner and starts no cloud write', () async {
+      uid = null;
+      await svc.placeMarker(12, 0xFF00838F);
+      await pumpEventQueue();
+      expect((await svc.load())!.ownerId, isNull);
+      expect(cloud.writes, 0);
+    });
+
+    test('a signed-in placement carries the uid and starts one background push',
+        () async {
+      uid = 'u1';
+      await svc.placeMarker(12, 0xFF00838F);
+      await pumpEventQueue();
+      expect((await svc.load())!.ownerId, 'u1');
+      expect(cloud.writes, 1);
+      expect(cloud.stored!.markerPage, 12);
+    });
+  });
 }

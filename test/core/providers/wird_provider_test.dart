@@ -8,6 +8,7 @@ import 'package:aura_app/core/providers/wird_provider.dart';
 import 'package:aura_app/core/services/wird_marker_service.dart';
 import 'package:aura_app/core/services/wird_service.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:aura_app/features/quran/wird_marker_widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -309,5 +310,18 @@ void main() {
         overrides: [wirdServiceProvider.overrideWithValue(wird)]);
     addTearDown(c.dispose);
     expect(c.read(wirdServiceProvider), same(wird));
+  });
+
+  group('first placement through the provider (P4a-2)', () {
+    test('placeMarker shows the marker in the state and N follows it', () async {
+      final c = await _container();
+      final n = c.read(wirdStateProvider.notifier);
+      expect(startSheetPage(c.read(wirdStateProvider).value!, null), 1);
+      expect(await n.placeMarker(12, 0xFF00838F), isA<Placed>());
+      final state = c.read(wirdStateProvider).value!;
+      expect(state.marker!.markerPage, 12);
+      // After "Start here" the reader opens on the marker page.
+      expect(startSheetPage(state, null), 12);
+    });
   });
 }
