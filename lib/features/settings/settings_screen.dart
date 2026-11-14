@@ -35,6 +35,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _calculationMethod = 'MuslimWorldLeague';
   String _asrMadhab = 'Shafi';
   bool _windowsStartup = true;
+  bool _autoLaunchAvailable = false;
   bool _loaded = false;
 
   @override
@@ -54,6 +55,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final madhab = sp.getString(AppConstants.keyAsrMadhab) ?? 'Shafi';
     final windowsStartup =
         sp.getBool(WindowsStartupService.prefKey) ?? true;
+    final autoLaunch = await PlatformChannelService.canOpenAutoLaunchSettings();
     if (mounted) {
       setState(() {
         _silentMode = silent;
@@ -63,6 +65,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         _calculationMethod = method;
         _asrMadhab = madhab;
         _windowsStartup = windowsStartup;
+        _autoLaunchAvailable = autoLaunch;
         _loaded = true;
       });
     }
@@ -275,6 +278,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         subtitle: isArabic ? 'تعطيل لضمان الإشعارات في الخلفية' : 'Disable for reliable background alerts',
                         onTap: () => PlatformChannelService.openBatteryOptimizationSettings(),
                       ),
+                      // Huawei only: where the user lets Aura start after a restart.
+                      if (_autoLaunchAvailable)
+                        SettingTile(
+                          icon: Icons.rocket_launch_outlined,
+                          iconColor: Colors.deepPurple,
+                          title: 'auto_launch_title'.tr(),
+                          subtitle: 'auto_launch_subtitle'.tr(),
+                          onTap: () => PlatformChannelService.openAutoLaunchSettings(),
+                        ),
                     ]),
                   ],
 

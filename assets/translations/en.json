@@ -150,6 +150,8 @@
   "exact_alarm_title": "Exact Alarm Permission",
   "exact_alarm_message": "For prayer alarms to work correctly, please grant exact alarm permission.",
 
+  "auto_launch_title": "Auto-launch after restart",
+  "auto_launch_subtitle": "Huawei: turn on Auto-launch, Secondary launch and Run in background for Aura so prayer alerts start after a restart",
   "background_service_section": "Background Service",
   "background_service_title": "Keep App Running",
   "background_service_subtitle": "Keeps app running in background for prayer alerts",

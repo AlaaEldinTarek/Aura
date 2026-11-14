@@ -149,17 +149,26 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
     }
 
     _hasChecked = true;
-    await _showPermissionsPage(missing);
+    // A Huawei-only hint, never part of the missing list (it cannot be checked).
+    final autoLaunchHint = await PlatformChannelService.canOpenAutoLaunchSettings();
+    if (!mounted) {
+      if (!PermissionDialogHandler._completer.isCompleted) {
+        PermissionDialogHandler._completer.complete();
+      }
+      widget.onDone?.call();
+      return;
+    }
+    await _showPermissionsPage(missing, autoLaunchHint: autoLaunchHint);
     if (!PermissionDialogHandler._completer.isCompleted) {
       PermissionDialogHandler._completer.complete();
     }
     widget.onDone?.call();
   }
 
-  Future<void> _showPermissionsPage(List<_PermInfo> missing) async {
+  Future<void> _showPermissionsPage(List<_PermInfo> missing, {bool autoLaunchHint = false}) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => _PermissionsPage(permissions: missing),
+        builder: (_) => _PermissionsPage(permissions: missing, showAutoLaunchHint: autoLaunchHint),
         fullscreenDialog: true,
       ),
     );
@@ -173,7 +182,8 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
 
 class _PermissionsPage extends StatefulWidget {
   final List<_PermInfo> permissions;
-  const _PermissionsPage({required this.permissions});
+  final bool showAutoLaunchHint;
+  const _PermissionsPage({required this.permissions, this.showAutoLaunchHint = false});
 
   @override
   State<_PermissionsPage> createState() => _PermissionsPageState();
@@ -337,6 +347,18 @@ class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingO
                             isDark: isDark,
                             onGrant: () => _grantPermission(e.key),
                           )),
+                ],
+                if (widget.showAutoLaunchHint) ...[
+                  const SizedBox(height: 16),
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.rocket_launch_outlined, color: Colors.deepPurple),
+                      title: Text('auto_launch_title'.tr()),
+                      subtitle: Text('auto_launch_subtitle'.tr()),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => PlatformChannelService.openAutoLaunchSettings(),
+                    ),
+                  ),
                 ],
               ],
             ),
