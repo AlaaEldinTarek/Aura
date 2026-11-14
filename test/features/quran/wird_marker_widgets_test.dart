@@ -227,4 +227,17 @@ void main() {
       expect(wirdReadingPage(_state(), null, 1), 1);
     });
   });
+
+  group('wirdRangeStart', () {
+    test('uses the marker page when there is no progress today', () {
+      expect(wirdRangeStart(_state(marker: _marker(page: 31)), null), 31);
+    });
+    test('progress start page wins once a move happened today', () {
+      expect(wirdRangeStart(_state(marker: _marker(page: 36)), 31), 31);
+    });
+    test('falls back to page 1 with neither', () {
+      expect(wirdRangeStart(_state(), null), 1);
+      expect(wirdRangeStart(_state(marker: _marker(page: null)), null), 1);
+    });
+  });
 }

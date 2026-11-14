@@ -883,7 +883,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
   Widget _buildActionButtons(BuildContext context, WirdState state, Color primary, WirdProgress? progress) {
     final ts = MediaQuery.textScalerOf(context);
     final goal = state.settings.dailyPageGoal;
-    final startPage = progress?.startPage ?? 1;
+    final startPage = wirdRangeStart(state, progress?.startPage);
     final currentPage = wirdReadingPage(state, progress?.currentPage, startPage);
     final endPage = (startPage + goal - 1).clamp(1, 604);
 

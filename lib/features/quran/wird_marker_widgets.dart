@@ -43,6 +43,11 @@ String _digits(int n, String lang) =>
 int wirdReadingPage(WirdState state, int? progressPage, int startPage) =>
     state.marker?.markerPage ?? progressPage ?? startPage;
 
+/// First page of the day's range on the Wird tab: the page where today's
+/// reading began, else the marker page, else 1.
+int wirdRangeStart(WirdState state, int? progressStartPage) =>
+    progressStartPage ?? state.marker?.markerPage ?? 1;
+
 /// The ribbon shows only in page mode, on the page the marker is on.
 bool shouldShowWirdRibbon({
   required WirdUnit unit,
