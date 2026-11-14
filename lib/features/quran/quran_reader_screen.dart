@@ -81,8 +81,6 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
 
   final _topBarKey = GlobalKey();
   final _bottomBarKey = GlobalKey();
-  // Measured height of the top bar (null until the first measurement).
-  double? _topBarHeight;
 
   static const _juzStartPages = [
     1, 22, 42, 62, 82, 102, 122, 142, 162, 182,
@@ -102,7 +100,6 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
       });
     }
     _saveProgress(_currentPage);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _measureTopBar());
     for (int i = 1; i <= 3; i++) {
       QuranSvgService.preload(_currentPage - i);
       QuranSvgService.preload(_currentPage + i);
@@ -115,13 +112,6 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
         if (mounted) _launchTutorial();
       }
     });
-  }
-
-  /// Reads the top bar height so the ribbon can sit just below it.
-  void _measureTopBar() {
-    if (!mounted) return;
-    final h = _topBarKey.currentContext?.size?.height;
-    if (h != null && h != _topBarHeight) setState(() => _topBarHeight = h);
   }
 
   void _launchTutorial() {
@@ -230,27 +220,28 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
     }
   }
 
-  /// "Move Wird marker here": asks first when the move is bigger than the daily
-  /// goal, moves, closes the sheet and shows a snackbar with an Undo action.
-  Future<void> _moveMarkerTo(BuildContext sheetContext, Ayah ayah) async {
+  /// Moves the marker to [page]: asks first when the move is bigger than the daily
+  /// goal, moves, closes the verse sheet (when [sheetContext] is given) and shows
+  /// a snackbar with an Undo action.
+  Future<void> _moveMarkerToPage(int page, {BuildContext? sheetContext}) async {
     final wirdState = ref.read(wirdStateProvider).valueOrNull;
     final from = wirdState?.marker?.markerPage;
-    if (wirdState == null || from == null || ayah.page <= from) return;
-    final pages = ayah.page - from;
+    if (wirdState == null || from == null || page <= from) return;
+    final pages = page - from;
     if (needsBigMoveConfirm(pages, wirdState.settings.dailyPageGoal)) {
-      final ok = await showBigMoveConfirm(sheetContext, pages);
+      final ok = await showBigMoveConfirm(sheetContext ?? context, pages);
       if (!ok || !mounted) return;
     }
-    final outcome = await ref.read(wirdStateProvider.notifier).moveMarker(ayah.page);
+    final outcome = await ref.read(wirdStateProvider.notifier).moveMarker(page);
     if (!mounted) return;
-    if (sheetContext.mounted) Navigator.pop(sheetContext);
+    if (sheetContext != null && sheetContext.mounted) Navigator.pop(sheetContext);
     switch (outcome) {
-      case Moved(markerPage: final page):
+      case Moved(markerPage: final landed):
         final lang = context.locale.languageCode;
         showMarkerMovedSnackBar(
           ScaffoldMessenger.of(context),
           message: 'wird_marker_moved'.tr().replaceAll(
-              '%d', NumberFormatter.withArabicNumeralsByLanguage(page.toString(), lang)),
+              '%d', NumberFormatter.withArabicNumeralsByLanguage(landed.toString(), lang)),
           undoLabel: 'wird_undo'.tr(),
           onUndo: () async {
             final undone = await ref.read(wirdStateProvider.notifier).undoMove();
@@ -262,18 +253,19 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
     }
   }
 
-  /// "Set Wird marker here" (no marker yet): closes the verse sheet, asks for the
-  /// page (shown) and a color on the start sheet, places the marker and shows a
-  /// snackbar with no Undo (a wrong first placement is corrected by Restart Wird).
-  Future<void> _setMarkerAt(BuildContext sheetContext, Ayah ayah) async {
-    if (sheetContext.mounted) Navigator.pop(sheetContext);
+  /// "Set Wird marker here" (no marker yet): closes the verse sheet (when
+  /// [sheetContext] is given), asks for the page (shown) and a color on the start
+  /// sheet, places the marker and shows a snackbar with no Undo (a wrong first
+  /// placement is corrected by Restart Wird).
+  Future<void> _setMarkerAtPage(int page, {BuildContext? sheetContext}) async {
+    if (sheetContext != null && sheetContext.mounted) Navigator.pop(sheetContext);
     if (!mounted) return;
     final choice =
-        await WirdStartSheet.show(context, page: ayah.page, readingMode: false);
+        await WirdStartSheet.show(context, page: page, readingMode: false);
     if (choice is! StartHere || !mounted) return;
     final outcome = await ref
         .read(wirdStateProvider.notifier)
-        .placeMarker(ayah.page, choice.color.toARGB32());
+        .placeMarker(page, choice.color.toARGB32());
     if (!mounted) return;
     switch (outcome) {
       case Placed():
@@ -284,11 +276,38 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
             content: Text('wird_marker_placed'.tr().replaceAll(
                 '%d',
                 NumberFormatter.withArabicNumeralsByLanguage(
-                    ayah.page.toString(), lang))),
+                    page.toString(), lang))),
             duration: const Duration(seconds: 3),
           ));
       case PlaceFailed(failure: final f):
         debugPrint('⚠️ [WIRD] Marker not placed: $f');
+    }
+  }
+
+  /// Tap on the top-bar Wird icon: set (start sheet), move (move sheet), or, when
+  /// the marker is on this page or behind it, show where the marker is.
+  Future<void> _onWirdIconTap(VerseSheetMarkerAction action) async {
+    switch (action) {
+      case VerseSheetMarkerAction.set:
+        await _setMarkerAtPage(_currentPage);
+      case VerseSheetMarkerAction.move:
+        final ok = await WirdMoveSheet.show(context, page: _currentPage);
+        if (ok != true || !mounted) return;
+        await _moveMarkerToPage(_currentPage);
+      case VerseSheetMarkerAction.none:
+        final markerPage =
+            ref.read(wirdStateProvider).valueOrNull?.marker?.markerPage;
+        if (markerPage == null) return;
+        final lang = context.locale.languageCode;
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(
+            content: Text('wird_marker_page_label'.tr().replaceAll(
+                '%d',
+                NumberFormatter.withArabicNumeralsByLanguage(
+                    markerPage.toString(), lang))),
+            duration: const Duration(seconds: 2),
+          ));
     }
   }
 
@@ -319,8 +338,8 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
             ayah: ayah,
             markerAction: markerAction,
             onMarkerAction: () => markerAction == VerseSheetMarkerAction.set
-                ? _setMarkerAt(ctx, ayah)
-                : _moveMarkerTo(ctx, ayah),
+                ? _setMarkerAtPage(ayah.page, sheetContext: ctx)
+                : _moveMarkerToPage(ayah.page, sheetContext: ctx),
             lang: lang,
             isDark: isDark,
             primary: primary,
@@ -585,11 +604,7 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
                     key: ValueKey(index + 1),
                     page: index + 1,
                     onAyahTap: _handleAyahTap,
-                    onEmptyTap: () {
-                      setState(() => _showUI = !_showUI);
-                      WidgetsBinding.instance
-                          .addPostFrameCallback((_) => _measureTopBar());
-                    },
+                    onEmptyTap: () => setState(() => _showUI = !_showUI),
                     initialScale: _zoomScale,
                     scrollController: (index + 1 == _currentPage) ? _mushafCtrl : null,
                     onScaleChanged: (s) {
@@ -617,6 +632,11 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
                   isBookmarked: isBookmarked,
                   primary: primary,
                   onBookmarkToggle: _togglePageBookmark,
+                  wirdAction: WirdMarkerTopBarButton(
+                    state: wirdState,
+                    currentPage: _currentPage,
+                    onTap: _onWirdIconTap,
+                  ),
                   onClose: () {
                     Navigator.of(context).maybePop();
                   },
@@ -648,18 +668,6 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
                   onZoomOut: _isDesktop ? null : () => _mushafCtrl.zoom(0.8),
                   onZoomIn: _isDesktop ? null : () => _mushafCtrl.zoom(1.25),
                 ),
-              ),
-
-            // Wird marker ribbon: only on the marker page, in page mode, just
-            // below the top bar while it is visible.
-            if (wirdState != null)
-              WirdMarkerRibbonLayer(
-                state: wirdState,
-                currentPage: _currentPage,
-                top: _showUI
-                    ? (_topBarHeight ??
-                        kToolbarHeight + MediaQuery.of(context).padding.top)
-                    : 0,
               ),
 
             // Desktop-only floating controls: zoom, scroll, page navigation
@@ -1489,6 +1497,9 @@ class _TopBar extends StatelessWidget {
   final bool isBookmarked;
   final Color primary;
   final VoidCallback onBookmarkToggle;
+
+  /// The Wird marker icon, placed just before the bookmark icon (null = none).
+  final Widget? wirdAction;
   final VoidCallback onClose;
 
   const _TopBar({
@@ -1499,6 +1510,7 @@ class _TopBar extends StatelessWidget {
     required this.primary,
     required this.onBookmarkToggle,
     required this.onClose,
+    this.wirdAction,
   });
 
   @override
@@ -1532,6 +1544,7 @@ class _TopBar extends StatelessWidget {
               ),
             ),
           ),
+          if (wirdAction != null) wirdAction!,
           IconButton(
             icon: Icon(
               isBookmarked ? Icons.bookmark : Icons.bookmark_outline,
