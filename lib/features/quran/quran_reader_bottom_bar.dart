@@ -15,6 +15,11 @@ class QuranReaderBottomBar extends StatelessWidget {
   final VoidCallback? onZoomOut;
   final VoidCallback? onZoomIn;
 
+  /// English: puts Next on the left and Previous on the right (back arrow =
+  /// next), so the bar matches the page direction of the reader. Arabic leaves
+  /// this false because its right-to-left layout already does it.
+  final bool reverseNav;
+
   const QuranReaderBottomBar({
     super.key,
     required this.currentPage,
@@ -24,7 +29,11 @@ class QuranReaderBottomBar extends StatelessWidget {
     this.onGoToNext,
     this.onZoomOut,
     this.onZoomIn,
+    this.reverseNav = false,
   });
+
+  Widget _navButton(VoidCallback? onPressed, IconData icon, Color color) =>
+      IconButton(onPressed: onPressed, icon: Icon(icon, color: color));
 
   @override
   Widget build(BuildContext context) {
@@ -44,13 +53,12 @@ class QuranReaderBottomBar extends StatelessWidget {
         top: false,
         child: Row(
           children: [
-            IconButton(
-              onPressed: onGoToPrevious,
-              icon: Icon(
-                Icons.arrow_back,
-                color: currentPage > 1 ? primary : Colors.grey,
-              ),
-            ),
+            if (reverseNav)
+              _navButton(onGoToNext, Icons.arrow_back,
+                  currentPage < totalPages ? primary : Colors.grey)
+            else
+              _navButton(onGoToPrevious, Icons.arrow_back,
+                  currentPage > 1 ? primary : Colors.grey),
             if (onZoomOut != null)
               _ZoomButton(
                   icon: Icons.remove, color: primary, onTap: onZoomOut!),
@@ -66,13 +74,12 @@ class QuranReaderBottomBar extends StatelessWidget {
             ),
             if (onZoomIn != null)
               _ZoomButton(icon: Icons.add, color: primary, onTap: onZoomIn!),
-            IconButton(
-              onPressed: onGoToNext,
-              icon: Icon(
-                Icons.arrow_forward,
-                color: currentPage < totalPages ? primary : Colors.grey,
-              ),
-            ),
+            if (reverseNav)
+              _navButton(onGoToPrevious, Icons.arrow_forward,
+                  currentPage > 1 ? primary : Colors.grey)
+            else
+              _navButton(onGoToNext, Icons.arrow_forward,
+                  currentPage < totalPages ? primary : Colors.grey),
           ],
         ),
       ),

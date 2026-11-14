@@ -20,6 +20,7 @@ import 'package:aura_app/core/services/shared_preferences_service.dart';
 import 'package:aura_app/core/models/wird.dart';
 import 'package:aura_app/core/providers/wird_provider.dart';
 import 'khatma_celebration_screen.dart';
+import 'quran_page_direction.dart';
 import 'quran_reader_bottom_bar.dart';
 import 'package:aura_app/core/theme/app_typography.dart';
 
@@ -71,6 +72,10 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
   // horizontal PageView swipe so one-finger drags pan the zoomed page instead.
   bool _pageZoomed = false;
   Offset? _pointerDown; // for desktop horizontal drag-to-navigate
+
+  /// English turns pages like Arabic (right-to-left): see quran_page_direction.dart.
+  bool _reversePages(BuildContext context) =>
+      readerReversesPages(Directionality.of(context));
 
   bool get _isDesktop =>
       !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
@@ -403,12 +408,13 @@ void _togglePageBookmark() {
                   _pointerDown = null;
                   // Only navigate when horizontal drag is dominant and long enough
                   if (dx.abs() < 80 || dx.abs() < dy * 1.5) return;
-                  if (dx < 0 && _currentPage < 604) {
+                  final step = dragPageStep(dx, reversed: _reversePages(context));
+                  if (step == 1 && _currentPage < 604) {
                     _pageController.nextPage(
                       duration: const Duration(milliseconds: 350),
                       curve: Curves.easeInOut,
                     );
-                  } else if (dx > 0 && _currentPage > 1) {
+                  } else if (step == -1 && _currentPage > 1) {
                     _pageController.previousPage(
                       duration: const Duration(milliseconds: 350),
                       curve: Curves.easeInOut,
@@ -422,6 +428,8 @@ void _togglePageBookmark() {
           children: [
             PageView.builder(
               controller: _pageController,
+              // English turns pages like Arabic (right-to-left).
+              reverse: _reversePages(context),
               // When zoomed in on mobile, lock swipe so panning the page works.
               // (Prev/Next arrows still navigate programmatically.)
               physics: _pageZoomed ? const NeverScrollableScrollPhysics() : null,
@@ -508,6 +516,7 @@ void _togglePageBookmark() {
                   currentPage: _currentPage,
                   totalPages: 604,
                   lang: lang,
+                  reverseNav: _reversePages(context),
                   onGoToPrevious: _currentPage > 1
                       ? () => _pageController.previousPage(
                             duration: const Duration(milliseconds: 350),
@@ -564,14 +573,15 @@ void _togglePageBookmark() {
       autofocus: true,
       onKeyEvent: (node, event) {
         if (event is! KeyDownEvent) return KeyEventResult.ignored;
-        if (event.logicalKey == LogicalKeyboardKey.arrowRight && _currentPage < 604) {
+        final keyStep = keyPageStep(event.logicalKey, reversed: _reversePages(context));
+        if (keyStep == 1 && _currentPage < 604) {
           _pageController.nextPage(
             duration: const Duration(milliseconds: 350),
             curve: Curves.easeInOut,
           );
           return KeyEventResult.handled;
         }
-        if (event.logicalKey == LogicalKeyboardKey.arrowLeft && _currentPage > 1) {
+        if (keyStep == -1 && _currentPage > 1) {
           _pageController.previousPage(
             duration: const Duration(milliseconds: 350),
             curve: Curves.easeInOut,
