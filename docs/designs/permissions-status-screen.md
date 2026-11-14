@@ -159,3 +159,19 @@ There is no test for the page today. Pure and widget tests, with a fake `Permiss
 *   **Order:** tests first (red run shown), then separate commits: (1) the probe, the row model, the pure rules and summary; (2) the page: show-everything mode, states, summary, back arrow, denied hint, `.tr()` fallback; (3) the public wrapper, the Settings tile and the strings. `flutter test`, `flutter analyze` after each commit, numbers against the baseline.
 *   **Review size:** touches no "edit carefully" file (VERIFIED: the list is `prayer_times_service.dart`, `prayer_times_provider.dart`, `PrayerAlarmReceiver.kt`, `DailySummaryReceiver.kt`), no native change and no contract change, so one lightweight review.
 *   **Decided by the owner (2026-11-14):** the Android version approach (no native method), Location hidden in tasks-only mode, Notifications and Location out of the popup, and the denied-permission line. **Still open:** the Arabic wording (DRAFT, awaiting the owner's reading).
+
+## Device results (2026-11-15, reported by Aladdin; not observed by Claude)
+Supersedes the "PS1 is not started" and "Not pushed" statements above: PS1 is implemented (commits `a6b49ad`, `8fe6089`, `fa8138d`) and `fix/boot-start-service` is merged (`db78e98`, PR #22).
+
+*   **Build:** test build `test/all-edits-final4` (tip `f701741`, merges this branch), installed on the phone (nova 5T, Huawei, Android 10) on 2026-11-15.
+*   **Reported by Aladdin: all 8 checks PASSED.** Claude did not run or watch these checks.
+    1.  The Settings "Permissions" tile opens the page in show-everything mode.
+    2.  Every row shows its state: Notifications and Location granted; exact alarms shown as "Granted" on Android 10.
+    3.  The EMUI Auto-launch row shows "Check by hand", never "granted", and opens the explanation dialog.
+    4.  The summary at the top.
+    5.  Rows recheck after returning from the system settings.
+    6.  The denied-permission line.
+    7.  The automatic popup. First attempt: it did not appear, because Aura was still on the battery whitelist and nothing counted as missing (read-only investigation, 2026-11-15: not a regression; trigger code matches `main`). After Aladdin changed the phone state himself (battery whitelist off), it showed and Enable opened the system battery dialog: PASS.
+    8.  The "Fire test adhan" tile and the reader top bar still work.
+*   **Arabic strings: still DRAFT.** Aladdin has not said he has read or approved them.
+*   **Not covered by any test (UNVERIFIED by tests):** `PermissionDialogHandler` itself (the 2 s delay, the `mounted` check, the push of the page); the row and page tests use a fake probe. Android 12+ and non-Huawei phones were not tested (no device).
