@@ -1,6 +1,5 @@
-// Spec: docs/designs/fix-boot-start-service.md, section 3 and phase P1. The Dart
-// side of the "App launch" tile: the two channel methods and the fallback when the
-// native side fails. Whether the EMUI screen opens is checked on a Huawei phone.
+// Spec: docs/designs/fix-boot-start-service.md, section 3a and phase P1b. The Dart
+// side of the "App launch" tile: the Huawei (EMUI) check. The dialog is checked on a Huawei phone.
 import 'package:aura_app/core/services/platform_channel_service.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,7 +10,6 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late List<String> calls;
-  late int appSettingsOpened;
 
   void mockChannel(Future<Object?> Function(MethodCall call) handler) {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
@@ -23,17 +21,11 @@ void main() {
 
   setUp(() {
     calls = [];
-    appSettingsOpened = 0;
     PlatformChannelService.debugIsAndroid = true;
-    PlatformChannelService.debugOpenAppSettings = () async {
-      appSettingsOpened++;
-      return true;
-    };
   });
 
   tearDown(() {
     PlatformChannelService.debugIsAndroid = null;
-    PlatformChannelService.debugOpenAppSettings = null;
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(_channel, null);
   });
@@ -60,40 +52,6 @@ void main() {
       mockChannel((_) async => true);
       expect(await PlatformChannelService.isEmuiDevice(), isFalse);
       expect(calls, isEmpty);
-    });
-  });
-
-  group('openAutoLaunchSettings', () {
-    test('asks the native side and does not touch app settings on success',
-        () async {
-      mockChannel((_) async => true);
-      await PlatformChannelService.openAutoLaunchSettings();
-      expect(calls, ['openAutoLaunchSettings']);
-      expect(appSettingsOpened, 0);
-    });
-
-    test('falls back to the app settings screen when the channel throws',
-        () async {
-      mockChannel((_) async => throw PlatformException(code: 'boom'));
-      await PlatformChannelService.openAutoLaunchSettings();
-      expect(calls, ['openAutoLaunchSettings']);
-      expect(appSettingsOpened, 1);
-    });
-
-    test('falls back to the app settings screen when nothing opened natively',
-        () async {
-      mockChannel((_) async => false);
-      await PlatformChannelService.openAutoLaunchSettings();
-      expect(calls, ['openAutoLaunchSettings']);
-      expect(appSettingsOpened, 1);
-    });
-
-    test('does nothing when not on Android', () async {
-      PlatformChannelService.debugIsAndroid = false;
-      mockChannel((_) async => true);
-      await PlatformChannelService.openAutoLaunchSettings();
-      expect(calls, isEmpty);
-      expect(appSettingsOpened, 0);
     });
   });
 }

@@ -79,19 +79,6 @@ class PlatformChannelService {
     await _openAppSettings();
   }
 
-  /// Open the EMUI "App launch" screen (Kotlin tries the EMUI screens, then the app
-  /// details screen). When the channel fails, or nothing opened, open app settings.
-  static Future<void> openAutoLaunchSettings() async {
-    if (!_isAndroid) return;
-    try {
-      final opened = await _prayerChannel.invokeMethod<bool>('openAutoLaunchSettings');
-      if (opened == false) await _openAppSettings();
-    } catch (e) {
-      debugPrint('⚠️ [PLATFORM] Failed to open auto-launch settings via channel: $e');
-      await _openAppSettings();
-    }
-  }
-
   /// Open exact alarm settings
   static Future<void> openExactAlarmSettings() async {
     if (!_isAndroid) return;

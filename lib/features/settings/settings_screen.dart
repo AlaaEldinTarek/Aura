@@ -12,6 +12,7 @@ import '../../core/services/notification_service.dart';
 import '../../core/services/prayer_alarm_service.dart';
 import '../../core/services/platform_channel_service.dart';
 import '../../core/services/windows_startup_service.dart';
+import '../../core/widgets/auto_launch_dialog.dart';
 import '../../core/widgets/setting_tile.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/app_language.dart';
@@ -285,7 +286,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           iconColor: Colors.deepPurple,
                           title: 'auto_launch_title'.tr(),
                           subtitle: 'auto_launch_subtitle'.tr(),
-                          onTap: () => PlatformChannelService.openAutoLaunchSettings(),
+                          onTap: () => showAutoLaunchDialog(context),
                         ),
                     ]),
                   ],

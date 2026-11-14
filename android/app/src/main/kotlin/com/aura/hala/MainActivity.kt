@@ -218,49 +218,6 @@ class MainActivity : FlutterFragmentActivity() {
         }
     }
 
-    private fun autoLaunchIntent(target: AutoLaunchSettings.Target): Intent {
-        val cls = target.className
-        val intent = if (cls != null) {
-            Intent().setClassName(target.packageName, cls)
-        } else {
-            Intent(target.action).setPackage(target.packageName)
-        }
-        return intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-    }
-
-    private fun canResolveAutoLaunchTarget(target: AutoLaunchSettings.Target): Boolean =
-        packageManager.resolveActivity(autoLaunchIntent(target), 0) != null
-
-    /**
-     * Opens the EMUI "App launch" screen: tries each target in [AutoLaunchSettings.CANDIDATES]
-     * in order (a screen that exists but refuses a third-party app is skipped), then the app
-     * details screen. Returns true when some screen opened.
-     */
-    private fun openAutoLaunchSettings(): Boolean {
-        for (target in AutoLaunchSettings.CANDIDATES) {
-            try {
-                if (!canResolveAutoLaunchTarget(target)) continue
-                startActivity(autoLaunchIntent(target))
-                Log.d("MainActivity", "⚙️ [AUTOLAUNCH] Opened ${target.className ?: target.action}")
-                return true
-            } catch (e: Exception) {
-                Log.w("MainActivity", "⚠️ [AUTOLAUNCH] ${target.className ?: target.action} failed: ${e.message}")
-            }
-        }
-        return try {
-            val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                data = Uri.fromParts("package", packageName, null)
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
-            startActivity(intent)
-            Log.d("MainActivity", "⚙️ [AUTOLAUNCH] Fell back to the app details screen")
-            true
-        } catch (e: Exception) {
-            Log.e("MainActivity", "❌ [AUTOLAUNCH] App details fallback failed: ${e.message}")
-            false
-        }
-    }
-
     private fun isIgnoringBatteryOptimizations(): Boolean {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
@@ -699,9 +656,6 @@ class MainActivity : FlutterFragmentActivity() {
                         Log.e("MainActivity", "❌ [AUTOLAUNCH] Manufacturer check failed: ${e.message}")
                         result.success(false)
                     }
-                }
-                "openAutoLaunchSettings" -> {
-                    result.success(openAutoLaunchSettings())
                 }
                 else -> result.notImplemented()
             }

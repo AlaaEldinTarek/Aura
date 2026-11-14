@@ -9,6 +9,7 @@ import '../services/platform_channel_service.dart';
 import '../services/notification_service.dart';
 import '../theme/app_typography.dart';
 import 'aura_button.dart';
+import 'auto_launch_dialog.dart';
 
 /// Checks all required permissions and shows a dialog for missing ones.
 class PermissionDialogHandler extends StatefulWidget {
@@ -356,7 +357,7 @@ class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingO
                       title: Text('auto_launch_title'.tr()),
                       subtitle: Text('auto_launch_subtitle'.tr()),
                       trailing: const Icon(Icons.chevron_right),
-                      onTap: () => PlatformChannelService.openAutoLaunchSettings(),
+                      onTap: () => showAutoLaunchDialog(context),
                     ),
                   ),
                 ],
