@@ -1,7 +1,7 @@
 # Fix — Vibration Buttons Inside the Foreground-Service Notification
 
 *   **Author:** Alaa Eldin Tarek
-*   **Status:** P1 implemented 2026-11-14 (device checks pending)
+*   **Status:** P1 implemented and device-checked 2026-11-14 (see Device Test Results; two items not tested, boot clearing not exercised)
 *   **Date:** 2026-11-14
 *   **Branch:** `fix/silent-mode-buttons-in-fgs` (off `main` at `827fa5e`)
 *   **Supersedes:** F68 (`docs/designs/fix-silent-mode-notification.md`), the part that adds a separate notification 8100.
@@ -162,6 +162,7 @@ Rejected in F68 (changes the notification's visual design). Standard actions wou
 ## Known Issues (outside the scope of this change)
 
 *   **Phone clock moved backwards.** If the phone clock is moved backwards while `adhan_active` is set, the adhan view and the Stop/Keep Vibration buttons stay visible until the real clock passes the stored `adhan_end_time` / `silent_end_time`. Cause: both are stored as absolute times and nothing checks for `now < start`. This was already the case before `d335140`. Possible future fix: treat the state as stale when `now` is earlier than its start time, or when the end time is more than the maximum window ahead. It needs its own spec because it changes `android/` behavior.
+*   **Boot receiver did not run on the test phone.** After a reboot during the vibration window, the foreground-service notification did not appear until the app was opened, and the boot-time clearing of the vibration state (`PrayerBootReceiver.kt:41-58`: restore `saved_ringer_mode`, clear `is_silent_active` and `silent_end_time`) was not exercised. The service was started only when the app was opened, probably because EMUI blocks `BOOT_COMPLETED` for the app (unconfirmed). Without that clearing, the ringer stays on vibrate after a reboot and the stale `is_silent_active = true` stays until the next adhan. Nothing reconciles the state on app start. This is existing behavior on `main` and is unchanged by `d335140`.
 
 ## Risks (all UNVERIFIED until run on the device)
 
@@ -204,6 +205,25 @@ There is no Kotlin unit-test setup in the repo that I have seen (UNVERIFIED). A 
 9.  Background notification off. No buttons; the adhan screen buttons still work.
 10. On a phone that ran an F68 build, "Silent Mode Control" no longer appears in the app's notification settings after one launch.
 11. `git diff --stat -- lib/` is empty.
+
+## Device Test Results (YAL-L21, Android 10 / EMUI 12, 2026-11-14)
+
+Run by the product owner on the build from `d335140`.
+
+| Check | Result |
+|---|---|
+| Lock-screen visibility, without expanding | Pass |
+| Taps work without unlocking | Pass |
+| Stop Vibration and Keep Vibration behave correctly | Pass |
+| Buttons disappear when the vibration window ends, data stays | Pass |
+| Auto-restore | Pass |
+| Old channel `silent_mode_control` removed | Pass |
+| Largest font size | Pass, labels not clipped |
+| Dark mode | Pass |
+| Arabic | Pass, labels clear |
+| Reboot during the window | No buttons appeared after boot. The buttons seen later came from a new real adhan at 11:40. The boot-time clearing of vibration state was **not exercised**, because the boot receiver did not run on this phone: the service started only when the app was opened (probably EMUI blocking `BOOT_COMPLETED`, unconfirmed). Existing behavior on `main`, unchanged by `d335140`. See Known Issues. |
+| PIN / pattern lock | **Not tested.** The phone is Android 10, and `setAuthenticationRequired` needs SDK 31. |
+| Background notification setting off | **Not tested** |
 
 ## Phases
 
