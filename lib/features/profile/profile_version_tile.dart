@@ -64,6 +64,17 @@ class _ProfileVersionTileState extends State<ProfileVersionTile> {
     );
     if (confirmed != true) return;
 
+    // testAdhanNow swallows errors and the native handler has no permission
+    // check, so without exact-alarm permission nothing would fire silently.
+    final canSchedule = widget.canScheduleExactAlarms ??
+        PrayerAlarmService.instance.canScheduleExactAlarms;
+    if (!await canSchedule()) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('dev_test_adhan_no_exact_alarm'.tr())),
+      );
+      return;
+    }
+
     // Zuhr only: Fajr and Isha also trigger a Flutter recalculation.
     final fire =
         widget.fireTestAdhan ?? PrayerAlarmService.instance.testAdhanNow;
