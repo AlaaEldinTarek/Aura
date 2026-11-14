@@ -13,6 +13,7 @@ import 'package:aura_app/core/models/wird.dart';
 import 'package:aura_app/core/constants/app_constants.dart';
 import 'package:aura_app/core/models/wird_marker.dart';
 import 'package:aura_app/core/providers/quran_provider.dart';
+import 'package:aura_app/core/providers/wird_provider.dart';
 import 'package:aura_app/core/utils/number_formatter.dart';
 
 /// The 12 colors a user can give the Wird marker. Each has contrast of at least
@@ -488,30 +489,81 @@ class JustRead extends StartSheetResult {
 /// "Start your Wird from page N?" with the 12-color grid. [readingMode] is the
 /// Start Reading sheet (three buttons); otherwise the reader's sheet (Start here
 /// and Cancel). Returns null when dismissed or cancelled.
+///
+/// [initialColor] pre-selects a swatch (the color picked earlier in the session);
+/// a value outside [kWirdMarkerPalette] is ignored. [onColorPicked] is called on
+/// every swatch tap, so a pick is recorded even when the sheet closes through a
+/// button that carries no color.
 class WirdStartSheet extends StatefulWidget {
   final int page;
   final bool readingMode;
+  final Color? initialColor;
+  final ValueChanged<Color>? onColorPicked;
 
-  const WirdStartSheet(
-      {super.key, required this.page, required this.readingMode});
+  const WirdStartSheet({
+    super.key,
+    required this.page,
+    required this.readingMode,
+    this.initialColor,
+    this.onColorPicked,
+  });
 
   static Future<StartSheetResult?> show(BuildContext context,
-          {required int page, required bool readingMode}) =>
+          {required int page,
+          required bool readingMode,
+          Color? initialColor,
+          ValueChanged<Color>? onColorPicked}) =>
       showModalBottomSheet<StartSheetResult>(
         context: context,
         isScrollControlled: true,
         shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        builder: (_) => WirdStartSheet(page: page, readingMode: readingMode),
+        builder: (_) => WirdStartSheet(
+          page: page,
+          readingMode: readingMode,
+          initialColor: initialColor,
+          onColorPicked: onColorPicked,
+        ),
       );
 
   @override
   State<WirdStartSheet> createState() => _WirdStartSheetState();
 }
 
+/// Opens [WirdStartSheet] with the session's remembered color pre-selected, and
+/// records every swatch tap in [wirdStartColorProvider]. The one entry the three
+/// callers (Start Reading, the setup card, the reader) use.
+Future<StartSheetResult?> showWirdStartSheetRemembered(
+  BuildContext context,
+  WidgetRef ref, {
+  required int page,
+  required bool readingMode,
+}) {
+  final remembered = ref.read(wirdStartColorProvider);
+  return WirdStartSheet.show(
+    context,
+    page: page,
+    readingMode: readingMode,
+    initialColor: remembered == null ? null : Color(remembered),
+    onColorPicked: (c) =>
+        ref.read(wirdStartColorProvider.notifier).state = c.toARGB32(),
+  );
+}
+
 class _WirdStartSheetState extends State<WirdStartSheet> {
   Color? _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialColor;
+    if (initial != null) {
+      for (final c in kWirdMarkerPalette) {
+        if (c.toARGB32() == initial.toARGB32()) _selected = c;
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -540,7 +592,10 @@ class _WirdStartSheetState extends State<WirdStartSheet> {
                 for (final (i, c) in kWirdMarkerPalette.indexed)
                   GestureDetector(
                     key: ValueKey('wird_start_swatch_$i'),
-                    onTap: () => setState(() => _selected = c),
+                    onTap: () {
+                      setState(() => _selected = c);
+                      widget.onColorPicked?.call(c);
+                    },
                     child: Container(
                       width: 44,
                       height: 44,

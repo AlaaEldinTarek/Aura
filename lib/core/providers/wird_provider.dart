@@ -7,9 +7,20 @@ import '../models/wird_marker.dart';
 import '../services/wird_marker_logic.dart' show kLastQuranPage;
 import '../services/wird_marker_service.dart';
 import '../services/wird_service.dart';
+import 'auth_provider.dart' show authStateProvider;
 
 /// The Wird service. Overridden in tests with a fake.
 final wirdServiceProvider = Provider<WirdService>((ref) => WirdService.instance);
+
+/// The color last picked on the Wird start sheet (ARGB, from `Color.toARGB32()`),
+/// or null when none was picked yet. Session memory only: nothing is persisted or
+/// synced, and it is not part of [WirdState] (spec: docs/designs/wird-marker.md,
+/// "Start sheet remembers the color"). It resets when the signed-in uid changes
+/// (sign-out, account switch); Reset All Progress invalidates it.
+final wirdStartColorProvider = StateProvider<int?>((ref) {
+  ref.watch(authStateProvider.select((a) => a.valueOrNull?.uid));
+  return null;
+});
 
 final quranStatsProvider = FutureProvider.autoDispose<QuranStatsData>((ref) async {
   final wird = ref.watch(wirdServiceProvider);
