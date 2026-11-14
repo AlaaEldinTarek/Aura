@@ -1,6 +1,6 @@
 # Fix: the prayer service and the boot-time work do not run after a reboot until Aura is opened (EMUI, Android 10)
 
-Status: DRAFT for the owner's review (Level A, docs). No code, no tests, no go-ahead for any phase. Branch `fix/boot-start-service` from `main` `1584deb`. Not pushed. Updated 2026-11-14 with one owner-observed reboot (see "Evidence from the owner" in section 1).
+Status: This spec and phases P1 and P2 approved by Aladdin on 2026-11-14 (spec: Level A, docs; P1 and P2: Level C, production), given as 'approve the boot-start spec, P1 and P2'. D0 (diagnosis reboots) and P3 (optional hardening) are NOT approved and are not to be built. Branch `fix/boot-start-service` from `main` `1584deb`. Not pushed. Updated 2026-11-14 with one owner-observed reboot (see "Evidence from the owner" in section 1).
 
 Labels: **VERIFIED** (read in code, manifest or the spec, or returned by a device query on 2026-11-14), **UNKNOWN** (not checked, or not checkable now), **GUESS** (reasoning or recalled Android behavior, not run). "Reported" means said by the product owner and not re-observed. No logs were read for this spec.
 
@@ -103,7 +103,7 @@ All options leave the notification IDs, channels, prefs keys and MethodChannels 
 *   **Not testable here:** Android 12-15 behavior (no device), Honor and other brands.
 *   **Reporting:** every item is reported as run or not run. None is reported as passed unless it ran.
 
-## Phases (each needs the owner's go-ahead; none is given)
+## Phases (go-ahead given on 2026-11-14 for P1 and P2 only; not given for D0 and P3)
 
 | Phase | Content | Level |
 | --- | --- | --- |
