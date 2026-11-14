@@ -156,19 +156,14 @@ class MainActivity : FlutterFragmentActivity() {
             notificationManager.createNotificationChannel(trackingChannel)
             Log.d("MainActivity", "✅ [CHANNEL] prayer_tracking channel created")
 
-            // Silent-mode control notification (vibrate-window action buttons)
-            val silentChannel = NotificationChannel(
-                "silent_mode_control",
-                "Silent Mode Control",
-                NotificationManager.IMPORTANCE_DEFAULT
-            ).apply {
-                description = "Controls for the vibrate-during-prayer silent mode"
-                setSound(null, null)
-                enableVibration(false)
-                setShowBadge(false)
+            // The separate silent-mode notification (8100) was replaced by buttons inside the
+            // foreground-service notification. Remove its orphan channel (no-op if absent).
+            try {
+                notificationManager.deleteNotificationChannel("silent_mode_control")
+                Log.d("MainActivity", "🧹 [CHANNEL] Removed old silent_mode_control channel")
+            } catch (e: Exception) {
+                Log.w("MainActivity", "⚠️ [CHANNEL] Could not remove silent_mode_control: ${e.message}")
             }
-            notificationManager.createNotificationChannel(silentChannel)
-            Log.d("MainActivity", "✅ [CHANNEL] silent_mode_control channel created")
         } else {
             Log.d("MainActivity", "⏭️ [CHANNEL] SDK < O, notification channel not needed")
         }

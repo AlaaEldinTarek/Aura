@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Foreground-service notification while the vibration window is active: the
+     prayer data and the Stop / Keep Vibration buttons in one compact row.
+     Ids shared with notification_large*.xml are filled by the same code. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/bg_notification"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <ImageView
+        android:id="@+id/notification_logo"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:src="@mipmap/ic_launcher"
+        android:scaleType="centerCrop"
+        android:contentDescription="Prayer Icon" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="10dp"
+        android:layout_marginEnd="8dp"
+        android:orientation="vertical">
+
+        <!-- Not shown in this layout; kept so the shared text code finds the id. -->
+        <TextView
+            android:id="@+id/notification_header"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/notification_title"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="Maghrib"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:textColor="#DE000000" />
+
+        <TextView
+            android:id="@+id/notification_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="Iqama in 12m 05s"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#F5B301" />
+
+        <TextView
+            android:id="@+id/notification_until"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="Time to pray"
+            android:textSize="11sp"
+            android:textColor="#99000000" />
+
+    </LinearLayout>
+
+    <!-- Two buttons, one above the other, at the end of the row. -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/btn_stop_vibration"
+            android:layout_width="wrap_content"
+            android:layout_height="28dp"
+            android:minWidth="104dp"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:background="@drawable/bg_vibration_button"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="Stop Vibration"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#7A5A0A" />
+
+        <TextView
+            android:id="@+id/btn_keep_vibration"
+            android:layout_width="wrap_content"
+            android:layout_height="28dp"
+            android:minWidth="104dp"
+            android:layout_marginTop="4dp"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:background="@drawable/bg_vibration_button"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="Keep Vibration"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#7A5A0A" />
+
+    </LinearLayout>
+
+</LinearLayout>
