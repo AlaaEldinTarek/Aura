@@ -1,6 +1,6 @@
 # Dev tool: fire a test adhan on demand (hidden)
 
-Status: APPROVED by user ("approve the dev-test-adhan spec and phase"); Arabic strings stay DRAFT pending user review · Level A (this doc only) · implementation would be Level C and needs
+Status: APPROVED by user ("approve the dev-test-adhan spec and phase"); Arabic strings reviewed by Aladdin on 2026-11-14 ("Arabic every where is very good") · Level A (this doc only) · implementation would be Level C and needs
 "approve phase" · branch `fix/dev-test-adhan` (from main) · not a fix for a finding; a developer test aid.
 
 Labels: VERIFIED = read in code at the cited line · UNKNOWN = not checked or not checkable by reading · GUESS = inference.
@@ -108,12 +108,12 @@ Pending alarms about 15 min (azkar) and 30 min (post-check) after the test:
   tapping Fire. UNKNOWN whether the activity start succeeds on every OEM; the notification full-screen intent is the fallback.
 - DND: `enableSilentModeForPrayer` checks DND permission but sets ringer vibrate either way (:692-711). VERIFIED.
 
-## Strings (new keys in BOTH `assets/translations/en.json` and `ar.json`; the Arabic is a DRAFT for your review)
-Arabic numerals rule: the English text has the number "10"; the Arabic DRAFT writes it as a word, so no raw digit
+## Strings (new keys in BOTH `assets/translations/en.json` and `ar.json`; the Arabic was reviewed by Aladdin on 2026-11-14 ("Arabic every where is very good"))
+Arabic numerals rule: the English text has the number "10"; the Arabic writes it as a word, so no raw digit
 appears in Arabic UI. If you prefer a digit, it must go through `NumberFormatter.withArabicNumerals`.
 Reuses `cancel` (`en.json:174`, `ar.json:174`).
 
-| Key | English | Arabic (DRAFT) |
+| Key | English | Arabic (reviewed 2026-11-14) |
 | --- | --- | --- |
 | `dev_test_adhan_title` | Fire test adhan | تشغيل أذان تجريبي |
 | `dev_test_adhan_subtitle` | Developer: runs the real adhan flow | للمطور: يشغّل مسار الأذان الحقيقي |
@@ -160,4 +160,4 @@ Device-only (cannot be unit tested), on the nova 5T release build:
 - Verification after approval: `flutter analyze` (no new issues vs the baseline), `flutter test`, a release build,
   then the device checks D1-D5.
 - Decisions (user): (a) Zuhr only: yes. (b) Keep the `canScheduleExactAlarms()` pre-check: yes. (c) The tile stays hidden
-  behind the seven taps in ALL builds, no special case for debug builds. (d) Arabic strings stay DRAFT for the user's review.
+  behind the seven taps in ALL builds, no special case for debug builds. (d) Arabic strings: reviewed by Aladdin on 2026-11-14 ("Arabic every where is very good").
