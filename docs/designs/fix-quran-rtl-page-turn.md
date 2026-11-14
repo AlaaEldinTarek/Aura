@@ -68,6 +68,6 @@ Measured when the commit was made (VERIFIED then). Not re-run for this note.
 
 *   **Arabic desktop keys and drag do not match its page direction.** In Arabic the pages slide in from the left for "next", but the right arrow and a left drag mean "next". English now follows its page direction, so on desktop English and Arabic differ in which key goes forward. This was already the case before `ed62d72`. A fix would change Arabic desktop behavior and needs its own decision.
 
-## Decision needed
+## Decision
 
-This note was written after the change was committed. The change touches `lib/` UI behavior, which CLAUDE.md requires a spec for. The product owner gives the go-ahead for this note and for merging; it is not recorded here.
+Approved by Aladdin on 2026-11-14 for device testing: this note and the implementation in `ed62d72`. The device checklist above is still UNKNOWN (not run yet). Merging waits for the device results.
