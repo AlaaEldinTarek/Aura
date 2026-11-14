@@ -756,3 +756,57 @@ class WirdMoveSheet extends StatelessWidget {
     );
   }
 }
+
+// ── Wird tab on a completed day (spec third amendment 2026-11-14, P4a-4) ────
+
+/// The setup card shows under the completed banner when there is no marker:
+/// page mode, no marker page, and today completed. On a day that is not
+/// completed the action block already offers Start Reading and Add from
+/// Bookmarks, so the card is not needed there.
+bool shouldShowMarkerSetupCard({
+  required WirdUnit unit,
+  required int? markerPage,
+  required bool dayCompleted,
+}) =>
+    unit == WirdUnit.page && markerPage == null && dayCompleted;
+
+/// A hint with "Set Wird marker" (the start sheet) and "Add from Bookmarks".
+class WirdMarkerSetupCard extends StatelessWidget {
+  final VoidCallback onSetMarker;
+  final VoidCallback onAddFromBookmarks;
+
+  const WirdMarkerSetupCard({
+    super.key,
+    required this.onSetMarker,
+    required this.onAddFromBookmarks,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('wird_no_marker_hint'.tr(),
+                style: Theme.of(context).textTheme.bodyMedium),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: onSetMarker,
+              icon: const Icon(Icons.flag_outlined, size: 18),
+              label: Text('wird_set_marker'.tr()),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: onAddFromBookmarks,
+              icon: const Icon(Icons.bookmark_outline, size: 18),
+              label: Text('wird_add_from_bookmarks'.tr()),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

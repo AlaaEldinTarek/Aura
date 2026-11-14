@@ -330,6 +330,8 @@
   "wird_marker_set_here": "ضع علامة الورد هنا",
   "wird_marker_placed": "تم وضع علامة الورد في الصفحة %d",
   "wird_move_sheet_title": "هل تنقل علامة الورد إلى الصفحة %d؟",
+  "wird_set_marker": "ضع علامة الورد",
+  "wird_no_marker_hint": "لا توجد علامة ورد بعد. ضع علامة لتُحتسب الصفحات التي تقرأها.",
   "bookmark_dialog_title": "علامة",
   "bookmark_dialog_question": "هل تريد إضافة علامة أخرى أم استبدال إحداها؟",
   "bookmark_dialog_add": "إضافة أخرى",

@@ -67,4 +67,15 @@ void main() {
       expect(v, contains('%d'));
     }
   });
+
+  test('the completed-day setup keys exist, are not empty, and are distinct', () {
+    for (final lang in [en, ar]) {
+      for (final k in ['wird_set_marker', 'wird_no_marker_hint']) {
+        expect(lang[k], isA<String>(), reason: k);
+        expect((lang[k] as String).trim(), isNotEmpty, reason: k);
+      }
+      expect(lang['wird_no_marker_hint'], isNot(contains('%d')));
+      expect(lang['wird_set_marker'], isNot(lang['wird_marker_set_here']));
+    }
+  });
 }
