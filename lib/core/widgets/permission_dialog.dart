@@ -2,14 +2,13 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:permission_handler/permission_handler.dart' show PermissionStatusGetters;
 import '../constants/app_constants.dart';
 import '../services/platform_channel_service.dart';
-import '../services/notification_service.dart';
 import '../theme/app_typography.dart';
 import 'aura_button.dart';
 import 'auto_launch_dialog.dart';
+import 'permission_rows.dart';
 
 /// Checks all required permissions and shows a dialog for missing ones.
 class PermissionDialogHandler extends StatefulWidget {
@@ -65,78 +64,10 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
   }
 
   Future<void> _runChecks() async {
-    // Read app mode to filter relevant permissions
-    final prefs = await SharedPreferences.getInstance();
-    final appMode = prefs.getString('app_mode') ?? 'both';
-    final needsPrayer = appMode != 'tasks_only';
-    final needsTasks  = appMode != 'prayer_only';
-
-    final missing = <_PermInfo>[];
-
-    // Location and notifications are requested contextually (prayer screen + alarm scheduling)
-    // Only show the truly critical permissions upfront that block core functionality
-
-    // 1. Exact Alarms (Android 12+)
-    final canSchedule = await PlatformChannelService.canScheduleExactAlarms();
-    if (!canSchedule) {
-      missing.add(_PermInfo(
-        icon: Icons.alarm,
-        title: 'exact_alarm_title',
-        desc: 'exact_alarm_message',
-        color: Colors.red,
-        group: _PermGroup.prayer,
-        action: null,
-        openSettings: () => PlatformChannelService.openExactAlarmSettings(),
-      ));
-    }
-
-    // 2. Battery Optimization
-    final isIgnoring = await PlatformChannelService.isIgnoringBatteryOptimizations();
-    if (!isIgnoring) {
-      missing.add(_PermInfo(
-        icon: Icons.battery_alert_outlined,
-        title: 'battery_optimization_title',
-        desc: 'battery_optimization_message',
-        color: Colors.amber.shade800,
-        group: _PermGroup.prayer,
-        action: null,
-        openSettings: () => PlatformChannelService.openBatteryOptimizationSettings(),
-      ));
-    }
-
-    // 3. Do Not Disturb — dual purpose:
-    // - Prayer silent mode (if prayer enabled)
-    // - Focus mode silence (if tasks enabled)
-    final dndStatus = await Permission.accessNotificationPolicy.status;
-    if (!dndStatus.isGranted) {
-      // Place under whichever group the user has enabled; Focus if both
-      final dndGroup = needsTasks ? _PermGroup.focusMode : _PermGroup.prayer;
-      missing.add(_PermInfo(
-        icon: Icons.do_not_disturb_on,
-        title: 'dnd_permission_title',
-        desc: 'dnd_permission_desc',
-        color: Colors.purple,
-        group: dndGroup,
-        action: () => Permission.accessNotificationPolicy.request(),
-        openSettings: () => openAppSettings(),
-      ));
-    }
-
-    // 4. Overlay — only needed for Focus Mode (tasks)
-    if (Platform.isAndroid && needsTasks) {
-      final canOverlay = await NotificationService.instance.canDrawOverlays();
-      if (!canOverlay) {
-        missing.add(_PermInfo(
-          icon: Icons.picture_in_picture_alt,
-          title: 'overlay_permission_title',
-          desc: 'overlay_permission_desc',
-          color: Colors.deepOrange,
-          group: _PermGroup.focusMode,
-          action: null,
-          openSettings: () => NotificationService.instance.requestOverlayPermission(),
-        ));
-      }
-    }
+    // Popup mode: only the missing ones of the four original checks (exact alarm,
+    // battery, Do Not Disturb, overlay). Notifications, Location and Auto-launch are
+    // only on the Settings page. The rules live in buildPermissionRows.
+    final missing = await buildPermissionRows(const RealPermissionProbe(), showAll: false);
 
     // Accessibility service removed — screen pinning dialog handled manually by user
 
@@ -166,10 +97,10 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
     widget.onDone?.call();
   }
 
-  Future<void> _showPermissionsPage(List<_PermInfo> missing, {bool autoLaunchHint = false}) async {
+  Future<void> _showPermissionsPage(List<PermRow> missing, {bool autoLaunchHint = false}) async {
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => _PermissionsPage(permissions: missing, showAutoLaunchHint: autoLaunchHint),
+        builder: (_) => PermissionsPage(rows: missing, showAutoLaunchHint: autoLaunchHint),
         fullscreenDialog: true,
       ),
     );
@@ -179,24 +110,53 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
   Widget build(BuildContext context) => const SizedBox.shrink();
 }
 
-// ==================== Permissions Page ====================
-
-class _PermissionsPage extends StatefulWidget {
-  final List<_PermInfo> permissions;
-  final bool showAutoLaunchHint;
-  const _PermissionsPage({required this.permissions, this.showAutoLaunchHint = false});
-
-  @override
-  State<_PermissionsPage> createState() => _PermissionsPageState();
+/// Opens the permissions page in "show everything" mode (every applicable row with
+/// its state), from the Settings "Permissions" tile.
+/// Spec: docs/designs/permissions-status-screen.md. [probe] is a test seam.
+Future<void> showPermissionsStatusPage(
+  BuildContext context, {
+  PermissionProbe? probe,
+}) async {
+  final rows = await buildPermissionRows(probe ?? const RealPermissionProbe(), showAll: true);
+  if (!context.mounted) return;
+  await Navigator.of(context).push(
+    MaterialPageRoute(builder: (_) => PermissionsPage(rows: rows, showAll: true)),
+  );
 }
 
-class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingObserver {
-  late List<bool> _granted;
+// ==================== Permissions Page ====================
+
+/// The permissions page. Popup mode (`showAll: false`): only missing rows, no back
+/// arrow, rechecks only rows not yet granted. Show-everything mode (`showAll: true`):
+/// every row with its state, a back arrow, a summary, and a recheck of every readable
+/// row when the user comes back to the app.
+class PermissionsPage extends StatefulWidget {
+  final List<PermRow> rows;
+  final bool showAll;
+  final bool showAutoLaunchHint;
+  const PermissionsPage({
+    super.key,
+    required this.rows,
+    this.showAll = false,
+    this.showAutoLaunchHint = false,
+  });
+
+  @override
+  State<PermissionsPage> createState() => _PermissionsPageState();
+}
+
+class _PermissionsPageState extends State<PermissionsPage> with WidgetsBindingObserver {
+  late List<PermState> _states;
+
+  /// Rows where an Enable attempt ended not granted: show the "turn it on in the
+  /// app's settings" line. Page state only, not stored.
+  late List<bool> _denied;
 
   @override
   void initState() {
     super.initState();
-    _granted = List.filled(widget.permissions.length, false);
+    _states = widget.rows.map((r) => r.state).toList();
+    _denied = List.filled(widget.rows.length, false);
     WidgetsBinding.instance.addObserver(this);
   }
 
@@ -209,20 +169,32 @@ class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingO
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // Recheck all ungranted permissions when user returns from settings
-      for (int i = 0; i < widget.permissions.length; i++) {
-        if (!_granted[i]) _recheckPermission(i);
+      for (int i = 0; i < widget.rows.length; i++) {
+        if (widget.showAll) {
+          // Every readable row: the user may also have revoked a permission.
+          if (_states[i] != PermState.checkByHand) _recheckPermission(i);
+        } else {
+          // Popup: only rows not granted yet, as before.
+          if (_states[i] != PermState.granted) _recheckPermission(i);
+        }
       }
     }
   }
 
   Future<void> _grantPermission(int index) async {
-    final perm = widget.permissions[index];
+    final perm = widget.rows[index];
     if (perm.action != null) {
       final result = await perm.action!();
       if (result.isGranted) {
-        setState(() => _granted[index] = true);
+        if (!mounted) return;
+        setState(() {
+          _states[index] = PermState.granted;
+          _denied[index] = false;
+        });
         return;
+      }
+      if (perm.explainsDenial && mounted) {
+        setState(() => _denied[index] = true);
       }
     }
     // If direct request failed or not available, open settings
@@ -233,31 +205,23 @@ class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingO
   }
 
   Future<void> _recheckPermission(int index) async {
-    final perm = widget.permissions[index];
-    bool nowGranted = false;
-
-    if (perm.title == 'battery_optimization_title') {
-      nowGranted = await PlatformChannelService.isIgnoringBatteryOptimizations();
-    } else if (perm.title == 'exact_alarm_title') {
-      nowGranted = await PlatformChannelService.canScheduleExactAlarms();
-    } else if (perm.title == 'location_permission_title') {
-      nowGranted = await Permission.location.status.isGranted;
-    } else if (perm.title == 'notification_permission_title') {
-      nowGranted = await Permission.notification.status.isGranted;
-    } else if (perm.title == 'dnd_permission_title') {
-      nowGranted = await Permission.accessNotificationPolicy.status.isGranted;
-    } else if (perm.title == 'overlay_permission_title') {
-      nowGranted = await NotificationService.instance.canDrawOverlays();
-    }
-
-    if (nowGranted && mounted) {
-      setState(() => _granted[index] = true);
+    final now = await widget.rows[index].recheck();
+    if (!mounted) return;
+    if (widget.showAll) {
+      if (now != _states[index]) {
+        setState(() {
+          _states[index] = now;
+          if (now == PermState.granted) _denied[index] = false;
+        });
+      }
+    } else if (now == PermState.granted) {
+      setState(() => _states[index] = PermState.granted);
     }
   }
 
   Future<void> _grantAll() async {
-    for (int i = 0; i < widget.permissions.length; i++) {
-      if (!_granted[i]) {
+    for (int i = 0; i < widget.rows.length; i++) {
+      if (_states[i] == PermState.missing) {
         await _grantPermission(i);
         // Small delay between requests
         await Future.delayed(const Duration(milliseconds: 500));
@@ -265,16 +229,61 @@ class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingO
     }
   }
 
+  String _summaryText(PermSummary s) {
+    switch (s) {
+      case PermSummary.allSet:
+        return 'permissions_all_set'.tr();
+      case PermSummary.allSetPlusHand:
+        return 'permissions_all_set_plus_hand'.tr();
+      case PermSummary.someMissing:
+        return 'permissions_some_missing'.tr();
+    }
+  }
+
+  List<Widget> _tiles(PermGroup group, bool isArabic, bool isDark) {
+    return widget.rows.asMap().entries.where((e) => e.value.group == group).map((e) {
+      final i = e.key;
+      return _PermTile(
+        perm: e.value,
+        state: _states[i],
+        denied: _denied[i],
+        isArabic: isArabic,
+        isDark: isDark,
+        onGrant: () => _grantPermission(i),
+        onGuide: () => e.value.showGuide?.call(context),
+      );
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final allGranted = _granted.every((g) => g);
+    final anyMissing = _states.contains(PermState.missing);
+    final allGranted = !anyMissing;
+    final summary = summarizePermissions(_states);
+    final headerOk = widget.showAll ? summary != PermSummary.someMissing : allGranted;
+
+    final primaryButton = ElevatedButton(
+      onPressed: allGranted ? () => Navigator.pop(context) : _grantAll,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: allGranted ? Colors.green : AppConstants.getPrimary(isDark),
+        padding: const EdgeInsets.symmetric(vertical: 14),
+      ),
+      child: Text(
+        allGranted
+            ? (isArabic ? 'تم' : 'Done')
+            : (isArabic ? 'تفعيل الكل' : 'Enable All'),
+        style: AppTypography.bodyM.copyWith(fontWeight: FontWeight.bold),
+      ),
+    );
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isArabic ? 'الأذونات المطلوبة' : 'Required Permissions'),
-        automaticallyImplyLeading: false,
+        title: Text(widget.showAll
+            ? 'permissions_page_title_all'.tr()
+            : (isArabic ? 'الأذونات المطلوبة' : 'Required Permissions')),
+        automaticallyImplyLeading: widget.showAll,
       ),
       body: Column(
         children: [
@@ -286,17 +295,19 @@ class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingO
             child: Column(
               children: [
                 Icon(
-                  allGranted ? Icons.check_circle : Icons.security,
+                  headerOk ? Icons.check_circle : Icons.security,
                   size: 48,
-                  color: allGranted ? Colors.green : AppConstants.getPrimary(isDark),
+                  color: headerOk ? Colors.green : AppConstants.getPrimary(isDark),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  allGranted
-                      ? (isArabic ? 'جميع الأذونات ممنوحة' : 'All permissions granted')
-                      : (isArabic
-                          ? 'يحتاج التطبيق هذه الأذونات ليعمل بشكل صحيح'
-                          : 'Aura needs these permissions to work properly'),
+                  widget.showAll
+                      ? _summaryText(summary)
+                      : (allGranted
+                          ? (isArabic ? 'جميع الأذونات ممنوحة' : 'All permissions granted')
+                          : (isArabic
+                              ? 'يحتاج التطبيق هذه الأذونات ليعمل بشكل صحيح'
+                              : 'Aura needs these permissions to work properly')),
                   style: AppTypography.bodyL.copyWith(
                     fontWeight: FontWeight.w600,
                     color: isDark ? Colors.white70 : Colors.black87,
@@ -312,7 +323,7 @@ class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingO
             child: ListView(
               padding: const EdgeInsets.all(AppConstants.paddingMedium),
               children: [
-                if (widget.permissions.any((p) => p.group == _PermGroup.prayer)) ...[
+                if (widget.rows.any((p) => p.group == PermGroup.prayer)) ...[
                   _GroupHeader(
                     icon: Icons.mosque_outlined,
                     label: isArabic ? '🕌 أذونات الصلاة' : '🕌 Prayer Permissions',
@@ -320,17 +331,9 @@ class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingO
                     isDark: isDark,
                   ),
                   const SizedBox(height: 8),
-                  ...widget.permissions.asMap().entries
-                      .where((e) => e.value.group == _PermGroup.prayer)
-                      .map((e) => _PermTile(
-                            perm: e.value,
-                            isGranted: _granted[e.key],
-                            isArabic: isArabic,
-                            isDark: isDark,
-                            onGrant: () => _grantPermission(e.key),
-                          )),
+                  ..._tiles(PermGroup.prayer, isArabic, isDark),
                 ],
-                if (widget.permissions.any((p) => p.group == _PermGroup.focusMode)) ...[
+                if (widget.rows.any((p) => p.group == PermGroup.focusMode)) ...[
                   const SizedBox(height: 12),
                   _GroupHeader(
                     icon: Icons.lock_clock,
@@ -339,17 +342,9 @@ class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingO
                     isDark: isDark,
                   ),
                   const SizedBox(height: 8),
-                  ...widget.permissions.asMap().entries
-                      .where((e) => e.value.group == _PermGroup.focusMode)
-                      .map((e) => _PermTile(
-                            perm: e.value,
-                            isGranted: _granted[e.key],
-                            isArabic: isArabic,
-                            isDark: isDark,
-                            onGrant: () => _grantPermission(e.key),
-                          )),
+                  ..._tiles(PermGroup.focusMode, isArabic, isDark),
                 ],
-                if (widget.showAutoLaunchHint) ...[
+                if (widget.showAutoLaunchHint && !widget.showAll) ...[
                   const SizedBox(height: 16),
                   Card(
                     child: ListTile(
@@ -368,65 +363,26 @@ class _PermissionsPageState extends State<_PermissionsPage> with WidgetsBindingO
           // Bottom buttons
           Padding(
             padding: const EdgeInsets.all(AppConstants.paddingMedium),
-            child: Row(
-              children: [
-                Expanded(
-                  child: AuraButton.secondary(
-                    label: isArabic ? 'لاحقاً' : 'Later',
-                    onPressed: () => Navigator.pop(context),
-                    expanded: true,
-                    verticalPadding: 14,
+            child: widget.showAll
+                ? SizedBox(width: double.infinity, child: primaryButton)
+                : Row(
+                    children: [
+                      Expanded(
+                        child: AuraButton.secondary(
+                          label: isArabic ? 'لاحقاً' : 'Later',
+                          onPressed: () => Navigator.pop(context),
+                          expanded: true,
+                          verticalPadding: 14,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(flex: 2, child: primaryButton),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 2,
-                  child: ElevatedButton(
-                    onPressed: allGranted ? () => Navigator.pop(context) : _grantAll,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: allGranted ? Colors.green : AppConstants.getPrimary(isDark),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                    ),
-                    child: Text(
-                      allGranted
-                          ? (isArabic ? 'تم' : 'Done')
-                          : (isArabic ? 'تفعيل الكل' : 'Enable All'),
-                      style: AppTypography.bodyM.copyWith(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
     );
-  }
-
-  String _arabicTitle(String key) {
-    const map = {
-      'location_permission_title': 'الموقع الجغرافي',
-      'notification_permission_title': 'الإشعارات',
-      'exact_alarm_title': 'المنبهات الدقيقة',
-      'battery_optimization_title': 'تحسين البطارية',
-      'dnd_permission_title': 'وضع عدم الإزعاج',
-      'overlay_permission_title': 'العرض فوق التطبيقات',
-      'accessibility_permission_title': 'خدمة إمكانية الوصول',
-    };
-    return map[key] ?? key;
-  }
-
-  String _arabicDesc(String key) {
-    const map = {
-      'location_permission_desc': 'مطلوب لحساب أوقات الصلاة بدقة واتجاه القبلة',
-      'notification_permission_desc': 'مطلوب لإشعارات أوقات الصلاة والمهام',
-      'exact_alarm_message': 'مطلوب لتشغيل الأذان في الوقت المحدد تماماً',
-      'battery_optimization_message': 'مطلوب لضمان عمل الإشعارات في الخلفية',
-      'dnd_permission_desc': 'مطلوب لوضع الصامت أثناء الصلاة ووضع التركيز',
-      'overlay_permission_desc': 'مطلوب لعرض شاشة وضع التركيز فوق التطبيقات',
-      'accessibility_permission_desc': 'يقبل تلقائياً تثبيت الشاشة أثناء وضع التركيز',
-    };
-    return map[key] ?? key;
   }
 }
 
@@ -471,16 +427,24 @@ class _GroupHeader extends StatelessWidget {
 
 // ── Permission tile widget ─────────────────────────────────────────────────
 class _PermTile extends StatelessWidget {
-  final _PermInfo perm;
-  final bool isGranted, isArabic, isDark;
+  final PermRow perm;
+  final PermState state;
+  final bool denied;
+  final bool isArabic, isDark;
   final VoidCallback onGrant;
+  final VoidCallback onGuide;
   const _PermTile({
     required this.perm,
-    required this.isGranted,
+    required this.state,
+    required this.denied,
     required this.isArabic,
     required this.isDark,
     required this.onGrant,
+    required this.onGuide,
   });
+
+  bool get _granted => state == PermState.granted;
+  bool get _byHand => state == PermState.checkByHand;
 
   String _title() {
     const ar = {
@@ -492,7 +456,9 @@ class _PermTile extends StatelessWidget {
       'overlay_permission_title': 'العرض فوق التطبيقات',
       'accessibility_permission_title': 'خدمة إمكانية الوصول',
     };
-    return isArabic ? (ar[perm.title] ?? perm.title) : perm.title.tr();
+    // A key that is not in the map (for example the Auto-launch row) goes through
+    // .tr() instead of showing the raw key.
+    return isArabic ? (ar[perm.title] ?? perm.title.tr()) : perm.title.tr();
   }
 
   String _desc() {
@@ -505,18 +471,19 @@ class _PermTile extends StatelessWidget {
       'overlay_permission_desc': 'مطلوب لعرض شاشة وضع التركيز فوق التطبيقات',
       'accessibility_permission_desc': 'يقبل تلقائياً تثبيت الشاشة أثناء وضع التركيز',
     };
-    return isArabic ? (ar[perm.desc] ?? perm.desc) : perm.desc.tr();
+    return isArabic ? (ar[perm.desc] ?? perm.desc.tr()) : perm.desc.tr();
   }
 
   @override
   Widget build(BuildContext context) {
+    final muted = AppConstants.textMuted(isDark);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: AppConstants.card(isDark),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: isGranted
+          color: _granted
               ? Colors.green.withValues(alpha: 0.4)
               : (AppConstants.border(isDark)),
         ),
@@ -527,12 +494,12 @@ class _PermTile extends StatelessWidget {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: (isGranted ? Colors.green : perm.color).withValues(alpha: 0.12),
+            color: (_granted ? Colors.green : perm.color).withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(12),
           ),
           child: Icon(
-            isGranted ? Icons.check_circle_rounded : perm.icon,
-            color: isGranted ? Colors.green : perm.color,
+            _granted ? Icons.check_circle_rounded : perm.icon,
+            color: _granted ? Colors.green : perm.color,
             size: 24,
           ),
         ),
@@ -540,14 +507,36 @@ class _PermTile extends StatelessWidget {
           _title(),
           style: AppTypography.label.copyWith(fontWeight: FontWeight.w600),
         ),
-        subtitle: Text(
-          _desc(),
-          style: AppTypography.caption.copyWith(
-            height: 1.4,
-            color: AppConstants.textMuted(isDark),
-          ),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              _desc(),
+              style: AppTypography.caption.copyWith(height: 1.4, color: muted),
+            ),
+            if (_byHand) ...[
+              const SizedBox(height: 4),
+              Text(
+                'permissions_check_by_hand'.tr(),
+                style: AppTypography.caption.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.amber.shade800,
+                ),
+              ),
+            ],
+            if (denied && state == PermState.missing) ...[
+              const SizedBox(height: 4),
+              Text(
+                'permissions_denied_hint'.tr(),
+                style: AppTypography.caption.copyWith(
+                  fontWeight: FontWeight.w600,
+                  color: Colors.red.shade700,
+                ),
+              ),
+            ],
+          ],
         ),
-        trailing: isGranted
+        trailing: _granted
             ? Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
@@ -563,7 +552,7 @@ class _PermTile extends StatelessWidget {
                 ),
               )
             : ElevatedButton(
-                onPressed: onGrant,
+                onPressed: _byHand ? onGuide : onGrant,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: perm.color,
                   foregroundColor: Colors.white,
@@ -574,35 +563,13 @@ class _PermTile extends StatelessWidget {
                   elevation: 0,
                 ),
                 child: Text(
-                  isArabic ? 'تفعيل' : 'Enable',
+                  _byHand
+                      ? 'permissions_check_by_hand_button'.tr()
+                      : (isArabic ? 'تفعيل' : 'Enable'),
                   style: AppTypography.caption.copyWith(fontWeight: FontWeight.w600),
                 ),
               ),
       ),
     );
   }
-}
-
-// ==================== Permission Info Model ====================
-
-enum _PermGroup { prayer, focusMode }
-
-class _PermInfo {
-  final IconData icon;
-  final String title;
-  final String desc;
-  final Color color;
-  final _PermGroup group;
-  final Future<PermissionStatus> Function()? action;
-  final VoidCallback openSettings;
-
-  _PermInfo({
-    required this.icon,
-    required this.title,
-    required this.desc,
-    required this.color,
-    required this.group,
-    required this.action,
-    required this.openSettings,
-  });
 }
