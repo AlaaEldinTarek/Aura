@@ -1,7 +1,7 @@
 # Fix F68 — Silent-Mode Notification Control Buttons
 
 *   **Author:** Alaa Eldin Tarek
-*   **Status:** Draft
+*   **Status:** Draft. **Partly superseded on 2026-11-14** by `docs/designs/fix-silent-mode-buttons-in-fgs.md`: the separate notification 8100, the `silent_mode_control` channel and request codes 8100/8101 are replaced by buttons inside the foreground-service notification. The boot-receiver ringer restore (Path d) and the rest of this spec stay in force.
 *   **Date:** 2026-11-11
 *   **Branch:** `fix/silent-mode-notification`
 *   **Finding:** F68 (`reference/findings.md`)
