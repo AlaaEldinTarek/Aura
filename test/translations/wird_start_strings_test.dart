@@ -78,4 +78,21 @@ void main() {
       expect(lang['wird_set_marker'], isNot(lang['wird_marker_set_here']));
     }
   });
+
+  test('tutorial_reader_topbar_body names the Wird marker, not saving the page',
+      () {
+    // Spec "Single bookmark-shaped Wird icon", Strings (fifth amendment, P4a-6).
+    for (final lang in [en, ar]) {
+      final v = lang['tutorial_reader_topbar_body'];
+      expect(v, isA<String>());
+      expect((v as String).trim(), isNotEmpty);
+    }
+    expect(en['tutorial_reader_topbar_body'], contains('Wird marker'));
+    expect(en['tutorial_reader_topbar_body'], isNot(contains('save this page')));
+    expect(ar['tutorial_reader_topbar_body'], contains('علامة الورد'));
+    expect(ar['tutorial_reader_topbar_body'], isNot(contains('لحفظ هذه الصفحة')));
+    // The sentences about verses and hiding the bars are still there.
+    expect(en['tutorial_reader_topbar_body'], contains('bookmark it with a color'));
+    expect(en['tutorial_reader_topbar_body'], contains('hide these bars'));
+  });
 }
