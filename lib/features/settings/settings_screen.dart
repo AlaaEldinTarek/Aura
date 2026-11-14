@@ -55,7 +55,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final madhab = sp.getString(AppConstants.keyAsrMadhab) ?? 'Shafi';
     final windowsStartup =
         sp.getBool(WindowsStartupService.prefKey) ?? true;
-    final autoLaunch = await PlatformChannelService.canOpenAutoLaunchSettings();
+    final autoLaunch = await PlatformChannelService.isEmuiDevice();
     if (mounted) {
       setState(() {
         _silentMode = silent;

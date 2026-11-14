@@ -27,6 +27,13 @@ object AutoLaunchSettings {
         Target(HSM_PACKAGE, null, "huawei.intent.action.HSM_STARTUPAPP_MANAGER"),
     )
 
+    /**
+     * True on a Huawei phone (EMUI), by the manufacturer name only: no Huawei activity is
+     * resolved. Honor is not included (its menu is not verified). Spec section 3a, P1b.
+     */
+    fun isEmuiManufacturer(manufacturer: String?): Boolean =
+        manufacturer.equals("HUAWEI", ignoreCase = true)
+
     /** The first candidate for which [resolves] is true, or null (stops asking once one is found). */
     fun firstResolvable(resolves: (Target) -> Boolean): Target? = CANDIDATES.firstOrNull(resolves)
 }

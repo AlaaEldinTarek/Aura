@@ -38,27 +38,27 @@ void main() {
         .setMockMethodCallHandler(_channel, null);
   });
 
-  group('canOpenAutoLaunchSettings', () {
-    test('true when the native side says an EMUI screen exists', () async {
+  group('isEmuiDevice', () {
+    test('true when the native side says this is a Huawei (EMUI) phone', () async {
       mockChannel((_) async => true);
-      expect(await PlatformChannelService.canOpenAutoLaunchSettings(), isTrue);
-      expect(calls, ['canOpenAutoLaunchSettings']);
+      expect(await PlatformChannelService.isEmuiDevice(), isTrue);
+      expect(calls, ['isEmuiDevice']);
     });
 
-    test('false when the native side says none exists', () async {
+    test('false when the native side says it is not', () async {
       mockChannel((_) async => false);
-      expect(await PlatformChannelService.canOpenAutoLaunchSettings(), isFalse);
+      expect(await PlatformChannelService.isEmuiDevice(), isFalse);
     });
 
     test('false when the channel throws', () async {
       mockChannel((_) async => throw PlatformException(code: 'boom'));
-      expect(await PlatformChannelService.canOpenAutoLaunchSettings(), isFalse);
+      expect(await PlatformChannelService.isEmuiDevice(), isFalse);
     });
 
     test('false, with no channel call, when not on Android', () async {
       PlatformChannelService.debugIsAndroid = false;
       mockChannel((_) async => true);
-      expect(await PlatformChannelService.canOpenAutoLaunchSettings(), isFalse);
+      expect(await PlatformChannelService.isEmuiDevice(), isFalse);
       expect(calls, isEmpty);
     });
   });

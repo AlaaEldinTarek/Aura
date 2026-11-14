@@ -150,7 +150,7 @@ class _PermissionDialogHandlerState extends State<PermissionDialogHandler> {
 
     _hasChecked = true;
     // A Huawei-only hint, never part of the missing list (it cannot be checked).
-    final autoLaunchHint = await PlatformChannelService.canOpenAutoLaunchSettings();
+    final autoLaunchHint = await PlatformChannelService.isEmuiDevice();
     if (!mounted) {
       if (!PermissionDialogHandler._completer.isCompleted) {
         PermissionDialogHandler._completer.complete();

@@ -1,6 +1,7 @@
 package com.aura.hala
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -60,5 +61,19 @@ class AutoLaunchSettingsTest {
         val asked = mutableListOf<AutoLaunchSettings.Target>()
         AutoLaunchSettings.firstResolvable { asked.add(it); it == control }
         assertEquals(listOf(list, control), asked)
+    }
+
+    @Test
+    fun `Huawei is recognised whatever the letter case`() {
+        for (m in listOf("HUAWEI", "huawei", "Huawei")) {
+            assertTrue(m, AutoLaunchSettings.isEmuiManufacturer(m))
+        }
+    }
+
+    @Test
+    fun `other makers, blank and null are not EMUI`() {
+        for (m in listOf("HONOR", "samsung", "Xiaomi", "OPPO", "", " ", null)) {
+            assertFalse(m ?: "null", AutoLaunchSettings.isEmuiManufacturer(m))
+        }
     }
 }

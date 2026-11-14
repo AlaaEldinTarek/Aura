@@ -59,15 +59,15 @@ class PlatformChannelService {
     }
   }
 
-  /// True when an EMUI "App launch" (auto-launch) screen exists on this phone, so
-  /// the "App launch" tile can be shown. Always false off Android and on error.
-  static Future<bool> canOpenAutoLaunchSettings() async {
+  /// True on a Huawei (EMUI) phone, by the manufacturer name, so the "App launch"
+  /// tile can be shown. Always false off Android and on error.
+  static Future<bool> isEmuiDevice() async {
     if (!_isAndroid) return false;
     try {
-      final result = await _prayerChannel.invokeMethod<bool>('canOpenAutoLaunchSettings');
+      final result = await _prayerChannel.invokeMethod<bool>('isEmuiDevice');
       return result ?? false;
     } catch (e) {
-      debugPrint('⚠️ [PLATFORM] canOpenAutoLaunchSettings failed: $e');
+      debugPrint('⚠️ [PLATFORM] isEmuiDevice failed: $e');
       return false;
     }
   }

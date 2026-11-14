@@ -691,12 +691,12 @@ class MainActivity : FlutterFragmentActivity() {
                         result.success(true)
                     }
                 }
-                "canOpenAutoLaunchSettings" -> {
-                    // True when an EMUI "App launch" screen exists on this phone.
+                "isEmuiDevice" -> {
+                    // True on a Huawei (EMUI) phone, by the manufacturer name only.
                     try {
-                        result.success(AutoLaunchSettings.firstResolvable { canResolveAutoLaunchTarget(it) } != null)
+                        result.success(AutoLaunchSettings.isEmuiManufacturer(Build.MANUFACTURER))
                     } catch (e: Exception) {
-                        Log.e("MainActivity", "❌ [AUTOLAUNCH] Check failed: ${e.message}")
+                        Log.e("MainActivity", "❌ [AUTOLAUNCH] Manufacturer check failed: ${e.message}")
                         result.success(false)
                     }
                 }
