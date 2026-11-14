@@ -147,6 +147,19 @@ Device-only (cannot be unit tested), on the nova 5T release build:
   `silent_mode_duration` in Settings first if the Settings UI allows it, minimum UNKNOWN).
 - D5: the real Zuhr adhan still fires normally afterwards (do on a day when it is possible).
 
+## Device results (2026-11-14)
+
+Reported by Aladdin on 2026-11-14, on the phone, with the throwaway build `test/all-edits-final3` (merge `2ba27d7`: `main` `1584deb` with `feat/wird-marker`, `fix/boot-start-service` and `fix/dev-test-adhan`; release APK 1.1.0+60, sha256 `5393d65a53350b01d4d7332774aba555bc8d4bc212c5dc561e77799394c69235`, installed over the previous app on 2026-11-14, installed hash equal to the built hash). These are his reported results; they were not observed by Claude. Only the items listed below are recorded as passed.
+
+| # | Check | Result |
+| --- | --- | --- |
+| D1 | Seven taps on the Version tile on Profile reveal the hidden "Fire test adhan" tile | PASSED |
+| D2 | The tile fires the adhan | PASSED |
+| D3 | The adhan screen and the vibration window flow worked (first device check, reported as a pass by Aladdin) | PASSED |
+| D1-D2 again | The tile still works on the final build above | PASSED |
+
+*   **Not reported as run:** D4 (the auto-restore at the end of the window with the real window length) and D5 (the real Zuhr adhan fires normally afterwards) from the device plan above, a fresh visit hiding the tile again, and the Arabic dialog on the phone. They are not recorded as passed. "The adhan screen and the vibration window flow worked" is reported as one result; it is not split into Stop Vibrate, Keep Vibrate and auto-restore.
+
 ## File boundary
 - `lib/features/profile/profile_screen.dart`, new `lib/features/profile/profile_version_tile.dart` (if extracted),
   `assets/translations/en.json`, `assets/translations/ar.json`, new tests.
