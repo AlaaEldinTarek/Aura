@@ -8,7 +8,23 @@ class PlatformChannelService {
   PlatformChannelService._();
 
   static const MethodChannel _prayerChannel = MethodChannel('com.aura.hala/prayer_alarms');
-  static bool get _isAndroid => !kIsWeb && Platform.isAndroid;
+  static bool get _isAndroid =>
+      debugIsAndroid ?? (!kIsWeb && Platform.isAndroid);
+
+  /// Test hooks: force the platform check, and replace `openAppSettings`.
+  @visibleForTesting
+  static bool? debugIsAndroid;
+  @visibleForTesting
+  static Future<bool> Function()? debugOpenAppSettings;
+
+  static Future<void> _openAppSettings() async {
+    final override = debugOpenAppSettings;
+    if (override != null) {
+      await override();
+    } else {
+      await openAppSettings();
+    }
+  }
 
   /// Check if battery optimization is disabled
   static Future<bool> isIgnoringBatteryOptimizations() async {
@@ -40,6 +56,32 @@ class PlatformChannelService {
     } catch (e) {
       debugPrint('⚠️ [PLATFORM] Failed to open battery optimization via channel: $e');
       await openAppSettings();
+    }
+  }
+
+  /// True when an EMUI "App launch" (auto-launch) screen exists on this phone, so
+  /// the "App launch" tile can be shown. Always false off Android and on error.
+  static Future<bool> canOpenAutoLaunchSettings() async {
+    if (!_isAndroid) return false;
+    try {
+      final result = await _prayerChannel.invokeMethod<bool>('canOpenAutoLaunchSettings');
+      return result ?? false;
+    } catch (e) {
+      debugPrint('⚠️ [PLATFORM] canOpenAutoLaunchSettings failed: $e');
+      return false;
+    }
+  }
+
+  /// Open the EMUI "App launch" screen (Kotlin tries the EMUI screens, then the app
+  /// details screen). When the channel fails, or nothing opened, open app settings.
+  static Future<void> openAutoLaunchSettings() async {
+    if (!_isAndroid) return;
+    try {
+      final opened = await _prayerChannel.invokeMethod<bool>('openAutoLaunchSettings');
+      if (opened == false) await _openAppSettings();
+    } catch (e) {
+      debugPrint('⚠️ [PLATFORM] Failed to open auto-launch settings via channel: $e');
+      await _openAppSettings();
     }
   }
 

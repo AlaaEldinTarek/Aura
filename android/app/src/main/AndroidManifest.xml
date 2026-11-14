@@ -349,5 +349,7 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- EMUI system manager: lets the app check for and open its "App launch" screen -->
+        <package android:name="com.huawei.systemmanager"/>
     </queries>
 </manifest>
