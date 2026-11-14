@@ -1,7 +1,7 @@
 # Wird Marker: Single Marker, Versioned Sync Guard, Undo, Khatma and Restart
 
 *   **Author:** Alaa Eldin Tarek
-*   **Status:** Proposed. Amended 2026-11-14: start entry points and the Restart dialog label (see "Start entry points (amendment 2026-11-14)"). The amendment is for the owner to review.
+*   **Status:** Proposed. Amended 2026-11-14: start entry points and the Restart dialog label (see "Start entry points (amendment 2026-11-14)"). Amendment approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-2 is NOT approved yet.
 *   **Date:** 2026-11-13
 
 --------------------------------------------------------------------------------
@@ -273,7 +273,7 @@ pushIfNewer(uid, record):             # used by undo; one Source.server read, th
 
 ### Start entry points (amendment 2026-11-14)
 
-Decided by the product owner on 2026-11-14. Labels: VERIFIED (read in code or in this spec), UNKNOWN (not checked), GUESS (reasoning, not run). The amendment itself is for the owner to review.
+Decided by the product owner on 2026-11-14. Labels: VERIFIED (read in code or in this spec), UNKNOWN (not checked), GUESS (reasoning, not run). Amendment approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-2 is NOT approved yet.
 
 **Problem (VERIFIED in code at `feat/wird-marker` `162a240`).** With no marker, "Start Reading" only opens the reader (`wird_tab.dart`, `_buildActionButtons`). The only way to create the first marker is "Add from Bookmarks" on the Wird tab, which needs an existing bookmark. In the reader, the verse sheet shows a marker action only when a marker exists and the tapped page is ahead of it (`canMove`, `quran_reader_screen.dart:281-283`; the button is built only when `canMoveMarker` is true, `:1163`), and the ribbon needs `markerPage != null` (`shouldShowWirdRibbon`). Reading without a marker counts nothing, because pages are credited only by `moveMarker`. Nothing on the screens tells the user what to do next.
 
@@ -326,9 +326,9 @@ The confirm button of the Restart dialog reused the key `wird_restart`, so after
 
 #### Strings (new in English and Arabic)
 
-The new Arabic below is a draft for the product owner to review. Numbers go through `NumberFormatter`.
+The Arabic below was reviewed by the product owner (Aladdin, native Arabic speaker) on 2026-11-14. Numbers go through `NumberFormatter`.
 
-| Key | English | Arabic (draft) |
+| Key | English | Arabic |
 | --- | --- | --- |
 | `wird_restart_confirm_yes` | Yes, restart | نعم، أعد البدء |
 | `wird_start_sheet_title` | Start your Wird from page %d? | هل تبدأ وردك من الصفحة %d؟ |
@@ -1003,7 +1003,7 @@ After `APPLY_CLOUD` or `DISCARD_LOCAL` the undo record is cleared when it no lon
 *   `khatma_finished_no` ("Not Yet") and `khatma_finished_keep` ("Keep Reading") keep their text. `wird_mark_complete` ("Mark Complete", `en.json:281`) stays the one label for the manual action in both modes.
 *   Removal list (P5), each removed only after a repo search shows no other use: `wird_record_pages`, `wird_how_many_pages`, `wird_record_mode_count`, `wird_record_mode_range`, `wird_page_from`, `wird_page_to`, `wird_page_range_invalid`, `wird_page_range_hint`, `wird_bookmark_pages_title`, `wird_bookmark_added`, `wird_bookmark_already_counted`, `wird_bookmark_juz_marked`, `wird_bookmark_no_new_juz`, `wird_bookmark_mode_desc`, `wird_bookmark_mode_new`, `wird_bookmark_mode_update`, `wird_bookmark_no_bookmarks`. The keys `wird_bookmark_color_red`, `wird_bookmark_color_orange`, `wird_bookmark_color_green` and `wird_bookmark_unique_pages` are kept only if the search shows the reader or the new bookmark pick sheet uses them. The search result decides, and the list above is the candidate set.
 
-*   **Amendment 2026-11-14 (P4a-2):** seven new keys and one changed key, with English and Arabic text, are listed in "Start entry points", "Strings". The new Arabic is a draft for the product owner to review.
+*   **Amendment 2026-11-14 (P4a-2):** seven new keys and one changed key, with English and Arabic text, are listed in "Start entry points", "Strings". The Arabic was reviewed by the product owner (Aladdin, native Arabic speaker) on 2026-11-14.
 
 #### 15. `test/core/services/wird_marker_logic_test.dart` (Create)
 
