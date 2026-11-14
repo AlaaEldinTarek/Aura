@@ -494,5 +494,14 @@
   "prayer_calc_done": "تم",
   "auto_launch_dialog_title": "السماح لـ Aura بالعمل بعد إعادة التشغيل",
   "auto_launch_dialog_body": "في هواتف هواوي قد لا تبدأ تنبيهات الصلاة بعد إعادة التشغيل ما لم يُسمح لـ Aura بالتشغيل.\n\nافتح: الإعدادات ← البطارية ← تشغيل التطبيق ← Aura.\nثم فعّل «التشغيل التلقائي» و«التشغيل الثانوي» و«التشغيل في الخلفية».",
-  "auto_launch_dialog_open_details": "فتح تفاصيل التطبيق"
+  "auto_launch_dialog_open_details": "فتح تفاصيل التطبيق",
+  "settings_permissions_title": "الأذونات",
+  "settings_permissions_subtitle": "اعرض كل إذن وحالته",
+  "permissions_page_title_all": "أذونات التطبيق",
+  "permissions_all_set": "كل شيء جاهز",
+  "permissions_all_set_plus_hand": "كل شيء جاهز، وبقي عنصر واحد للتحقق منه يدويًا",
+  "permissions_some_missing": "بعض الأذونات غير ممنوحة",
+  "permissions_check_by_hand": "تحقّق يدويًا",
+  "permissions_check_by_hand_button": "كيف أتحقق؟",
+  "permissions_denied_hint": "إن بقي الإذن مغلقًا، فعّله من إعدادات التطبيق."
 }

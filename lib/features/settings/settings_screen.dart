@@ -13,6 +13,7 @@ import '../../core/services/prayer_alarm_service.dart';
 import '../../core/services/platform_channel_service.dart';
 import '../../core/services/windows_startup_service.dart';
 import '../../core/widgets/auto_launch_dialog.dart';
+import '../../core/widgets/permission_dialog.dart';
 import '../../core/widgets/setting_tile.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/app_language.dart';
@@ -278,6 +279,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         title: isArabic ? 'تحسين البطارية' : 'Battery Optimization',
                         subtitle: isArabic ? 'تعطيل لضمان الإشعارات في الخلفية' : 'Disable for reliable background alerts',
                         onTap: () => PlatformChannelService.openBatteryOptimizationSettings(),
+                      ),
+                      // Every permission and its state on one page.
+                      SettingTile(
+                        icon: Icons.verified_user_outlined,
+                        iconColor: Colors.green,
+                        title: 'settings_permissions_title'.tr(),
+                        subtitle: 'settings_permissions_subtitle'.tr(),
+                        onTap: () => showPermissionsStatusPage(context),
                       ),
                       // Huawei only: where the user lets Aura start after a restart.
                       if (_autoLaunchAvailable)
