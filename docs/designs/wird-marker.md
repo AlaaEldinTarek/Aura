@@ -1,7 +1,7 @@
 # Wird Marker: Single Marker, Versioned Sync Guard, Undo, Khatma and Restart
 
 *   **Author:** Alaa Eldin Tarek
-*   **Status:** Proposed. Amended 2026-11-14: start entry points and the Restart dialog label (see "Start entry points (amendment 2026-11-14)"). Amendment approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-2 is implemented (commits `952a631`, `75f8c8c`, `dae8f98`). Device feedback on it led to a second amendment (2026-11-14): the Wird marker ribbon is replaced by an icon in the reader's top bar (see "Top-bar Wird icon"). Second amendment (top-bar Wird icon replaces the ribbon) approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-3 is NOT approved yet.
+*   **Status:** Proposed. Third amendment (2026-11-14, from a device finding): the Wird tab always offers a way to set the first marker, also on a completed day (see "Wird tab on a completed day"); it is for the owner to review. Amended 2026-11-14: start entry points and the Restart dialog label (see "Start entry points (amendment 2026-11-14)"). Amendment approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-2 is implemented (commits `952a631`, `75f8c8c`, `dae8f98`). Device feedback on it led to a second amendment (2026-11-14): the Wird marker ribbon is replaced by an icon in the reader's top bar (see "Top-bar Wird icon"). Second amendment (top-bar Wird icon replaces the ribbon) approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-3 is implemented (commits `f985dba` and `793fb7e`).
 *   **Date:** 2026-11-13
 
 --------------------------------------------------------------------------------
@@ -273,7 +273,7 @@ pushIfNewer(uid, record):             # used by undo; one Source.server read, th
 
 ### Start entry points (amendment 2026-11-14)
 
-Decided by the product owner on 2026-11-14. Labels: VERIFIED (read in code or in this spec), UNKNOWN (not checked), GUESS (reasoning, not run). Amendment approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-2 is implemented (commits `952a631`, `75f8c8c`, `dae8f98`). Device feedback on it led to a second amendment (2026-11-14): the Wird marker ribbon is replaced by an icon in the reader's top bar (see "Top-bar Wird icon"). Second amendment (top-bar Wird icon replaces the ribbon) approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-3 is NOT approved yet.
+Decided by the product owner on 2026-11-14. Labels: VERIFIED (read in code or in this spec), UNKNOWN (not checked), GUESS (reasoning, not run). Amendment approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-2 is implemented (commits `952a631`, `75f8c8c`, `dae8f98`). Device feedback on it led to a second amendment (2026-11-14): the Wird marker ribbon is replaced by an icon in the reader's top bar (see "Top-bar Wird icon"). Second amendment (top-bar Wird icon replaces the ribbon) approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-3 is implemented (commits `f985dba` and `793fb7e`).
 
 **Problem (VERIFIED in code at `feat/wird-marker` `162a240`).** With no marker, "Start Reading" only opens the reader (`wird_tab.dart`, `_buildActionButtons`). The only way to create the first marker is "Add from Bookmarks" on the Wird tab, which needs an existing bookmark. In the reader, the verse sheet shows a marker action only when a marker exists and the tapped page is ahead of it (`canMove`, `quran_reader_screen.dart:281-283`; the button is built only when `canMoveMarker` is true, `:1163`), and the ribbon (replaced by the top-bar icon on 2026-11-14) needed `markerPage != null` (`shouldShowWirdRibbon`). Reading without a marker counts nothing, because pages are credited only by `moveMarker`. Nothing on the screens tells the user what to do next.
 
@@ -291,6 +291,7 @@ Decided by the product owner on 2026-11-14. Labels: VERIFIED (read in code or in
 *   **Dismissing the sheet** (tap outside or Back) cancels: nothing is saved and the reader does not open.
 *   **After any outcome** the reader opens at the page `wirdReadingPage` gives from the fresh state. After "Start here" that is N. If `placeMarker` fails because a marker appeared meanwhile (`MARKER_EXISTS`, for example from a pull), the reader opens at that marker instead. A failure is logged, not shown.
 *   **Frequency (GUESS on how it feels):** the sheet shows on every press of Start Reading while there is no marker. No "don't ask again" flag is added, because a new prefs key would be a contract change (see Risk 17).
+*   **Completed day (third amendment, 2026-11-14):** Start Reading is not built on a completed day (VERIFIED, `wird_tab.dart:241-244`), so entry point (a) does not exist then. With no marker, the tab shows a setup card instead (see "Wird tab on a completed day").
 
 #### Entry point (b): "Set Wird marker here" in the verse sheet
 
@@ -360,7 +361,7 @@ Reused as they are: `wird_marker_choose_color` (the grid caption) and `cancel`. 
 
 ### Top-bar Wird icon (amendment 2026-11-14, second)
 
-Decided by the product owner on 2026-11-14 after device feedback on the P4a-2 build (Option 1: one Wird icon in the top bar, the ribbon removed). Labels: VERIFIED (read in code or in this spec), UNKNOWN (not checked), GUESS (reasoning, not run). Second amendment (top-bar Wird icon replaces the ribbon) approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-3 is NOT approved yet.
+Decided by the product owner on 2026-11-14 after device feedback on the P4a-2 build (Option 1: one Wird icon in the top bar, the ribbon removed). Labels: VERIFIED (read in code or in this spec), UNKNOWN (not checked), GUESS (reasoning, not run). Second amendment (top-bar Wird icon replaces the ribbon) approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-3 is implemented (commits `f985dba` and `793fb7e`).
 
 **Problem (VERIFIED in code at `feat/wird-marker` `dae8f98`).** The reader showed two markers in the same corner: the ordinary bookmark icon at the end of the top bar (`_TopBar`, `quran_reader_screen.dart:1485-1545`, the last child of the `Row`) and the Wird ribbon on the right edge just below it (`WirdMarkerRibbonLayer`, `right: 8`, drawn at `:656-664`).
 
@@ -454,6 +455,53 @@ Reused as they are: `wird_marker_set_here`, `wird_marker_move_here`, `wird_marke
 *   **P4a-3 (new):** the icon, the move sheet, the reader cleanup, one key and the tests above, on the same branch and PR, with its own gate (see the Phases table).
 *   **P4b:** none. **P5:** also deletes the ribbon code, its tests and `wird_marker_ribbon_label`. **P6:** device checks for the top bar (see the Verification Plan).
 
+### Wird tab on a completed day (amendment 2026-11-14, third)
+
+Written 2026-11-14 after a device finding by the product owner. Option A below is the design; the options are compared in Alternative AD. This amendment is for the owner to review. Labels: VERIFIED (read in code or in this spec), UNKNOWN (not checked), GUESS (reasoning, not run).
+
+**Problem (VERIFIED in code at `feat/wird-marker` `793fb7e`).** In page mode the Wird tab builds `_buildCompletedBanner` when today is completed and `_buildActionButtons` otherwise (`wird_tab.dart:241-244`, from `isCompleted = progress?.isCompleted ?? false` at `:200`). The banner (`:259`) holds "Wird completed today!", the "undo complete" control (only after Mark Complete) and "Undo last move". It holds no marker control. The action block holds Start Reading, Mark Complete, Undo last move and "Add from Bookmarks" (`:979`, or the restart hint when a marker exists). Restart Wird leaves today's history alone (VERIFIED, State changes table), so after Restart on a completed day there is no marker and the tab shows no way to set one. The only ways left are in the reader: the top-bar flag icon and the verse sheet (P4a-3 and P4a-2). Those work, but nothing on the tab points to them.
+
+**Rule.** In page mode, when no marker exists, the Wird tab always offers a way to set one, on any day. On a not-completed day the action block already does (Start Reading opens the start sheet, and "Add from Bookmarks" is there). On a completed day the new setup card does.
+
+#### The setup card (Option A, recommended)
+
+*   **When it shows:** page mode, no marker (`marker == null` or `marker.markerPage == null`), and today completed. A small pure helper `shouldShowMarkerSetupCard({unit, markerPage, dayCompleted})` decides (true only for page mode, no marker page, completed day).
+*   **Where:** a separate card directly under the green completed banner (not inside it), built by the tab only on that condition. Whether it looks right is a device check (GUESS).
+*   **What it holds:** a caption `wird_no_marker_hint`, then two buttons, "Set Wird marker" (`wird_set_marker`) and "Add from Bookmarks" (the existing `wird_add_from_bookmarks`, the existing `_addFromBookmarks` flow, `wird_tab.dart:322`).
+*   **"Set Wird marker":** opens `WirdStartSheet` in reader mode (Start here and Cancel) with N = `startSheetPage(state, progress)`, the page the reader would open at. On a completed day that is today's last recorded page, because today's history is still there (VERIFIED from `startSheetPage` and from Restart leaving history). "Start here" calls `placeMarker(N, color)`, stays on the tab, and shows the existing snackbar `wird_marker_placed` with no Undo. Cancel changes nothing. A different page comes from "Add from Bookmarks" or from the reader.
+*   **After placement:** the card disappears (the condition is no longer true) and the progress card shows the marker line (existing).
+*   **Start Reading and Mark Complete on a completed day:** they stay hidden, as today. The goal is reached, Mark Complete has nothing to complete, and the reader is reachable from the Quran tabs and, with a marker, the top-bar icon. The "undo complete" and "Undo last move" controls in the banner are unchanged.
+*   **Unchanged:** a not-completed day (the action block as it is, with Start Reading, Mark Complete and "Add from Bookmarks"); a day with a marker (nothing new on the tab, and the restart hint where it is today); juz mode (VERIFIED: the juz branch builds `_buildJuzActions` or the banner with no marker control, `wird_tab.dart:228-237`).
+*   **Signed in or guest, sync, cycle and version:** the same `placeMarker` call as the other entry points, so the rules in "What happens when the user is not signed in" and "Sync, cycle and version" apply as they are. No schema or contract change.
+
+#### Strings (two new keys, drafts for the owner to review)
+
+| Key | English | Arabic (draft) |
+| --- | --- | --- |
+| `wird_set_marker` | Set Wird marker | ضع علامة الورد |
+| `wird_no_marker_hint` | No Wird marker yet. Set one to count the pages you read. | لا توجد علامة ورد بعد. ضع علامة لتُحتسب الصفحات التي تقرأها. |
+
+Reused as they are: `wird_add_from_bookmarks`, `wird_marker_placed`, `wird_start_sheet_title`, `wird_start_here` and `cancel`.
+
+#### Tests to write first (red run before any code)
+
+*   **Pure helper** (new file `test/features/quran/wird_marker_setup_card_test.dart`): `shouldShowMarkerSetupCard` is true for page mode with no record, or a record with no marker page, on a completed day; false on a not-completed day; false when a marker exists; false in juz mode in every case.
+*   **Widget tests** (same file): `WirdMarkerSetupCard` shows the caption and both buttons, and each button calls its own callback.
+*   **Strings** (addition to `test/translations/wird_start_strings_test.dart`): both keys exist in both files and are not empty; `wird_no_marker_hint` has no `%d`; `wird_set_marker` differs from `wird_marker_set_here`.
+*   **Not covered by tests:** the tab itself (the banner with the card under it, the start sheet opening from the tab, staying on the tab, the snackbar). They are checked on a device.
+
+#### Effect on existing code and tests
+
+*   **`wird_tab.dart`:** after the banner in page mode, the tab builds the setup card when the helper is true; one new method (for example `_setMarkerFromTab`) opens the reader-mode start sheet and calls `placeMarker`; `_addFromBookmarks` is reused unchanged. `_buildActionButtons` and `_buildCompletedBanner` keep their content.
+*   **`wird_marker_widgets.dart`:** adds `shouldShowMarkerSetupCard` and `WirdMarkerSetupCard`. **`en.json` and `ar.json`:** two new keys.
+*   **Existing tests:** none change. The tab has no widget tests, and the helpers and sheets it reuses are untouched. No change to the logic, the service, the provider, the models, the contracts or Kotlin.
+
+#### Effect on the phases
+
+*   **P2, P3, P4b, P5:** none. **P4a, P4a-2, P4a-3:** implemented and unchanged by this amendment.
+*   **P4a-4 (new):** the setup card, its helper, two keys and the tests above, on the same branch and PR, with its own gate (see the Phases table). It is not part of P4b, because P4b is about stats and achievements.
+*   **P6:** one device check is added to the Verification Plan.
+
 ### Contracts and docs that change in the same commits
 
 *   `.project-docs/contracts/firestore-paths.md`: new row for `users/{uid}/wird/marker`.
@@ -488,6 +536,7 @@ Each row names a failure, what limits it, and what remains. "Device check" means
 | 19 | A signed-in user on a fresh device can place a marker before the first pull finishes. If the cloud record is higher, the next sync replaces the new marker with it. | The cloud-wins rule, so nothing in the cloud is lost. | The user sees the new marker disappear. How often this happens is UNKNOWN. |
 | 20 | In full-screen reading (top bar hidden) the Wird icon is hidden too, so the marker page is not visible. The old ribbon stayed visible then (VERIFIED: it was drawn whether or not `_showUI` was true; the bar is built only `if (_showUI)`). | The verse sheet entries still work with the bar hidden, and one tap on the page shows the bar. | The user cannot see the marker page at a glance while the bar is hidden. Accepted with the decision. |
 | 21 | A one-tap icon beside the bookmark icon can be hit by mistake. | A move needs the move sheet (and the count dialog for a big move), moves only go forward, and Undo covers today's last move. The first placement needs the start sheet. | A mistaken confirmed move is undone with Undo, which needs a connection when signed in. |
+| 22 | A user who deliberately reads without a Wird marker sees the setup card on every completed day. | It is one card, not a modal, and it disappears once a marker exists. No "don't show again" flag, because a new prefs key would be a contract change. | Mild annoyance for those users. A flag can be added later as its own change. |
 
 --------------------------------------------------------------------------------
 
@@ -677,6 +726,14 @@ Each alternative below was weighed while drafting this design. Every reason for 
 *   **Cons**: A separate rules deploy and emulator tests are needed. A rejected write returns a permission error that the app must map to `notNewer`. The rule must handle document creation. `firestore.rules` is outside this release's file list.
 *   **Reason for Rejection**: Not now. It needs a rules deploy and tests that this release does not otherwise touch. It can be reconsidered in the later sync item, together with the other Wird documents.
 
+#### Alternative AD: Other ways to offer the first marker on a completed day
+
+*   **Option A (chosen as the design): a setup card under the banner with "Set Wird marker" and "Add from Bookmarks".** Pros: the start sheet gives the page and a color in two taps, "Add from Bookmarks" keeps the older way, and nothing changes on not-completed days. Cons: a new card and two strings; "Add from Bookmarks" is built in two places (the action block and the card), though both call the same method.
+*   **Option B: one "Set Wird marker" button only.** Pros: the smallest change, one string pair less. Cons: the page is fixed to today's last recorded page, so a user who wants another page must go to the reader; it also hides "Add from Bookmarks" on completed days only, which is inconsistent.
+*   **Option C: show the whole action block on a completed day when there is no marker.** Pros: no new card. Cons: it brings back Start Reading and Mark Complete on a day that is already complete, and Mark Complete would have nothing to complete.
+*   **Option D: move the setup controls out of the action block and show them on every day while there is no marker.** Pros: one place, one rule, no duplicate. Cons: it changes the not-completed-day screen too, and adds a "Set Wird marker" button next to Start Reading, which already opens the start sheet.
+*   **Reason for choosing A:** it fixes the gap with the least change to screens that already work. The owner can switch to B or D.
+
 --------------------------------------------------------------------------------
 
 ## Detailed Implementation Plan
@@ -697,6 +754,7 @@ The numbering P1 is not used any more: the Windows spike was dropped on 2026-11-
 | P4a | Switch the callers (reader and Wird tab) and the state source: marker widgets and the palette (with `wird_marker_palette_test.dart`), reader, Wird tab, the two `KhatmaCelebrationScreen` call sites, strings (new and changed keys except `quran_stats_avg_daily`), the provider switch to `_reload()` and `composeWirdState` (so `totalPagesRead` is now the derived total), `resetAllProgress` calls `WirdMarkerService.resetAll`, and the `markDayComplete`, `undoComplete` and `toggleJuzCompleted` rule changes. `creditPages` and `removePages` keep mirroring `wird_total_pages_read`, so the achievements still read a valid number. After P4a no screen calls the old link or manual-entry methods. | 5 (rules part), 6 (switch part), 9, 10, 11, 13, 14 (new and changed keys), 17 (remaining cases), 19, 24 (compose and action cases) | "approve phase P4a" |
 | P4a-2 | Start entry points (amendment 2026-11-14), written tests first: `WirdStartSheet` and the helpers `verseSheetMarkerAction` and `startSheetPage` in `wird_marker_widgets.dart`; the Start Reading flow and the Restart dialog's new confirm label in `wird_tab.dart`; "Set Wird marker here" in the verse sheet of `quran_reader_screen.dart` (the inline `canMove` moves into the helper); the 7 new keys and the changed `tutorial_wird_actions_body` in `en.json` and `ar.json`. No change to the pure logic, the service, the provider or any contract. | 9, 10, 11, 14 (amendment), 26 | owner's go-ahead for P4a-2 |
 | P4a-3 | Top-bar Wird icon (second amendment 2026-11-14), written tests first: `WirdMarkerTopBarButton`, `wirdTopBarIconSpec` and `WirdMoveSheet` in `wird_marker_widgets.dart`; in `quran_reader_screen.dart` the icon in `_TopBar`, the page-based `_moveMarkerToPage` and `_setMarkerAtPage`, and the removal of the ribbon layer and of `_topBarHeight` with `_measureTopBar`; one new key (`wird_move_sheet_title`) in `en.json` and `ar.json`. The ribbon classes stay unused until P5. No change to the pure logic, the service, the provider or any contract. | 9, 10, 14 (amendment), 27 | owner's go-ahead for P4a-3 |
+| P4a-4 | Wird tab setup on a completed day (third amendment 2026-11-14), written tests first: `shouldShowMarkerSetupCard` and `WirdMarkerSetupCard` in `wird_marker_widgets.dart`; in `wird_tab.dart` the card under the completed banner (page mode, no marker) and a method that opens the reader-mode start sheet and calls `placeMarker`; two new keys (`wird_set_marker`, `wird_no_marker_hint`) in `en.json` and `ar.json`. No change to the pure logic, the service, the provider or any contract. | 9, 11, 14 (amendment), 28 | owner's go-ahead for P4a-4 |
 | P4b | Stats and achievements: `quranStatsProvider` uses `averagePerCompletedDay`, the label key `quran_stats_avg_daily`, `achievement_service.dart` reads the marker (khatma count and derived total), and then nothing writes or reads `wird_total_pages_read`: `creditPages`, `removePages` and `resetAllProgress` stop writing it, `getFullState`, `syncToFirestore` and `syncFromFirestore` stop using it. The achievement change and the end of the mirror are in this one phase, so achievements work in every build. | 5 (key part), 6 (stats part), 12, 14 (`quran_stats_avg_daily`), 21 (the `wird_total_pages_read` note only), 22, 23, 24 (stats case) | "approve phase P4b" |
 | P5 | Delete old code: `recordPagesRead`, `syncBookmarkPages`, `setLinkedBookmarkColor`, `markJuzFromBookmarks`, `recordPageKhatma`, `linkedBookmarkColor`, `countedBookmarkPages`, `clearLinkedColor`, `_totalPagesKey`, `countedPagesAfterChooseOne` with its test, the ribbon (`WirdMarkerRibbon`, `WirdMarkerRibbonLayer`, `shouldShowWirdRibbon`, key `wird_marker_ribbon_label`) with its tests, the unused strings | 4 (remove part), 5 (remove part), 6 (remove part), 14 (removed keys), 18 (legacy-field cases), 20 | "approve phase P5" |
 | P6 | Docs and device checks (the ADR and the contract rows are not repeated here) | 21 (remaining docs), Verification Plan | "approve phase P6" |
@@ -1001,6 +1059,8 @@ After `APPLY_CLOUD` or `DISCARD_LOCAL` the undo record is cleared when it no lon
 
 *   **Amendment 2026-11-14 (P4a-3):** adds `WirdMarkerTopBarButton`, `WirdTopBarIconSpec` with `wirdTopBarIconSpec`, and `WirdMoveSheet`. See "Top-bar Wird icon". The ribbon classes stay unused until P5.
 
+*   **Amendment 2026-11-14 (P4a-4):** adds `shouldShowMarkerSetupCard` and `WirdMarkerSetupCard`. See "Wird tab on a completed day".
+
 #### 10. `lib/features/quran/quran_reader_screen.dart` (Modify)
 
 *   **Type / Scope**: Reader (careful: it holds zoom and navigation state, and F38b changes this file later). Phase P4a. Every marker control here is shown only when `settings.wirdUnit == WirdUnit.page`.
@@ -1025,17 +1085,19 @@ After `APPLY_CLOUD` or `DISCARD_LOCAL` the undo record is cleared when it no lon
         *   the widgets `_BookmarkPagesSheet` (1363), `_BookmarkListSheet` (1530), `_RecordPagesContent` and its state (1649, 1664);
         *   the two copies of the Reset All button: the `SizedBox(height: 4)` plus full-width `TextButton.icon(onPressed: _confirmReset)` block in `_buildJuzActions` (lines 526-535) and in `_buildActionButtons` (lines 1070-1079).
     *   **Keep:** `_confirmReset` (562) with its call, now from the settings section; its dialog uses the changed `wird_reset_confirm_body` text. The "undo complete" control in `_buildCompletedBanner` (299, lines 317-321) shows if and only if today's history entry has `manualCredit == true`; the field `_showUndo` (72) and its four assignments (321, 492, 583, 1053) are deleted, so there is one controller. The "Mark Complete" buttons (491 and 1052) in both modes.
-    *   **Add in `_buildActionButtons` (page mode):**
+    *   **Add in `_buildActionButtons` (page mode):** (On a completed day the action block is not built; the same controls appear in the setup card under the banner, see "Wird tab on a completed day".)
         *   when there is no marker: the "Add from Bookmarks" button (key `wird_add_from_bookmarks`) opens `WirdBookmarkPickSheet`, then `WirdColorGridSheet`, then calls `placeMarker`; cancelling either sheet changes nothing. With no bookmarks the pick sheet shows `wird_marker_no_bookmarks` and an "Open reader" button (`wird_marker_open_reader`);
         *   when a marker exists: the button is replaced by the text `wird_marker_restart_hint`;
         *   "Undo last move" (`wird_undo_last_move`) as a text button below "Mark Complete", visible while a valid undo record for today exists, shown with `wird_undo_connect` as its label while a signed-in user is offline (offline = `connectivityProvider`, `lib/core/providers/connectivity_provider.dart`, VERIFIED to exist). A tap, in either label, calls `undoMove()`; the button is disabled only while that call runs, and its result text follows the `UndoOutcome` mapping (see "Connect to undo and the undo button").
-    *   **Undo last move on a completed day (decided 2026-11-13):** the page-mode action block (`_buildActionButtons`) is built only while the day is not complete (`wird_tab.dart:271-286`), so a move that completes the goal would hide the button. `_buildCompletedBanner` therefore gets the `WirdState` as a parameter and, in page mode, shows a second row below the "Wird completed today" row with the same "Undo last move" button (same label rule, same `undoMove()` call and `showUndoOutcome`) whenever `state.undo != null`. The existing "undo complete" control stays in the first row and is shown only when `manualCredit` is true. When the day is not complete the button is in `_buildActionButtons` as described above. The two controls can both be visible and do different things: "undo complete" reverses "Mark Complete", "Undo last move" reverses the marker move.
+    *   **Undo last move on a completed day (decided 2026-11-13):** the page-mode action block (`_buildActionButtons`) is built only while the day is not complete (`wird_tab.dart:271-286`), so a move that completes the goal would hide the button. `_buildCompletedBanner` therefore gets the `WirdState` as a parameter and, in page mode, shows a second row below the "Wird completed today" row with the same "Undo last move" button (same label rule, same `undoMove()` call and `showUndoOutcome`) whenever `state.undo != null`. The existing "undo complete" control stays in the first row and is shown only when `manualCredit` is true. When the day is not complete the button is in `_buildActionButtons` as described above. The two controls can both be visible and do different things: "undo complete" reverses "Mark Complete", "Undo last move" reverses the marker move. The same completed-day path also shows the marker setup card when there is no marker (third amendment 2026-11-14, see "Wird tab on a completed day").
     *   **Add in `_buildProgressCard` (895):** one line under the progress bar with `wird_marker_page_label` and the marker page, shown only when a marker exists, with a small dot in the stored color.
     *   **Add in `_buildSettingsSection` (1200):** at the end, in this order: a divider, "Restart Wird" (`wird_restart`, shown only in page mode while a marker exists (`marker.markerPage != null`), as the Flows section already says; with a dialog using `wird_restart_confirm_title` and `wird_restart_confirm_body`, calls `restartWird`), then "Reset All Progress" (last, red, `wird_reset_today`, calls `_confirmReset`). Restart Wird is hidden in juz mode, so in juz mode the section ends with Reset All Progress alone, still last and red.
     *   **Change `_handleJuzKhatma` (148-157):** pass the combined count to `KhatmaCelebrationScreen` (item 13).
     *   `resetJuzForKhatma`, the juz grid and the juz toggles are unchanged.
 
 *   **Amendment 2026-11-14 (P4a-2):** `_buildActionButtons` (page mode): "Start Reading" with no marker opens `WirdStartSheet` (reading mode) and then opens the reader as the sheet's choice says; with a marker it opens the reader at the marker page as before. `_confirmRestart`: the dialog's confirm button uses `wird_restart_confirm_yes`. Juz mode is unchanged. See "Start entry points".
+
+*   **Amendment 2026-11-14 (P4a-4), `wird_tab.dart`:** in page mode, after `_buildCompletedBanner`, the tab builds the setup card when `shouldShowMarkerSetupCard` is true (completed day, no marker); a new method opens `WirdStartSheet` in reader mode with `startSheetPage(state, progress)` and calls `placeMarker`; `_addFromBookmarks` is reused. The action block and the banner keep their content. See "Wird tab on a completed day".
 
 #### 12. `lib/features/quran/quran_stats_screen.dart` (No code change)
 
@@ -1110,6 +1172,8 @@ After `APPLY_CLOUD` or `DISCARD_LOCAL` the undo record is cleared when it no lon
 *   **Amendment 2026-11-14 (P4a-2):** seven new keys and one changed key, with English and Arabic text, are listed in "Start entry points", "Strings". The Arabic was reviewed by the product owner (Aladdin, native Arabic speaker) on 2026-11-14.
 
 *   **Amendment 2026-11-14 (P4a-3):** one new key, `wird_move_sheet_title`, with English and Arabic text, is listed in "Top-bar Wird icon", "Strings". The Arabic was reviewed by the product owner (Aladdin, native Arabic speaker) on 2026-11-14.
+
+*   **Amendment 2026-11-14 (P4a-4):** two new keys, `wird_set_marker` and `wird_no_marker_hint`, with English and Arabic text, are listed in "Wird tab on a completed day", "Strings". The new Arabic is a draft for the product owner to review.
 
 #### 15. `test/core/services/wird_marker_logic_test.dart` (Create)
 
@@ -1248,6 +1312,11 @@ After `APPLY_CLOUD` or `DISCARD_LOCAL` the undo record is cleared when it no lon
 *   **Type / Scope**: Short logic and widget tests for the top-bar icon. Phase P4a-3. Written first, with a red run shown before any code.
 *   **Proposed Changes**: the cases listed in "Top-bar Wird icon", "Tests to write first". The reader's top bar and the tap flows are checked on a device.
 
+#### 28. `test/features/quran/wird_marker_setup_card_test.dart` (Create)
+
+*   **Type / Scope**: Short logic and widget tests for the completed-day setup card. Phase P4a-4. Written first, with a red run shown before any code.
+*   **Proposed Changes**: the cases listed in "Wird tab on a completed day", "Tests to write first". The Wird tab itself is checked on a device.
+
 ### Verification Plan
 
 *   **Per phase (decided 2026-11-13)**: at the end of P2, P3, P4a, P4b and P5, `flutter analyze` shows no new issue and `flutter test` passes, so the app compiles after every phase.
@@ -1264,6 +1333,7 @@ After `APPLY_CLOUD` or `DISCARD_LOCAL` the undo record is cleared when it no lon
     *   Layout: the top bar with both icons, the undo snackbar and the stats screen (the label "Average per completed day" is longer than "Avg. Daily") on a small phone and in a narrow Windows window, in light and dark mode, with the desktop zoom controls visible.
     *   **Start entry points (amendment 2026-11-14, P4a-2):** with no marker in page mode: (1) Start Reading opens the start sheet with N (page 1 on a fresh Wird); "Start here" is disabled until a color is picked, then places the marker and opens the reader on N with the Wird icon filled in the marker color; "Choose another page" and "Just read" open the reader with no marker; dismissing the sheet does nothing; (2) in the reader, tap a verse, "Set Wird marker here" shows the page and the grid, "Start here" places the marker, the Wird icon turns filled in the chosen color and the snackbar shows with no Undo; Cancel changes nothing; (3) as a guest and signed in (and offline once); (4) a wrong first placement ahead of the real position is fixed with Restart Wird, and setup works again; (5) with a marker present neither entry point appears, and "Move Wird marker here" works as before; (6) juz mode shows neither; (7) the Restart dialog confirm button reads "Yes, restart" and the screen no longer shows two "Restart Wird"; (8) in Arabic, the new strings read clearly and the page numbers use Arabic numerals.
     *   **Top-bar Wird icon (second amendment 2026-11-14, P4a-3):** (1) the top bar shows the surah name, then the Wird icon, then the bookmark icon, in English and in Arabic (the bookmark stays at the outer end); (2) no marker: a neutral outline icon, and a tap opens the start sheet for the current page; (3) marker on this page: the icon is filled in the marker color and a tap shows "Wird marker: page N" with no change; (4) marker on another page: outline in the marker color; ahead of the marker a tap opens the move sheet, and Move runs the usual count dialog (for a big move), the move and the Undo snackbar; behind the marker a tap shows the info text; (5) juz mode shows no Wird icon and the bookmark icon is unchanged; (6) the 12 colors are visible on the top bar in light and dark mode; (7) 320 dp and 360 dp widths and the largest font, with the longest surah names in English and Arabic: no overflow, the name wraps or fits; (8) with the top bar hidden (tap the page) the verse sheet still offers Set and Move; (9) the tooltip or TalkBack label reads clearly in both languages.
+    *   **Completed day with no marker (third amendment 2026-11-14, P4a-4):** (1) complete today's goal, then use Restart Wird: the banner stays, and under it the setup card shows the hint, "Set Wird marker" and "Add from Bookmarks"; Start Reading and Mark Complete stay hidden; (2) "Set Wird marker" opens the start sheet with two buttons and N = today's last page; "Start here" places the marker, stays on the tab, shows the snackbar, and the card disappears while the progress card shows the marker line; Cancel changes nothing; (3) "Add from Bookmarks" still works from the card; (4) with a marker the card is absent; (5) a not-completed day with no marker looks as before; (6) juz mode shows no card; (7) the new Arabic reads clearly.
 *   Every device check is reported as run or not run. None is reported as passed unless it ran.
 
 --------------------------------------------------------------------------------
