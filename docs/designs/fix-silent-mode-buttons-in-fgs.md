@@ -159,6 +159,10 @@ Data in the title and text, two `addAction` buttons, no custom view.
 
 Rejected in F68 (changes the notification's visual design). Standard actions would still be expanded-only (UNVERIFIED). Not reconsidered here.
 
+## Known Issues (outside the scope of this change)
+
+*   **Phone clock moved backwards.** If the phone clock is moved backwards while `adhan_active` is set, the adhan view and the Stop/Keep Vibration buttons stay visible until the real clock passes the stored `adhan_end_time` / `silent_end_time`. Cause: both are stored as absolute times and nothing checks for `now < start`. This was already the case before `d335140`. Possible future fix: treat the state as stale when `now` is earlier than its start time, or when the end time is more than the maximum window ahead. It needs its own spec because it changes `android/` behavior.
+
 ## Risks (all UNVERIFIED until run on the device)
 
 *   EMUI 12 may replace or hide custom views on the lock screen, or require unlocking for `RemoteViews` taps.
