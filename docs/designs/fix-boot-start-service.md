@@ -1,6 +1,6 @@
 # Fix: the prayer service and the boot-time work do not run after a reboot until Aura is opened (EMUI, Android 10)
 
-Status: This spec and phases P1 and P2 approved by Aladdin on 2026-11-14 (spec: Level A, docs; P1 and P2: Level C, production), given as 'approve the boot-start spec, P1 and P2'. D0 (diagnosis reboots) and P3 (optional hardening) are NOT approved and are not to be built. Branch `fix/boot-start-service` from `main` `1584deb`. Not pushed. Updated 2026-11-14 with one owner-observed reboot (see "Evidence from the owner" in section 1).
+Status: This spec and phases P1 and P2 approved by Aladdin on 2026-11-14 (spec: Level A, docs; P1 and P2: Level C, production), given as 'approve the boot-start spec, P1 and P2'. D0 (diagnosis reboots) and P3 (optional hardening) are NOT approved and are not to be built. Branch `fix/boot-start-service` from `main` `1584deb`. Not pushed. Updated 2026-11-14 with one owner-observed reboot (see "Evidence from the owner" in section 1). **Amendment 2026-11-14 (section 3a, phase P1b): the "App launch" tile becomes an explanation dialog. DRAFT, awaiting the owner's review; P1b is not approved and not to be built.**
 
 Labels: **VERIFIED** (read in code, manifest or the spec, or returned by a device query on 2026-11-14), **UNKNOWN** (not checked, or not checkable now), **GUESS** (reasoning or recalled Android behavior, not run). "Reported" means said by the product owner and not re-observed. No logs were read for this spec.
 
@@ -65,12 +65,81 @@ All options leave the notification IDs, channels, prefs keys and MethodChannels 
 
 ## (3) When the OS blocks boot broadcasts: an "App launch" row
 
-*   **This is the main fix** (section 2). The owner's working case had three switches ON on the EMUI 12 "App launch" screen: Auto-launch, Secondary launch and Run in background (reported). Which of them is required is UNKNOWN (D0, run V3). The tile cannot set them, so its text must tell the user to turn on all three (two new strings, English and Arabic, drafts at implementation). Which candidate target lands on Aura's own page and which on the list of all apps is UNKNOWN until each is tried on the phone (GUESS: the list screens open the app list and the user finds Aura); P1 starts by trying them in order on the device.
-*   **Idea:** a row, only on Huawei or Honor, that opens the EMUI "App launch" (auto-launch) screen so the user can allow Aura. Candidate targets, in order: `com.huawei.systemmanager/.startupmgr.ui.StartupNormalAppListActivity`, `.appcontrol.activity.StartupAppControlActivity`, the action `huawei.intent.action.HSM_STARTUPAPP_MANAGER`, then the app-details settings (`ACTION_APPLICATION_DETAILS_SETTINGS`), then Dart `openAppSettings()`. The last two already exist as fallbacks for the battery row (VERIFIED, `MainActivity.kt:615-623`, `platform_channel_service.dart:36-43`), and the `try`/`catch` per step follows the CLAUDE.md platform-channel rule.
+*   **This is the main fix** (section 2). The owner's working case had three switches ON on the EMUI 12 "App launch" screen: Auto-launch, Secondary launch and Run in background (reported). Which of them is required is UNKNOWN (D0, run V3). The tile cannot set them, so its text must tell the user to turn on all three (two new strings, English and Arabic, drafts at implementation). ~~Which candidate target lands on Aura's own page and which on the list of all apps is UNKNOWN until each is tried on the phone (GUESS: the list screens open the app list and the user finds Aura); P1 starts by trying them in order on the device.~~ **SUPERSEDED by section 3a:** on the phone none of the three targets gave a usable screen (device finding, 2026-11-14); the tile now shows a dialog.
+*   **SUPERSEDED by section 3a (the candidate chain is removed; the row is Huawei only and opens a dialog).** **Idea (original):** a row, only on Huawei or Honor, that opens the EMUI "App launch" (auto-launch) screen so the user can allow Aura. Candidate targets, in order: `com.huawei.systemmanager/.startupmgr.ui.StartupNormalAppListActivity`, `.appcontrol.activity.StartupAppControlActivity`, the action `huawei.intent.action.HSM_STARTUPAPP_MANAGER`, then the app-details settings (`ACTION_APPLICATION_DETAILS_SETTINGS`), then Dart `openAppSettings()`. The last two already exist as fallbacks for the battery row (VERIFIED, `MainActivity.kt:615-623`, `platform_channel_service.dart:36-43`), and the `try`/`catch` per step follows the CLAUDE.md platform-channel rule.
 *   **What the app cannot do:** read whether Aura is allowed (GUESS: no public API), so the row cannot show granted or missing and must not be part of the dialog's `missing` list (VERIFIED: that list is built from checkable states). It is an always-available tile, next to "Battery Optimization" in Settings (`settings_screen.dart:272-276`), and optionally a one-line hint on the permissions page. After returning from the screen the app cannot confirm anything.
-*   **Whether the screens open for a third-party app is UNKNOWN** (both resolve, VERIFIED, but the "exported" and permission state is not known). With targetSdk 36, package visibility may hide `com.huawei.systemmanager` from `resolveActivity`, so the manifest would need `<queries><package android:name="com.huawei.systemmanager"/></queries>` (GUESS; an explicit `startActivity` may work without it). The fallback chain makes a wrong guess safe: the worst case is the app-details screen.
+*   **Whether the screens open for a third-party app is UNKNOWN** (both resolve, VERIFIED, but the "exported" and permission state is not known). With targetSdk 36, package visibility may hide `com.huawei.systemmanager` from `resolveActivity`, so the manifest would need `<queries><package android:name="com.huawei.systemmanager"/></queries>` (GUESS; an explicit `startActivity` may work without it). ~~The fallback chain makes a wrong guess safe: the worst case is the app-details screen.~~ **CORRECTED (device finding 2026-11-14, VERIFIED on the phone):** this was wrong. The action candidate (c) matches two activities, so `startActivity` starts the system chooser (`HwResolverActivity`) and does not throw. The code then reports success (`MainActivity.kt:243-245` returns true) and Dart never opens app settings (`platform_channel_service.dart:81`). The worst case was the chooser "Open with: No apps can perform this action", not the app-details screen. See section 3a.
 *   **Contracts (VERIFIED rule in CLAUDE.md):** a new MethodChannel method (for example `openAutoLaunchSettings`) is a native contract change: Dart, Kotlin and `.project-docs/contracts/method-channels.md` in one commit. Two new strings (English and Arabic) via `.tr()`. No numbers in the text. Other brands (Xiaomi, Oppo, Vivo) are out of scope (components UNKNOWN); they get the generic app-details fallback only if a brand check is added later.
-*   **Honor devices:** UNKNOWN whether the same component exists; the brand check should be on the component resolving, not on the brand name alone (GUESS).
+*   **Honor devices:** UNKNOWN whether the same component exists. ~~The brand check should be on the component resolving, not on the brand name alone (GUESS).~~ **SUPERSEDED by section 3a:** no component is resolved any more; the check is the manufacturer, Huawei only, and Honor is left out until a device shows its menu.
+
+## (3a) Amendment 2026-11-14: the tile opens an explanation dialog (phase P1b, DRAFT)
+
+**Why (device finding by the owner, and the trace).** On the owner's phone (EMUI 12, Android 10) the Settings tile "Auto-launch after restart" showed the system chooser "Open with: No apps can perform this action" and nothing else.
+
+*   **Chain as built (VERIFIED, `MainActivity.kt:239-250`, `AutoLaunchSettings.kt:24-28`):** (a) explicit `StartupNormalAppListActivity`, (b) explicit `StartupAppControlActivity`, (c) the implicit action `huawei.intent.action.HSM_STARTUPAPP_MANAGER` with the package set, then app details (`MainActivity.kt:251-262`), then Dart `openAppSettings()` only when the channel returns false or throws (`platform_channel_service.dart:81`).
+*   **What happened (VERIFIED on the phone: `dumpsys package com.huawei.systemmanager` and `cmd package query-activities`):** the action in (c) is declared by two activities of the same package, `StartupAppControlActivity` and `StartupNormalAppListActivity`. An implicit intent with two matches starts the system chooser; `HwResolverActivity` ran in the `system:ui` process (logcat). `startActivity` did not throw, so the loop logged "Opened" and returned true (`MainActivity.kt:243-245`), and no fallback ran.
+*   **Why the check said "resolves" (VERIFIED, `MainActivity.kt:231-232`):** `canResolveAutoLaunchTarget` only tests `resolveActivity(...) != null`, which says the component exists and is visible. It does not say a third-party app may start it.
+*   **UNKNOWN:** which exception (a) and (b) threw (a `SecurityException` for a non-exported or permission-protected activity is the GUESS). The logcat of that tap was not recorded: the `[AUTOLAUNCH]` lines are not in the phone's buffer, and the catch only logs a warning (`MainActivity.kt:246-248`). So it is not VERIFIED that a third-party app can start (a) or (b).
+
+**Decision (owner): option C combined with A.** The tile and the permissions-page hint open an explanation dialog. The candidate (c) and the implicit-intent path are removed.
+
+**Keep trying (a) and (b) first, or remove them too?**
+
+| | Keep (a), (b), then the dialog | Remove them (recommended; the owner's preference) |
+| --- | --- | --- |
+| Result on the owner's phone | GUESS: both throw and the dialog shows; not VERIFIED | The dialog shows every time (by design) |
+| Other EMUI versions | Might open the Huawei screen in one tap (GUESS), might show a different or odd screen | One behavior everywhere, so one thing to test |
+| Risk | Explicit intents fail by throwing (safe), but they are private Huawei activity names that can change per EMUI version (GUESS) and cannot be tested here beyond one phone | None from Huawei internals |
+| Code | Keeps `AutoLaunchSettings.CANDIDATES`, the resolver check, the `<queries>` entry, a Kotlin open method | All of that is deleted |
+| Cost | Needs a device logcat run to learn the exception | None |
+
+**Recommendation: remove (a) and (b).** It is not VERIFIED that a third party can start them, and the dialog already gives the user the exact path. If a later device test VERIFIES that (a) or (b) opens for a third-party app (a tap shows no exception and the screen appears), they can come back as a separate amendment with their own gate.
+
+**Where it shows, and when.**
+
+*   **Settings tile (VERIFIED code):** `settings_screen.dart:281-289`, next to "Battery Optimization". The flag `_autoLaunchAvailable` is loaded once with the settings (`settings_screen.dart:58`, set at `:68`). Tapping the tile opens the dialog instead of calling `openAutoLaunchSettings`.
+*   **Permissions-page hint (VERIFIED code):** `permission_dialog.dart:351-361`, shown only when the page itself is shown. The page is skipped when no permission is missing (`permission_dialog.dart:142`), so the hint never appears for a user who has granted everything; that is unchanged. Its `onTap` opens the same dialog.
+*   **Condition: Huawei phones only, by manufacturer, without resolving any Huawei activity.** Kotlin returns `Build.MANUFACTURER.equals("HUAWEI", ignoreCase = true)` (`android.os.Build` is already imported, `MainActivity.kt:9`). On the owner's phone `ro.product.manufacturer=HUAWEI`, `ro.product.brand=HUAWEI`, `ro.build.version.emui=EmotionUI_12.0.0`, Android 10 (VERIFIED by `getprop`; that `Build.MANUFACTURER` returns the same value is a GUESS until the app runs). The EMUI system property is not used (`ro.build.version.emui` is not a public API, GUESS). Honor is not included: UNKNOWN whether it has the same menu (newer Honor phones run MagicOS, GUESS).
+*   **Other makers** get no tile and no hint (GUESS: not run on any other phone).
+*   **Package visibility:** no `<queries>` entry is needed for the manufacturer check.
+
+**The dialog** (one shared widget, `lib/core/widgets/auto_launch_dialog.dart`, used by the tile and the hint; `permission_dialog.dart` is in `core`, so it must not import from `features`).
+
+*   Title, body, and two buttons: "Open app details" and "OK" (the existing `ok` key, `en.json:177`, `ar.json:177`, VERIFIED).
+*   Body: why (prayer alerts may not start after a restart), then the path "Settings > Battery > App launch > Aura", then "turn on Auto-launch, Secondary launch and Run in background". The path comes from the owner's report (section 1, "Evidence from the owner"); the exact EMUI 12 wording is not verified by the app (UNKNOWN).
+*   "Open app details" calls the existing Dart `_openAppSettings()` (`platform_channel_service.dart:20-27`, permission_handler `openAppSettings`); no new native call. Whether it opens the right screen on EMUI 12 is UNKNOWN (it is the existing battery-row fallback, not recorded as device-checked). If it does nothing, the body text still gives the path (the "plain instruction" fallback).
+*   The tile title and subtitle keep the existing keys and text (`en.json:153-154`, `ar.json:153-154`).
+
+**Strings** (new keys in BOTH `assets/translations/en.json` and `ar.json`, via `.tr()`; the Arabic is a DRAFT for the owner to check against the phone). No numbers appear, so the Arabic-numerals rule does not apply.
+
+| Key | English | Arabic (DRAFT) |
+| --- | --- | --- |
+| `auto_launch_dialog_title` | Let Aura start after a restart | السماح لـ Aura بالعمل بعد إعادة التشغيل |
+| `auto_launch_dialog_body` | On Huawei phones, prayer alerts may not start after a restart unless Aura is allowed to launch.\n\nOpen: Settings > Battery > App launch > Aura.\nThen turn on Auto-launch, Secondary launch and Run in background. | في هواتف هواوي قد لا تبدأ تنبيهات الصلاة بعد إعادة التشغيل ما لم يُسمح لـ Aura بالتشغيل.\n\nافتح: الإعدادات ← البطارية ← تشغيل التطبيق ← Aura.\nثم فعّل «التشغيل التلقائي» و«التشغيل الثانوي» و«التشغيل في الخلفية». |
+| `auto_launch_dialog_open_details` | Open app details | فتح تفاصيل التطبيق |
+
+The owner checks, on the phone: the Arabic names of the EMUI menus "Battery" (البطارية) and "App launch" (تشغيل التطبيق, GUESS), the three switch names (reused from the existing draft `ar.json:154`, VERIFIED present, not verified against the phone), and that the arrows (←) point the right way in the RTL dialog.
+
+**Contract impact** (`.project-docs/contracts/method-channels.md:30`; CLAUDE.md: Dart, Kotlin and the contract file change in one commit).
+
+*   `canOpenAutoLaunchSettings → bool` is renamed `isEmuiDevice → bool` (the manufacturer check). Alternative: keep the old name with the new meaning, a smaller diff but a misleading name. Recommended: rename.
+*   `openAutoLaunchSettings → bool` is removed from Dart and Kotlin (the app-details open goes through the existing Dart `openAppSettings`).
+*   Row 30 is rewritten: new method, removed method, no package-visibility note. The channel stays `com.aura.hala/prayer_alarms`. No prefs key, notification ID, intent extra or Firestore path changes. The `[AUTOLAUNCH]` log lines live in the removed Kotlin code; whether `contracts/log-tags.md` lists them is UNKNOWN (checked at implementation).
+
+**Manifest `<queries>` (`AndroidManifest.xml:347-354`).** The `<package android:name="com.huawei.systemmanager"/>` entry and its comment (`:352-353`) exist only so `resolveActivity` can see the Huawei activities. After P1b nothing resolves them (VERIFIED: the only other references to that package are in `AutoLaunchSettings.kt`, which loses them; grep of `lib/` and `android/app/src/main`). **Recommendation: remove it.** Leaving it is harmless but misleading and keeps a package-visibility declaration with no use. The `PROCESS_TEXT` entry stays.
+
+**Unit tests that change** (VERIFIED by search of `test/` and `android/app/src/test/`):
+
+1.  `android/app/src/test/kotlin/com/aura/hala/AutoLaunchSettingsTest.kt`: all six tests are about `CANDIDATES` (three targets, order, first resolvable). They are replaced by tests of a pure manufacturer helper (for example `AutoLaunchSettings.isEmuiManufacturer(String?)`): "HUAWEI", "huawei", "Huawei" true; "HONOR", "samsung", "", null false. `AutoLaunchSettings.kt` keeps only that helper (`CANDIDATES`, `Target`, `firstResolvable` deleted).
+2.  `test/core/services/platform_channel_service_auto_launch_test.dart`: the group `canOpenAutoLaunchSettings` (4 tests) becomes `isEmuiDevice` (true, false, channel throws, not Android: no channel call). The group `openAutoLaunchSettings` (3 tests: success, throws, returns false) is deleted with the method.
+3.  `test/translations/auto_launch_strings_test.dart`: keep its three tests; add the three new keys (present in both files and not empty; the English body names the path and the three switches; no ASCII digits in the Arabic).
+4.  New widget test for the dialog: shows the title and body; "Open app details" calls the open-details callback once; "OK" closes it without calling it; fits 360 dp in Arabic without overflow.
+5.  No existing test covers the Settings tile or the permissions-page hint (VERIFIED for `test/features/settings`: three files, none for the settings screen; UNKNOWN for the permissions page). Their visibility by flag stays device-only.
+
+**Phase P1b (DRAFT, not approved).** Level C (production: `lib/`, `android/`, `assets/`, tests). Own gate: an explicit "approve phase P1b" after the owner reviews this section. It sits on `fix/boot-start-service` on top of the P1 commits. Order: tests first (red run shown), then separate commits: (1) the Kotlin helper and the channel rename with the contract row, (2) the shared dialog and the three strings, (3) the tile and the hint use the dialog; remove `openAutoLaunchSettings`, the resolver code and the `<queries>` entry. `flutter test`, `flutter analyze` and the Kotlin tests after each commit, numbers against the baseline. It is small and touches no "edit carefully" file: one lightweight review.
+
+*   **Device check (owner, nova 5T):** the tile opens the dialog and no system chooser; "Open app details" opens Aura's details screen; the text matches the EMUI menu names on the phone; the Arabic dialog reads right in RTL. Not testable here: non-Huawei phones (the tile must stay hidden), Honor, HarmonyOS.
+*   **Risks:** the user must change three switches by hand and the app cannot show whether they are on, so the dialog is informational and can be reopened. Menu names differ by EMUI or HarmonyOS version (UNKNOWN). D0 (the reboot test with the setting off and on) is still the check that the setting fixes the missing service; P1b changes only how the user is told.
 
 ## (4) Should the app clear stale `is_silent_active` and `silent_end_time` on start?
 
@@ -109,7 +178,8 @@ All options leave the notification IDs, channels, prefs keys and MethodChannels 
 | Phase | Content | Level |
 | --- | --- | --- |
 | D0 | Verification of the owner's observation: the real-reboot runs V1 (setting off) and V2 (setting on) with logcat or `dumpsys` after boot, V3 and V4 optional, results recorded in this spec. Replaces the earlier open-ended diagnosis | A (docs) and device |
-| P1 | Main fix: the "App launch" tile with its fallback chain, the MethodChannel method, manifest `<queries>`, two strings naming the three switches, contract rows; pure helpers unit tested first | C (production) |
+| P1 | Main fix: the "App launch" tile with its fallback chain, the MethodChannel method, manifest `<queries>`, two strings naming the three switches, contract rows; pure helpers unit tested first. Approved and committed (`626b4fe`, `78fbd13`, not pushed). **The tile action and the fallback chain are replaced by P1b; the two strings stay.** | C (production) |
+| P1b (DRAFT, not approved) | Section 3a: the tile and the permissions-page hint open an explanation dialog; remove the EMUI candidate chain, `openAutoLaunchSettings`, the resolver check and the manifest `<queries>` entry; Huawei check by manufacturer; three new strings; contract rows rewritten; unit tests first. Own gate: "approve phase P1b" | C (production) |
 | P2 | Stale silent flag: 4a (adhan screen checks the end time) and 4b (clear flags on app start after a grace), `shouldClearStaleSilent`, unit tests first. Independent of the cause and of P1 | C |
 | P3 | Optional hardening: Option 1 (critical work at once in `onReceive`, the 30 s pass kept as an idempotent second pass), after reading that the boot calls are safe to run twice | C |
 
@@ -121,6 +191,8 @@ All options leave the notification IDs, channels, prefs keys and MethodChannels 
 4.  Why does the receiver wait 30 s (UNKNOWN: no recorded reason)? Is there a case where an earlier start was seen to fail?
 5.  Is the idempotence of the boot calls (`reschedulePrayerAlarms`, `DailyRecalcReceiver.schedule`, `rescheduleDailySummary`, `JumuahReminderReceiver.schedule`) safe to run twice (Option 1 repeats them)? UNKNOWN: they were not read for this; the first step of P3 is to read them.
 6.  Which of the three switches is required (Auto-launch alone?). UNKNOWN; V3 answers it.
+8.  (P1b) Which exception did (a) and (b) throw for a third-party app? UNKNOWN; only matters if they are ever brought back (logcat of a tap: `adb logcat -c`, tap, `adb logcat -d -s MainActivity`).
+9.  (P1b) The Arabic names of the EMUI menus "Battery" and "App launch" and of the three switches on the owner's phone: the owner checks the DRAFT.
 7.  Was the earlier "no start" observation on the same build as the working one? UNKNOWN; it limits how much the single working reboot proves.
 
 ## Risks
@@ -128,6 +200,6 @@ All options leave the notification IDs, channels, prefs keys and MethodChannels 
 *   The cause rests on one reboot seen by eye plus an earlier uncontrolled observation (GUESS, leaning LIKELY). If D0 does not confirm it, the tile alone would not fix the phone, which is why P1 comes after D0.
 *   Option 1 may re-arm alarms before something they depend on is ready (UNKNOWN reason for the delay); mitigated by keeping the delayed second pass.
 *   The "App launch" tile cannot show state, so it may be tapped by users who already allowed the app; it is informational only.
-*   A brand check that is too narrow hides the tile on Honor; one that is too wide shows a dead row, which falls back to app-details.
+*   ~~A brand check that is too narrow hides the tile on Honor; one that is too wide shows a dead row, which falls back to app-details.~~ **CORRECTED:** a dead row did not fall back to app-details, it showed the system chooser (section 3a). With P1b the check is by manufacturer, Huawei only; a Huawei phone with a different menu layout (for example HarmonyOS, GUESS) would still get the tile and the same text (risks in 3a).
 
 *Drafted for review; no code was written.*
