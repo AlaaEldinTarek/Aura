@@ -1,7 +1,6 @@
 // P3 cases: the clock seam, creditPages and removePages. P4a cases:
 // markDayComplete, undoComplete and toggleJuzCompleted (completion rule,
-// manualCredit). The cases for the end of the wird_total_pages_read mirror are
-// added in P4b.
+// manualCredit). P4b: wird_total_pages_read is never written or read.
 import 'dart:convert';
 
 import 'package:aura_app/core/models/wird.dart';
@@ -211,22 +210,25 @@ void main() {
       expect((await _history()).length, 2);
     });
 
-    group('wird_total_pages_read mirror (until P4b)', () {
-      test('adds the pages when the day is not complete before the call',
-          () async {
+    group('P4b: wird_total_pages_read is never written', () {
+      test('creditPages leaves the key untouched', () async {
         final s = _service();
         await s.creditPages(3, fromPage: 1, toPage: 4);
-        expect((await _prefs()).getInt('wird_total_pages_read'), 3);
         await s.creditPages(4, fromPage: 4, toPage: 8);
-        expect((await _prefs()).getInt('wird_total_pages_read'), 7,
-            reason: 'the move that completes the day is still added');
+        expect((await _prefs()).containsKey('wird_total_pages_read'), isFalse);
       });
 
-      test('does not add when the day was already complete', () async {
+      test('creditPages keeps a seeded value as it is', () async {
+        _seed({'wird_total_pages_read': 77});
         final s = _service();
         await s.creditPages(5, fromPage: 1, toPage: 6);
-        await s.creditPages(4, fromPage: 6, toPage: 10);
-        expect((await _prefs()).getInt('wird_total_pages_read'), 5);
+        expect((await _prefs()).getInt('wird_total_pages_read'), 77);
+      });
+
+      test('getFullState does not read the key', () async {
+        _seed({'wird_total_pages_read': 999});
+        final s = _service();
+        expect((await s.getFullState()).totalPagesRead, 0);
       });
     });
 
@@ -355,8 +357,6 @@ void main() {
       await s.removePages(5,
           dateKey: _today, removeCredit: false, restoreCurrentPage: 1);
       expect((await _todayEntry())!['pagesRead'], 0);
-      expect((await _prefs()).getInt('wird_total_pages_read'), 0,
-          reason: 'the mirror is floored at 0');
     });
 
     test('the day count never goes below zero', () async {
@@ -392,12 +392,16 @@ void main() {
           reason: 'the day count is decremented by the caller path regardless');
     });
 
-    test('mirror: subtracts the pages from wird_total_pages_read', () async {
+    test('P4b: removePages leaves wird_total_pages_read untouched', () async {
+      _seed({
+        'wird_total_pages_read': 50,
+        'wird_progress_history':
+            jsonEncode([_entry(date: _today, pagesRead: 3)]),
+      });
       final s = _service();
-      await s.creditPages(3, fromPage: 1, toPage: 4);
       await s.removePages(3,
           dateKey: _today, removeCredit: false, restoreCurrentPage: 1);
-      expect((await _prefs()).getInt('wird_total_pages_read'), 0);
+      expect((await _prefs()).getInt('wird_total_pages_read'), 50);
     });
 
     test('does not throw when the cloud push cannot run', () async {

@@ -139,8 +139,7 @@ class WirdService {
   ///
   /// [fromPage] is the marker page before the move; it becomes the entry's
   /// `startPage` when this creates today's entry. [toPage] always becomes
-  /// `currentPage`. Until P4b it also mirrors the pages into
-  /// `wird_total_pages_read`, so achievements keep working.
+  /// `currentPage`. It does not touch `wird_total_pages_read` (P4b).
   Future<CreditResult> creditPages(
     int pages, {
     required int fromPage,
@@ -174,11 +173,6 @@ class WirdService {
     if (granted) {
       await _incrementStreak();
       await prefs.setInt(_totalDaysKey, (prefs.getInt(_totalDaysKey) ?? 0) + 1);
-    }
-    // Mirror (removed in P4b): same condition as recordPagesRead. The pages are
-    // added unless the day was already complete before this call.
-    if (!wasCompleted) {
-      await prefs.setInt(_totalPagesKey, (prefs.getInt(_totalPagesKey) ?? 0) + pages);
     }
 
     _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
@@ -218,9 +212,6 @@ class WirdService {
       final days = (prefs.getInt(_totalDaysKey) ?? 0) - 1;
       await prefs.setInt(_totalDaysKey, days < 0 ? 0 : days);
     }
-    // Mirror (removed in P4b).
-    final total = (prefs.getInt(_totalPagesKey) ?? 0) - pages;
-    await prefs.setInt(_totalPagesKey, total < 0 ? 0 : total);
 
     _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
   }
@@ -307,7 +298,6 @@ class WirdService {
     final prefs = await _prefs;
     await prefs.setInt(_streakCountKey, 0);
     await prefs.remove(_streakDateKey);
-    await prefs.setInt(_totalPagesKey, 0);
     await prefs.setInt(_totalDaysKey, 0);
     await prefs.setString(_historyKey, jsonEncode([]));
     await prefs.setString(_completedJuzKey, jsonEncode([]));
@@ -527,7 +517,6 @@ class WirdService {
       todayProgress: todayProgress,
       streakCount: streakCount,
       streakDate: prefs.getString(_streakDateKey),
-      totalPagesRead: prefs.getInt(_totalPagesKey) ?? 0,
       totalDaysCompleted: prefs.getInt(_totalDaysKey) ?? 0,
       allCompletedJuz: allCompletedJuz,
       khatmCount: khatmCount,
@@ -585,7 +574,6 @@ class WirdService {
         'settings': settings.toJson(),
         'streakCount': prefs.getInt(_streakCountKey) ?? 0,
         'streakDate': prefs.getString(_streakDateKey),
-        'totalPagesRead': prefs.getInt(_totalPagesKey) ?? 0,
         'totalDaysCompleted': prefs.getInt(_totalDaysKey) ?? 0,
         'completedJuz': completedJuz,
         'khatmCount': khatmCount,
@@ -622,9 +610,6 @@ class WirdService {
       }
       if (data['streakDate'] != null) {
         await prefs.setString(_streakDateKey, data['streakDate'] as String);
-      }
-      if (data['totalPagesRead'] != null) {
-        await prefs.setInt(_totalPagesKey, data['totalPagesRead'] as int);
       }
       if (data['totalDaysCompleted'] != null) {
         await prefs.setInt(_totalDaysKey, data['totalDaysCompleted'] as int);

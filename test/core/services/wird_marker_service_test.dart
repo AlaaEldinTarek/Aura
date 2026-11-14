@@ -569,7 +569,8 @@ void main() {
       final p = await _prefs();
       expect(p.getInt('wird_streak_count'), 0);
       expect(p.containsKey('wird_streak_date'), isFalse);
-      expect(p.getInt('wird_total_pages_read'), 0);
+      expect(p.getInt('wird_total_pages_read'), 100,
+          reason: 'P4b: Reset All no longer writes the key');
       expect(p.getInt('wird_total_days_completed'), 0);
       expect(jsonDecode(p.getString('wird_progress_history')!), isEmpty);
       expect(jsonDecode(p.getString('wird_completed_juz')!), isEmpty);
