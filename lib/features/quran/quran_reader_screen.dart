@@ -260,8 +260,12 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
   Future<void> _setMarkerAtPage(int page, {BuildContext? sheetContext}) async {
     if (sheetContext != null && sheetContext.mounted) Navigator.pop(sheetContext);
     if (!mounted) return;
-    final choice =
-        await WirdStartSheet.show(context, page: page, readingMode: false);
+    final choice = await showWirdStartSheetRemembered(
+      context,
+      ref,
+      page: page,
+      readingMode: false,
+    );
     if (choice is! StartHere || !mounted) return;
     final outcome = await ref
         .read(wirdStateProvider.notifier)

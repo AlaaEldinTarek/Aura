@@ -337,8 +337,12 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
   /// stay on the tab with the "placed" snackbar (no Undo; Restart Wird corrects).
   Future<void> _setMarkerFromTab(WirdState state, WirdProgress? progress) async {
     final page = startSheetPage(state, progress);
-    final choice =
-        await WirdStartSheet.show(context, page: page, readingMode: false);
+    final choice = await showWirdStartSheetRemembered(
+      context,
+      ref,
+      page: page,
+      readingMode: false,
+    );
     if (choice is! StartHere || !mounted) return;
     final outcome = await ref
         .read(wirdStateProvider.notifier)
@@ -383,8 +387,9 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
   Future<void> _startReading(WirdState state, WirdProgress? progress) async {
     final noMarker = state.marker?.markerPage == null;
     if (state.settings.wirdUnit == WirdUnit.page && noMarker) {
-      final choice = await WirdStartSheet.show(
+      final choice = await showWirdStartSheetRemembered(
         context,
+        ref,
         page: startSheetPage(state, progress),
         readingMode: true,
       );
@@ -654,6 +659,9 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
     );
     if (confirmed != true || !mounted) return;
     await ref.read(wirdStateProvider.notifier).resetAllProgress();
+    if (!mounted) return;
+    // A full wipe starts the start sheet blank again (session memory only).
+    ref.invalidate(wirdStartColorProvider);
   }
 
   // ── Juz Grid ──────────────────────────────────────────────────────────────
