@@ -238,9 +238,22 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
         ] else ...[
           SizedBox(key: _progressKey, child: _buildProgressCard(context, state, primary, isDark, pagesRead, goal, isCompleted, progressRatio)),
           SizedBox(height: gapS),
-          if (isCompleted)
-            _buildCompletedBanner(context, state, primary, isDark)
-          else ...[
+          if (isCompleted) ...[
+            _buildCompletedBanner(context, state, primary, isDark),
+            // After Restart Wird on a completed day there is no marker and the
+            // action block is not built, so offer the setup here.
+            if (shouldShowMarkerSetupCard(
+              unit: state.settings.wirdUnit,
+              markerPage: state.marker?.markerPage,
+              dayCompleted: isCompleted,
+            )) ...[
+              SizedBox(height: gapS),
+              WirdMarkerSetupCard(
+                onSetMarker: () => _setMarkerFromTab(state, progress),
+                onAddFromBookmarks: _addFromBookmarks,
+              ),
+            ],
+          ] else ...[
             SizedBox(key: _actionsKey, child: _buildActionButtons(context, state, primary, progress)),
             SizedBox(height: gapS),
           ],
@@ -319,6 +332,34 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
 
   /// Bookmark pick sheet, then the color grid, then the marker is placed.
   /// Cancelling either sheet changes nothing.
+  /// "Set Wird marker" on a completed day: the start sheet (Start here and
+  /// Cancel) for the page the reader would open at, then place the marker and
+  /// stay on the tab with the "placed" snackbar (no Undo; Restart Wird corrects).
+  Future<void> _setMarkerFromTab(WirdState state, WirdProgress? progress) async {
+    final page = startSheetPage(state, progress);
+    final choice =
+        await WirdStartSheet.show(context, page: page, readingMode: false);
+    if (choice is! StartHere || !mounted) return;
+    final outcome = await ref
+        .read(wirdStateProvider.notifier)
+        .placeMarker(page, choice.color.toARGB32());
+    if (!mounted) return;
+    switch (outcome) {
+      case Placed():
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(
+            content: Text('wird_marker_placed'.tr().replaceAll(
+                '%d',
+                NumberFormatter.withArabicNumeralsByLanguage(
+                    page.toString(), widget.lang))),
+            duration: const Duration(seconds: 3),
+          ));
+      case PlaceFailed(failure: final f):
+        debugPrint('⚠️ [WIRD] Marker not placed: $f');
+    }
+  }
+
   Future<void> _addFromBookmarks() async {
     final page = await WirdBookmarkPickSheet.show(
       context,
