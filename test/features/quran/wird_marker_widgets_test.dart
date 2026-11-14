@@ -214,4 +214,17 @@ void main() {
       }
     });
   });
+
+  group('wirdReadingPage', () {
+    test('opens at the marker page when a marker exists', () {
+      expect(wirdReadingPage(_state(marker: _marker(page: 31)), 5, 1), 31);
+    });
+    test('falls back to progress page without a marker page', () {
+      expect(wirdReadingPage(_state(marker: _marker(page: null)), 5, 1), 5);
+      expect(wirdReadingPage(_state(), 5, 1), 5);
+    });
+    test('falls back to the start page with nothing', () {
+      expect(wirdReadingPage(_state(), null, 1), 1);
+    });
+  });
 }

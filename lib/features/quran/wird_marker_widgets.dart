@@ -38,6 +38,11 @@ String _digits(int n, String lang) =>
 
 // ── Ribbon ──────────────────────────────────────────────────────────────────
 
+/// Page the Start/Continue Reading button opens: the marker page when one
+/// exists, else the day's progress page, else the start page.
+int wirdReadingPage(WirdState state, int? progressPage, int startPage) =>
+    state.marker?.markerPage ?? progressPage ?? startPage;
+
 /// The ribbon shows only in page mode, on the page the marker is on.
 bool shouldShowWirdRibbon({
   required WirdUnit unit,
