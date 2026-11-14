@@ -29,6 +29,7 @@ package, see its README), home-screen widgets, and full-screen activities shown 
 | `AzkarFullScreenActivity.kt` | `AzkarFullScreenActivity.getIntent`: hard-coded post-prayer azkar with in-memory counters |
 | `StopAdhanReceiver.kt` | `StopAdhanReceiver` (action `STOP_ADHAN`): stops audio, re-posts the adhan notification |
 | `ToggleSilentModeReceiver.kt` | `ToggleSilentModeReceiver` (`ENABLE_SILENT` / `DISMISS_SILENT` / `EXTEND_SILENT`; calls `PrayerForegroundService.nudge()` after `DISMISS_SILENT` / `EXTEND_SILENT` so the foreground notification drops its vibration buttons) and `SilentOffReceiver` (rc 3999 restore; same `nudge()`) |
+| `SilentModeState.kt` | `SilentModeState` (object, pure, unit tested): `shouldClearStaleSilent(isActive, endTime, now, graceMs)` (flag on, timed window, ended more than `STALE_GRACE_MS` = 5 min ago; end time 0 = permanent vibrate, never stale) used by `MainActivity.onCreate` to clear the two flags (ringer untouched); `adhanButtonsVisible(isActive, endTime, now)` used by `AdhanFullScreenActivity` for the Stop / Keep Vibrate buttons |
 | `SilentModeAutomation.kt` | `SilentModeScheduler` (object): `cancelAll`, `cancelSilentOffAlarm`, `triggerSilentMode` (no-op) |
 | `DailySummaryReceiver.kt` | `DailySummaryReceiver.schedule(ctx, "HH:mm")` / `cancel`: untracked-prayer summary (7001), prunes old status keys |
 | `JumuahReminderReceiver.kt` | `JumuahReminderReceiver.schedule` / `cancel`: Friday reminder 30 min before stored `dhuhr_time` (8001) |

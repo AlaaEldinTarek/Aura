@@ -12,6 +12,8 @@ import '../../core/services/notification_service.dart';
 import '../../core/services/prayer_alarm_service.dart';
 import '../../core/services/platform_channel_service.dart';
 import '../../core/services/windows_startup_service.dart';
+import '../../core/widgets/auto_launch_dialog.dart';
+import '../../core/widgets/permission_dialog.dart';
 import '../../core/widgets/setting_tile.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/app_language.dart';
@@ -35,6 +37,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   String _calculationMethod = 'MuslimWorldLeague';
   String _asrMadhab = 'Shafi';
   bool _windowsStartup = true;
+  bool _autoLaunchAvailable = false;
   bool _loaded = false;
 
   @override
@@ -54,6 +57,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final madhab = sp.getString(AppConstants.keyAsrMadhab) ?? 'Shafi';
     final windowsStartup =
         sp.getBool(WindowsStartupService.prefKey) ?? true;
+    final autoLaunch = await PlatformChannelService.isEmuiDevice();
     if (mounted) {
       setState(() {
         _silentMode = silent;
@@ -63,6 +67,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         _calculationMethod = method;
         _asrMadhab = madhab;
         _windowsStartup = windowsStartup;
+        _autoLaunchAvailable = autoLaunch;
         _loaded = true;
       });
     }
@@ -275,6 +280,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         subtitle: isArabic ? 'تعطيل لضمان الإشعارات في الخلفية' : 'Disable for reliable background alerts',
                         onTap: () => PlatformChannelService.openBatteryOptimizationSettings(),
                       ),
+                      // Every permission and its state on one page.
+                      SettingTile(
+                        icon: Icons.verified_user_outlined,
+                        iconColor: Colors.green,
+                        title: 'settings_permissions_title'.tr(),
+                        subtitle: 'settings_permissions_subtitle'.tr(),
+                        onTap: () => showPermissionsStatusPage(context),
+                      ),
+                      // Huawei only: where the user lets Aura start after a restart.
+                      if (_autoLaunchAvailable)
+                        SettingTile(
+                          icon: Icons.rocket_launch_outlined,
+                          iconColor: Colors.deepPurple,
+                          title: 'auto_launch_title'.tr(),
+                          subtitle: 'auto_launch_subtitle'.tr(),
+                          onTap: () => showAutoLaunchDialog(context),
+                        ),
                     ]),
                   ],
 

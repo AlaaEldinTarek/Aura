@@ -291,10 +291,12 @@ class AdhanFullScreenActivity : AppCompatActivity() {
         // Vibration control buttons — show only when silent/vibrate mode is active
         val silentPrefs = getSharedPreferences("aura_silent_mode", MODE_PRIVATE)
         val isSilentActive = silentPrefs.getBoolean("is_silent_active", false)
+        val silentEndTime = silentPrefs.getLong("silent_end_time", 0L)
         val silentEnabled = FlutterPrefs.getBoolean(this, "silent_mode_enabled", true)
         val btnContainer = findViewById<android.widget.LinearLayout>(R.id.btnContainer)
 
-        if (silentEnabled && isSilentActive) {
+        // A flag left on by a missed boot clear must not show the buttons once the window is over.
+        if (silentEnabled && SilentModeState.adhanButtonsVisible(isSilentActive, silentEndTime, System.currentTimeMillis())) {
             btnContainer.visibility = View.VISIBLE
 
             // Stop Vibrate — turns off vibration then closes
