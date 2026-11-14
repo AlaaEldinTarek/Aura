@@ -329,6 +329,7 @@
   "wird_just_read": "Just read",
   "wird_marker_set_here": "Set Wird marker here",
   "wird_marker_placed": "Wird marker placed on page %d",
+  "wird_move_sheet_title": "Move Wird marker to page %d?",
   "bookmark_dialog_title": "Bookmark",
   "bookmark_dialog_question": "Add another bookmark or replace one?",
   "bookmark_dialog_add": "Add another",

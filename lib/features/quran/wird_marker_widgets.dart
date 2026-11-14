@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:aura_app/core/models/quran_models.dart';
 import 'package:aura_app/core/models/wird.dart';
+import 'package:aura_app/core/constants/app_constants.dart';
 import 'package:aura_app/core/models/wird_marker.dart';
 import 'package:aura_app/core/providers/quran_provider.dart';
 import 'package:aura_app/core/utils/number_formatter.dart';
@@ -583,6 +584,172 @@ class _WirdStartSheetState extends State<WirdStartSheet> {
                 onPressed: () => Navigator.pop(context),
                 child: Text('cancel'.tr()),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Top-bar Wird icon (spec second amendment 2026-11-14, P4a-3) ─────────────
+
+/// What the top-bar Wird icon looks like and does for the current page.
+class WirdTopBarIconSpec {
+  /// False in juz mode: the icon is not built.
+  final bool visible;
+
+  /// Filled on the marker's page, outline everywhere else.
+  final bool filled;
+
+  /// The marker's stored color; false means the neutral (no marker) color.
+  final bool useMarkerColor;
+
+  /// Tooltip and semantics label key (an existing key).
+  final String tooltipKey;
+
+  /// What a tap does; `none` means show the info text only.
+  final VerseSheetMarkerAction action;
+
+  const WirdTopBarIconSpec({
+    required this.visible,
+    required this.filled,
+    required this.useMarkerColor,
+    required this.tooltipKey,
+    required this.action,
+  });
+}
+
+/// The one rule behind the icon: the same action as the verse sheet, with
+/// `none` (marker on this page or behind it) showing the marker page instead.
+WirdTopBarIconSpec wirdTopBarIconSpec({
+  required WirdUnit unit,
+  required int? markerPage,
+  required int currentPage,
+}) {
+  if (unit != WirdUnit.page) {
+    return const WirdTopBarIconSpec(
+      visible: false,
+      filled: false,
+      useMarkerColor: false,
+      tooltipKey: '',
+      action: VerseSheetMarkerAction.none,
+    );
+  }
+  final action = verseSheetMarkerAction(
+      unit: unit, markerPage: markerPage, ayahPage: currentPage);
+  if (markerPage == null) {
+    return WirdTopBarIconSpec(
+      visible: true,
+      filled: false,
+      useMarkerColor: false,
+      tooltipKey: 'wird_marker_set_here',
+      action: action,
+    );
+  }
+  return WirdTopBarIconSpec(
+    visible: true,
+    filled: currentPage == markerPage,
+    useMarkerColor: true,
+    tooltipKey: action == VerseSheetMarkerAction.move
+        ? 'wird_marker_move_here'
+        : 'wird_marker_page_label',
+    action: action,
+  );
+}
+
+/// The Wird marker icon for the reader's top bar, beside the bookmark icon.
+/// Built only in page mode once the Wird state is loaded.
+class WirdMarkerTopBarButton extends StatelessWidget {
+  final WirdState? state;
+  final int currentPage;
+  final void Function(VerseSheetMarkerAction action) onTap;
+
+  const WirdMarkerTopBarButton({
+    super.key,
+    required this.state,
+    required this.currentPage,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final s = state;
+    if (s == null) return const SizedBox.shrink();
+    final markerPage = s.marker?.markerPage;
+    final spec = wirdTopBarIconSpec(
+        unit: s.settings.wirdUnit,
+        markerPage: markerPage,
+        currentPage: currentPage);
+    if (!spec.visible) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    final lang = Localizations.localeOf(context).languageCode;
+    final stored = s.marker?.color;
+    final color = spec.useMarkerColor && stored != null
+        ? Color(stored)
+        : theme.hintColor;
+    final tooltip = spec.tooltipKey
+        .tr()
+        .replaceAll('%d', _digits(markerPage ?? currentPage, lang));
+
+    return IconButton(
+      tooltip: tooltip,
+      iconSize: 22,
+      onPressed: () => onTap(spec.action),
+      icon: Icon(
+        spec.filled ? Icons.flag : Icons.flag_outlined,
+        color: color,
+        // A thin edge keeps a very light or very dark color visible.
+        shadows: [
+          Shadow(
+            color: AppConstants.border(theme.brightness == Brightness.dark),
+            blurRadius: 1.5,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "Move Wird marker to page N?" with Move and Cancel. Returns true only on
+/// "Move Wird marker here".
+class WirdMoveSheet extends StatelessWidget {
+  final int page;
+
+  const WirdMoveSheet({super.key, required this.page});
+
+  static Future<bool?> show(BuildContext context, {required int page}) =>
+      showModalBottomSheet<bool>(
+        context: context,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        builder: (_) => WirdMoveSheet(page: page),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final lang = Localizations.localeOf(context).languageCode;
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              startSheetTitle('wird_move_sheet_title'.tr(), page, lang),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 20),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text('wird_marker_move_here'.tr()),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text('cancel'.tr()),
+            ),
           ],
         ),
       ),

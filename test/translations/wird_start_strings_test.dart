@@ -58,4 +58,13 @@ void main() {
     expect(en['tutorial_wird_actions_body'], contains('Add from Bookmarks'));
     expect(en['tutorial_wird_actions_body'], contains('Undo last move'));
   });
+
+  test('wird_move_sheet_title exists in both languages and keeps its %d', () {
+    for (final lang in [en, ar]) {
+      final v = lang['wird_move_sheet_title'];
+      expect(v, isA<String>());
+      expect((v as String).trim(), isNotEmpty);
+      expect(v, contains('%d'));
+    }
+  });
 }
