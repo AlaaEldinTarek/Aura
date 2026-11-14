@@ -262,6 +262,36 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
     }
   }
 
+  /// "Set Wird marker here" (no marker yet): closes the verse sheet, asks for the
+  /// page (shown) and a color on the start sheet, places the marker and shows a
+  /// snackbar with no Undo (a wrong first placement is corrected by Restart Wird).
+  Future<void> _setMarkerAt(BuildContext sheetContext, Ayah ayah) async {
+    if (sheetContext.mounted) Navigator.pop(sheetContext);
+    if (!mounted) return;
+    final choice =
+        await WirdStartSheet.show(context, page: ayah.page, readingMode: false);
+    if (choice is! StartHere || !mounted) return;
+    final outcome = await ref
+        .read(wirdStateProvider.notifier)
+        .placeMarker(ayah.page, choice.color.toARGB32());
+    if (!mounted) return;
+    switch (outcome) {
+      case Placed():
+        final lang = context.locale.languageCode;
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(
+            content: Text('wird_marker_placed'.tr().replaceAll(
+                '%d',
+                NumberFormatter.withArabicNumeralsByLanguage(
+                    ayah.page.toString(), lang))),
+            duration: const Duration(seconds: 3),
+          ));
+      case PlaceFailed(failure: final f):
+        debugPrint('⚠️ [WIRD] Marker not placed: $f');
+    }
+  }
+
   Future<void> _handleAyahTap(Ayah ayah) async {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = AppConstants.getPrimary(isDark);
@@ -277,15 +307,20 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
           final id = '${ayah.suraNo}_${ayah.ayaNo}';
           final existing = bookmarks.where((b) => b.id == id).firstOrNull;
           final wirdNow = ref.watch(wirdStateProvider).valueOrNull;
-          final markerPage = wirdNow?.marker?.markerPage;
-          final canMove = wirdNow?.settings.wirdUnit == WirdUnit.page &&
-              markerPage != null &&
-              ayah.page > markerPage;
+          final markerAction = wirdNow == null
+              ? VerseSheetMarkerAction.none
+              : verseSheetMarkerAction(
+                  unit: wirdNow.settings.wirdUnit,
+                  markerPage: wirdNow.marker?.markerPage,
+                  ayahPage: ayah.page,
+                );
 
           return _AyahSheet(
             ayah: ayah,
-            canMoveMarker: canMove,
-            onMoveMarker: () => _moveMarkerTo(ctx, ayah),
+            markerAction: markerAction,
+            onMarkerAction: () => markerAction == VerseSheetMarkerAction.set
+                ? _setMarkerAt(ctx, ayah)
+                : _moveMarkerTo(ctx, ayah),
             lang: lang,
             isDark: isDark,
             primary: primary,
@@ -1050,8 +1085,8 @@ class _AyahSheet extends StatelessWidget {
   final void Function(BuildContext context, BookmarkColor color) onBookmark;
   final VoidCallback onRemove;
   // True in page mode with a marker behind this verse's page.
-  final bool canMoveMarker;
-  final VoidCallback onMoveMarker;
+  final VerseSheetMarkerAction markerAction;
+  final VoidCallback onMarkerAction;
 
   static const _colorMap = {
     BookmarkColor.red: Color(0xFFE53935),
@@ -1067,8 +1102,8 @@ class _AyahSheet extends StatelessWidget {
     required this.existingBookmark,
     required this.onBookmark,
     required this.onRemove,
-    required this.canMoveMarker,
-    required this.onMoveMarker,
+    required this.markerAction,
+    required this.onMarkerAction,
   });
 
   @override
@@ -1160,12 +1195,15 @@ class _AyahSheet extends StatelessWidget {
                 ),
             ],
           ),
-          if (canMoveMarker) ...[
+          if (markerAction != VerseSheetMarkerAction.none) ...[
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: onMoveMarker,
+              onPressed: onMarkerAction,
               icon: const Icon(Icons.bookmark_added_outlined, size: 18),
-              label: Text('wird_marker_move_here'.tr()),
+              label: Text((markerAction == VerseSheetMarkerAction.set
+                      ? 'wird_marker_set_here'
+                      : 'wird_marker_move_here')
+                  .tr()),
             ),
           ],
         ],
