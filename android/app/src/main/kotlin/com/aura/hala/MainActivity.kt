@@ -38,7 +38,30 @@ class MainActivity : FlutterFragmentActivity() {
         super.onCreate(savedInstanceState)
         // Create notification channel early to ensure it exists before alarms fire
         createNotificationChannel()
+        clearStaleSilentState()
         intent?.let { handleWidgetTabIntent(it) }
+    }
+
+    /**
+     * Clears `is_silent_active` and `silent_end_time` (flags only, the ringer mode is not
+     * touched) when a timed vibrate window ended long ago, which happens when the boot
+     * receiver did not run. Permanent vibrate (end time 0) is left alone.
+     */
+    private fun clearStaleSilentState() {
+        try {
+            val prefs = getSharedPreferences("aura_silent_mode", Context.MODE_PRIVATE)
+            val active = prefs.getBoolean("is_silent_active", false)
+            val endTime = prefs.getLong("silent_end_time", 0L)
+            if (SilentModeState.shouldClearStaleSilent(active, endTime, System.currentTimeMillis())) {
+                prefs.edit()
+                    .putBoolean("is_silent_active", false)
+                    .putLong("silent_end_time", 0)
+                    .apply()
+                Log.d("MainActivity", "🔕 [SILENT] Cleared stale silent-mode flags on app start (window ended long ago, ringer untouched)")
+            }
+        } catch (e: Exception) {
+            Log.e("MainActivity", "❌ [SILENT] Failed to check stale silent-mode state: ${e.message}")
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
