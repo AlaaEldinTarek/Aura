@@ -1,7 +1,7 @@
 # Wird Marker: Single Marker, Versioned Sync Guard, Undo, Khatma and Restart
 
 *   **Author:** Alaa Eldin Tarek
-*   **Status:** Proposed. Amended 2026-11-14: start entry points and the Restart dialog label (see "Start entry points (amendment 2026-11-14)"). Amendment approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-2 is implemented (commits `952a631`, `75f8c8c`, `dae8f98`). Device feedback on it led to a second amendment (2026-11-14): the Wird marker ribbon is replaced by an icon in the reader's top bar (see "Top-bar Wird icon"). That second amendment is for the owner to review.
+*   **Status:** Proposed. Amended 2026-11-14: start entry points and the Restart dialog label (see "Start entry points (amendment 2026-11-14)"). Amendment approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-2 is implemented (commits `952a631`, `75f8c8c`, `dae8f98`). Device feedback on it led to a second amendment (2026-11-14): the Wird marker ribbon is replaced by an icon in the reader's top bar (see "Top-bar Wird icon"). Second amendment (top-bar Wird icon replaces the ribbon) approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-3 is NOT approved yet.
 *   **Date:** 2026-11-13
 
 --------------------------------------------------------------------------------
@@ -273,7 +273,7 @@ pushIfNewer(uid, record):             # used by undo; one Source.server read, th
 
 ### Start entry points (amendment 2026-11-14)
 
-Decided by the product owner on 2026-11-14. Labels: VERIFIED (read in code or in this spec), UNKNOWN (not checked), GUESS (reasoning, not run). Amendment approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-2 is implemented (commits `952a631`, `75f8c8c`, `dae8f98`). Device feedback on it led to a second amendment (2026-11-14): the Wird marker ribbon is replaced by an icon in the reader's top bar (see "Top-bar Wird icon"). That second amendment is for the owner to review.
+Decided by the product owner on 2026-11-14. Labels: VERIFIED (read in code or in this spec), UNKNOWN (not checked), GUESS (reasoning, not run). Amendment approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-2 is implemented (commits `952a631`, `75f8c8c`, `dae8f98`). Device feedback on it led to a second amendment (2026-11-14): the Wird marker ribbon is replaced by an icon in the reader's top bar (see "Top-bar Wird icon"). Second amendment (top-bar Wird icon replaces the ribbon) approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-3 is NOT approved yet.
 
 **Problem (VERIFIED in code at `feat/wird-marker` `162a240`).** With no marker, "Start Reading" only opens the reader (`wird_tab.dart`, `_buildActionButtons`). The only way to create the first marker is "Add from Bookmarks" on the Wird tab, which needs an existing bookmark. In the reader, the verse sheet shows a marker action only when a marker exists and the tapped page is ahead of it (`canMove`, `quran_reader_screen.dart:281-283`; the button is built only when `canMoveMarker` is true, `:1163`), and the ribbon (replaced by the top-bar icon on 2026-11-14) needed `markerPage != null` (`shouldShowWirdRibbon`). Reading without a marker counts nothing, because pages are credited only by `moveMarker`. Nothing on the screens tells the user what to do next.
 
@@ -360,7 +360,7 @@ Reused as they are: `wird_marker_choose_color` (the grid caption) and `cancel`. 
 
 ### Top-bar Wird icon (amendment 2026-11-14, second)
 
-Decided by the product owner on 2026-11-14 after device feedback on the P4a-2 build (Option 1: one Wird icon in the top bar, the ribbon removed). Labels: VERIFIED (read in code or in this spec), UNKNOWN (not checked), GUESS (reasoning, not run). This amendment is for the owner to review.
+Decided by the product owner on 2026-11-14 after device feedback on the P4a-2 build (Option 1: one Wird icon in the top bar, the ribbon removed). Labels: VERIFIED (read in code or in this spec), UNKNOWN (not checked), GUESS (reasoning, not run). Second amendment (top-bar Wird icon replaces the ribbon) approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-3 is NOT approved yet.
 
 **Problem (VERIFIED in code at `feat/wird-marker` `dae8f98`).** The reader showed two markers in the same corner: the ordinary bookmark icon at the end of the top bar (`_TopBar`, `quran_reader_screen.dart:1485-1545`, the last child of the `Row`) and the Wird ribbon on the right edge just below it (`WirdMarkerRibbonLayer`, `right: 8`, drawn at `:656-664`).
 
@@ -425,9 +425,9 @@ Decided by the product owner on 2026-11-14 after device feedback on the P4a-2 bu
 
 #### Strings (one new key, English and Arabic)
 
-The new Arabic below is a draft for the product owner to review.
+The Arabic below was reviewed by the product owner (Aladdin, native Arabic speaker) on 2026-11-14.
 
-| Key | English | Arabic (draft) |
+| Key | English | Arabic |
 | --- | --- | --- |
 | `wird_move_sheet_title` | Move Wird marker to page %d? | هل تنقل علامة الورد إلى الصفحة %d؟ |
 
@@ -1109,7 +1109,7 @@ After `APPLY_CLOUD` or `DISCARD_LOCAL` the undo record is cleared when it no lon
 
 *   **Amendment 2026-11-14 (P4a-2):** seven new keys and one changed key, with English and Arabic text, are listed in "Start entry points", "Strings". The Arabic was reviewed by the product owner (Aladdin, native Arabic speaker) on 2026-11-14.
 
-*   **Amendment 2026-11-14 (P4a-3):** one new key, `wird_move_sheet_title`, with English and Arabic text, is listed in "Top-bar Wird icon", "Strings". The new Arabic is a draft for the product owner to review.
+*   **Amendment 2026-11-14 (P4a-3):** one new key, `wird_move_sheet_title`, with English and Arabic text, is listed in "Top-bar Wird icon", "Strings". The Arabic was reviewed by the product owner (Aladdin, native Arabic speaker) on 2026-11-14.
 
 #### 15. `test/core/services/wird_marker_logic_test.dart` (Create)
 
