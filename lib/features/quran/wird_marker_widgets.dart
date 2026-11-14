@@ -224,6 +224,25 @@ String undoOutcomeMessageKey(UndoOutcome outcome) => switch (outcome) {
       UndoFailed() => 'wird_undo_stale',
     };
 
+/// "Wird marker moved" snackbar with an Undo action. A snackbar with an action
+/// stays until dismissed unless `persist` is false, so it is set here. Any
+/// earlier snackbar is cleared first, so moves never queue up stale Undo bars.
+void showMarkerMovedSnackBar(
+  ScaffoldMessengerState messenger, {
+  required String message,
+  required String undoLabel,
+  required VoidCallback onUndo,
+}) {
+  messenger
+    ..clearSnackBars()
+    ..showSnackBar(SnackBar(
+      content: Text(message),
+      persist: false,
+      duration: const Duration(seconds: 5),
+      action: SnackBarAction(label: undoLabel, onPressed: onUndo),
+    ));
+}
+
 /// Shows the message for [outcome]. Used by the reader snackbar action and by
 /// both Wird-tab buttons.
 void showUndoOutcome(BuildContext context, UndoOutcome outcome) {

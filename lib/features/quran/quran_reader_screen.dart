@@ -151,6 +151,10 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
 
   @override
   void dispose() {
+    // The snackbar belongs to the app-level messenger and would otherwise stay
+    // on the Wird tab. Cleared after the frame, as the tree is locked here.
+    final messenger = _messenger;
+    WidgetsBinding.instance.addPostFrameCallback((_) => messenger?.clearSnackBars());
     WakelockPlus.disable();
     if (_isDesktop) {
       try { ref.read(desktopSidebarVisibleProvider.notifier).state = true; } catch (_) {}
@@ -197,7 +201,15 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
     }
   }
 
-void _togglePageBookmark() {
+  ScaffoldMessengerState? _messenger;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _messenger = ScaffoldMessenger.maybeOf(context);
+  }
+
+  void _togglePageBookmark() {
     final meta = _surahForPage(_currentPage);
     if (meta == null) return;
     final id = 'page_$_currentPage';
@@ -235,18 +247,15 @@ void _togglePageBookmark() {
     switch (outcome) {
       case Moved(markerPage: final page):
         final lang = context.locale.languageCode;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('wird_marker_moved'.tr().replaceAll(
-                '%d', NumberFormatter.withArabicNumeralsByLanguage(page.toString(), lang))),
-            action: SnackBarAction(
-              label: 'wird_undo'.tr(),
-              onPressed: () async {
-                final undone = await ref.read(wirdStateProvider.notifier).undoMove();
-                if (mounted) showUndoOutcome(context, undone);
-              },
-            ),
-          ),
+        showMarkerMovedSnackBar(
+          ScaffoldMessenger.of(context),
+          message: 'wird_marker_moved'.tr().replaceAll(
+              '%d', NumberFormatter.withArabicNumeralsByLanguage(page.toString(), lang)),
+          undoLabel: 'wird_undo'.tr(),
+          onUndo: () async {
+            final undone = await ref.read(wirdStateProvider.notifier).undoMove();
+            if (mounted) showUndoOutcome(context, undone);
+          },
         );
       case MoveFailed(failure: final f):
         debugPrint('⚠️ [WIRD] Marker move failed: $f');

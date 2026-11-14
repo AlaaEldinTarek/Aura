@@ -240,4 +240,49 @@ void main() {
       expect(wirdRangeStart(_state(marker: _marker(page: null)), null), 1);
     });
   });
+
+  group('showMarkerMovedSnackBar', () {
+    Future<ScaffoldMessengerState> host(WidgetTester t) async {
+      await t.pumpWidget(const MaterialApp(home: Scaffold(body: SizedBox())));
+      return ScaffoldMessenger.of(t.element(find.byType(Scaffold)));
+    }
+
+    testWidgets('shows message and Undo, then disappears by itself', (t) async {
+      final m = await host(t);
+      showMarkerMovedSnackBar(m, message: 'moved 8', undoLabel: 'Undo', onUndo: () {});
+      await t.pump();
+      expect(find.text('moved 8'), findsOneWidget);
+      expect(find.text('Undo'), findsOneWidget);
+      await t.pump(const Duration(seconds: 1)); // entrance animation, starts the timer
+      await t.pump(const Duration(seconds: 6));
+      await t.pumpAndSettle();
+      expect(find.text('moved 8'), findsNothing);
+      expect(find.text('Undo'), findsNothing);
+    });
+
+    testWidgets('a new move replaces the old snackbar instead of queueing', (t) async {
+      final m = await host(t);
+      showMarkerMovedSnackBar(m, message: 'moved 8', undoLabel: 'Undo', onUndo: () {});
+      await t.pump();
+      showMarkerMovedSnackBar(m, message: 'moved 11', undoLabel: 'Undo', onUndo: () {});
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 500));
+      expect(find.text('moved 8'), findsNothing);
+      expect(find.text('moved 11'), findsOneWidget);
+      await t.pump(const Duration(seconds: 1)); // entrance animation, starts the timer
+      await t.pump(const Duration(seconds: 6));
+      await t.pumpAndSettle();
+      expect(find.text('moved 8'), findsNothing);
+    });
+
+    testWidgets('Undo calls onUndo', (t) async {
+      final m = await host(t);
+      var called = 0;
+      showMarkerMovedSnackBar(m, message: 'x', undoLabel: 'Undo', onUndo: () => called++);
+      await t.pump();
+      await t.pump(const Duration(milliseconds: 500));
+      await t.tap(find.text('Undo'));
+      expect(called, 1);
+    });
+  });
 }
