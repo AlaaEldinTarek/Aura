@@ -7,6 +7,18 @@ import '../models/prayer_record.dart';
 import 'prayer_tracking_service.dart';
 import 'dhikr_service.dart';
 import 'task_service.dart';
+import 'wird_marker_service.dart';
+
+/// The Wird achievements the marker values qualify for. [khatmaCount] and
+/// [pages] come from `WirdMarkerService.khatmaCountLocal` and `progressTotalLocal`.
+/// Pure, so it is tested without Firebase (docs/designs/wird-marker.md item 22).
+List<String> wirdAchievementIds({required int khatmaCount, required int pages}) {
+  return [
+    if (khatmaCount >= 1) 'wird_khatma',
+    if (pages >= 100) 'wird_pages_100',
+    if (pages >= 300) 'wird_pages_300',
+  ];
+}
 
 /// Service for checking and awarding achievements.
 /// Listen to [newAchievements] stream to show UI notifications on unlock.
@@ -242,6 +254,12 @@ class AchievementService {
 
       // ── Wird achievements ──────────────────────────────────────────────────
 
+      // Local reads of the marker record only (no network); 0 when there is none.
+      final wirdIds = wirdAchievementIds(
+        khatmaCount: await WirdMarkerService.instance.khatmaCountLocal(),
+        pages: await WirdMarkerService.instance.progressTotalLocal(),
+      );
+
       if (!earnedIds.contains('wird_first')) {
         final daysCompleted = prefs.getInt('wird_total_days_completed') ?? 0;
         if (daysCompleted >= 1) {
@@ -264,8 +282,7 @@ class AchievementService {
       }
 
       if (!earnedIds.contains('wird_khatma')) {
-        final totalPages = prefs.getInt('wird_total_pages_read') ?? 0;
-        if (totalPages >= 604) {
+        if (wirdIds.contains('wird_khatma')) {
           await _award(userId, 'wird_khatma', now, newlyEarned);
         }
       }
@@ -278,15 +295,13 @@ class AchievementService {
       }
 
       if (!earnedIds.contains('wird_pages_100')) {
-        final totalPages = prefs.getInt('wird_total_pages_read') ?? 0;
-        if (totalPages >= 100) {
+        if (wirdIds.contains('wird_pages_100')) {
           await _award(userId, 'wird_pages_100', now, newlyEarned);
         }
       }
 
       if (!earnedIds.contains('wird_pages_300')) {
-        final totalPages = prefs.getInt('wird_total_pages_read') ?? 0;
-        if (totalPages >= 300) {
+        if (wirdIds.contains('wird_pages_300')) {
           await _award(userId, 'wird_pages_300', now, newlyEarned);
         }
       }
