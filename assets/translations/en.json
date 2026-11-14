@@ -491,5 +491,8 @@
   "guest_sync_success": "Tasks synced to your account!",
   "prayer_calc_method_title": "Calculation Method",
   "prayer_asr_madhab_title": "Asr Madhab",
-  "prayer_calc_done": "Done"
+  "prayer_calc_done": "Done",
+  "auto_launch_dialog_title": "Let Aura start after a restart",
+  "auto_launch_dialog_body": "On Huawei phones, prayer alerts may not start after a restart unless Aura is allowed to launch.\n\nOpen: Settings > Battery > App launch > Aura.\nThen turn on Auto-launch, Secondary launch and Run in background.",
+  "auto_launch_dialog_open_details": "Open app details"
 }

@@ -9,7 +9,13 @@ Map<String, dynamic> _load(String lang) =>
     json.decode(File('assets/translations/$lang.json').readAsStringSync())
         as Map<String, dynamic>;
 
-const _keys = ['auto_launch_title', 'auto_launch_subtitle'];
+const _keys = [
+  'auto_launch_title',
+  'auto_launch_subtitle',
+  'auto_launch_dialog_title',
+  'auto_launch_dialog_body',
+  'auto_launch_dialog_open_details',
+];
 
 void main() {
   final en = _load('en');
@@ -29,6 +35,21 @@ void main() {
     expect(sub, contains('Auto-launch'));
     expect(sub, contains('Secondary launch'));
     expect(sub, contains('Run in background'));
+  });
+
+  test('the English dialog body names the menu path and the three switches', () {
+    final body = en['auto_launch_dialog_body'] as String;
+    expect(body, contains('Settings > Battery > App launch > Aura'));
+    expect(body, contains('Auto-launch'));
+    expect(body, contains('Secondary launch'));
+    expect(body, contains('Run in background'));
+  });
+
+  test('the Arabic dialog strings have no ASCII digits', () {
+    for (final k in _keys.where((k) => k.startsWith('auto_launch_dialog'))) {
+      expect(RegExp(r'[0-9]').hasMatch((ar[k] ?? '') as String), isFalse,
+          reason: k);
+    }
   });
 
   test('the tile is not the battery tile and has no number placeholder', () {

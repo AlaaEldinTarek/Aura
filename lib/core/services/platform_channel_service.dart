@@ -72,6 +72,13 @@ class PlatformChannelService {
     }
   }
 
+  /// Open Aura's app details screen (the "Open app details" button of the App
+  /// launch dialog). Dart only, no channel call; no-op off Android.
+  static Future<void> openAppDetails() async {
+    if (!_isAndroid) return;
+    await _openAppSettings();
+  }
+
   /// Open the EMUI "App launch" screen (Kotlin tries the EMUI screens, then the app
   /// details screen). When the channel fails, or nothing opened, open app settings.
   static Future<void> openAutoLaunchSettings() async {
