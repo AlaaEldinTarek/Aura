@@ -183,6 +183,20 @@ The Arabic EMUI menu names were not compared against an Arabic EMUI phone. Open 
 | P2 | Stale silent flag: 4a (adhan screen checks the end time) and 4b (clear flags on app start after a grace), `shouldClearStaleSilent`, unit tests first. Independent of the cause and of P1 | C |
 | P3 | Optional hardening: Option 1 (critical work at once in `onReceive`, the 30 s pass kept as an idempotent second pass), after reading that the boot calls are safe to run twice | C |
 
+## Device results (P1b, 2026-11-14)
+
+Reported by Aladdin on 2026-11-14, on the phone, with the throwaway build `test/all-edits-final3` (merge `2ba27d7`: `main` `1584deb` with `feat/wird-marker`, `fix/boot-start-service` and `fix/dev-test-adhan`; release APK 1.1.0+60, sha256 `5393d65a53350b01d4d7332774aba555bc8d4bc212c5dc561e77799394c69235`, installed over the previous app on 2026-11-14, installed hash equal to the built hash). These are his reported results; they were not observed by Claude. Only the items listed below are recorded as passed.
+
+| # | Check | Result |
+| --- | --- | --- |
+| 1 | The Settings tile "Auto-launch after restart" opens the explanation dialog, and no "Open with" chooser appears | PASSED |
+| 2 | The Arabic dialog text reads well | PASSED |
+| 3 | "Open app details" opens Aura's App info screen | PASSED |
+| 4 | A reboot with Auto-launch on brought the prayer notification back on its own after a minute or two (reported on an earlier build, not on the build above) | PASSED |
+
+*   **Not tested:** the permissions-page hint (that page only shows when a permission is missing, and everything is granted on the phone); the Arabic EMUI menu names against an Arabic EMUI phone; non-Huawei phones (the tile must stay hidden there).
+*   **Observation (open point, the dialog is not changed):** from the App info screen the EMUI entry is called "Power usage details", and "Launch settings" is inside it (the "Battery usage details" screen). The dialog text gives the route Settings > Battery > App launch > Aura. A second route line may be added later (needs its own strings and a spec amendment).
+
 ## Open Questions
 
 1.  How was "the boot-time clearing of the vibration state does not run" observed (the vibration buttons still showing, the phone still on vibrate, a log)? The answer separates cause A from B. (The owner's later evidence is about the notification after a reboot, not about this.)
@@ -193,6 +207,7 @@ The Arabic EMUI menu names were not compared against an Arabic EMUI phone. Open 
 6.  Which of the three switches is required (Auto-launch alone?). UNKNOWN; V3 answers it.
 8.  (P1b) Which exception did (a) and (b) throw for a third-party app? UNKNOWN; only matters if they are ever brought back (logcat of a tap: `adb logcat -c`, tap, `adb logcat -d -s MainActivity`).
 9.  (P1b) The Arabic names of the EMUI menus "Battery" and "App launch" and of the three switches: the Arabic was reviewed by Aladdin on 2026-11-14 ("Arabic every where is very good"); the Arabic EMUI menu names were not compared against an Arabic EMUI phone.
+10. (P1b, from the device results) Should the dialog give a second route, from the App info screen: "Power usage details" then "Launch settings" (the "Battery usage details" screen)? Reported by Aladdin on 2026-11-14; not decided, the dialog is unchanged.
 7.  Was the earlier "no start" observation on the same build as the working one? UNKNOWN; it limits how much the single working reboot proves.
 
 ## Risks
