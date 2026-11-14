@@ -1,7 +1,7 @@
 # Fix — Vibration Buttons Inside the Foreground-Service Notification
 
 *   **Author:** Alaa Eldin Tarek
-*   **Status:** Draft (awaiting "approve phase P1")
+*   **Status:** P1 implemented 2026-11-14 (device checks pending)
 *   **Date:** 2026-11-14
 *   **Branch:** `fix/silent-mode-buttons-in-fgs` (off `main` at `827fa5e`)
 *   **Supersedes:** F68 (`docs/designs/fix-silent-mode-notification.md`), the part that adds a separate notification 8100.
@@ -92,6 +92,7 @@ When `buttonsVisible`, the service uses a new compact layout in place of the cur
 *   Four new layout files, the same matrix as today (light/dark by LTR/RTL): `notification_actions.xml`, `notification_actions_dark.xml`, `notification_actions_rtl.xml`, `notification_actions_dark_rtl.xml`.
 *   One row: the logo (about 36 dp), then a column with the prayer name and the time text (iqama / countdown), then the two buttons "Stop Vibration" and "Keep Vibration". The header row and the divider are dropped while the buttons show. The data ids (`notification_title`, `notification_time`, `notification_logo`) are reused so the existing text-setting code is shared.
 *   Buttons are clickable `TextView`s with a small rounded background drawable (one for light, one for dark), single line, 12 sp, ellipsized. `RemoteViews` cannot shrink text to fit.
+*   **As built (P1):** the two buttons are stacked one above the other (28 dp each) at the end of the row, not side by side. Side by side needed about 180 dp of the 360 dp width, which left too little for the data (my estimate, not measured). The row is about 72 dp tall. If the device check shows clipping, this layout is what to adjust.
 *   Same `RemoteViews` for `setCustomContentView` and `setCustomBigContentView`, as today, so the collapsed and expanded states show the same row.
 *   Height target: no taller than the current layout (about 80 dp). The stock Android collapsed limit is about 64 dp (UNVERIFIED on EMUI 12); the current layout already exceeds it, and the compact row is shorter.
 *   **Fallback if one row does not fit at 360 dp with the default font:** two lines inside the same notification (data on top, buttons below), still without expansion. Decided at the first device check, not now.
@@ -99,7 +100,7 @@ When `buttonsVisible`, the service uses a new compact layout in place of the cur
 ### 3. Click handling
 
 *   `RemoteViews.setOnClickPendingIntent` on each button, with explicit `PendingIntent.getBroadcast` to `ToggleSilentModeReceiver` and `FLAG_IMMUTABLE | FLAG_UPDATE_CURRENT`, as 8100 does today.
-*   Actions: `com.aura.hala.DISMISS_SILENT` and `com.aura.hala.EXTEND_SILENT`, both with `EXTRA_PRAYER_NAME` and `EXTRA_PRAYER_NAME_AR` (the receiver reads them, and defaults to "Prayer" without them). The prayer name comes from the adhan prefs when present, else from the silent state.
+*   Actions: `com.aura.hala.DISMISS_SILENT` and `com.aura.hala.EXTEND_SILENT`, both with `EXTRA_PRAYER_NAME` and `EXTRA_PRAYER_NAME_AR` (the receiver reads them, and defaults to "Prayer" without them). The prayer name comes from the adhan prefs (`adhan_prayer_name`, `adhan_prayer_name_ar`) when present; otherwise the extras are omitted and the receiver uses its default (it only uses them for logs and toasts).
 *   Two new request codes, `9101` and `9102` (proposed; must be re-checked by grep against `contracts/notification-ids.md` and the Kotlin sources at implementation, because 9100 is daily recalc and 9999 is the foreground-service ID).
 *   Lock screen: broadcast PendingIntents are the only mechanism available on SDK 29. Whether the system lets them run without unlocking on EMUI 12 is UNVERIFIED and is checked on the device (Verification Plan).
 
