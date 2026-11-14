@@ -1,7 +1,7 @@
 # Wird Marker: Single Marker, Versioned Sync Guard, Undo, Khatma and Restart
 
 *   **Author:** Alaa Eldin Tarek
-*   **Status:** Proposed
+*   **Status:** Proposed. Amended 2026-11-14: start entry points and the Restart dialog label (see "Start entry points (amendment 2026-11-14)"). The amendment is for the owner to review.
 *   **Date:** 2026-11-13
 
 --------------------------------------------------------------------------------
@@ -17,9 +17,10 @@ This document is self-contained: it cites only files tracked in the repository.
 Decisions already made by the product owner (2026-11-13):
 
 *   **One marker, page mode only.** Juz toggles are unchanged. The old color link is removed. There is no migration and no notice, because there are no real users yet.
-*   **Modes (decided 2026-11-13).** The mode is the existing Wird setting `WirdSettings.wirdUnit` (`WirdUnit.page` or `WirdUnit.juz`, `lib/core/models/wird.dart:1`). The user changes it with the Page/Juz segmented button in the Wird settings section (`wird_tab.dart:1220`, saved by the provider at `wird_provider.dart:128`). This release adds no new toggle. Switching to juz mode hides every marker control (ribbon, "Move Wird marker here", undo snackbar and button, "Restart Wird", the close-on-604 prompt) but keeps the marker record and the undo record, locally and in the cloud, and marker sync continues. Switching back to page mode shows the marker again exactly as it was. Streak, history, `totalDaysCompleted` and the khatma totals do not depend on the mode. "Reset All Progress" works in both modes and clears a hidden marker too.
+*   **Modes (decided 2026-11-13).** The mode is the existing Wird setting `WirdSettings.wirdUnit` (`WirdUnit.page` or `WirdUnit.juz`, `lib/core/models/wird.dart:1`). The user changes it with the Page/Juz segmented button in the Wird settings section (`wird_tab.dart:1220`, saved by the provider at `wird_provider.dart:128`). This release adds no new toggle. Switching to juz mode hides every marker control (ribbon, "Move Wird marker here", "Set Wird marker here", the Start Reading sheet, undo snackbar and button, "Restart Wird", the close-on-604 prompt) but keeps the marker record and the undo record, locally and in the cloud, and marker sync continues. Switching back to page mode shows the marker again exactly as it was. Streak, history, `totalDaysCompleted` and the khatma totals do not depend on the mode. "Reset All Progress" works in both modes and clears a hidden marker too.
 *   **Marker display (decided 2026-11-13).** A fixed ribbon drawn in the reader's top-level `Stack` (`quran_reader_screen.dart:421`) after the `PageView`, shown only when `_currentPage == markerPage` (page mode). Its `top` is the measured top bar height (from `_topBarKey`) while `_showUI` is true, else 0. It sits at `right: 8`, about 14 dp wide and at most 30 dp tall, in the outer margin of the RTL mushaf, so it is intended not to cover the first text line or the top bar controls (confirmed only by the acceptance check below). It does not zoom, pan or swipe with the page (accepted limit). Acceptance: on pages 2, 3 and 604 at 320 dp and 360 dp widths and in a narrow Windows window, in light and dark mode, it overlaps no glyph of line 1 and no top bar control. If it fails, the owner decides the fallback (not the top bar icon without approval).
 *   **Setup (decided 2026-11-13).** The "Add from Bookmarks" button on the Wird page stays. It lists the user's ordinary bookmarks (all colors). The chosen bookmark's page becomes the start page and the marker page once the user has also picked a color; nothing is saved until then, and cancelling either sheet changes nothing. No pages are counted at setup. **Setup is blocked while a marker exists (decided 2026-11-13):** the page-mode "Add from Bookmarks" button is replaced by the hint "To choose a new starting page, restart your Wird first", and the user must use Restart Wird, which deletes the marker, before a new setup. If the user has no bookmarks, the sheet shows "Add a bookmark in the reader first" with an "Open reader" button. These strings exist in English and Arabic.
+*   **Start entry points (decided 2026-11-14 by the product owner, amends Setup).** When no marker exists (page mode only), two more ways to create the first marker are added: (a) "Start Reading" opens a small start sheet ("Start your Wird from page N?", the 12-color grid, and the choices "Start here", "Choose another page" and "Just read"), and (b) the verse sheet in the reader shows "Set Wird marker here", which asks for confirmation of the page and a color before placing. "Add from Bookmarks" stays unchanged. The ordinary bookmark button in the reader's top bar is not reused for the Wird marker: bookmarks and the marker stay separate. This reverses Alternative X. Details in "Start entry points (amendment 2026-11-14)".
 *   **Color (decided 2026-11-13).** A preset grid of about 12 colors, no hex field and no free picker. The colors are chosen to contrast with the page in light and dark mode, and they exclude shades close to the reference red, green and orange. No new dependency and no `pubspec.*` change. Restart deletes the color, and the user picks a new one.
 *   **Moving the marker.** The reader has no long-press today. Tapping a verse calls `onAyahTap` (`quran_reader_screen.dart:819-835, 468`), which opens the verse sheet. "Move Wird marker here" is added to that sheet. If a forward move adds more pages than the daily goal, the app first asks "Count N pages as read?".
 *   **Counting.** Moving the marker forward counts the pages passed. Moving from page 31 to page 36 adds pages 31 to 35. Progress = stored running page total + (marker page - start page). The marker never moves backward, except through undo, a finished khatma, and Restart.
@@ -46,7 +47,7 @@ The proposed solution is one marker per user, with progress derived from a small
 
 ## Goals
 
-*   One marker per user in a color picked from a preset grid, with its own shape and separate from bookmarks. Setup through the Wird page. Move through "Move Wird marker here" in the verse sheet that a verse tap opens. Derived progress. Page mode only.
+*   One marker per user in a color picked from a preset grid, with its own shape and separate from bookmarks. Setup through the Wird page, the Start Reading sheet or the verse sheet. Move through "Move Wird marker here" in the verse sheet that a verse tap opens. Derived progress. Page mode only.
 *   Red, green and orange stay reference-only bookmarks and never count toward the Wird.
 *   Progress is the stored running page total plus (marker page - start page). The running total is kept in the versioned record and grows at each khatma by the pages counted in that cycle (start page through 604).
 *   One-step undo for today's last move (a connection is required for signed-in users). Big-move confirmation at the daily goal. Streak credit tied to the daily goal. "Mark day complete" as a streak-only action. Khatma through the close-reader prompt on page 604.
@@ -138,6 +139,8 @@ Facts below marked VERIFIED were read in code on 2026-11-13. Line numbers refer 
                                     guarded push / checked pull, 5 s timeout
 ```
 
+Amendment 2026-11-14: with no marker, "Start Reading" opens a start sheet, and the verse sheet shows "Set Wird marker here" in place of "Move Wird marker here". Both call the same `placeMarker` (see "Start entry points").
+
 ### The marker record
 
 One immutable value, `WirdMarkerRecord`, stored as one JSON string in the local key `wird_marker` and as one document at `users/{uid}/wird/marker`. A new document is a different path from `wird/data`, so the blind whole-document push and the stale settings write cannot touch it.
@@ -169,7 +172,7 @@ All changes are pure functions from a record to a new record. The service saves 
 
 | Action | Marker record change | Today's pages and streak |
 | --- | --- | --- |
-| Setup (chosen bookmark page `p`, color `c`; only when no marker exists, else fails `MARKER_EXISTS`) | `markerPage = p`, `startPage = p`, `color = c`, `ownerId` = current uid or null, `version + 1`, `cycle` unchanged | No pages counted |
+| Setup (chosen page `p` (from a bookmark, the start sheet or the verse sheet), color `c`; only when no marker exists, else fails `MARKER_EXISTS`) | `markerPage = p`, `startPage = p`, `color = c`, `ownerId` = current uid or null, `version + 1`, `cycle` unchanged | No pages counted |
 | Move to `t` (`t > markerPage`, `t <= 604`) | `markerPage = t`, `version + 1` | Add `t - m` pages. Streak credit if today reaches the daily goal. Save an undo record. |
 | Undo last move | `markerPage = previous`, `version + 1` | Remove the move's pages from today. If today drops below the goal and today's credit came from pages, remove today's streak credit. Clear the undo record. |
 | Complete khatma (Yes) | `markerPage = 1`, `startPage = 1`, `runningTotal` grows as above, `khatmaCount + 1`, today's date appended, `cycle + 1`, `version + 1`, color kept | Add `604 - m + 1` pages. No undo record is written, and any existing one is cleared. |
@@ -180,7 +183,7 @@ All changes are pure functions from a record to a new record. The service saves 
 
 Rules that hold for every action:
 
-*   The marker never moves backward except through undo, a khatma and Restart or Reset All Progress. "Move Wird marker here" is hidden or disabled when the tapped verse's `ayah.page` is at or behind the marker, when no marker exists, and in juz mode.
+*   The marker never moves backward except through undo, a khatma and Restart or Reset All Progress. "Move Wird marker here" is hidden or disabled when the tapped verse's `ayah.page` is at or behind the marker and in juz mode. When no marker exists (page mode), the verse sheet shows "Set Wird marker here" instead (amendment 2026-11-14).
 *   A forward move that adds more pages than the daily goal asks "Count N pages as read?" first. Declining changes nothing. The khatma prompt replaces this confirmation and shows its own page count.
 *   Today's credit: a day is completed when `pagesRead >= dailyPageGoal` or `manualCredit` is true. Undo of a move may remove streak credit only when `manualCredit` is false. The `manualCredit` flag is a new optional field in the local history JSON (`wird_progress_history`), defaulting to false when absent, and is not synced.
 *   Undo is one step. A second move overwrites the undo record. The undo record holds the previous marker page, the pages added, the local date key, and whether that move granted streak credit. It is local only (`wird_marker_undo`). Undo is refused after midnight, because the stored date key differs from today's.
@@ -268,6 +271,93 @@ pushIfNewer(uid, record):             # used by undo; one Source.server read, th
 *   **Color grid:** about 12 fixed colors, chosen once for contrast against the page in light and dark mode, excluding shades near the reference red (`0xFFE53935`), orange (`0xFFFB8C00`) and green (`0xFF43A047`) used by `_AyahSheet._colorMap`. No new dependency.
 *   **Strings:** every new label goes through `.tr()` with keys added to `assets/translations/en.json` and `ar.json`. Numbers in Arabic go through `NumberFormatter`.
 
+### Start entry points (amendment 2026-11-14)
+
+Decided by the product owner on 2026-11-14. Labels: VERIFIED (read in code or in this spec), UNKNOWN (not checked), GUESS (reasoning, not run). The amendment itself is for the owner to review.
+
+**Problem (VERIFIED in code at `feat/wird-marker` `162a240`).** With no marker, "Start Reading" only opens the reader (`wird_tab.dart`, `_buildActionButtons`). The only way to create the first marker is "Add from Bookmarks" on the Wird tab, which needs an existing bookmark. In the reader, the verse sheet shows a marker action only when a marker exists and the tapped page is ahead of it (`canMove`, `quran_reader_screen.dart:281-283`; the button is built only when `canMoveMarker` is true, `:1163`), and the ribbon needs `markerPage != null` (`shouldShowWirdRibbon`). Reading without a marker counts nothing, because pages are credited only by `moveMarker`. Nothing on the screens tells the user what to do next.
+
+**Scope.** Page mode only, and only while no marker exists, that is `marker == null` or `marker.markerPage == null` (the second case is the state after Restart, in which `applySetup` is allowed, see "Behavior when there is no marker"). In juz mode nothing changes.
+
+**Unchanged.** "Add from Bookmarks" on the Wird tab. The ordinary bookmark button in the reader's top bar is not reused for the Wird marker. No new field in the marker record, no schema change, no contract change.
+
+#### Entry point (a): Start Reading with no marker
+
+*   **N** is the page the reader would open at: `startSheetPage(state, progress)` = `wirdReadingPage(state, progress?.currentPage, wirdRangeStart(state, progress?.startPage))`. With no marker that is today's recorded page when today has progress, else page 1 (VERIFIED from the two helpers). After Restart, today's history is untouched, so a user who already moved today sees that last position as N (VERIFIED: Restart leaves history alone). `placeMarker` refuses a page outside 1 to 604, so an invalid N cannot be saved (VERIFIED, `wird_marker_service.dart:318`).
+*   **The start sheet** (`WirdStartSheet`, in `wird_marker_widgets.dart`): title `wird_start_sheet_title` with N in Arabic numerals through `NumberFormatter`; the 12-color grid from `kWirdMarkerPalette` inline, titled with the existing `wird_marker_choose_color`, with no color preselected; three buttons:
+    *   **Start here** (`wird_start_here`): disabled until a color is picked. Saves the marker on page N with that color (`placeMarker(N, color)`), then opens the reader. Nothing is counted.
+    *   **Choose another page** (`wird_choose_another_page`): opens the reader at N with no marker. The user sets the marker later with entry point (b).
+    *   **Just read** (`wird_just_read`): opens the reader at N with no marker, as today.
+*   **Dismissing the sheet** (tap outside or Back) cancels: nothing is saved and the reader does not open.
+*   **After any outcome** the reader opens at the page `wirdReadingPage` gives from the fresh state. After "Start here" that is N. If `placeMarker` fails because a marker appeared meanwhile (`MARKER_EXISTS`, for example from a pull), the reader opens at that marker instead. A failure is logged, not shown.
+*   **Frequency (GUESS on how it feels):** the sheet shows on every press of Start Reading while there is no marker. No "don't ask again" flag is added, because a new prefs key would be a contract change (see Risk 17).
+
+#### Entry point (b): "Set Wird marker here" in the verse sheet
+
+*   **Shown** in `_AyahSheet` when the unit is page mode and no marker exists. It takes the place of "Move Wird marker here", which stays as specified when a marker exists. The rule moves out of the inline `canMove` into a small pure helper `verseSheetMarkerAction({unit, markerPage, ayahPage})` returning `none`, `set` or `move`, so it can be tested.
+*   **Flow:** tap a verse, the sheet opens, tap "Set Wird marker here", the verse sheet closes, and the same `WirdStartSheet` opens in reader mode with P = `ayah.page` (a verse that spans two pages uses the page stored on the `Ayah`, as in Risk 6). Reader mode shows two buttons only: "Start here" and Cancel (the existing `cancel` key). "Start here" calls `placeMarker(P, color)` and shows the snackbar `wird_marker_placed` with no Undo action (see "Correcting a wrong first placement").
+*   **No forward-only rule and no big-move confirmation at setup:** any page 1 to 604 is allowed, and nothing is counted, so "Count N pages as read?" does not apply.
+
+#### What happens when the user is not signed in
+
+*   **Guest (VERIFIED from `placeMarker`):** the same call works. `ownerId` is null, the record is saved locally, and `syncMarker` does nothing for a guest. Nothing needs a connection.
+*   **Signed in:** `ownerId` is the uid. The record is saved locally first and pushed in the background, so placing needs no connection. An offline first placement stays local and is pushed at the next start or reconnect (Risk 3).
+*   **Fresh device, signed in, first pull not finished (GUESS on timing, effect VERIFIED by the `decideSync` rule):** the screen can show "no marker" while the cloud holds one. A marker placed then has cycle 0 and version 1, which is lower than a real cloud record, so the next `syncMarker` applies the cloud record and the new marker disappears. The cloud wins and nothing in the cloud is lost (Risk 19).
+
+#### Correcting a wrong first placement
+
+*   **Chosen for this amendment: Restart Wird, not Undo.** Placement writes no undo record (VERIFIED: `placeMarker` saves the record and calls `clearUndo`), so "Undo last move" does not apply to it. Setup counts no pages, so Restart after a wrong first placement loses nothing except the color and the cycle number (cycle + 1, version + 1). Streak and history stay (VERIFIED, State changes table). Restart needs no connection and no new code.
+*   **Why not Undo for the first placement:** it would need `WirdUndoRecord.previousPage` to allow "no marker", an `applyUndo` branch that restores the no-marker state, new cases in the P2 tests (the P2 code is already committed), and a connection for signed-in users ("Connect to undo"), so an offline first-time user could not correct a mistake. Both sheets already show the page before it is saved. This is listed as a choice for the owner (Alternative X).
+*   **The case that matters:** a marker placed ahead of the real reading position cannot move back, because the marker only moves forward. Restart is then the way back (Risk 18).
+
+#### The ribbon after placement
+
+*   **Entry point (a):** "Start here" places the marker on N and opens the reader at N, so the ribbon is on the opening page. The ribbon rule is unchanged: page mode and `_currentPage == markerPage`. Whether the ribbon looks right is the existing UNVERIFIED acceptance check.
+*   **Entry point (b):** the marker is placed on the page being read, and the reader watches `wirdStateProvider` (VERIFIED, `ref.watch` at `quran_reader_screen.dart:378`), so the ribbon should appear when the provider reloads (GUESS, not run). Swiping away and back also shows it.
+
+#### Sync, cycle and version
+
+*   Both entry points call `applySetup`, so the rules do not change: from no record the result is cycle 0, version 1 with `startPage = markerPage = P`, the color and `ownerId`; from a record with `markerPage == null` (after Restart) the cycle and khatma data are kept and the version goes up by 1 (State changes and "Behavior when there is no marker").
+*   `placeMarker` saves, clears the undo record and starts `syncMarker` without waiting (VERIFIED, `wird_marker_service.dart:311-322`). The sync decision and the (cycle, version) merge are untouched.
+
+#### Restart dialog label
+
+The confirm button of the Restart dialog reused the key `wird_restart`, so after tapping "Restart Wird" the dialog also showed a button reading "Restart Wird" (VERIFIED, `wird_tab.dart:351`). A new key `wird_restart_confirm_yes` ("Yes, restart") replaces it. The tile, the dialog title and body, and `restartWird` are unchanged.
+
+#### Strings (new in English and Arabic)
+
+The new Arabic below is a draft for the product owner to review. Numbers go through `NumberFormatter`.
+
+| Key | English | Arabic (draft) |
+| --- | --- | --- |
+| `wird_restart_confirm_yes` | Yes, restart | نعم، أعد البدء |
+| `wird_start_sheet_title` | Start your Wird from page %d? | هل تبدأ وردك من الصفحة %d؟ |
+| `wird_start_here` | Start here | ابدأ من هنا |
+| `wird_choose_another_page` | Choose another page | اختر صفحة أخرى |
+| `wird_just_read` | Just read | قراءة فقط |
+| `wird_marker_set_here` | Set Wird marker here | ضع علامة الورد هنا |
+| `wird_marker_placed` | Wird marker placed on page %d | تم وضع علامة الورد في الصفحة %d |
+
+Reused as they are: `wird_marker_choose_color` (the grid caption) and `cancel`. One changed key: the first bullet of `tutorial_wird_actions_body` becomes "• Start / Continue Reading — opens the Quran at your current Wird page. With no marker, it first asks where to start." and in Arabic "• ابدأ/تابع القراءة — يفتح القارئ عند صفحتك الحالية في الورد. وإن لم تكن لديك علامة، فيسألك أولاً من أين تبدأ." (the other bullets are unchanged).
+
+#### Tests to write first (red run before any code)
+
+*   **Pure helpers** (new file `test/features/quran/wird_start_sheet_test.dart`):
+    *   `verseSheetMarkerAction`: no record or `markerPage == null` in page mode gives `set`; a marker with the tapped page ahead gives `move`; the tapped page equal to or behind the marker gives `none`; marker on 604 gives `none`; juz mode gives `none` in every case.
+    *   `startSheetPage`: no marker and no progress gives 1; no marker with today's progress gives that page; a marker gives the marker page.
+*   **Widget tests** (same file): reading mode shows the title with N (Western digits in English, Arabic numerals in Arabic), 12 swatches and three buttons; "Start here" is disabled until a swatch is tapped and then returns the chosen color; the other two buttons return their own results; dismissing returns null. Reader mode shows only "Start here" and Cancel.
+*   **Service and provider** (additions to items 16 and 24): `placeMarker` on pages 1, 604 and N in between; after Restart (a record with no marker); `MARKER_EXISTS` when a marker exists; the undo record is cleared; guest `ownerId` null and signed-in `ownerId` the uid; one background sync start; through the provider, the state shows `markerPage == N` and `wirdReadingPage` gives N (the "Start here" result).
+*   **Strings:** the seven new keys exist in both files, and `wird_restart_confirm_yes` differs from `wird_restart` in English. (UNKNOWN whether a key-parity test already exists: check before writing, and add one only if none does.)
+*   **Not covered by tests:** the Start Reading flow inside `wird_tab.dart` and the verse sheet inside `quran_reader_screen.dart`. They are checked on a device.
+
+#### Effect on the phases
+
+*   **P2 and P3:** no change. `applySetup`, `placeMarker` and the sync are used as they are (VERIFIED: both exist and are committed). Only tests are added.
+*   **P4a:** already implemented and committed. The entry points are new work, a follow-up phase **P4a-2** on the same branch and PR (see the Phases table). It changes `wird_marker_widgets.dart`, `wird_tab.dart`, `quran_reader_screen.dart`, `en.json`, `ar.json` and adds the tests above. It needs the owner's go-ahead as its own gate.
+*   **P4b:** no change. Placement credits no pages, so stats and achievements are unaffected.
+*   **P5:** no change. `wird_restart` stays in use for the Restart tile.
+*   **P6:** device checks for both entry points and the dialog label are added to the Verification Plan, and the `lib/features/quran/README.md` description of Wird setup is updated.
+
 ### Contracts and docs that change in the same commits
 
 *   `.project-docs/contracts/firestore-paths.md`: new row for `users/{uid}/wird/marker`.
@@ -297,6 +387,9 @@ Each row names a failure, what limits it, and what remains. "Device check" means
 | 14 | Existing users see page-mode totals restart from the new record. | None. | Accepted because there are no real users yet. |
 | 15 | Sign-out is deferred (Non-Goals). A guest using the device after sign-out continues the previous account's marker; a guest move keeps the old `ownerId`, and that account's next sign-in could push it. `auth_provider.dart:208-211` has no Wird handling (VERIFIED). | `decideSync` discards a local record whose `ownerId` differs from the signed-in account. | The next user briefly sees the previous account's marker until their first sync. |
 | 16 | The juz-mode average multiplies the legacy khatma count by 30, so a legacy count written by an older build's page-mode khatma is also multiplied by 30. | None. | Accepted because there are no real users yet. |
+| 17 | The start sheet shows on every press of Start Reading while there is no marker, so a user who only wants to read sees it each time. | Three choices, and "Just read" is one tap. No "don't ask again" flag, because a new prefs key would be a contract change. | Some annoyance for readers who never use a Wird marker. A flag can be added later as its own change. |
+| 18 | A wrong first placement ahead of the real reading position cannot move back, because the marker only moves forward. | Both sheets show the page number before saving. Setup counts no pages, so Restart Wird loses only the color and raises the cycle. | The correction is Restart (a confirm dialog), not a one-tap undo. |
+| 19 | A signed-in user on a fresh device can place a marker before the first pull finishes. If the cloud record is higher, the next sync replaces the new marker with it. | The cloud-wins rule, so nothing in the cloud is lost. | The user sees the new marker disappear. How often this happens is UNKNOWN. |
 
 --------------------------------------------------------------------------------
 
@@ -450,9 +543,10 @@ Each alternative below was weighed while drafting this design. Every reason for 
 
 #### Alternative X: Setup by page number, or by color first and placing the marker in the reader
 
-*   **Pros**: Page number: works with no bookmarks. Color first: no bookmark needed and no typing.
-*   **Cons**: Page number: a mistyped page is hard to correct because the marker only moves forward, and it brings back manual number entry. Color first: a marker can exist with no page, so every screen needs a "not placed" state.
-*   **Reason for Rejection**: Setup from a bookmark needs no typing and no "not placed" state. The cost is that a user with no bookmarks must first add one in the reader, which the empty state explains with an "Open reader" button.
+*   **Pros**: Page number: works with no bookmarks. Color first: no bookmark needed and no typing. Placing the marker in the reader from a verse tap (and from a start sheet): works with no bookmarks, and needs no typing.
+*   **Cons**: Page number: a mistyped page is hard to correct because the marker only moves forward, and it brings back manual number entry. Color first: a marker can exist with no page, so every screen needs a "not placed" state. Placing in the reader: a marker placed ahead of the real position cannot move back, so the way back is Restart Wird.
+*   **Reason for Rejection (page number and color first)**: still rejected. A typed page and a marker with no page both stay out.
+*   **Reversed on 2026-11-14 (placing the marker in the reader and from the start sheet):** the first decision (2026-11-13) rejected all of Alternative X because setup from a bookmark needs no typing and no "not placed" state, and it accepted the cost that a user with no bookmarks must first add one in the reader. During the P4a review the product owner found that this cost is too high: with no marker, "Start Reading" gives no way forward, and the only setup needs a bookmark that a new user does not have. The owner chose two entry points (the start sheet and "Set Wird marker here"), and kept "Add from Bookmarks". The two reasons for the first rejection do not apply to these entry points: the marker is created together with a real page and a color, so there is no "not placed" state, and the page is shown on a sheet and confirmed before it is saved, with no typing. The remaining cost is the one listed above, and Restart Wird is the correction (Risk 18).
 
 #### Alternative Y: Marker drawn inside the page, or shown as an icon in the top bar
 
@@ -502,6 +596,7 @@ The numbering P1 is not used any more: the Windows spike was dropped on 2026-11-
 | P2 | Additive only: models, pure functions and their tests (move, undo, khatma, restart, no-marker rules, validation, sync decision, streak decision, averages, khatma merge, `composeWirdState`). New fields on `WirdState`, `WirdProgress` have defaults, so existing code is untouched. | 1, 2, 4 (add part), 15, 18 (add cases) | "approve phase P2" |
 | P3 | Additive only: `WirdMarkerService` (validation, cloud seam), new `WirdService` methods beside the old ones (`creditPages` and `removePages` still mirror the pages into `wird_total_pages_read`, so achievements keep working), new provider actions beside the old ones, sync call sites (start, sign-in, reconnect, all `unawaited`). The provider does not use `composeWirdState` yet, so every displayed value is unchanged. With no marker the new sync calls do nothing. | 3, 5 (add part), 6 (add part), 7, 8, 16, 17 (`creditPages` and `removePages` cases), 21 (the two contract rows only) | "approve phase P3" |
 | P4a | Switch the callers (reader and Wird tab) and the state source: marker widgets and the palette (with `wird_marker_palette_test.dart`), reader, Wird tab, the two `KhatmaCelebrationScreen` call sites, strings (new and changed keys except `quran_stats_avg_daily`), the provider switch to `_reload()` and `composeWirdState` (so `totalPagesRead` is now the derived total), `resetAllProgress` calls `WirdMarkerService.resetAll`, and the `markDayComplete`, `undoComplete` and `toggleJuzCompleted` rule changes. `creditPages` and `removePages` keep mirroring `wird_total_pages_read`, so the achievements still read a valid number. After P4a no screen calls the old link or manual-entry methods. | 5 (rules part), 6 (switch part), 9, 10, 11, 13, 14 (new and changed keys), 17 (remaining cases), 19, 24 (compose and action cases) | "approve phase P4a" |
+| P4a-2 | Start entry points (amendment 2026-11-14), written tests first: `WirdStartSheet` and the helpers `verseSheetMarkerAction` and `startSheetPage` in `wird_marker_widgets.dart`; the Start Reading flow and the Restart dialog's new confirm label in `wird_tab.dart`; "Set Wird marker here" in the verse sheet of `quran_reader_screen.dart` (the inline `canMove` moves into the helper); the 7 new keys and the changed `tutorial_wird_actions_body` in `en.json` and `ar.json`. No change to the pure logic, the service, the provider or any contract. | 9, 10, 11, 14 (amendment), 26 | owner's go-ahead for P4a-2 |
 | P4b | Stats and achievements: `quranStatsProvider` uses `averagePerCompletedDay`, the label key `quran_stats_avg_daily`, `achievement_service.dart` reads the marker (khatma count and derived total), and then nothing writes or reads `wird_total_pages_read`: `creditPages`, `removePages` and `resetAllProgress` stop writing it, `getFullState`, `syncToFirestore` and `syncFromFirestore` stop using it. The achievement change and the end of the mirror are in this one phase, so achievements work in every build. | 5 (key part), 6 (stats part), 12, 14 (`quran_stats_avg_daily`), 21 (the `wird_total_pages_read` note only), 22, 23, 24 (stats case) | "approve phase P4b" |
 | P5 | Delete old code: `recordPagesRead`, `syncBookmarkPages`, `setLinkedBookmarkColor`, `markJuzFromBookmarks`, `recordPageKhatma`, `linkedBookmarkColor`, `countedBookmarkPages`, `clearLinkedColor`, `_totalPagesKey`, `countedPagesAfterChooseOne` with its test, the unused strings | 4 (remove part), 5 (remove part), 6 (remove part), 14 (removed keys), 18 (legacy-field cases), 20 | "approve phase P5" |
 | P6 | Docs and device checks (the ADR and the contract rows are not repeated here) | 21 (remaining docs), Verification Plan | "approve phase P6" |
@@ -686,7 +781,7 @@ moveMarker(target) -> MoveOutcome:         # called by the reader and tested wit
            r2.cycle, r2.version)
   unawaited(syncMarker())                        # fire and forget; result is logged
 
-placeMarker(page, color) -> PlaceOutcome:  # setup from a bookmark; creates the record when none exists
+placeMarker(page, color) -> PlaceOutcome:  # setup from a bookmark, the start sheet or the verse sheet; creates the record when none exists
   r2 = applySetup(load(), page, color, ownerId: cloud uid or null)   # fails MARKER_EXISTS if a marker exists
   save(r2); clearUndo(); unawaited(syncMarker())
 
@@ -802,6 +897,8 @@ After `APPLY_CLOUD` or `DISCARD_LOCAL` the undo record is cleared when it no lon
 *   **Type / Scope**: Flutter widgets for the marker. Phase P4a (the palette test in item 19 is in the same phase).
 *   **Proposed Changes**: `kWirdMarkerPalette`; `WirdMarkerRibbon` (small narrow ribbon, outline from `AppConstants` colors, fill from the stored color, with a semantics label); `WirdColorGridSheet` (12 swatches, a selected state, returns the chosen color, RTL-safe, no hex field); `WirdBookmarkPickSheet` (data from `ref.watch(quranBookmarksProvider).valueOrNull ?? []`, `lib/core/providers/quran_provider.dart:18`, all three colors; one row per page, taking the bookmark with the earliest `createdAt` when several share a page; rows sorted by `page` ascending; each row shows the page (through `NumberFormatter`) and the sura name by language (`suraNameAr` or `suraNameEn`); the title is `wird_marker_choose_start`; the sheet returns `Future<int?>` with the chosen page, `null` on cancel; with no bookmarks it shows `wird_marker_no_bookmarks` and an "Open reader" button (`wird_marker_open_reader`) that closes the sheet and runs `Navigator.push(MaterialPageRoute(builder: (_) => QuranReaderScreen(suraNo: 1, initialPage: 1)))`, the same pattern as `wird_tab.dart:475-478`); `WirdColorGridSheet` (title `wird_marker_choose_color`, returns `Future<Color?>`, `null` on cancel). `wird_marker_confirm_yes` and `wird_marker_confirm_no` are the two buttons of the big-move confirmation dialog (`showBigMoveConfirm`). So that the controls can be tested without building the reader and the Wird tab, the file also holds small public pieces: `shouldShowWirdRibbon` and `WirdMarkerRibbonLayer` (the ribbon, drawn only on the marker page in page mode), `WirdUndoMoveButton` (shown only in page mode with a valid undo record; label `wird_undo_connect` while offline), `WirdRestartTile` (shown only in page mode with a marker), `bookmarkPickRows` (one row per page, earliest `createdAt`, sorted by page), `undoOutcomeMessageKey` and `showUndoOutcome` (the one undo mapping).
 
+*   **Amendment 2026-11-14 (P4a-2):** adds `WirdStartSheet` (reading mode with three buttons, reader mode with two), `verseSheetMarkerAction` and `startSheetPage`. See "Start entry points". The palette, the ribbon and `WirdColorGridSheet` are unchanged.
+
 #### 10. `lib/features/quran/quran_reader_screen.dart` (Modify)
 
 *   **Type / Scope**: Reader (careful: it holds zoom and navigation state, and F38b changes this file later). Phase P4a. Every marker control here is shown only when `settings.wirdUnit == WirdUnit.page`.
@@ -809,6 +906,8 @@ After `APPLY_CLOUD` or `DISCARD_LOCAL` the undo record is cleared when it no lon
     *   **Marker access:** the reader reads `ref.watch(wirdStateProvider).valueOrNull` and uses `.marker` and `.settings.wirdUnit`; it keeps no copy of its own.
     *   **Literal 604:** the constant `kLastQuranPage` replaces the literal 604 at `quran_reader_screen.dart:316, 428, 509, 517` and at `wird_provider.dart:62`.
     *   **Ribbon:** the reader's top-level `Stack` (line 421) gets the ribbon after the `PageView` (shown when `_currentPage == markerPage` in page mode; `top` = measured top bar height via `_topBarKey` while `_showUI` is true, else 0; `right: 8`; 14 dp wide and 30 dp tall (fixed values; the acceptance check in the Overview can change them, and nothing else may); the top bar height is read as `_topBarKey.currentContext?.size?.height` in a post-frame callback after each change of `_showUI` and on the first build, stored with `setState`, and falls back to `kToolbarHeight` plus the top `MediaQuery` padding while it is null; drawn before the desktop controls so they stay on top). `_MushafPageState` is not changed for the ribbon. `_handleAyahTap` passes `canMoveMarker` (`bool`: page mode, marker exists, `ayah.page > markerPage`) and `onMoveMarker` (`VoidCallback`; the handler closes over the tapped `ayah`) to `_AyahSheet`. `_AyahSheet` gets a "Move Wird marker here" button below the color row. The handler asks "Count N pages as read?" when `needsBigMoveConfirm`, calls `moveMarker`, closes the sheet and shows a snackbar with an "Undo" action that calls `undoMove`. The `showWirdPrompt` condition (line 316) becomes "page mode, marker exists, current page is 604". The khatma dialog shows the page count. The Yes branch (lines 348-358) is rewritten: it deletes the `recordPageKhatma()` call (line 349) and the `markComplete()` call (line 350, which would set `manualCredit` and duplicate the credit that `completeKhatma` already gives through `creditPages`), calls `completeKhatma()` once, and opens `KhatmaCelebrationScreen` with `KhatmaOutcome.Completed.khatmCount` (item 13); the desktop-sidebar line between them stays. If `completeKhatma()` returns `Failed(...)` (not reachable from the prompt, which requires a marker), the reader logs with the `[WIRD]` prefix, stays open and shows no celebration screen. The replace dialog (lines 252-292) switches its four strings in P4a: `wird_bookmark_pages_title` to `bookmark_dialog_title` (line 255), `wird_bookmark_mode_desc` to `bookmark_dialog_question` (256), `wird_bookmark_mode_new` to `bookmark_dialog_add` (264) and `wird_bookmark_mode_update` to `bookmark_dialog_replace` (288); P5 deletes the old keys. Removing `!wirdAlreadyDone` from the `showWirdPrompt` condition is a deliberate behavior change, stated in "Reader and Wird tab changes".
+
+*   **Amendment 2026-11-14 (P4a-2), `quran_reader_screen.dart`:** `_AyahSheet` shows "Set Wird marker here" (`wird_marker_set_here`) when `verseSheetMarkerAction` returns `set`, and "Move Wird marker here" when it returns `move`; `_handleAyahTap` computes the action with the helper instead of the inline `canMove`. "Set Wird marker here" opens `WirdStartSheet` in reader mode with the tapped `ayah.page` and calls `placeMarker`, then shows `wird_marker_placed`. Nothing else in the reader changes.
 
 #### 11. `lib/features/quran/wird_tab.dart` (Modify)
 
@@ -831,6 +930,8 @@ After `APPLY_CLOUD` or `DISCARD_LOCAL` the undo record is cleared when it no lon
     *   **Add in `_buildSettingsSection` (1200):** at the end, in this order: a divider, "Restart Wird" (`wird_restart`, shown only in page mode while a marker exists (`marker.markerPage != null`), as the Flows section already says; with a dialog using `wird_restart_confirm_title` and `wird_restart_confirm_body`, calls `restartWird`), then "Reset All Progress" (last, red, `wird_reset_today`, calls `_confirmReset`). Restart Wird is hidden in juz mode, so in juz mode the section ends with Reset All Progress alone, still last and red.
     *   **Change `_handleJuzKhatma` (148-157):** pass the combined count to `KhatmaCelebrationScreen` (item 13).
     *   `resetJuzForKhatma`, the juz grid and the juz toggles are unchanged.
+
+*   **Amendment 2026-11-14 (P4a-2):** `_buildActionButtons` (page mode): "Start Reading" with no marker opens `WirdStartSheet` (reading mode) and then opens the reader as the sheet's choice says; with a marker it opens the reader at the marker page as before. `_confirmRestart`: the dialog's confirm button uses `wird_restart_confirm_yes`. Juz mode is unchanged. See "Start entry points".
 
 #### 12. `lib/features/quran/quran_stats_screen.dart` (No code change)
 
@@ -901,6 +1002,8 @@ After `APPLY_CLOUD` or `DISCARD_LOCAL` the undo record is cleared when it no lon
 
 *   `khatma_finished_no` ("Not Yet") and `khatma_finished_keep` ("Keep Reading") keep their text. `wird_mark_complete` ("Mark Complete", `en.json:281`) stays the one label for the manual action in both modes.
 *   Removal list (P5), each removed only after a repo search shows no other use: `wird_record_pages`, `wird_how_many_pages`, `wird_record_mode_count`, `wird_record_mode_range`, `wird_page_from`, `wird_page_to`, `wird_page_range_invalid`, `wird_page_range_hint`, `wird_bookmark_pages_title`, `wird_bookmark_added`, `wird_bookmark_already_counted`, `wird_bookmark_juz_marked`, `wird_bookmark_no_new_juz`, `wird_bookmark_mode_desc`, `wird_bookmark_mode_new`, `wird_bookmark_mode_update`, `wird_bookmark_no_bookmarks`. The keys `wird_bookmark_color_red`, `wird_bookmark_color_orange`, `wird_bookmark_color_green` and `wird_bookmark_unique_pages` are kept only if the search shows the reader or the new bookmark pick sheet uses them. The search result decides, and the list above is the candidate set.
+
+*   **Amendment 2026-11-14 (P4a-2):** seven new keys and one changed key, with English and Arabic text, are listed in "Start entry points", "Strings". The new Arabic is a draft for the product owner to review.
 
 #### 15. `test/core/services/wird_marker_logic_test.dart` (Create)
 
@@ -1029,6 +1132,11 @@ After `APPLY_CLOUD` or `DISCARD_LOCAL` the undo record is cleared when it no lon
 *   **Type / Scope**: Short widget and logic tests for item 9. Phase P4a. Added after approval of P4a (2026-11-14).
 *   **Proposed Changes**: the ribbon is drawn only on the marker page, in page mode, 14 x 30 dp at the given top and 8 dp from the right edge; the undo button appears only in page mode with an undo record, shows `wird_undo_connect` while offline, and calls `onPressed` in both labels; the restart tile appears only in page mode with a marker page; `bookmarkPickRows` keeps one row per page (earliest `createdAt`) sorted by page; `undoOutcomeMessageKey` maps every `UndoOutcome`. The reader and Wird-tab screens themselves are checked on a device (Verification Plan), not by widget tests.
 
+#### 26. `test/features/quran/wird_start_sheet_test.dart` (Create), with additions to items 16 and 24
+
+*   **Type / Scope**: Short logic and widget tests for the start entry points. Phase P4a-2. Written first, with a red run shown before any code.
+*   **Proposed Changes**: the cases listed in "Start entry points", "Tests to write first": `verseSheetMarkerAction`, `startSheetPage`, `WirdStartSheet` in both modes, `placeMarker` on pages 1, 604 and in between, after Restart, with a marker present, undo cleared, guest and signed-in owner, one sync start, the provider result, and the string keys. The Wird tab and reader screens themselves are checked on a device.
+
 ### Verification Plan
 
 *   **Per phase (decided 2026-11-13)**: at the end of P2, P3, P4a, P4b and P5, `flutter analyze` shows no new issue and `flutter test` passes, so the app compiles after every phase.
@@ -1043,6 +1151,7 @@ After `APPLY_CLOUD` or `DISCARD_LOCAL` the undo record is cleared when it no lon
     *   Verse page rule (named risk 6): open a verse that crosses a page break, use "Move Wird marker here", and compare the page the marker lands on and the pages credited with the printed pages. Record the result in the spec.
     *   Palette: on real mushaf pages in light and dark mode, the 12 colors are visible against the page background (named risk 13).
     *   Layout: the ribbon, the undo snackbar and the stats screen (the label "Average per completed day" is longer than "Avg. Daily") on a small phone and in a narrow Windows window, in light and dark mode, with the desktop zoom controls visible.
+    *   **Start entry points (amendment 2026-11-14, P4a-2):** with no marker in page mode: (1) Start Reading opens the start sheet with N (page 1 on a fresh Wird); "Start here" is disabled until a color is picked, then places the marker and opens the reader on N with the ribbon visible; "Choose another page" and "Just read" open the reader with no marker; dismissing the sheet does nothing; (2) in the reader, tap a verse, "Set Wird marker here" shows the page and the grid, "Start here" places the marker, the ribbon appears and the snackbar shows with no Undo; Cancel changes nothing; (3) as a guest and signed in (and offline once); (4) a wrong first placement ahead of the real position is fixed with Restart Wird, and setup works again; (5) with a marker present neither entry point appears, and "Move Wird marker here" works as before; (6) juz mode shows neither; (7) the Restart dialog confirm button reads "Yes, restart" and the screen no longer shows two "Restart Wird"; (8) in Arabic, the new strings read clearly and the page numbers use Arabic numerals.
 *   Every device check is reported as run or not run. None is reported as passed unless it ran.
 
 --------------------------------------------------------------------------------
