@@ -1,12 +1,12 @@
 # Fix: the prayer service and the boot-time work do not run after a reboot until Aura is opened (EMUI, Android 10)
 
-Status: DRAFT for the owner's review (Level A, docs). No code, no tests, no go-ahead for any phase. Branch `fix/boot-start-service` from `main` `1584deb`. Not pushed.
+Status: DRAFT for the owner's review (Level A, docs). No code, no tests, no go-ahead for any phase. Branch `fix/boot-start-service` from `main` `1584deb`. Not pushed. Updated 2026-11-14 with one owner-observed reboot (see "Evidence from the owner" in section 1).
 
 Labels: **VERIFIED** (read in code, manifest or the spec, or returned by a device query on 2026-11-14), **UNKNOWN** (not checked, or not checkable now), **GUESS** (reasoning or recalled Android behavior, not run). "Reported" means said by the product owner and not re-observed. No logs were read for this spec.
 
 ## Overview
 
-After a phone reboot, `PrayerForegroundService` does not start until the user opens Aura. The prayer notification is missing, and the boot-time clearing of the vibration state does not run (reported, on the test phone). This spec lists the possible causes and how to tell them apart on the device, the options for a code fix, what the app can do when the OS blocks boot broadcasts, whether to clear stale silent-mode state on app start, and a test plan. It recommends diagnosing first.
+After a phone reboot, `PrayerForegroundService` does not start until the user opens Aura. The prayer notification is missing, and the boot-time clearing of the vibration state does not run (reported, on the test phone). This spec lists the possible causes and how to tell them apart on the device, the options for a code fix, what the app can do when the OS blocks boot broadcasts, whether to clear stale silent-mode state on app start, and a test plan. After the owner's observation (one reboot with the EMUI "App launch" switches on, section 1) it recommends the EMUI "App launch" tile as the main fix, a short reboot test (setting off versus on) to verify the cause, the stale-silent-flag fix as its own item, and the receiver change as optional hardening.
 
 Test phone (VERIFIED by `adb`, 2026-11-14): Huawei YAL-L21 (nova 5T), `EmotionUI_12.0.0`, Android 10 (API 29). Aura is on the battery-optimization whitelist (VERIFIED: `dumpsys deviceidle whitelist` lists `com.aura.hala`), and `RECEIVE_BOOT_COMPLETED` is granted (VERIFIED, `dumpsys package`).
 
@@ -27,11 +27,20 @@ Test phone (VERIFIED by `adb`, 2026-11-14): Huawei YAL-L21 (nova 5T), `EmotionUI
 
 ## (1) Possible causes and how to tell them apart
 
-The synchronous silent-state clear is the discriminator. It runs the moment `onReceive` runs, before the 30 s delay (VERIFIED). So if the vibration state really was not cleared after the reboot, the receiver most probably did not run at all (GUESS: it assumes the state was set before the reboot). UNKNOWN how the owner observed "clearing did not run": that must be answered first (Open Questions).
+The synchronous silent-state clear is the discriminator. It runs the moment `onReceive` runs, before the 30 s delay (VERIFIED). So if the vibration state really was not cleared after the reboot, the receiver most probably did not run at all (GUESS: it assumes the state was set before the reboot). UNKNOWN how the owner observed "clearing did not run": that stays an open question (Open Questions).
+
+**Evidence from the owner (2026-11-14; observed by Aladdin on the phone, one reboot, not from logs or `dumpsys`).**
+
+*   **Before (reported, earlier, uncontrolled):** the service did not start after a reboot until Aura was opened. UNKNOWN: which build that was, what the EMUI "App launch" state was then (GUESS: the default, "Manage automatically"), and how it was checked.
+*   **After (reported):** he turned ON Auto-launch, Secondary launch and Run in background for Aura (Settings > Battery > App launch), restarted the phone, did NOT open Aura, unlocked it, and the prayer foreground-service notification appeared on its own about one to two minutes after the restart. His first check, a few minutes after changing the setting, showed nothing yet; it appeared a minute or two later.
+*   **Reading: cause A (EMUI blocks the boot broadcast) is now the most likely cause on this phone. GUESS, leaning LIKELY.** The OS setting is what changed, and with it the same code (the receiver with its 30 s delay, VERIFIED unchanged) started the service without the app being opened. It also shows that the delayed block ran to the end on that boot, so the process was not killed during the 30 s that time (cause B did not happen on that boot; B is not ruled out as an occasional case).
+*   **Why it is not more than a GUESS:** it is one reboot with the setting on, seen by eye. The "before" run is an earlier observation, possibly on another build or in other conditions (UNKNOWN). No log line shows whether the receiver ran or did not run. The three switches were turned on together, so which one matters is UNKNOWN (GUESS: Auto-launch is the one that lets the system start the app on a boot broadcast; "Secondary launch" and "Run in background" may not be needed). The wait of one to two minutes fits a slow EMUI boot, the unlock time and the 30 s delay together (GUESS), and the missed first check fits it too.
+*   **What would verify it:** one reboot with the setting off (the state before), then one with it on, each with `adb logcat` started right after boot, or `dumpsys activity processes` and `dumpsys activity services com.aura.hala` at +40 s and +90 s (the capture steps below). Cause A is verified for this phone if the off boot shows no `Boot event received` line and the on boot shows it, followed about 30 s later by `Prayer foreground service restarted after boot`. That is phase D0 in the test plan.
+*   **What it changes:** the code cannot make the OS deliver a blocked broadcast, so the main fix is user-facing (section 3), and the receiver change becomes optional hardening (section 2).
 
 | Cause | What it predicts | How to tell (one real reboot, section 5) |
 | --- | --- | --- |
-| **A. EMUI blocks the boot broadcast** (the app's "App launch" setting is not allowed or is "Manage automatically", GUESS about EMUI 12 behavior) | No `PrayerBootReceiver: Boot event received` line at all; stale silent state stays; nothing re-armed | No log line from `PrayerBootReceiver` within 90 s after unlock |
+| **A. EMUI blocks the boot broadcast. Most likely on this phone (GUESS, leaning LIKELY, see the owner's evidence above)** (the app's "App launch" setting is not allowed or is "Manage automatically", GUESS about EMUI 12 behavior) | No `PrayerBootReceiver: Boot event received` line at all; stale silent state stays; nothing re-armed | No log line from `PrayerBootReceiver` within 90 s after unlock |
 | **B. Receiver ran, the process died before 30 s** (no `goAsync`, GUESS) | `Boot event received` and `Cleared stale silent-mode state on boot` are logged, then nothing 30 s later | The first two lines exist, `Prayer reschedule service started` and `Prayer foreground service restarted after boot` do not; `dumpsys activity processes` shows no `com.aura.hala` process at +40 s |
 | **C. Phone locked at boot, nothing delivered until the first unlock** (GUESS) | Everything runs, but only after unlock | The log lines start only after the unlock time |
 | **D. The start was attempted and refused or skipped** | `Failed to restart prayer foreground service: ...`, or `Auto-start skipped (background notification off)` | The error or skip line (both VERIFIED to exist in the code) |
@@ -52,10 +61,11 @@ All options leave the notification IDs, channels, prefs keys and MethodChannels 
 | **4. A second, independent trigger** | The existing periodic worker (every 6 h, already persisted by the OS) also runs the idempotent "arm alarms and ensure the service" routine; the widget providers (`AllPrayersWidgetReceiver` has recent broadcasts, VERIFIED) could call it from `onUpdate` | Might work when the Aura boot receiver is blocked (UNKNOWN: EMUI may restrict jobs and widgets of an app with auto-launch off too) | Changes widgets and the worker (shared code); a 6 h period means a long gap; starting a foreground service from a worker is not allowed on 12+ (GUESS) |
 | **5. User action: allow App launch** (section 3) | Lets the OS deliver the broadcast | The only remedy for cause A | Needs the user; the OS state cannot be read (GUESS: no public API) |
 
-**Recommendation (GUESS until the diagnosis is done):** diagnose first (phase D0). If the logs show B, take Option 1 (and consider 2 only if Option 1 proves insufficient). If they show A, the code cannot fix it: Option 5 plus the section 3 row. Option 3 and 4 are follow-ups only if D0 shows a case that 1 and 5 do not cover. **Android 15 note (GUESS, not observable on this phone):** the app targets API 36 (VERIFIED, `dumpsys package` shows `targetSdk=36`), and Android 15 disallows starting `dataSync` foreground services from a `BOOT_COMPLETED` receiver. `PrayerRescheduleService` is `dataSync` (VERIFIED, `AndroidManifest.xml:155-161`). That is a separate latent risk on newer phones, outside this fix, to be tested on a newer device.
+**Recommendation (GUESS, leaning LIKELY, from one owner-observed reboot; D0 verifies it):** (1) **Main fix: the "App launch" tile (Option 5, section 3, phase P1)**, because the evidence points at EMUI blocking the boot broadcast, which the code cannot fix by itself. (2) **The stale-silent-flag fix (section 4, phase P2) as its own item**, independent of the cause. (3) **Option 1 (immediate work in `onReceive`) as optional hardening (phase P3).** It is kept because the 30 s delay still loses every re-arm and the service start if the process is killed in that time (VERIFIED by the code structure; cause B was not observed), and it is cheap, but it would not have helped when the broadcast is blocked. Options 2, 3 and 4 only if D0 or later use shows a case that these do not cover. **Android 15 note (GUESS, not observable on this phone):** the app targets API 36 (VERIFIED, `dumpsys package` shows `targetSdk=36`), and Android 15 disallows starting `dataSync` foreground services from a `BOOT_COMPLETED` receiver. `PrayerRescheduleService` is `dataSync` (VERIFIED, `AndroidManifest.xml:155-161`). That is a separate latent risk on newer phones, outside this fix, to be tested on a newer device.
 
 ## (3) When the OS blocks boot broadcasts: an "App launch" row
 
+*   **This is the main fix** (section 2). The owner's working case had three switches ON on the EMUI 12 "App launch" screen: Auto-launch, Secondary launch and Run in background (reported). Which of them is required is UNKNOWN (D0, run V3). The tile cannot set them, so its text must tell the user to turn on all three (two new strings, English and Arabic, drafts at implementation). Which candidate target lands on Aura's own page and which on the list of all apps is UNKNOWN until each is tried on the phone (GUESS: the list screens open the app list and the user finds Aura); P1 starts by trying them in order on the device.
 *   **Idea:** a row, only on Huawei or Honor, that opens the EMUI "App launch" (auto-launch) screen so the user can allow Aura. Candidate targets, in order: `com.huawei.systemmanager/.startupmgr.ui.StartupNormalAppListActivity`, `.appcontrol.activity.StartupAppControlActivity`, the action `huawei.intent.action.HSM_STARTUPAPP_MANAGER`, then the app-details settings (`ACTION_APPLICATION_DETAILS_SETTINGS`), then Dart `openAppSettings()`. The last two already exist as fallbacks for the battery row (VERIFIED, `MainActivity.kt:615-623`, `platform_channel_service.dart:36-43`), and the `try`/`catch` per step follows the CLAUDE.md platform-channel rule.
 *   **What the app cannot do:** read whether Aura is allowed (GUESS: no public API), so the row cannot show granted or missing and must not be part of the dialog's `missing` list (VERIFIED: that list is built from checkable states). It is an always-available tile, next to "Battery Optimization" in Settings (`settings_screen.dart:272-276`), and optionally a one-line hint on the permissions page. After returning from the screen the app cannot confirm anything.
 *   **Whether the screens open for a third-party app is UNKNOWN** (both resolve, VERIFIED, but the "exported" and permission state is not known). With targetSdk 36, package visibility may hide `com.huawei.systemmanager` from `resolveActivity`, so the manifest would need `<queries><package android:name="com.huawei.systemmanager"/></queries>` (GUESS; an explicit `startActivity` may work without it). The fallback chain makes a wrong guess safe: the worst case is the app-details screen.
@@ -71,24 +81,25 @@ All options leave the notification IDs, channels, prefs keys and MethodChannels 
     *   **4a. Make `AdhanFullScreenActivity` use `vibrationButtonsVisible(...)` with the end time, as the notification does.** Fixes the visible symptom with one call-site change and no new state.
     *   **4b. Clear the two flags (flags only, no ringer change) on app start when `isActive && now >= endTime + grace`,** through a small pure helper such as `shouldClearStaleSilent(isActive, endTime, now)`, unit tested. The grace (for example 5 minutes, GUESS) avoids a race with `SilentOffReceiver` firing at the end time. UNKNOWN what `SilentOffReceiver` does when the flag is already false, so the grace is required until that is read.
     *   **4c. Restore the ringer after a reboot inside the window** by storing `Settings.Global.BOOT_COUNT` when the window starts and comparing on start. Needs a new key in `aura_silent_mode` (a native contract: `.project-docs/contracts/prefs-keys.md` in the same commit) and decides whether to change the user's ringer on app open. **Not recommended now** (GUESS: the risk of overriding a deliberate ringer choice outweighs the gain; cause A is better solved at the source).
-*   **Recommendation:** 4a and 4b with a grace period, in the same phase as the receiver change; 4c deferred. Reason: both are small, need no new key, and cover the blocked-receiver case that the receiver fix cannot (GUESS).
+*   **Recommendation:** 4a and 4b with a grace period, **as their own item (phase P2), independent of the cause and of the receiver change**; 4c deferred. Reason: both are small and need no new key, and they cover every case where the boot clear does not run: users who never turn the EMUI setting on, other makers' phones, and a boot broadcast that is delayed (GUESS). They stay worthwhile even if the "App launch" tile solves the owner's phone.
 
 ## (5) Test plan
 
 *   **Unit tests, written first (Kotlin, `./gradlew :app:testDebugUnitTest`, VERIFIED command in `STATE.md`):** `shouldClearStaleSilent` (inactive: false; active with a future end time: false; active with a past end time inside the grace: false; past the grace: true; active with end time 0: true) and the 4a decision through `vibrationButtonsVisible`. The receiver and the service are not unit-testable without a framework double (UNKNOWN whether Robolectric is available), so they are tested on the device.
 *   **Device test with a real reboot (`adb reboot`), phone clock on automatic.** Before the first run, confirm that Settings > Date & time > "Set automatically" is on (UNKNOWN now: the phone had just disconnected when this was checked; `settings get global auto_time` is the check). A manual clock changes the computed prayer times and the next alarm, so it would confuse the result.
-*   **Matrix (3 boots each, Aura never opened during a run):**
+*   **Matrix (verifies the owner's observation; Aura never opened during a run; at least 1 boot each, 3 if time allows):**
 
-| Run | App launch setting for Aura | Screen lock |
+| Run | App launch setting for Aura | Purpose and expected result |
 | --- | --- | --- |
-| R0 baseline | whatever it is now (record it; UNKNOWN today) | as it is |
-| R1 | Manage automatically | as it is |
-| R2 | Manual, auto-launch ON | as it is |
-| R3 | Manual, auto-launch OFF (a control that should reproduce cause A) | as it is |
-| R4 | best of R1-R3 | none versus PIN (cause C) |
+| V1 | The state before the owner changed it (GUESS: "Manage automatically"; record exactly what it is) | Control. If cause A is right: no `Boot event received` line and no service after unlock |
+| V2 | Auto-launch, Secondary launch and Run in background all ON, as the owner did | `Boot event received`, then about 30 s later the service start; the notification within about one to two minutes of the restart (reported once) |
+| V3 (optional, after V1 and V2) | Auto-launch alone ON, the other two OFF | Finds which switch is needed (UNKNOWN); decides the wording of the tile text |
+| V4 (optional) | The setting from V2, screen lock none versus PIN | Cause C |
+
+*   **How to read D0:** V1 without the boot line and V2 with it verifies cause A for this phone. V1 with the boot line but no service start points at B or D (then Option 1 and the error lines matter). V1 and V2 both with the boot line and the service: the earlier observation had another cause or a different build (UNKNOWN), and D0 is repeated with the build the owner uses.
 
 *   **Each run:** set a vibration window active before the reboot (the checklist's vibrate-window steps; which S-number is UNKNOWN, look it up in `reference/device-checklist.md` at that time), reboot, unlock, start the log capture from section 1 at once, and at +10 s, +40 s, +90 s record: the log lines, `dumpsys activity processes | grep com.aura.hala`, `dumpsys activity services com.aura.hala`, `dumpsys alarm | grep com.aura.hala` (the next prayer armed), whether the foreground notification is visible, and the vibration state (the log line `Cleared stale silent-mode state on boot`, because the release build's prefs cannot be read with `adb`, GUESS).
-*   **Pass (after a fix):** the service is running and the notification visible within 60 s after unlock without opening Aura, an alarm for the next prayer is armed, and no stale vibration state remains, in R1 and R2 and in R4. R3 is expected to still fail without a code-side answer (that is the case Option 5 addresses).
+*   **Pass (after the tile and the hardening):** with the setting ON (V2) the service is running and the notification visible within about 90 s after unlock without opening Aura, an alarm for the next prayer is armed, and no stale vibration state remains. With the setting OFF (V1) the service is still not started without the broadcast: that case is answered by the tile, not by code, so it is not a failure of the fix. The stale-flag change (P2) is tested separately: with the receiver blocked (V1), after the app is opened the flags are cleared once the grace has passed and the adhan screen shows no vibration buttons.
 *   **Not testable here:** Android 12-15 behavior (no device), Honor and other brands.
 *   **Reporting:** every item is reported as run or not run. None is reported as passed unless it ran.
 
@@ -96,20 +107,24 @@ All options leave the notification IDs, channels, prefs keys and MethodChannels 
 
 | Phase | Content | Level |
 | --- | --- | --- |
-| D0 | Diagnosis only: the real-reboot runs R0 to R3, results recorded in this spec | A (docs) and device |
-| P1 | Code: the receiver change chosen after D0 (Option 1 first), 4a, 4b, unit tests first | C (production) |
-| P2 | Code: the "App launch" tile, its MethodChannel method, manifest `<queries>`, two strings, contract rows | C |
+| D0 | Verification of the owner's observation: the real-reboot runs V1 (setting off) and V2 (setting on) with logcat or `dumpsys` after boot, V3 and V4 optional, results recorded in this spec. Replaces the earlier open-ended diagnosis | A (docs) and device |
+| P1 | Main fix: the "App launch" tile with its fallback chain, the MethodChannel method, manifest `<queries>`, two strings naming the three switches, contract rows; pure helpers unit tested first | C (production) |
+| P2 | Stale silent flag: 4a (adhan screen checks the end time) and 4b (clear flags on app start after a grace), `shouldClearStaleSilent`, unit tests first. Independent of the cause and of P1 | C |
+| P3 | Optional hardening: Option 1 (critical work at once in `onReceive`, the 30 s pass kept as an idempotent second pass), after reading that the boot calls are safe to run twice | C |
 
 ## Open Questions
 
-1.  How was "the boot-time clearing of the vibration state does not run" observed (the vibration buttons still showing, the phone still on vibrate, a log)? The answer separates cause A from B.
+1.  How was "the boot-time clearing of the vibration state does not run" observed (the vibration buttons still showing, the phone still on vibrate, a log)? The answer separates cause A from B. (The owner's later evidence is about the notification after a reboot, not about this.)
 2.  Is a screen lock set on the test phone (cause C)?
-3.  What is the "App launch" state for Aura today (screenshot of Settings > Battery > App launch, GUESS about the path on EMUI 12)?
+3.  What was the "App launch" state for Aura before the owner changed it (UNKNOWN; screenshot of Settings > Battery > App launch, GUESS about the path on EMUI 12)? Now it is reported as Auto-launch, Secondary launch and Run in background all ON.
 4.  Why does the receiver wait 30 s (UNKNOWN: no recorded reason)? Is there a case where an earlier start was seen to fail?
-5.  Is the idempotence of the boot calls (`reschedulePrayerAlarms`, `DailyRecalcReceiver.schedule`, `rescheduleDailySummary`, `JumuahReminderReceiver.schedule`) safe to run twice (Option 1 repeats them)? UNKNOWN: they were not read for this; the first step of P1 is to read them.
+5.  Is the idempotence of the boot calls (`reschedulePrayerAlarms`, `DailyRecalcReceiver.schedule`, `rescheduleDailySummary`, `JumuahReminderReceiver.schedule`) safe to run twice (Option 1 repeats them)? UNKNOWN: they were not read for this; the first step of P3 is to read them.
+6.  Which of the three switches is required (Auto-launch alone?). UNKNOWN; V3 answers it.
+7.  Was the earlier "no start" observation on the same build as the working one? UNKNOWN; it limits how much the single working reboot proves.
 
 ## Risks
 
+*   The cause rests on one reboot seen by eye plus an earlier uncontrolled observation (GUESS, leaning LIKELY). If D0 does not confirm it, the tile alone would not fix the phone, which is why P1 comes after D0.
 *   Option 1 may re-arm alarms before something they depend on is ready (UNKNOWN reason for the delay); mitigated by keeping the delayed second pass.
 *   The "App launch" tile cannot show state, so it may be tapped by users who already allowed the app; it is informational only.
 *   A brand check that is too narrow hides the tile on Honor; one that is too wide shows a dead row, which falls back to app-details.
