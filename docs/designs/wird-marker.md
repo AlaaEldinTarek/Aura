@@ -644,6 +644,17 @@ If the owner does not accept losing whole-page bookmarks: do not remove the butt
 *   **Recommendation: a small phase P4a-6 on the same branch and PR, not folded into P4a-5.** P4a-5 adds a provider and changes call sites for a behavior, and is still waiting for the owner's go-ahead. P4a-6 removes a user-visible feature and changes a glyph and a tutorial string; it carries the owner's decision on whole-page bookmarks and its own device checks. Keeping them apart lets either be reviewed, reverted or skipped alone (GUESS: the order does not matter; P4a-5 first keeps the smaller change first).
 *   **P2 to P4a-4:** implemented and unchanged in behavior; the second amendment's icon text is superseded as marked. **P4b:** none. **P5:** also deletes nothing new (no shared member is removed; the removed members are private). **P6:** one device check is added to the Verification Plan, and the `lib/features/quran/README.md` description of the top bar is updated.
 
+#### Device test (P4a-6, 2026-11-14)
+
+Reported by Aladdin on 2026-11-14, on the phone, with the throwaway build `test/all-edits-final3` (merge `2ba27d7`: `main` `1584deb` with `feat/wird-marker`, `fix/boot-start-service` and `fix/dev-test-adhan`; release APK 1.1.0+60, sha256 `5393d65a53350b01d4d7332774aba555bc8d4bc212c5dc561e77799394c69235`, installed over the previous app on 2026-11-14, installed hash equal to the built hash). These are his reported results; they were not observed by Claude. Only the items listed below are recorded as passed.
+
+| # | Check | Result |
+| --- | --- | --- |
+| 1 | The reader top bar shows one bookmark-shaped Wird icon, and the old ordinary bookmark button is gone | PASSED |
+| 2 | Verse bookmarks still work | PASSED |
+
+*   **Not reported as run:** any other P4a-6 check (the Arabic tutorial text on the phone, the icon states in each situation, the setup card glyph). Everything else in this spec keeps the status already recorded.
+
 ### Contracts and docs that change in the same commits
 
 *   `.project-docs/contracts/firestore-paths.md`: new row for `users/{uid}/wird/marker`.
