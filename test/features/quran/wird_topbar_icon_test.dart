@@ -1,6 +1,8 @@
 // Spec: docs/designs/wird-marker.md item 27 and "Top-bar Wird icon (amendment
-// 2026-11-14, second)". Phase P4a-3. The reader's top bar, the order of the
-// icons and the tap flows inside the reader are checked on a device.
+// 2026-11-14, second)", glyphs changed by "Single bookmark-shaped Wird icon
+// (amendment 2026-11-14, fifth)", item 30. Phases P4a-3 and P4a-6. The reader's
+// top bar (one icon, the removed bookmark button, title centering) and the tap
+// flows inside the reader are checked on a device.
 import 'package:aura_app/core/models/wird.dart';
 import 'package:aura_app/core/models/wird_marker.dart';
 import 'package:aura_app/features/quran/wird_marker_widgets.dart';
@@ -21,12 +23,20 @@ WirdState _state({WirdUnit unit = WirdUnit.page, WirdMarkerRecord? marker}) =>
 
 Widget _host(Widget child) => MaterialApp(home: Scaffold(body: Center(child: child)));
 
-/// The flag icon inside the button, or null when none is built.
-Icon? _flag(WidgetTester t) {
-  final f = find.byWidgetPredicate(
-      (w) => w is Icon && (w.icon == Icons.flag || w.icon == Icons.flag_outlined));
+/// The bookmark-shaped icon inside the button, or null when none is built.
+Icon? _glyph(WidgetTester t) {
+  final f = find.byWidgetPredicate((w) =>
+      w is Icon &&
+      (w.icon == Icons.bookmark || w.icon == Icons.bookmark_outline));
   return f.evaluate().isEmpty ? null : t.widget<Icon>(f);
 }
+
+/// True when a flag glyph (the icon this phase replaces) is anywhere on screen.
+bool _hasFlag() => find
+    .byWidgetPredicate(
+        (w) => w is Icon && (w.icon == Icons.flag || w.icon == Icons.flag_outlined))
+    .evaluate()
+    .isNotEmpty;
 
 void main() {
   group('wirdTopBarIconSpec', () {
@@ -106,7 +116,7 @@ void main() {
           currentPage: 31,
           onTap: (_) {})));
       expect(find.byType(IconButton), findsNothing);
-      expect(_flag(t), isNull);
+      expect(_glyph(t), isNull);
     });
 
     testWidgets('is not built before the Wird state is loaded', (t) async {
@@ -115,33 +125,65 @@ void main() {
       expect(find.byType(IconButton), findsNothing);
     });
 
-    testWidgets('no marker: neutral outline flag and the set tooltip', (t) async {
+    testWidgets('not visible: an empty 48 by 48 box keeps the title centered',
+        (t) async {
+      // Juz mode.
+      await t.pumpWidget(_host(WirdMarkerTopBarButton(
+          state: _state(unit: WirdUnit.juz, marker: _marker()),
+          currentPage: 31,
+          onTap: (_) {})));
+      expect(t.getSize(find.byType(WirdMarkerTopBarButton)), const Size(48, 48));
+      expect(_glyph(t), isNull);
+      // State not loaded.
+      await t.pumpWidget(_host(WirdMarkerTopBarButton(
+          state: null, currentPage: 31, onTap: (_) {})));
+      expect(t.getSize(find.byType(WirdMarkerTopBarButton)), const Size(48, 48));
+      expect(_glyph(t), isNull);
+    });
+
+    testWidgets('never draws a flag, in any state', (t) async {
+      final cases = <(WirdState?, int)>[
+        (null, 12),
+        (_state(), 12),
+        (_state(marker: _marker(page: 31)), 31),
+        (_state(marker: _marker(page: 31)), 36),
+        (_state(marker: _marker(page: 31)), 12),
+        (_state(unit: WirdUnit.juz, marker: _marker()), 31),
+      ];
+      for (final (state, page) in cases) {
+        await t.pumpWidget(_host(WirdMarkerTopBarButton(
+            state: state, currentPage: page, onTap: (_) {})));
+        expect(_hasFlag(), isFalse);
+      }
+    });
+
+    testWidgets('no marker: neutral outline bookmark and the set tooltip', (t) async {
       await t.pumpWidget(_host(WirdMarkerTopBarButton(
           state: _state(), currentPage: 12, onTap: (_) {})));
-      final icon = _flag(t)!;
-      expect(icon.icon, Icons.flag_outlined);
+      final icon = _glyph(t)!;
+      expect(icon.icon, Icons.bookmark_outline);
       expect(icon.color, isNot(const Color(_color)));
       expect(find.byTooltip('wird_marker_set_here'), findsOneWidget);
     });
 
-    testWidgets('on the marker page: filled flag in the marker color', (t) async {
+    testWidgets('on the marker page: filled bookmark in the marker color', (t) async {
       await t.pumpWidget(_host(WirdMarkerTopBarButton(
           state: _state(marker: _marker(page: 31)),
           currentPage: 31,
           onTap: (_) {})));
-      final icon = _flag(t)!;
-      expect(icon.icon, Icons.flag);
+      final icon = _glyph(t)!;
+      expect(icon.icon, Icons.bookmark);
       expect(icon.color, const Color(_color));
       expect(find.byTooltip('wird_marker_page_label'), findsOneWidget);
     });
 
-    testWidgets('on another page: outline flag in the marker color', (t) async {
+    testWidgets('on another page: outline bookmark in the marker color', (t) async {
       await t.pumpWidget(_host(WirdMarkerTopBarButton(
           state: _state(marker: _marker(page: 31)),
           currentPage: 36,
           onTap: (_) {})));
-      final icon = _flag(t)!;
-      expect(icon.icon, Icons.flag_outlined);
+      final icon = _glyph(t)!;
+      expect(icon.icon, Icons.bookmark_outline);
       expect(icon.color, const Color(_color));
       expect(find.byTooltip('wird_marker_move_here'), findsOneWidget);
     });

@@ -712,7 +712,8 @@ WirdTopBarIconSpec wirdTopBarIconSpec({
   );
 }
 
-/// The Wird marker icon for the reader's top bar, beside the bookmark icon.
+/// The Wird marker icon for the reader's top bar: a bookmark-shaped icon, the
+/// only trailing icon there (outline, or filled on the marker page).
 /// Built only in page mode once the Wird state is loaded.
 class WirdMarkerTopBarButton extends StatelessWidget {
   final WirdState? state;
@@ -729,13 +730,16 @@ class WirdMarkerTopBarButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = state;
-    if (s == null) return const SizedBox.shrink();
+    // Not visible (state not loaded, or juz mode): an empty box of the button's
+    // size, so the reader's title stays centered between the two 48 dp slots.
+    const emptySlot = SizedBox(width: 48, height: 48);
+    if (s == null) return emptySlot;
     final markerPage = s.marker?.markerPage;
     final spec = wirdTopBarIconSpec(
         unit: s.settings.wirdUnit,
         markerPage: markerPage,
         currentPage: currentPage);
-    if (!spec.visible) return const SizedBox.shrink();
+    if (!spec.visible) return emptySlot;
 
     final theme = Theme.of(context);
     final lang = Localizations.localeOf(context).languageCode;
@@ -752,7 +756,7 @@ class WirdMarkerTopBarButton extends StatelessWidget {
       iconSize: 22,
       onPressed: () => onTap(spec.action),
       icon: Icon(
-        spec.filled ? Icons.flag : Icons.flag_outlined,
+        spec.filled ? Icons.bookmark : Icons.bookmark_outline,
         color: color,
         // A thin edge keeps a very light or very dark color visible.
         shadows: [
@@ -850,7 +854,7 @@ class WirdMarkerSetupCard extends StatelessWidget {
             const SizedBox(height: 12),
             FilledButton.icon(
               onPressed: onSetMarker,
-              icon: const Icon(Icons.flag_outlined, size: 18),
+              icon: const Icon(Icons.bookmark_outline, size: 18),
               label: Text('wird_set_marker'.tr()),
             ),
             const SizedBox(height: 8),
