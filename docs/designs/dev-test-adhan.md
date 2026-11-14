@@ -1,6 +1,6 @@
 # Dev tool: fire a test adhan on demand (hidden)
 
-Status: DRAFT, awaiting user review · Level A (this doc only) · implementation would be Level C and needs
+Status: APPROVED by user ("approve the dev-test-adhan spec and phase"); Arabic strings stay DRAFT pending user review · Level A (this doc only) · implementation would be Level C and needs
 "approve phase" · branch `fix/dev-test-adhan` (from main) · not a fix for a finding; a developer test aid.
 
 Labels: VERIFIED = read in code at the cited line · UNKNOWN = not checked or not checkable by reading · GUESS = inference.
@@ -159,5 +159,5 @@ Device-only (cannot be unit tested), on the nova 5T release build:
 - Review size: small, no "edit carefully" files, no native contracts: one lightweight review.
 - Verification after approval: `flutter analyze` (no new issues vs the baseline), `flutter test`, a release build,
   then the device checks D1-D5.
-- Open for you: (a) accept hard-coded Zuhr; (b) accept the pre-check snackbar; (c) Arabic wording; (d) whether to also
-  hide the tile in debug builds (default: no gate).
+- Decisions (user): (a) Zuhr only: yes. (b) Keep the `canScheduleExactAlarms()` pre-check: yes. (c) The tile stays hidden
+  behind the seven taps in ALL builds, no special case for debug builds. (d) Arabic strings stay DRAFT for the user's review.
