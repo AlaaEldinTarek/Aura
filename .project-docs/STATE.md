@@ -1,4 +1,4 @@
-# Project State — 2026-11-13
+# Project State — 2026-11-15
 - App: Aura 1.1.0+60 on main (85a12b5), tag `v1.1.0` = 9ce26e2 (MSIX 1.0.3.114) | Analyze: 418 issues (0 errors) | Tests: 260 Dart + 25 Kotlin (`./gradlew :app:testDebugUnitTest`) pass
 - Baseline commit: 75d38b9 | Flutter 3.38.7 / Dart 3.10.7 (frozen) | Android minSdk 24 / target 36 / compile 36
 - Support target: current minSdk and newer (Android 10 must keep working; test device nova 5T = API 29)
@@ -31,4 +31,5 @@
 - Future (not F38, needs its own design and approval): one color at a time is reserved for the Wird reading position. The reader's ordinary bookmark color picker must not offer the reserved color. The other colors stay available for ordinary marks. To change the Wird color, the user picks one of the other colors; the previous Wird color is released back to ordinary marks. Open question: what happens to existing bookmarks already in the picked color (keep them, or prompt the user to recolor them).
 - Future (not F38, needs its own design and approval): custom bookmark colors, up to 5 total (red, orange, green plus 2 custom), needing a new color model, storage, sync, a picker UI, and English and Arabic keys. Open questions: whether custom colors are any value or a fixed palette; whether existing users keep their current linked color and counted pages.
 - Future (not F38, needs its own design and approval): counting several colors at once, with a separate counted set per color (changes WirdSettings and Firestore data). Open question: whether the user picks one color or any of several.
+- PS1 permissions popup (test/all-edits-final4, check 7): device PASS 2026-11-15 on nova 5T (whitelist removed by adb, popup shown, Enable opened the system battery dialog). Earlier "no popup" = Aura was still whitelisted, not a regression. Open: no test covers `PermissionDialogHandler` itself (fake-probe tests only). Log: log/2026-11-15.md
 - Open questions: reference/findings.md (F4, F7–F59, § Doc conflicts)
