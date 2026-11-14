@@ -199,27 +199,6 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
     _messenger = ScaffoldMessenger.maybeOf(context);
   }
 
-  void _togglePageBookmark() {
-    final meta = _surahForPage(_currentPage);
-    if (meta == null) return;
-    final id = 'page_$_currentPage';
-    final bookmarks = ref.read(quranBookmarksProvider).valueOrNull ?? [];
-    if (bookmarks.any((b) => b.id == id)) {
-      ref.read(quranBookmarksProvider.notifier).removeBookmark(id);
-    } else {
-      ref.read(quranBookmarksProvider.notifier).addBookmark(QuranBookmark(
-        id: id,
-        suraNo: meta.suraNo,
-        ayaNo: 1,
-        page: _currentPage,
-        suraNameAr: meta.nameAr,
-        suraNameEn: meta.nameEn,
-        ayaText: '',
-        createdAt: DateTime.now(),
-      ));
-    }
-  }
-
   /// Moves the marker to [page]: asks first when the move is bigger than the daily
   /// goal, moves, closes the verse sheet (when [sheetContext] is given) and shows
   /// a snackbar with an Undo action.
@@ -427,11 +406,7 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
   Widget build(BuildContext context) {
     final lang = context.locale.languageCode;
     final isArabic = lang == 'ar';
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = AppConstants.getPrimary(isDark);
     final meta = _surahForPage(_currentPage);
-    final bookmarks = ref.watch(quranBookmarksProvider).valueOrNull ?? [];
-    final isBookmarked = bookmarks.any((b) => b.id == 'page_$_currentPage');
 
     final wirdState = ref.watch(wirdStateProvider).valueOrNull;
     final isPageModeWird = wirdState?.settings.wirdUnit == WirdUnit.page;
@@ -633,9 +608,6 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
                       : (meta?.nameEn ?? ''),
                   pageNo: _currentPage,
                   lang: lang,
-                  isBookmarked: isBookmarked,
-                  primary: primary,
-                  onBookmarkToggle: _togglePageBookmark,
                   wirdAction: WirdMarkerTopBarButton(
                     state: wirdState,
                     currentPage: _currentPage,
@@ -1498,11 +1470,9 @@ class _TopBar extends StatelessWidget {
   final String surahName;
   final int pageNo;
   final String lang;
-  final bool isBookmarked;
-  final Color primary;
-  final VoidCallback onBookmarkToggle;
 
-  /// The Wird marker icon, placed just before the bookmark icon (null = none).
+  /// The Wird marker icon: the only trailing icon, in the slot the ordinary
+  /// bookmark button used to take (null = none).
   final Widget? wirdAction;
   final VoidCallback onClose;
 
@@ -1510,9 +1480,6 @@ class _TopBar extends StatelessWidget {
     required this.surahName,
     required this.pageNo,
     required this.lang,
-    required this.isBookmarked,
-    required this.primary,
-    required this.onBookmarkToggle,
     required this.onClose,
     this.wirdAction,
   });
@@ -1549,14 +1516,6 @@ class _TopBar extends StatelessWidget {
             ),
           ),
           if (wirdAction != null) wirdAction!,
-          IconButton(
-            icon: Icon(
-              isBookmarked ? Icons.bookmark : Icons.bookmark_outline,
-              color: isBookmarked ? primary : theme.hintColor,
-            ),
-            onPressed: onBookmarkToggle,
-            iconSize: 22,
-          ),
         ],
       ),
     );
