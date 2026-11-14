@@ -1,6 +1,6 @@
 # Fix: the prayer service and the boot-time work do not run after a reboot until Aura is opened (EMUI, Android 10)
 
-Status: This spec and phases P1 and P2 approved by Aladdin on 2026-11-14 (spec: Level A, docs; P1 and P2: Level C, production), given as 'approve the boot-start spec, P1 and P2'. D0 (diagnosis reboots) and P3 (optional hardening) are NOT approved and are not to be built. Branch `fix/boot-start-service` from `main` `1584deb`. Not pushed. Updated 2026-11-14 with one owner-observed reboot (see "Evidence from the owner" in section 1). **Amendment 2026-11-14 (section 3a, phase P1b): the "App launch" tile becomes an explanation dialog. DRAFT, awaiting the owner's review; P1b is not approved and not to be built.**
+Status: This spec and phases P1 and P2 approved by Aladdin on 2026-11-14 (spec: Level A, docs; P1 and P2: Level C, production), given as 'approve the boot-start spec, P1 and P2'. D0 (diagnosis reboots) and P3 (optional hardening) are NOT approved and are not to be built. Branch `fix/boot-start-service` from `main` `1584deb`. Not pushed. Updated 2026-11-14 with one owner-observed reboot (see "Evidence from the owner" in section 1). **Amendment 2026-11-14 (section 3a, phase P1b): the "App launch" tile becomes an explanation dialog. The P1b amendment (explanation dialog, `isEmuiDevice` rename) and phase P1b were approved by Aladdin on 2026-11-14, given as: 'approve the P1b amendment and phase P1b'. The Arabic strings of this spec were reviewed by Aladdin on 2026-11-14 ("Arabic every where is very good"). The Arabic EMUI menu names were not compared against an Arabic EMUI phone.**
 
 Labels: **VERIFIED** (read in code, manifest or the spec, or returned by a device query on 2026-11-14), **UNKNOWN** (not checked, or not checkable now), **GUESS** (reasoning or recalled Android behavior, not run). "Reported" means said by the product owner and not re-observed. No logs were read for this spec.
 
@@ -72,7 +72,7 @@ All options leave the notification IDs, channels, prefs keys and MethodChannels 
 *   **Contracts (VERIFIED rule in CLAUDE.md):** a new MethodChannel method (for example `openAutoLaunchSettings`) is a native contract change: Dart, Kotlin and `.project-docs/contracts/method-channels.md` in one commit. Two new strings (English and Arabic) via `.tr()`. No numbers in the text. Other brands (Xiaomi, Oppo, Vivo) are out of scope (components UNKNOWN); they get the generic app-details fallback only if a brand check is added later.
 *   **Honor devices:** UNKNOWN whether the same component exists. ~~The brand check should be on the component resolving, not on the brand name alone (GUESS).~~ **SUPERSEDED by section 3a:** no component is resolved any more; the check is the manufacturer, Huawei only, and Honor is left out until a device shows its menu.
 
-## (3a) Amendment 2026-11-14: the tile opens an explanation dialog (phase P1b, DRAFT)
+## (3a) Amendment 2026-11-14: the tile opens an explanation dialog (phase P1b; amendment and phase approved by Aladdin on 2026-11-14)
 
 **Why (device finding by the owner, and the trace).** On the owner's phone (EMUI 12, Android 10) the Settings tile "Auto-launch after restart" showed the system chooser "Open with: No apps can perform this action" and nothing else.
 
@@ -110,15 +110,15 @@ All options leave the notification IDs, channels, prefs keys and MethodChannels 
 *   "Open app details" calls the existing Dart `_openAppSettings()` (`platform_channel_service.dart:20-27`, permission_handler `openAppSettings`); no new native call. Whether it opens the right screen on EMUI 12 is UNKNOWN (it is the existing battery-row fallback, not recorded as device-checked). If it does nothing, the body text still gives the path (the "plain instruction" fallback).
 *   The tile title and subtitle keep the existing keys and text (`en.json:153-154`, `ar.json:153-154`).
 
-**Strings** (new keys in BOTH `assets/translations/en.json` and `ar.json`, via `.tr()`; the Arabic is a DRAFT for the owner to check against the phone). No numbers appear, so the Arabic-numerals rule does not apply.
+**Strings** (new keys in BOTH `assets/translations/en.json` and `ar.json`, via `.tr()`; the Arabic was reviewed by Aladdin on 2026-11-14 ("Arabic every where is very good")). No numbers appear, so the Arabic-numerals rule does not apply.
 
-| Key | English | Arabic (DRAFT) |
+| Key | English | Arabic (reviewed 2026-11-14) |
 | --- | --- | --- |
 | `auto_launch_dialog_title` | Let Aura start after a restart | السماح لـ Aura بالعمل بعد إعادة التشغيل |
 | `auto_launch_dialog_body` | On Huawei phones, prayer alerts may not start after a restart unless Aura is allowed to launch.\n\nOpen: Settings > Battery > App launch > Aura.\nThen turn on Auto-launch, Secondary launch and Run in background. | في هواتف هواوي قد لا تبدأ تنبيهات الصلاة بعد إعادة التشغيل ما لم يُسمح لـ Aura بالتشغيل.\n\nافتح: الإعدادات ← البطارية ← تشغيل التطبيق ← Aura.\nثم فعّل «التشغيل التلقائي» و«التشغيل الثانوي» و«التشغيل في الخلفية». |
 | `auto_launch_dialog_open_details` | Open app details | فتح تفاصيل التطبيق |
 
-The owner checks, on the phone: the Arabic names of the EMUI menus "Battery" (البطارية) and "App launch" (تشغيل التطبيق, GUESS), the three switch names (reused from the existing draft `ar.json:154`, VERIFIED present, not verified against the phone), and that the arrows (←) point the right way in the RTL dialog.
+The Arabic EMUI menu names were not compared against an Arabic EMUI phone. Open for the owner, on an Arabic EMUI phone: the Arabic names of the EMUI menus "Battery" (البطارية) and "App launch" (تشغيل التطبيق, GUESS), the three switch names (reused from the existing draft `ar.json:154`, VERIFIED present, not verified against the phone), and that the arrows (←) point the right way in the RTL dialog.
 
 **Contract impact** (`.project-docs/contracts/method-channels.md:30`; CLAUDE.md: Dart, Kotlin and the contract file change in one commit).
 
@@ -136,7 +136,7 @@ The owner checks, on the phone: the Arabic names of the EMUI menus "Battery" (ا
 4.  New widget test for the dialog: shows the title and body; "Open app details" calls the open-details callback once; "OK" closes it without calling it; fits 360 dp in Arabic without overflow.
 5.  No existing test covers the Settings tile or the permissions-page hint (VERIFIED for `test/features/settings`: three files, none for the settings screen; UNKNOWN for the permissions page). Their visibility by flag stays device-only.
 
-**Phase P1b (DRAFT, not approved).** Level C (production: `lib/`, `android/`, `assets/`, tests). Own gate: an explicit "approve phase P1b" after the owner reviews this section. It sits on `fix/boot-start-service` on top of the P1 commits. Order: tests first (red run shown), then separate commits: (1) the Kotlin helper and the channel rename with the contract row, (2) the shared dialog and the three strings, (3) the tile and the hint use the dialog; remove `openAutoLaunchSettings`, the resolver code and the `<queries>` entry. `flutter test`, `flutter analyze` and the Kotlin tests after each commit, numbers against the baseline. It is small and touches no "edit carefully" file: one lightweight review.
+**Phase P1b (approved by Aladdin on 2026-11-14).** Level C (production: `lib/`, `android/`, `assets/`, tests). Own gate: the explicit "approve phase P1b", given as recorded in the status line. It sits on `fix/boot-start-service` on top of the P1 commits. Order: tests first (red run shown), then separate commits: (1) the Kotlin helper and the channel rename with the contract row, (2) the shared dialog and the three strings, (3) the tile and the hint use the dialog; remove `openAutoLaunchSettings`, the resolver code and the `<queries>` entry. `flutter test`, `flutter analyze` and the Kotlin tests after each commit, numbers against the baseline. It is small and touches no "edit carefully" file: one lightweight review.
 
 *   **Device check (owner, nova 5T):** the tile opens the dialog and no system chooser; "Open app details" opens Aura's details screen; the text matches the EMUI menu names on the phone; the Arabic dialog reads right in RTL. Not testable here: non-Huawei phones (the tile must stay hidden), Honor, HarmonyOS.
 *   **Risks:** the user must change three switches by hand and the app cannot show whether they are on, so the dialog is informational and can be reopened. Menu names differ by EMUI or HarmonyOS version (UNKNOWN). D0 (the reboot test with the setting off and on) is still the check that the setting fixes the missing service; P1b changes only how the user is told.
@@ -179,7 +179,7 @@ The owner checks, on the phone: the Arabic names of the EMUI menus "Battery" (ا
 | --- | --- | --- |
 | D0 | Verification of the owner's observation: the real-reboot runs V1 (setting off) and V2 (setting on) with logcat or `dumpsys` after boot, V3 and V4 optional, results recorded in this spec. Replaces the earlier open-ended diagnosis | A (docs) and device |
 | P1 | Main fix: the "App launch" tile with its fallback chain, the MethodChannel method, manifest `<queries>`, two strings naming the three switches, contract rows; pure helpers unit tested first. Approved and committed (`626b4fe`, `78fbd13`, not pushed). **The tile action and the fallback chain are replaced by P1b; the two strings stay.** | C (production) |
-| P1b (DRAFT, not approved) | Section 3a: the tile and the permissions-page hint open an explanation dialog; remove the EMUI candidate chain, `openAutoLaunchSettings`, the resolver check and the manifest `<queries>` entry; Huawei check by manufacturer; three new strings; contract rows rewritten; unit tests first. Own gate: "approve phase P1b" | C (production) |
+| P1b (approved by Aladdin on 2026-11-14) | Section 3a: the tile and the permissions-page hint open an explanation dialog; remove the EMUI candidate chain, `openAutoLaunchSettings`, the resolver check and the manifest `<queries>` entry; Huawei check by manufacturer; three new strings; contract rows rewritten; unit tests first. Own gate: "approve phase P1b" | C (production) |
 | P2 | Stale silent flag: 4a (adhan screen checks the end time) and 4b (clear flags on app start after a grace), `shouldClearStaleSilent`, unit tests first. Independent of the cause and of P1 | C |
 | P3 | Optional hardening: Option 1 (critical work at once in `onReceive`, the 30 s pass kept as an idempotent second pass), after reading that the boot calls are safe to run twice | C |
 
@@ -192,7 +192,7 @@ The owner checks, on the phone: the Arabic names of the EMUI menus "Battery" (ا
 5.  Is the idempotence of the boot calls (`reschedulePrayerAlarms`, `DailyRecalcReceiver.schedule`, `rescheduleDailySummary`, `JumuahReminderReceiver.schedule`) safe to run twice (Option 1 repeats them)? UNKNOWN: they were not read for this; the first step of P3 is to read them.
 6.  Which of the three switches is required (Auto-launch alone?). UNKNOWN; V3 answers it.
 8.  (P1b) Which exception did (a) and (b) throw for a third-party app? UNKNOWN; only matters if they are ever brought back (logcat of a tap: `adb logcat -c`, tap, `adb logcat -d -s MainActivity`).
-9.  (P1b) The Arabic names of the EMUI menus "Battery" and "App launch" and of the three switches on the owner's phone: the owner checks the DRAFT.
+9.  (P1b) The Arabic names of the EMUI menus "Battery" and "App launch" and of the three switches: the Arabic was reviewed by Aladdin on 2026-11-14 ("Arabic every where is very good"); the Arabic EMUI menu names were not compared against an Arabic EMUI phone.
 7.  Was the earlier "no start" observation on the same build as the working one? UNKNOWN; it limits how much the single working reboot proves.
 
 ## Risks
