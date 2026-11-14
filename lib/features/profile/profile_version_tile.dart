@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 
+import '../../core/services/prayer_alarm_service.dart';
 import '../../core/widgets/setting_tile.dart';
 
 /// Number of taps on the Version tile that reveals the developer tile.
@@ -41,6 +42,37 @@ class _ProfileVersionTileState extends State<ProfileVersionTile> {
     setState(() => _taps++);
   }
 
+  Future<void> _confirmAndFire() async {
+    // Captured before any await: the dialog and snackbar outlive this build.
+    final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('dev_test_adhan_dialog_title'.tr()),
+        content: Text('dev_test_adhan_dialog_body'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('cancel'.tr()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text('dev_test_adhan_fire'.tr()),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    // Zuhr only: Fajr and Isha also trigger a Flutter recalculation.
+    final fire =
+        widget.fireTestAdhan ?? PrayerAlarmService.instance.testAdhanNow;
+    await fire('Zuhr');
+    messenger.showSnackBar(
+      SnackBar(content: Text('dev_test_adhan_scheduled'.tr())),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -58,6 +90,8 @@ class _ProfileVersionTileState extends State<ProfileVersionTile> {
             icon: Icons.notifications_active_outlined,
             title: 'dev_test_adhan_title'.tr(),
             subtitle: 'dev_test_adhan_subtitle'.tr(),
+            onTap: _confirmAndFire,
+            showChevron: false,
           ),
       ],
     );
