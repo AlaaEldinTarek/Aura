@@ -335,6 +335,39 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
     if (outcome is PlaceFailed) debugPrint('⚠️ [WIRD] Marker not placed: ${outcome.failure}');
   }
 
+  /// Start / Continue Reading (page mode). With no marker it first offers to start
+  /// the Wird: "Start here" places the marker on N, "Choose another page" and
+  /// "Just read" open the reader with no marker, and dismissing the sheet does
+  /// nothing. The reader then opens at the page the fresh state gives.
+  Future<void> _startReading(WirdState state, WirdProgress? progress) async {
+    final noMarker = state.marker?.markerPage == null;
+    if (state.settings.wirdUnit == WirdUnit.page && noMarker) {
+      final choice = await WirdStartSheet.show(
+        context,
+        page: startSheetPage(state, progress),
+        readingMode: true,
+      );
+      if (choice == null || !mounted) return;
+      if (choice is StartHere) {
+        final outcome = await ref
+            .read(wirdStateProvider.notifier)
+            .placeMarker(startSheetPage(state, progress), choice.color.toARGB32());
+        if (outcome is PlaceFailed) {
+          debugPrint('⚠️ [WIRD] Marker not placed: ${outcome.failure}');
+        }
+        if (!mounted) return;
+      }
+    }
+    final fresh = ref.read(wirdStateProvider).valueOrNull ?? state;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => QuranReaderScreen(
+            suraNo: 1, initialPage: startSheetPage(fresh, progress)),
+      ),
+    );
+  }
+
   Future<void> _confirmRestart(BuildContext context) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -348,7 +381,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
           ),
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('wird_restart'.tr()),
+            child: Text('wird_restart_confirm_yes'.tr()),
           ),
         ],
       ),
@@ -884,7 +917,6 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
     final ts = MediaQuery.textScalerOf(context);
     final goal = state.settings.dailyPageGoal;
     final startPage = wirdRangeStart(state, progress?.startPage);
-    final currentPage = wirdReadingPage(state, progress?.currentPage, startPage);
     final endPage = (startPage + goal - 1).clamp(1, 604);
 
     return Column(
@@ -917,14 +949,7 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
           children: [
             Expanded(
               child: FilledButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => QuranReaderScreen(suraNo: 1, initialPage: currentPage),
-                    ),
-                  );
-                },
+                onPressed: () => _startReading(state, progress),
                 icon: Icon(progress == null ? Icons.play_arrow : Icons.arrow_forward, size: ts.scale(18.0)),
                 label: Text(progress == null ? 'wird_start_reading'.tr() : 'wird_continue_reading'.tr()),
               ),
