@@ -489,5 +489,12 @@
   "guest_sync_success": "Tasks synced to your account!",
   "prayer_calc_method_title": "Calculation Method",
   "prayer_asr_madhab_title": "Asr Madhab",
-  "prayer_calc_done": "Done"
+  "prayer_calc_done": "Done",
+  "dev_test_adhan_title": "Fire test adhan",
+  "dev_test_adhan_subtitle": "Developer: runs the real adhan flow",
+  "dev_test_adhan_dialog_title": "Fire a real test adhan?",
+  "dev_test_adhan_dialog_body": "In about 10 seconds the real Zuhr adhan will play with sound, the phone will switch to vibrate for your Silent Mode duration from Settings, and the adhan screen will open. Azkar and prayer-check reminders may follow later. Set the ringer to Normal first.",
+  "dev_test_adhan_fire": "Fire",
+  "dev_test_adhan_scheduled": "Test adhan in about 10 seconds. Lock your phone now.",
+  "dev_test_adhan_no_exact_alarm": "Exact alarm permission is off. Enable it in the app's alarm settings, then try again."
 }
