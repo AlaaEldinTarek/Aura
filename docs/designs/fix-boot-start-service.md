@@ -1,0 +1,117 @@
+# Fix: the prayer service and the boot-time work do not run after a reboot until Aura is opened (EMUI, Android 10)
+
+Status: DRAFT for the owner's review (Level A, docs). No code, no tests, no go-ahead for any phase. Branch `fix/boot-start-service` from `main` `1584deb`. Not pushed.
+
+Labels: **VERIFIED** (read in code, manifest or the spec, or returned by a device query on 2026-11-14), **UNKNOWN** (not checked, or not checkable now), **GUESS** (reasoning or recalled Android behavior, not run). "Reported" means said by the product owner and not re-observed. No logs were read for this spec.
+
+## Overview
+
+After a phone reboot, `PrayerForegroundService` does not start until the user opens Aura. The prayer notification is missing, and the boot-time clearing of the vibration state does not run (reported, on the test phone). This spec lists the possible causes and how to tell them apart on the device, the options for a code fix, what the app can do when the OS blocks boot broadcasts, whether to clear stale silent-mode state on app start, and a test plan. It recommends diagnosing first.
+
+Test phone (VERIFIED by `adb`, 2026-11-14): Huawei YAL-L21 (nova 5T), `EmotionUI_12.0.0`, Android 10 (API 29). Aura is on the battery-optimization whitelist (VERIFIED: `dumpsys deviceidle whitelist` lists `com.aura.hala`), and `RECEIVE_BOOT_COMPLETED` is granted (VERIFIED, `dumpsys package`).
+
+## What the code does today (VERIFIED unless marked)
+
+*   **Registration:** `PrayerBootReceiver` is declared in the manifest, `exported="false"`, for six actions: `BOOT_COMPLETED`, `QUICKBOOT_POWERON`, `com.htc.intent.action.QUICKBOOT_POWERON`, `ACTION_BOOT_COMPLETED`, `REBOOT`, `MY_PACKAGE_REPLACED` (`AndroidManifest.xml:141-153`). It has no `directBootAware` attribute, so it is not delivered before the first unlock (GUESS: standard Android behavior).
+*   **Order inside `onReceive` (`PrayerBootReceiver.kt:27-71`):**
+    1.  **Immediately (synchronous):** if `aura_silent_mode/is_silent_active` is true, restore the ringer mode, then clear `is_silent_active` and `silent_end_time` (`:42-60`).
+    2.  **After `Handler(mainLooper).postDelayed(..., 30000)` (`:63-70`):** `reschedulePrayerAlarms` (starts `PrayerRescheduleService`, a `dataSync` foreground service), `rescheduleDailySummary`, `rescheduleJumuahReminder`, `restartForegroundService`, `DailyRecalcReceiver.schedule`, `PrayerRecalcWorker.schedule`.
+*   **No `goAsync()`** anywhere in `android/app/src/main/kotlin` (VERIFIED by search: 0 uses). After `onReceive` returns, nothing holds the process, so the 30 s block depends on the process staying alive (GUESS: an otherwise idle process is cached right after the receiver returns, and EMUI may kill it).
+*   **The reason for the 30 s delay is not recorded.** The line is in the initial commit (`ee44c6c`); the only comment says "Wait a bit for the system to fully start". UNKNOWN what it was protecting against.
+*   **Service start path:** `restartForegroundService` calls `PrayerForegroundService.startServiceIfAllowed(context, "boot")`, which reads `flutter.background_notification_enabled` (default true) and then `startService`, which calls `startForegroundService` on API 26+ (`PrayerForegroundService.kt:59-69, 104-112`). When the setting is off it logs "Auto-start skipped" and does nothing. Errors are caught and logged as "Failed to restart prayer foreground service".
+*   **Everything that re-arms the alarms after a reboot is in the delayed block.** Alarms set with `AlarmManager` do not survive a reboot (GUESS: Android documentation, not tested here), so if the block does not run, the next adhan and the 00:05 recalculation are not armed until something else does it. Other re-arm points: opening the app (the Dart side calls the service and alarm code; details UNKNOWN), `JumuahReminderReceiver` and `DailyRecalcReceiver` re-arm themselves when they fire, and the foreground service re-arms `DailyRecalcReceiver` when it is created (`PrayerForegroundService.kt:159`). So starting the service also re-arms the daily recalculation.
+*   **`PrayerRecalcWorker` only recalculates prayer times** (`calculateAndSave`); it does not start the service or arm alarms (VERIFIED). It is a 6 h periodic WorkManager job with `KEEP` (`PrayerRecalcWorker.kt`), enqueued from `MainActivity.kt:210` and from the boot block.
+*   **Permissions the app asks for (the permission dialog and Settings):** battery optimization (`permission_dialog.dart:92-104`, `MainActivity.kt:600-624`, with fallbacks: app-details settings in Kotlin, `openAppSettings()` in Dart), exact alarm (not shown on API 29: `canScheduleExactAlarms` returns true below Android 12, `MainActivity.kt:561`), Do Not Disturb, and overlay (tasks mode). **Nothing asks for or opens an auto-launch / auto-start setting** (VERIFIED by a search of `lib/` and `android/app/src/main` for `com.huawei`, `systemmanager`, `startup`, `autostart`, `protected`; only unrelated hits). The manifest `<queries>` holds only `PROCESS_TEXT`.
+*   **Device query (VERIFIED, 2026-11-14):** `com.huawei.systemmanager` is installed. Two activities resolve: `com.huawei.systemmanager/.startupmgr.ui.StartupNormalAppListActivity` and `.appcontrol.activity.StartupAppControlActivity` (`cmd package query-activities`). The package also registers the action `huawei.intent.action.HSM_STARTUPAPP_MANAGER`. UNKNOWN whether either screen can be opened by a third-party app (that needs a test from the app; an `adb shell` launch is not a valid proxy, GUESS: `shell` has more rights).
+*   **System broadcast history on the phone does not cover the last boot** (VERIFIED: `dumpsys activity broadcasts` has no `PrayerBootReceiver` entry, and its history is a short ring). So it proves nothing either way.
+
+## (1) Possible causes and how to tell them apart
+
+The synchronous silent-state clear is the discriminator. It runs the moment `onReceive` runs, before the 30 s delay (VERIFIED). So if the vibration state really was not cleared after the reboot, the receiver most probably did not run at all (GUESS: it assumes the state was set before the reboot). UNKNOWN how the owner observed "clearing did not run": that must be answered first (Open Questions).
+
+| Cause | What it predicts | How to tell (one real reboot, section 5) |
+| --- | --- | --- |
+| **A. EMUI blocks the boot broadcast** (the app's "App launch" setting is not allowed or is "Manage automatically", GUESS about EMUI 12 behavior) | No `PrayerBootReceiver: Boot event received` line at all; stale silent state stays; nothing re-armed | No log line from `PrayerBootReceiver` within 90 s after unlock |
+| **B. Receiver ran, the process died before 30 s** (no `goAsync`, GUESS) | `Boot event received` and `Cleared stale silent-mode state on boot` are logged, then nothing 30 s later | The first two lines exist, `Prayer reschedule service started` and `Prayer foreground service restarted after boot` do not; `dumpsys activity processes` shows no `com.aura.hala` process at +40 s |
+| **C. Phone locked at boot, nothing delivered until the first unlock** (GUESS) | Everything runs, but only after unlock | The log lines start only after the unlock time |
+| **D. The start was attempted and refused or skipped** | `Failed to restart prayer foreground service: ...`, or `Auto-start skipped (background notification off)` | The error or skip line (both VERIFIED to exist in the code) |
+| **E. The service started and EMUI killed it soon after** (GUESS) | Start line present, service absent later | `dumpsys activity services com.aura.hala` at +90 s and +10 min |
+
+*   **Mixed results are possible** (for example A on some boots only). Each run records the six checks (log lines, process at +40 s, service at +90 s, armed alarm, notification, silent state), not a single yes or no.
+*   **Capturing the boot log:** start `adb wait-for-device` then `adb logcat -v time -s PrayerBootReceiver:D PrayerRescheduleService:D PrayerForegroundService:D` immediately after `adb reboot`, because the log buffer starts empty at boot. A later `adb logcat -d -b all` may still hold the boot lines for a few minutes (UNKNOWN on EMUI, the buffer size is not known). Do not open Aura during the run, because opening it starts the service and hides the result.
+
+## (2) Options for a code fix
+
+All options leave the notification IDs, channels, prefs keys and MethodChannels unchanged unless a row says otherwise.
+
+| Option | Idea | Gain | Cost and risk |
+| --- | --- | --- | --- |
+| **1. Do the critical work at once in `onReceive`**, keep the 30 s pass as an idempotent second pass | Re-arm the alarms and start the foreground service immediately; the delayed block repeats the same idempotent calls | Removes the lost-delay window (cause B) with a few lines; no new dependency | Does nothing for A and C (needs delivery). Unknown reason for the 30 s (UNKNOWN): the risk is that something needs a fully started system (GUESS: network, location, a busy CPU: the phone showed a load average near 49 an hour after boot, VERIFIED, so boot is heavy). `startForegroundService` from a boot receiver is allowed on Android 8-11 (GUESS from docs) |
+| **2. `goAsync()` and keep a delay** | The receiver stays alive until `finish()` | Keeps the process through the 30 s | Background broadcast timeout is about 60 s on Android 8+ (GUESS; the exact EMUI limit is UNKNOWN), so 30 s fits with little slack, and an overrun is an ANR report. More code than Option 1 for the same gain |
+| **3. WorkManager one-time work from `onReceive`** (persisted, with backoff) | A queued job survives a killed process and retries | Robust against B and E | Still needs the broadcast to enqueue (A, C). A worker cannot start a foreground service from the background on Android 12+ except under exemptions (GUESS), so it would be a fallback with a limited future. New logic to test |
+| **4. A second, independent trigger** | The existing periodic worker (every 6 h, already persisted by the OS) also runs the idempotent "arm alarms and ensure the service" routine; the widget providers (`AllPrayersWidgetReceiver` has recent broadcasts, VERIFIED) could call it from `onUpdate` | Might work when the Aura boot receiver is blocked (UNKNOWN: EMUI may restrict jobs and widgets of an app with auto-launch off too) | Changes widgets and the worker (shared code); a 6 h period means a long gap; starting a foreground service from a worker is not allowed on 12+ (GUESS) |
+| **5. User action: allow App launch** (section 3) | Lets the OS deliver the broadcast | The only remedy for cause A | Needs the user; the OS state cannot be read (GUESS: no public API) |
+
+**Recommendation (GUESS until the diagnosis is done):** diagnose first (phase D0). If the logs show B, take Option 1 (and consider 2 only if Option 1 proves insufficient). If they show A, the code cannot fix it: Option 5 plus the section 3 row. Option 3 and 4 are follow-ups only if D0 shows a case that 1 and 5 do not cover. **Android 15 note (GUESS, not observable on this phone):** the app targets API 36 (VERIFIED, `dumpsys package` shows `targetSdk=36`), and Android 15 disallows starting `dataSync` foreground services from a `BOOT_COMPLETED` receiver. `PrayerRescheduleService` is `dataSync` (VERIFIED, `AndroidManifest.xml:155-161`). That is a separate latent risk on newer phones, outside this fix, to be tested on a newer device.
+
+## (3) When the OS blocks boot broadcasts: an "App launch" row
+
+*   **Idea:** a row, only on Huawei or Honor, that opens the EMUI "App launch" (auto-launch) screen so the user can allow Aura. Candidate targets, in order: `com.huawei.systemmanager/.startupmgr.ui.StartupNormalAppListActivity`, `.appcontrol.activity.StartupAppControlActivity`, the action `huawei.intent.action.HSM_STARTUPAPP_MANAGER`, then the app-details settings (`ACTION_APPLICATION_DETAILS_SETTINGS`), then Dart `openAppSettings()`. The last two already exist as fallbacks for the battery row (VERIFIED, `MainActivity.kt:615-623`, `platform_channel_service.dart:36-43`), and the `try`/`catch` per step follows the CLAUDE.md platform-channel rule.
+*   **What the app cannot do:** read whether Aura is allowed (GUESS: no public API), so the row cannot show granted or missing and must not be part of the dialog's `missing` list (VERIFIED: that list is built from checkable states). It is an always-available tile, next to "Battery Optimization" in Settings (`settings_screen.dart:272-276`), and optionally a one-line hint on the permissions page. After returning from the screen the app cannot confirm anything.
+*   **Whether the screens open for a third-party app is UNKNOWN** (both resolve, VERIFIED, but the "exported" and permission state is not known). With targetSdk 36, package visibility may hide `com.huawei.systemmanager` from `resolveActivity`, so the manifest would need `<queries><package android:name="com.huawei.systemmanager"/></queries>` (GUESS; an explicit `startActivity` may work without it). The fallback chain makes a wrong guess safe: the worst case is the app-details screen.
+*   **Contracts (VERIFIED rule in CLAUDE.md):** a new MethodChannel method (for example `openAutoLaunchSettings`) is a native contract change: Dart, Kotlin and `.project-docs/contracts/method-channels.md` in one commit. Two new strings (English and Arabic) via `.tr()`. No numbers in the text. Other brands (Xiaomi, Oppo, Vivo) are out of scope (components UNKNOWN); they get the generic app-details fallback only if a brand check is added later.
+*   **Honor devices:** UNKNOWN whether the same component exists; the brand check should be on the component resolving, not on the brand name alone (GUESS).
+
+## (4) Should the app clear stale `is_silent_active` and `silent_end_time` on start?
+
+*   **Facts (VERIFIED):** the only places that write `is_silent_active` are `PrayerAlarmReceiver.kt:718` (set), `PrayerBootReceiver.kt:56` (clear at boot), `ToggleSilentModeReceiver.kt:334` (clear on Stop) and the dead `SilentModeAutomation.kt:84`. No start-up code and no Dart code clears it. So when the boot receiver does not run (cause A), the flag stays true after a reboot.
+*   **What a stale flag does today:** `PrayerForegroundService` hides the vibration buttons when the end time has passed (`vibrationButtonsVisible = isActive && endTime > 0 && now < endTime`, `:90-91`), so the notification is fine. **`AdhanFullScreenActivity.kt:293` checks only `is_silent_active` and `silent_mode_enabled`, not the end time**, so after a missed boot clear it shows "Stop Vibrate / Keep Vibrate" on the next adhan screen. Tapping "Stop Vibrate" sends `DISMISS_SILENT`, which restores the ringer mode saved when the old window started (what that restore does to a ringer the user changed since is UNKNOWN; `ToggleSilentModeReceiver` was not read in full). `PrayerAlarmReceiver.kt:779` also reads the flag; its effect was not read (UNKNOWN).
+*   **The ringer itself:** the boot receiver restores it because Android keeps the ringer mode across reboots (the code comment says so; the behavior is not tested here, GUESS). A blocked receiver leaves the phone on vibrate; clearing flags alone does not fix that.
+*   **Options:**
+    *   **4a. Make `AdhanFullScreenActivity` use `vibrationButtonsVisible(...)` with the end time, as the notification does.** Fixes the visible symptom with one call-site change and no new state.
+    *   **4b. Clear the two flags (flags only, no ringer change) on app start when `isActive && now >= endTime + grace`,** through a small pure helper such as `shouldClearStaleSilent(isActive, endTime, now)`, unit tested. The grace (for example 5 minutes, GUESS) avoids a race with `SilentOffReceiver` firing at the end time. UNKNOWN what `SilentOffReceiver` does when the flag is already false, so the grace is required until that is read.
+    *   **4c. Restore the ringer after a reboot inside the window** by storing `Settings.Global.BOOT_COUNT` when the window starts and comparing on start. Needs a new key in `aura_silent_mode` (a native contract: `.project-docs/contracts/prefs-keys.md` in the same commit) and decides whether to change the user's ringer on app open. **Not recommended now** (GUESS: the risk of overriding a deliberate ringer choice outweighs the gain; cause A is better solved at the source).
+*   **Recommendation:** 4a and 4b with a grace period, in the same phase as the receiver change; 4c deferred. Reason: both are small, need no new key, and cover the blocked-receiver case that the receiver fix cannot (GUESS).
+
+## (5) Test plan
+
+*   **Unit tests, written first (Kotlin, `./gradlew :app:testDebugUnitTest`, VERIFIED command in `STATE.md`):** `shouldClearStaleSilent` (inactive: false; active with a future end time: false; active with a past end time inside the grace: false; past the grace: true; active with end time 0: true) and the 4a decision through `vibrationButtonsVisible`. The receiver and the service are not unit-testable without a framework double (UNKNOWN whether Robolectric is available), so they are tested on the device.
+*   **Device test with a real reboot (`adb reboot`), phone clock on automatic.** Before the first run, confirm that Settings > Date & time > "Set automatically" is on (UNKNOWN now: the phone had just disconnected when this was checked; `settings get global auto_time` is the check). A manual clock changes the computed prayer times and the next alarm, so it would confuse the result.
+*   **Matrix (3 boots each, Aura never opened during a run):**
+
+| Run | App launch setting for Aura | Screen lock |
+| --- | --- | --- |
+| R0 baseline | whatever it is now (record it; UNKNOWN today) | as it is |
+| R1 | Manage automatically | as it is |
+| R2 | Manual, auto-launch ON | as it is |
+| R3 | Manual, auto-launch OFF (a control that should reproduce cause A) | as it is |
+| R4 | best of R1-R3 | none versus PIN (cause C) |
+
+*   **Each run:** set a vibration window active before the reboot (the checklist's vibrate-window steps; which S-number is UNKNOWN, look it up in `reference/device-checklist.md` at that time), reboot, unlock, start the log capture from section 1 at once, and at +10 s, +40 s, +90 s record: the log lines, `dumpsys activity processes | grep com.aura.hala`, `dumpsys activity services com.aura.hala`, `dumpsys alarm | grep com.aura.hala` (the next prayer armed), whether the foreground notification is visible, and the vibration state (the log line `Cleared stale silent-mode state on boot`, because the release build's prefs cannot be read with `adb`, GUESS).
+*   **Pass (after a fix):** the service is running and the notification visible within 60 s after unlock without opening Aura, an alarm for the next prayer is armed, and no stale vibration state remains, in R1 and R2 and in R4. R3 is expected to still fail without a code-side answer (that is the case Option 5 addresses).
+*   **Not testable here:** Android 12-15 behavior (no device), Honor and other brands.
+*   **Reporting:** every item is reported as run or not run. None is reported as passed unless it ran.
+
+## Phases (each needs the owner's go-ahead; none is given)
+
+| Phase | Content | Level |
+| --- | --- | --- |
+| D0 | Diagnosis only: the real-reboot runs R0 to R3, results recorded in this spec | A (docs) and device |
+| P1 | Code: the receiver change chosen after D0 (Option 1 first), 4a, 4b, unit tests first | C (production) |
+| P2 | Code: the "App launch" tile, its MethodChannel method, manifest `<queries>`, two strings, contract rows | C |
+
+## Open Questions
+
+1.  How was "the boot-time clearing of the vibration state does not run" observed (the vibration buttons still showing, the phone still on vibrate, a log)? The answer separates cause A from B.
+2.  Is a screen lock set on the test phone (cause C)?
+3.  What is the "App launch" state for Aura today (screenshot of Settings > Battery > App launch, GUESS about the path on EMUI 12)?
+4.  Why does the receiver wait 30 s (UNKNOWN: no recorded reason)? Is there a case where an earlier start was seen to fail?
+5.  Is the idempotence of the boot calls (`reschedulePrayerAlarms`, `DailyRecalcReceiver.schedule`, `rescheduleDailySummary`, `JumuahReminderReceiver.schedule`) safe to run twice (Option 1 repeats them)? UNKNOWN: they were not read for this; the first step of P1 is to read them.
+
+## Risks
+
+*   Option 1 may re-arm alarms before something they depend on is ready (UNKNOWN reason for the delay); mitigated by keeping the delayed second pass.
+*   The "App launch" tile cannot show state, so it may be tapped by users who already allowed the app; it is informational only.
+*   A brand check that is too narrow hides the tile on Honor; one that is too wide shows a dead row, which falls back to app-details.
+
+*Drafted for review; no code was written.*
