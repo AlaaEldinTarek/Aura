@@ -1,0 +1,110 @@
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+
+import '../../core/services/prayer_alarm_service.dart';
+import '../../core/widgets/setting_tile.dart';
+
+/// Number of taps on the Version tile that reveals the developer tile.
+const int kDevTapsToUnlock = 7;
+
+/// The Profile "Version" tile. Seven taps reveal a hidden developer tile
+/// (docs/designs/dev-test-adhan.md). The tap counter lives in this widget's
+/// state only: it is not persisted and resets on every new visit to the screen.
+class ProfileVersionTile extends StatefulWidget {
+  final String title;
+  final String version;
+
+  /// Fires the real adhan flow; defaults to [PrayerAlarmService.testAdhanNow].
+  final Future<void> Function(String prayerName)? fireTestAdhan;
+
+  /// Defaults to [PrayerAlarmService.canScheduleExactAlarms].
+  final Future<bool> Function()? canScheduleExactAlarms;
+
+  const ProfileVersionTile({
+    super.key,
+    required this.title,
+    required this.version,
+    this.fireTestAdhan,
+    this.canScheduleExactAlarms,
+  });
+
+  @override
+  State<ProfileVersionTile> createState() => _ProfileVersionTileState();
+}
+
+class _ProfileVersionTileState extends State<ProfileVersionTile> {
+  int _taps = 0;
+
+  bool get _unlocked => _taps >= kDevTapsToUnlock;
+
+  void _onVersionTap() {
+    if (_unlocked) return;
+    setState(() => _taps++);
+  }
+
+  Future<void> _confirmAndFire() async {
+    // Captured before any await: the dialog and snackbar outlive this build.
+    final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('dev_test_adhan_dialog_title'.tr()),
+        content: Text('dev_test_adhan_dialog_body'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('cancel'.tr()),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text('dev_test_adhan_fire'.tr()),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    // testAdhanNow swallows errors and the native handler has no permission
+    // check, so without exact-alarm permission nothing would fire silently.
+    final canSchedule = widget.canScheduleExactAlarms ??
+        PrayerAlarmService.instance.canScheduleExactAlarms;
+    if (!await canSchedule()) {
+      messenger.showSnackBar(
+        SnackBar(content: Text('dev_test_adhan_no_exact_alarm'.tr())),
+      );
+      return;
+    }
+
+    // Zuhr only: Fajr and Isha also trigger a Flutter recalculation.
+    final fire =
+        widget.fireTestAdhan ?? PrayerAlarmService.instance.testAdhanNow;
+    await fire('Zuhr');
+    messenger.showSnackBar(
+      SnackBar(content: Text('dev_test_adhan_scheduled'.tr())),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SettingTile(
+          icon: Icons.info_outline,
+          title: widget.title,
+          subtitle: widget.version,
+          onTap: _onVersionTap,
+          showChevron: false,
+        ),
+        if (_unlocked)
+          SettingTile(
+            icon: Icons.notifications_active_outlined,
+            title: 'dev_test_adhan_title'.tr(),
+            subtitle: 'dev_test_adhan_subtitle'.tr(),
+            onTap: _confirmAndFire,
+            showChevron: false,
+          ),
+      ],
+    );
+  }
+}
