@@ -54,7 +54,9 @@ Not on this branch: the Wird marker ribbon (it is on `feat/wird-marker`). It is 
 
 Measured when the commit was made (VERIFIED then). Not re-run for this note.
 
-## Device checklist (none run yet: UNKNOWN)
+## Device checklist
+
+Tested by Aladdin on his phone with the `ed62d72` build, reported working. Individual checklist items were not recorded one by one, so none is marked as passed here.
 
 *   **Swipe direction (English):** swiping left-to-right goes to the next page, and the next page comes in from the left.
 *   **Bottom-bar arrows (English):** the left arrow (←) is Next and the right arrow (→) is Previous.
@@ -70,4 +72,4 @@ Measured when the commit was made (VERIFIED then). Not re-run for this note.
 
 ## Decision
 
-Approved by Aladdin on 2026-11-14 for device testing: this note and the implementation in `ed62d72`. The device checklist above is still UNKNOWN (not run yet). Merging waits for the device results.
+Spec and implementation approved by Aladdin on 2026-11-14.
