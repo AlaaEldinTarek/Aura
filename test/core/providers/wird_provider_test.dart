@@ -1,6 +1,7 @@
 // Spec: docs/designs/wird-marker.md item 24 (compose and action cases, P4a).
-// The stats case (quranStatsProvider mapping) belongs to P4b.
+// P4b: the quranStatsProvider mapping.
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:aura_app/core/models/wird.dart';
 import 'package:aura_app/core/models/wird_marker.dart';
@@ -96,8 +97,72 @@ WirdState _state(ProviderContainer c) => c.read(wirdStateProvider).requireValue;
 WirdNotifier _notifier(ProviderContainer c) =>
     c.read(wirdStateProvider.notifier);
 
+Future<QuranStatsData> _stats() async {
+  final c = ProviderContainer(overrides: [
+    wirdServiceProvider.overrideWithValue(wird),
+    wirdStateProvider.overrideWith(
+        (ref) => WirdNotifier(wird: wird, marker: marker, uid: () => uid)),
+  ]);
+  addTearDown(c.dispose);
+  c.listen(wirdStateProvider, (_, __) {});
+  c.listen(quranStatsProvider, (_, __) {});
+  await _settle();
+  return c.read(quranStatsProvider.future);
+}
+
 void main() {
   setUp(_build);
+
+  group('P4b: quranStatsProvider mapping', () {
+    test('page mode: average is the derived total over completed days',
+        () async {
+      _build(prefs: {
+        'wird_total_pages_read': 999,
+        'wird_total_days_completed': 2,
+        'wird_khatm_count': 1,
+      });
+      await marker.save(_rec(
+          markerPage: 40,
+          startPage: 31,
+          runningTotal: 574,
+          khatmaCount: 2,
+          version: 2));
+      final st = await _stats();
+      expect(st.totalPages, 583);
+      expect(st.averageDaily, 583 / 2);
+      expect(st.khatmCount, 3, reason: '1 legacy juz khatma + 2 marker khatmas');
+    });
+
+    test('juz mode: average counts juz, not pages', () async {
+      _build(prefs: {
+        'wird_settings':
+            jsonEncode(const WirdSettings(wirdUnit: WirdUnit.juz).toJson()),
+        'wird_total_days_completed': 4,
+        'wird_khatm_count': 2,
+        'wird_completed_juz': jsonEncode([1, 2, 3]),
+      });
+      await marker.save(_rec(
+          markerPage: 40, startPage: 31, runningTotal: 574, version: 2));
+      final st = await _stats();
+      expect(st.averageDaily, (2 * 30 + 3) / 4);
+    });
+
+    test('no completed day gives 0.0', () async {
+      _build(prefs: {});
+      await marker.save(_rec(version: 2));
+      final st = await _stats();
+      expect(st.averageDaily, 0.0);
+    });
+  });
+
+  test('the average label says "per completed day" in both languages', () {
+    for (final f in ['en', 'ar']) {
+      final j = jsonDecode(
+          File('assets/translations/$f.json').readAsStringSync()) as Map;
+      expect(j['quran_stats_avg_daily'],
+          f == 'en' ? 'Average per completed day' : 'المتوسط لكل يوم مكتمل');
+    }
+  });
 
   test('initial state loads with no marker', () async {
     final c = await _container();

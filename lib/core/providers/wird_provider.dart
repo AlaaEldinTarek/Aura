@@ -4,7 +4,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/wird.dart';
 import '../models/wird_marker.dart';
-import '../services/wird_marker_logic.dart' show kLastQuranPage;
+import '../services/wird_marker_logic.dart'
+    show averagePerCompletedDay, kLastQuranPage;
 import '../services/wird_marker_service.dart';
 import '../services/wird_service.dart';
 import 'auth_provider.dart' show authStateProvider;
@@ -42,7 +43,13 @@ final quranStatsProvider = FutureProvider.autoDispose<QuranStatsData>((ref) asyn
     totalDays: totalDays,
     currentStreak: wirdState.streakCount,
     bestStreak: bestStreak,
-    averageDaily: totalDays > 0 ? totalPages / totalDays : 0.0,
+    averageDaily: averagePerCompletedDay(
+      unit: wirdState.settings.wirdUnit,
+      progressTotal: totalPages,
+      juzKhatmCount: wirdState.juzKhatmCount,
+      checkedJuzCount: wirdState.allCompletedJuz.length,
+      totalDaysCompleted: totalDays,
+    ),
     khatmCount: wirdState.khatmCount,
     allCompletedJuz: wirdState.allCompletedJuz,
     wirdUnit: wirdState.settings.wirdUnit,
