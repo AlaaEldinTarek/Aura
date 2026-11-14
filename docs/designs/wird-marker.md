@@ -1,7 +1,7 @@
 # Wird Marker: Single Marker, Versioned Sync Guard, Undo, Khatma and Restart
 
 *   **Author:** Alaa Eldin Tarek
-*   **Status:** Proposed. Third amendment (2026-11-14, from a device finding): the Wird tab always offers a way to set the first marker, also on a completed day (see "Wird tab on a completed day"). Third amendment (Wird tab setup card on a completed day) and phase P4a-4 approved by Aladdin on 2026-11-14 via the message 'approve phase P4a-4' (the amendment text was accepted through that phase approval, without a separate message). Phase P4a-4 is implemented (commits `3c01b3a` and `47c0b2d`). The two new Arabic strings of this amendment are a DRAFT, awaiting Aladdin's review. Amended 2026-11-14: start entry points and the Restart dialog label (see "Start entry points (amendment 2026-11-14)"). Amendment approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-2 is implemented (commits `952a631`, `75f8c8c`, `dae8f98`). Device feedback on it led to a second amendment (2026-11-14): the Wird marker ribbon is replaced by an icon in the reader's top bar (see "Top-bar Wird icon"). Second amendment (top-bar Wird icon replaces the ribbon) approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-3 is implemented (commits `f985dba` and `793fb7e`).
+*   **Status:** Proposed. Third amendment (2026-11-14, from a device finding): the Wird tab always offers a way to set the first marker, also on a completed day (see "Wird tab on a completed day"). Third amendment (Wird tab setup card on a completed day) and phase P4a-4 approved by Aladdin on 2026-11-14 via the message 'approve phase P4a-4' (the amendment text was accepted through that phase approval, without a separate message). Phase P4a-4 is implemented (commits `3c01b3a` and `47c0b2d`). The two new Arabic strings of this amendment were reviewed by Aladdin on 2026-11-14 ("Arabic every where is very good"). Amended 2026-11-14: start entry points and the Restart dialog label (see "Start entry points (amendment 2026-11-14)"). Amendment approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-2 is implemented (commits `952a631`, `75f8c8c`, `dae8f98`). Device feedback on it led to a second amendment (2026-11-14): the Wird marker ribbon is replaced by an icon in the reader's top bar (see "Top-bar Wird icon"). Second amendment (top-bar Wird icon replaces the ribbon) approved by Aladdin on 2026-11-14 (Level A, docs). Phase P4a-3 is implemented (commits `f985dba` and `793fb7e`).
 *   **Date:** 2026-11-13
 
 --------------------------------------------------------------------------------
@@ -474,9 +474,9 @@ Written 2026-11-14 after a device finding by the product owner. Option A below i
 *   **Unchanged:** a not-completed day (the action block as it is, with Start Reading, Mark Complete and "Add from Bookmarks"); a day with a marker (nothing new on the tab, and the restart hint where it is today); juz mode (VERIFIED: the juz branch builds `_buildJuzActions` or the banner with no marker control, `wird_tab.dart:228-237`).
 *   **Signed in or guest, sync, cycle and version:** the same `placeMarker` call as the other entry points, so the rules in "What happens when the user is not signed in" and "Sync, cycle and version" apply as they are. No schema or contract change.
 
-#### Strings (two new keys; the Arabic is a DRAFT, awaiting Aladdin's review)
+#### Strings (two new keys; the Arabic was reviewed by Aladdin on 2026-11-14 ("Arabic every where is very good"))
 
-| Key | English | Arabic (draft) |
+| Key | English | Arabic (reviewed 2026-11-14) |
 | --- | --- | --- |
 | `wird_set_marker` | Set Wird marker | ضع علامة الورد |
 | `wird_no_marker_hint` | No Wird marker yet. Set one to count the pages you read. | لا توجد علامة ورد بعد. ضع علامة لتُحتسب الصفحات التي تقرأها. |
@@ -614,9 +614,9 @@ The case that matches what was found is Case 1: ordinary bookmarks, the kind the
 
 #### Strings
 
-No new key (VERIFIED: the tooltips reuse existing keys). One changed key, `tutorial_reader_topbar_body`, because it tells users to "tap the bookmark icon to save this page" (VERIFIED in `en.json` and `ar.json`). Drafts for the owner's review; the Arabic is a DRAFT (GUESS on wording):
+No new key (VERIFIED: the tooltips reuse existing keys). One changed key, `tutorial_reader_topbar_body`, because it tells users to "tap the bookmark icon to save this page" (VERIFIED in `en.json` and `ar.json`). English: drafts for the owner's review. The Arabic was reviewed by Aladdin on 2026-11-14 ("Arabic every where is very good"):
 
-| Key | English (draft) | Arabic (draft) |
+| Key | English (draft) | Arabic (reviewed 2026-11-14) |
 | --- | --- | --- |
 | `tutorial_reader_topbar_body` | Tap the bookmark icon to set your Wird marker on this page. Tap any Ayah on the page to see its text and bookmark it with a color. Tap anywhere else to hide these bars. | اضغط على أيقونة الإشارة لوضع علامة الورد على هذه الصفحة. اضغط على أي آية لعرض نصها وحفظها بلون مخصص. اضغط في أي مكان آخر لإخفاء الأشرطة. |
 
@@ -1317,7 +1317,7 @@ After `APPLY_CLOUD` or `DISCARD_LOCAL` the undo record is cleared when it no lon
 
 *   **Amendment 2026-11-14 (P4a-3):** one new key, `wird_move_sheet_title`, with English and Arabic text, is listed in "Top-bar Wird icon", "Strings". The Arabic was reviewed by the product owner (Aladdin, native Arabic speaker) on 2026-11-14.
 
-*   **Amendment 2026-11-14 (P4a-4):** two new keys, `wird_set_marker` and `wird_no_marker_hint`, with English and Arabic text, are listed in "Wird tab on a completed day", "Strings". The new Arabic is a draft for the product owner to review.
+*   **Amendment 2026-11-14 (P4a-4):** two new keys, `wird_set_marker` and `wird_no_marker_hint`, with English and Arabic text, are listed in "Wird tab on a completed day", "Strings". The new Arabic was reviewed by Aladdin on 2026-11-14 ("Arabic every where is very good").
 
 #### 15. `test/core/services/wird_marker_logic_test.dart` (Create)
 
