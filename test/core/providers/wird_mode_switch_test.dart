@@ -49,9 +49,8 @@ late WirdMarkerService marker;
 String? uid;
 
 Map<String, Object> _juzPrefs({bool juz = true}) => {
-      'wird_settings': jsonEncode(WirdSettings(
-              wirdUnit: juz ? WirdUnit.juz : WirdUnit.page)
-          .toJson()),
+      'wird_settings': jsonEncode(
+          WirdSettings(wirdUnit: juz ? WirdUnit.juz : WirdUnit.page).toJson()),
       'wird_completed_juz': jsonEncode([1, 2, 3, 4, 5]),
       'wird_khatm_count': 1,
       'wird_khatm_dates': jsonEncode(['2026-06-01']),
