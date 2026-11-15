@@ -78,6 +78,18 @@ class PrayerForegroundService : Service() {
 
         // Re-tick the countdown loop right away — used when adhan mode just
         // activated and the loop may be mid-way through its 60 s sleep
+        // PendingIntent request codes of the two vibration buttons
+        private const val REQ_STOP_VIBRATION = 9101
+        private const val REQ_KEEP_VIBRATION = 9102
+
+        /**
+         * The Stop / Keep Vibration buttons show only while the vibration window
+         * runs: silent mode is active and its end time is set (Keep sets it to 0)
+         * and has not passed yet.
+         */
+        fun vibrationButtonsVisible(isActive: Boolean, endTime: Long, now: Long): Boolean =
+            isActive && endTime > 0 && now < endTime
+
         fun nudge() {
             val svc = instance ?: return
             val h = svc.handler ?: return
@@ -494,14 +506,7 @@ class PrayerForegroundService : Service() {
                 val prayerName = getDisplayPrayerName(nextPrayerName, nextPrayerNameAr, isArabic)
                 val untilText = if (isArabic) "حتى موعد الأذان" else "Until Azan"
 
-                val isDark = isDarkTheme()
-                val layoutId = when {
-                    isDark && isArabic -> R.layout.notification_large_dark_rtl
-                    isDark -> R.layout.notification_large_dark
-                    isArabic -> R.layout.notification_large_rtl
-                    else -> R.layout.notification_large
-                }
-                val contentView = RemoteViews(packageName, layoutId)
+                val contentView = buildContentView(isArabic)
                 contentView.setTextViewText(R.id.notification_header, if (isArabic) "هالة - $nextPrayerText" else "Aura - $nextPrayerText")
                 loadPrayerIcon()?.let { contentView.setImageViewBitmap(R.id.notification_logo, it) } // clock-based for normal mode
                 contentView.setTextViewText(R.id.notification_title, prayerName)
@@ -532,14 +537,7 @@ class PrayerForegroundService : Service() {
     ) {
         val isIqamaArrived = iqamaTime > 0 && now >= iqamaTime
 
-        val isDark = isDarkTheme()
-        val layoutId = when {
-            isDark && isArabic -> R.layout.notification_large_dark_rtl
-            isDark -> R.layout.notification_large_dark
-            isArabic -> R.layout.notification_large_rtl
-            else -> R.layout.notification_large
-        }
-        val contentView = RemoteViews(packageName, layoutId)
+        val contentView = buildContentView(isArabic)
 
         // Header
         val headerText = if (isArabic) "هالة 🔔 وقت الصلاة" else "Aura 🔔 Prayer Time"
@@ -600,14 +598,7 @@ class PrayerForegroundService : Service() {
         prayerNameAr: String,
         prayerTime: Long
     ) {
-        val isDark = isDarkTheme()
-        val layoutId = when {
-            isDark && isArabic -> R.layout.notification_large_dark_rtl
-            isDark -> R.layout.notification_large_dark
-            isArabic -> R.layout.notification_large_rtl
-            else -> R.layout.notification_large
-        }
-        val contentView = RemoteViews(packageName, layoutId)
+        val contentView = buildContentView(isArabic)
 
         // Header
         val headerText = if (isArabic) "هالة - تذكير الصلاة" else "Aura - Prayer Reminder"
@@ -649,6 +640,70 @@ class PrayerForegroundService : Service() {
     private fun localDayKey(timeMs: Long): Long {
         val cal = java.util.Calendar.getInstance().apply { timeInMillis = timeMs }
         return cal.get(java.util.Calendar.YEAR) * 1000L + cal.get(java.util.Calendar.DAY_OF_YEAR)
+    }
+
+    /**
+     * RemoteViews for the notification. While the vibration window runs it is
+     * the compact layout with the Stop / Keep Vibration buttons; otherwise the
+     * usual layout. Both fill the same text ids, so every mode sets its data the
+     * same way and the data stays when the buttons go.
+     */
+    private fun buildContentView(isArabic: Boolean): RemoteViews {
+        val isDark = isDarkTheme()
+        val silentPrefs = getSharedPreferences("aura_silent_mode", Context.MODE_PRIVATE)
+        val showButtons = vibrationButtonsVisible(
+            silentPrefs.getBoolean("is_silent_active", false),
+            silentPrefs.getLong("silent_end_time", 0L),
+            System.currentTimeMillis()
+        )
+
+        if (!showButtons) {
+            val layoutId = when {
+                isDark && isArabic -> R.layout.notification_large_dark_rtl
+                isDark -> R.layout.notification_large_dark
+                isArabic -> R.layout.notification_large_rtl
+                else -> R.layout.notification_large
+            }
+            return RemoteViews(packageName, layoutId)
+        }
+
+        val layoutId = when {
+            isDark && isArabic -> R.layout.notification_actions_dark_rtl
+            isDark -> R.layout.notification_actions_dark
+            isArabic -> R.layout.notification_actions_rtl
+            else -> R.layout.notification_actions
+        }
+        val view = RemoteViews(packageName, layoutId)
+        view.setTextViewText(R.id.btn_stop_vibration, if (isArabic) "إيقاف الاهتزاز" else "Stop Vibration")
+        view.setTextViewText(R.id.btn_keep_vibration, if (isArabic) "إبقاء الاهتزاز" else "Keep Vibration")
+        view.setOnClickPendingIntent(
+            R.id.btn_stop_vibration,
+            vibrationActionIntent("com.aura.hala.DISMISS_SILENT", REQ_STOP_VIBRATION)
+        )
+        view.setOnClickPendingIntent(
+            R.id.btn_keep_vibration,
+            vibrationActionIntent("com.aura.hala.EXTEND_SILENT", REQ_KEEP_VIBRATION)
+        )
+        Log.d(TAG, "🔕 [VIBRATE_BUTTONS] Shown in the foreground notification")
+        return view
+    }
+
+    /** Broadcast to ToggleSilentModeReceiver, so a tap needs no screen unlock for the app itself. */
+    private fun vibrationActionIntent(action: String, requestCode: Int): PendingIntent {
+        val timesPrefs = getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+        val intent = Intent(this, ToggleSilentModeReceiver::class.java).apply {
+            this.action = action
+            timesPrefs.getString("adhan_prayer_name", null)?.let {
+                putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME, it)
+            }
+            timesPrefs.getString("adhan_prayer_name_ar", null)?.let {
+                putExtra(PrayerAlarmReceiver.EXTRA_PRAYER_NAME_AR, it)
+            }
+        }
+        return PendingIntent.getBroadcast(
+            this, requestCode, intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
     }
 
     private fun isDarkTheme(): Boolean {

@@ -12,7 +12,6 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.text.format.DateFormat
 import android.util.Log
-import androidx.core.app.NotificationManagerCompat
 import com.aura.hala.R
 import java.util.Date
 
@@ -28,15 +27,6 @@ class ToggleSilentModeReceiver : BroadcastReceiver() {
         private const val KEY_SAVED_RINGER_MODE = "saved_ringer_mode"
         private const val KEY_SILENT_END_TIME = "silent_end_time"
         private const val KEY_IS_SILENT_ACTIVE = "is_silent_active"
-
-        fun cancelSilentModeNotification(context: Context) {
-            try {
-                NotificationManagerCompat.from(context).cancel(8100)
-                Log.d(TAG, "🔕 [SILENT_NOTIF] Cancelled notification 8100")
-            } catch (e: Exception) {
-                Log.e(TAG, "❌ [SILENT_NOTIF] cancel failed: ${e.message}")
-            }
-        }
 
         // Default silent mode duration (20 minutes)
         private const val DEFAULT_SILENT_DURATION_MINUTES = 20
@@ -146,7 +136,8 @@ class ToggleSilentModeReceiver : BroadcastReceiver() {
 
         // Mark silent mode as inactive
         sharedPrefs.edit().putBoolean(KEY_IS_SILENT_ACTIVE, false).apply()
-        cancelSilentModeNotification(context)
+        // Rebuild the foreground notification now so the vibration buttons go
+        PrayerForegroundService.nudge()
 
         // Show toast
         val language = getLanguagePreference(context)
@@ -213,7 +204,8 @@ class ToggleSilentModeReceiver : BroadcastReceiver() {
 
         // Update silent end time to 0 (indicates permanent mode)
         sharedPrefs.edit().putLong(KEY_SILENT_END_TIME, 0).apply()
-        cancelSilentModeNotification(context)
+        // Rebuild the foreground notification now so the vibration buttons go
+        PrayerForegroundService.nudge()
 
         // Show toast
         showKeepSilentToast(context)
@@ -340,11 +332,12 @@ class SilentOffReceiver : BroadcastReceiver() {
         // Mark silent mode as inactive
         val sharedPrefs = context.getSharedPreferences("aura_silent_mode", Context.MODE_PRIVATE)
         sharedPrefs.edit().putBoolean("is_silent_active", false).apply()
-        ToggleSilentModeReceiver.cancelSilentModeNotification(context)
 
         // Clear adhan mode — foreground service goes back to normal countdown
         context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
             .edit().putBoolean("adhan_active", false).apply()
+        // Rebuild the foreground notification now so the vibration buttons go
+        PrayerForegroundService.nudge()
         Log.d(TAG, "✅ [ADHAN_STATE] Cleared — 20 min window ended")
 
         // Show toast to notify user

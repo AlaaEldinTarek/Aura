@@ -22,7 +22,6 @@ Verified 2026-11-06 at 4aa1022 by static grep (Step 2). Do NOT modify IDs. All I
 | 7001 | Daily prayer summary | `_jumuahNotificationId = 7001` cancelled at `notification_service.dart:1390,1401` | `DailySummaryReceiver.kt:20` | No | Verified — collision F7 |
 | 7100–8099 | Achievement unlocked, `7100 + hash % 1000` | `notification_service.dart:1171` | — | Yes (hash) | Verified — overlaps 8001 (F4) |
 | 8001 | Jumu'ah reminder | — | `JumuahReminderReceiver.kt:19` | No | Partial (Kotlin only) |
-| 8100 | Silent-mode control notification (vibrate-window action buttons) | — | `PrayerAlarmReceiver.kt (postSilentModeNotification)` | No | New (F68) |
 | 9000–9006 | Post-prayer azkar (Fajr 9001 … Isha 9006; Dhuhr/Zuhr 9003) | — | `AzkarAlarmReceiver.getAzkarNotificationId` | No | Partial (added 2026-11-07) |
 | 9999 | Prayer foreground service | — | `PrayerForegroundService.kt:32` | No | Partial |
 
@@ -31,8 +30,10 @@ PendingIntent request-code offsets (not notification IDs, but must stay unique):
 Added 2026-11-07 (Kotlin EGM): silent restore 3999 (`SilentOffReceiver`), azkar 3000–3006, daily summary 7001,
 Jumu'ah 8001, daily recalc 9100, test adhan 9999, `NativeNotificationReceiver` / `TaskReminderReceiver` id, id+1, id+2 (+3),
 Focus relaunch 5996. Foreground-service silent buttons 8001/8002 removed (dead code, F68).
-Added 2026-11-11 (F68): silent-mode control 8100 (`PrayerAlarmReceiver.postSilentModeNotification → ToggleSilentModeReceiver`);
-PendingIntent request codes 8100/8101. Full per-file list: `android/app/src/main/kotlin/com/aura/hala/README.md`.
+Added 2026-11-11 (F68) and removed 2026-11-14: silent-mode control notification 8100, channel `silent_mode_control` and PendingIntent request
+codes 8100/8101. The Stop / Keep Vibration buttons now live in the foreground-service notification 9999
+(`PrayerForegroundService`, request codes 9101 Stop and 9102 Keep, broadcasts to `ToggleSilentModeReceiver`); `MainActivity` deletes the old
+channel at launch. Spec: `docs/designs/fix-silent-mode-buttons-in-fgs.md`. Full per-file list: `android/app/src/main/kotlin/com/aura/hala/README.md`.
 
 ## Channels
 | Channel ID | Dart location | Kotlin location | Confidence |
@@ -40,7 +41,6 @@ PendingIntent request codes 8100/8101. Full per-file list: `android/app/src/main
 | `prayer_foreground_channel_v4` | — | `PrayerForegroundService.kt:30` (old docs said `prayer_foreground_channel`) | Partial |
 | `prayer_times` | `notification_service.dart:45` | `MainActivity.kt:116`, `PrayerAlarmReceiver.kt:798` | Verified |
 | `prayer_tracking` | — | `MainActivity.kt:157`, `DailySummaryReceiver.kt:81`, `PrayerAlarmReceiver.kt:913` | Partial |
-| `silent_mode_control` | — | `MainActivity.kt (createNotificationChannel)` | New (F68) |
 | `prayer_check` | `notification_service.dart:70` | — | Partial |
 | `task_reminders` | `notification_service.dart:50` | `TaskReminderReceiver.kt:37` | Verified |
 | `jumuah_reminder` | `notification_service.dart:55` | `JumuahReminderReceiver.kt:20` | Verified |

@@ -21,6 +21,7 @@ import '../../core/providers/guest_migration_provider.dart';
 import 'dart:io' show Platform;
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../core/widgets/setting_tile.dart';
+import 'profile_version_tile.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/share_card.dart';
 import '../../core/services/notification_service.dart';
@@ -301,10 +302,9 @@ class ProfileScreen extends ConsumerWidget {
                       final version = snap.hasData
                           ? '${snap.data!.version}+${snap.data!.buildNumber}'
                           : '—';
-                      return SettingTile(
-                        icon: Icons.info_outline,
+                      return ProfileVersionTile(
                         title: isArabic ? 'الإصدار' : 'Version',
-                        subtitle: version,
+                        version: version,
                       );
                     },
                   );
