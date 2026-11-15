@@ -8,9 +8,28 @@ import '../models/wird.dart';
 import 'notification_service.dart';
 import 'desktop_notification_service.dart';
 
+/// Result of [WirdService.creditPages].
+class CreditResult {
+  /// True when this call completed the day and so gave today's streak credit.
+  final bool grantedStreakCredit;
+
+  /// Today's saved entry after the call.
+  final WirdProgress progress;
+
+  const CreditResult({required this.grantedStreakCredit, required this.progress});
+}
+
 class WirdService {
-  WirdService._();
+  WirdService._({DateTime Function()? now}) : _now = now ?? DateTime.now;
+
+  /// Test constructor: lets a test control the clock. Production code uses [instance].
+  @visibleForTesting
+  WirdService.forTesting({DateTime Function()? now}) : _now = now ?? DateTime.now;
+
   static final WirdService instance = WirdService._();
+
+  /// Every date in this service comes from here, so tests can fix the day.
+  final DateTime Function() _now;
 
   static const _settingsKey = 'wird_settings';
   static const _streakCountKey = 'wird_streak_count';
@@ -65,7 +84,7 @@ class WirdService {
     final settings = await getSettings();
     var history = await _loadHistory();
     final today = _todayKey();
-    final now = DateTime.now();
+    final now = _now();
 
     WirdProgress todayProgress;
     try {
@@ -115,43 +134,131 @@ class WirdService {
     return todayProgress;
   }
 
-  Future<void> markDayComplete() async {
+  /// Credits [pages] to today's entry for a marker move (or a khatma) and
+  /// returns whether the move gave today's streak credit.
+  ///
+  /// [fromPage] is the marker page before the move; it becomes the entry's
+  /// `startPage` when this creates today's entry. [toPage] always becomes
+  /// `currentPage`. It does not touch `wird_total_pages_read` (P4b).
+  Future<CreditResult> creditPages(
+    int pages, {
+    required int fromPage,
+    required int toPage,
+  }) async {
     final settings = await getSettings();
     var history = await _loadHistory();
     final today = _todayKey();
-    final now = DateTime.now();
 
-    WirdProgress todayProgress;
-    try {
-      todayProgress = history.firstWhere((p) => p.dateKey == today);
-      if (todayProgress.isCompleted) return;
-      todayProgress = todayProgress.copyWith(
-        pagesRead: settings.dailyPageGoal,
-        isCompleted: true,
-      );
-    } catch (_) {
-      todayProgress = WirdProgress(
-        date: now,
-        pagesRead: settings.dailyPageGoal,
-        startPage: 1,
-        currentPage: settings.dailyPageGoal,
-        isCompleted: true,
-      );
-      history.add(todayProgress);
+    var entry = history.where((p) => p.dateKey == today).firstOrNull ??
+        WirdProgress(date: _now(), startPage: fromPage, currentPage: toPage);
+
+    final wasCompleted = entry.isCompleted;
+    final newPagesRead = entry.pagesRead + pages;
+    final nowCompleted = newPagesRead >= settings.dailyPageGoal || entry.manualCredit;
+
+    entry = entry.copyWith(
+      pagesRead: newPagesRead,
+      currentPage: toPage,
+      isCompleted: nowCompleted,
+    );
+    history = [
+      for (final p in history)
+        if (p.dateKey != today) p,
+      entry,
+    ];
+    await _saveHistory(history);
+
+    final prefs = await _prefs;
+    final granted = nowCompleted && !wasCompleted;
+    if (granted) {
+      await _incrementStreak();
+      await prefs.setInt(_totalDaysKey, (prefs.getInt(_totalDaysKey) ?? 0) + 1);
     }
 
-    history = history.map((p) => p.dateKey == today ? todayProgress : p).toList();
-    if (!history.any((p) => p.dateKey == today)) {
-      history.add(todayProgress);
+    _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
+    return CreditResult(grantedStreakCredit: granted, progress: entry);
+  }
+
+  /// Takes back [pages] from the entry for [dateKey] (an undone marker move).
+  /// Does nothing when there is no entry for that date. If [removeCredit] is
+  /// true and the day goes from complete to not complete, today's streak
+  /// credit and day count are rolled back.
+  Future<void> removePages(
+    int pages, {
+    required String dateKey,
+    required bool removeCredit,
+    required int restoreCurrentPage,
+  }) async {
+    final settings = await getSettings();
+    var history = await _loadHistory();
+    final existing = history.where((p) => p.dateKey == dateKey).firstOrNull;
+    if (existing == null) return;
+
+    final wasCompleted = existing.isCompleted;
+    final newPagesRead = existing.pagesRead - pages < 0 ? 0 : existing.pagesRead - pages;
+    final nowCompleted = newPagesRead >= settings.dailyPageGoal || existing.manualCredit;
+
+    final entry = existing.copyWith(
+      pagesRead: newPagesRead,
+      currentPage: restoreCurrentPage,
+      isCompleted: nowCompleted,
+    );
+    history = [for (final p in history) p.dateKey == dateKey ? entry : p];
+    await _saveHistory(history);
+
+    final prefs = await _prefs;
+    if (removeCredit && wasCompleted && !nowCompleted) {
+      await _rollbackStreakCredit(prefs, _todayKey());
+      final days = (prefs.getInt(_totalDaysKey) ?? 0) - 1;
+      await prefs.setInt(_totalDaysKey, days < 0 ? 0 : days);
     }
+
+    _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
+  }
+
+  /// Undoes today's streak credit. Acts only when the streak date is [today].
+  /// The day count is changed by the callers, not here.
+  Future<void> _rollbackStreakCredit(SharedPreferences prefs, String today) async {
+    if (prefs.getString(_streakDateKey) != today) return;
+    final count = prefs.getInt(_streakCountKey) ?? 0;
+    if (count > 0) await prefs.setInt(_streakCountKey, count - 1);
+    if (count <= 1) {
+      await prefs.remove(_streakDateKey);
+    } else {
+      await prefs.setString(_streakDateKey, _yesterdayKey());
+    }
+  }
+
+  Future<void> markDayComplete() async {
+    var history = await _loadHistory();
+    final today = _todayKey();
+    final now = _now();
+
+    // One completion rule (spec): "Mark Complete" is streak-only. It adds no
+    // pages and no juz, and does nothing on a day that is already complete.
+    final existing = history.where((p) => p.dateKey == today).firstOrNull;
+    if (existing != null && existing.isCompleted) return;
+
+    final entry = existing != null
+        ? existing.copyWith(isCompleted: true, manualCredit: true)
+        : WirdProgress(
+            date: now,
+            pagesRead: 0,
+            startPage: 1,
+            currentPage: 1,
+            isCompleted: true,
+            manualCredit: true,
+          );
+
+    history = [
+      for (final p in history)
+        if (p.dateKey != today) p,
+      entry,
+    ];
     await _saveHistory(history);
 
     await _incrementStreak();
     final prefs = await _prefs;
-    await prefs.setInt(
-      _totalPagesKey,
-      (prefs.getInt(_totalPagesKey) ?? 0) + settings.dailyPageGoal,
-    );
     await prefs.setInt(
       _totalDaysKey,
       (prefs.getInt(_totalDaysKey) ?? 0) + 1,
@@ -159,52 +266,30 @@ class WirdService {
     _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
   }
 
+  /// Reverses "Mark Complete". Works only on a day completed by it
+  /// (`manualCredit`). Pages and juz are untouched. If the day still reaches
+  /// the goal by pages or juz it stays complete and the streak is kept.
   Future<void> undoComplete() async {
     final settings = await getSettings();
     var history = await _loadHistory();
     final today = _todayKey();
 
-    WirdProgress? todayProgress;
-    try {
-      todayProgress = history.firstWhere((p) => p.dateKey == today);
-    } catch (_) {
-      return;
-    }
+    final existing = history.where((p) => p.dateKey == today).firstOrNull;
+    if (existing == null || !existing.manualCredit) return;
 
-    if (!todayProgress.isCompleted) return;
-
-    final pagesToUndo = todayProgress.pagesRead;
-
-    // Revert history entry
-    todayProgress = todayProgress.copyWith(
-      pagesRead: 0,
-      isCompleted: false,
-    );
-    history = history.map((p) => p.dateKey == today ? todayProgress! : p).toList();
+    final stillComplete = settings.wirdUnit == WirdUnit.page
+        ? existing.pagesRead >= settings.dailyPageGoal
+        : existing.juzCompletedToday.length >= settings.dailyJuzGoal;
+    final entry = existing.copyWith(manualCredit: false, isCompleted: stillComplete);
+    history = [for (final p in history) p.dateKey == today ? entry : p];
     await _saveHistory(history);
 
-    // Decrement streak
-    final prefs = await _prefs;
-    final streakDate = prefs.getString(_streakDateKey);
-    if (streakDate == today) {
-      final currentCount = prefs.getInt(_streakCountKey) ?? 0;
-      if (currentCount > 0) {
-        await prefs.setInt(_streakCountKey, currentCount - 1);
-      }
-      // Roll back streak date to yesterday only if streak was 1 (just started)
-      if (currentCount <= 1) {
-        await prefs.remove(_streakDateKey);
-      } else {
-        final y = DateTime.now().subtract(const Duration(days: 1));
-        await prefs.setString(_streakDateKey, _yesterdayKey());
-      }
+    if (!stillComplete) {
+      final prefs = await _prefs;
+      await _rollbackStreakCredit(prefs, today);
+      final totalDays = (prefs.getInt(_totalDaysKey) ?? 0) - 1;
+      await prefs.setInt(_totalDaysKey, totalDays < 0 ? 0 : totalDays);
     }
-
-    // Decrement totals
-    final totalPages = (prefs.getInt(_totalPagesKey) ?? 0) - pagesToUndo;
-    await prefs.setInt(_totalPagesKey, totalPages < 0 ? 0 : totalPages);
-    final totalDays = (prefs.getInt(_totalDaysKey) ?? 0) - 1;
-    await prefs.setInt(_totalDaysKey, totalDays < 0 ? 0 : totalDays);
     _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
   }
 
@@ -213,7 +298,6 @@ class WirdService {
     final prefs = await _prefs;
     await prefs.setInt(_streakCountKey, 0);
     await prefs.remove(_streakDateKey);
-    await prefs.setInt(_totalPagesKey, 0);
     await prefs.setInt(_totalDaysKey, 0);
     await prefs.setString(_historyKey, jsonEncode([]));
     await prefs.setString(_completedJuzKey, jsonEncode([]));
@@ -248,7 +332,7 @@ class WirdService {
     // Update today's progress
     var history = await _loadHistory();
     final today = _todayKey();
-    final now = DateTime.now();
+    final now = _now();
 
     WirdProgress todayProgress;
     try {
@@ -266,7 +350,8 @@ class WirdService {
     }
 
     final wasCompletedToday = todayProgress.isCompleted;
-    final nowCompleted = juzToday.length >= settings.dailyJuzGoal;
+    final nowCompleted =
+        juzToday.length >= settings.dailyJuzGoal || todayProgress.manualCredit;
 
     todayProgress = todayProgress.copyWith(
       juzCompletedToday: juzToday,
@@ -281,16 +366,7 @@ class WirdService {
       await prefs.setInt(_totalDaysKey, (prefs.getInt(_totalDaysKey) ?? 0) + 1);
     } else if (!nowCompleted && wasCompletedToday) {
       // Undo completion if juz removed and now below goal
-      final streakDate = prefs.getString(_streakDateKey);
-      if (streakDate == today) {
-        final count = prefs.getInt(_streakCountKey) ?? 0;
-        if (count > 0) await prefs.setInt(_streakCountKey, count - 1);
-        if (count <= 1) {
-          await prefs.remove(_streakDateKey);
-        } else {
-          await prefs.setString(_streakDateKey, _yesterdayKey());
-        }
-      }
+      await _rollbackStreakCredit(prefs, today);
       final totalDays = (prefs.getInt(_totalDaysKey) ?? 0) - 1;
       await prefs.setInt(_totalDaysKey, totalDays < 0 ? 0 : totalDays);
     }
@@ -413,7 +489,7 @@ class WirdService {
     var history = list.map((e) => WirdProgress.fromJson(Map<String, dynamic>.from(e))).toList();
 
     // Prune to 90 days
-    final cutoff = DateTime.now().subtract(const Duration(days: 90));
+    final cutoff = _now().subtract(const Duration(days: 90));
     history = history.where((p) => p.date.isAfter(cutoff)).toList();
     return history;
   }
@@ -441,7 +517,6 @@ class WirdService {
       todayProgress: todayProgress,
       streakCount: streakCount,
       streakDate: prefs.getString(_streakDateKey),
-      totalPagesRead: prefs.getInt(_totalPagesKey) ?? 0,
       totalDaysCompleted: prefs.getInt(_totalDaysKey) ?? 0,
       allCompletedJuz: allCompletedJuz,
       khatmCount: khatmCount,
@@ -499,7 +574,6 @@ class WirdService {
         'settings': settings.toJson(),
         'streakCount': prefs.getInt(_streakCountKey) ?? 0,
         'streakDate': prefs.getString(_streakDateKey),
-        'totalPagesRead': prefs.getInt(_totalPagesKey) ?? 0,
         'totalDaysCompleted': prefs.getInt(_totalDaysKey) ?? 0,
         'completedJuz': completedJuz,
         'khatmCount': khatmCount,
@@ -537,9 +611,6 @@ class WirdService {
       if (data['streakDate'] != null) {
         await prefs.setString(_streakDateKey, data['streakDate'] as String);
       }
-      if (data['totalPagesRead'] != null) {
-        await prefs.setInt(_totalPagesKey, data['totalPagesRead'] as int);
-      }
       if (data['totalDaysCompleted'] != null) {
         await prefs.setInt(_totalDaysKey, data['totalDaysCompleted'] as int);
       }
@@ -565,7 +636,7 @@ class WirdService {
   Future<List<int>> getWeeklyPageData() async {
     final history = await _loadHistory();
     final map = <String, WirdProgress>{for (final p in history) p.dateKey: p};
-    final now = DateTime.now();
+    final now = _now();
     return List.generate(7, (i) {
       final day = now.subtract(Duration(days: 6 - i));
       final key = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
@@ -577,7 +648,7 @@ class WirdService {
   Future<List<int>> getWeeklyJuzData() async {
     final history = await _loadHistory();
     final map = <String, WirdProgress>{for (final p in history) p.dateKey: p};
-    final now = DateTime.now();
+    final now = _now();
     return List.generate(7, (i) {
       final day = now.subtract(Duration(days: 6 - i));
       final key = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
@@ -595,7 +666,7 @@ class WirdService {
     };
     int best = 0;
     int current = 0;
-    final now = DateTime.now();
+    final now = _now();
     for (int i = 89; i >= 0; i--) {
       final day = now.subtract(Duration(days: i));
       final key = '${day.year}-${day.month.toString().padLeft(2, '0')}-${day.day.toString().padLeft(2, '0')}';
@@ -612,12 +683,12 @@ class WirdService {
   // ── Helpers ──────────────────────────────────────────────────────────────
 
   String _todayKey() {
-    final now = DateTime.now();
+    final now = _now();
     return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
   }
 
   String _yesterdayKey() {
-    final y = DateTime.now().subtract(const Duration(days: 1));
+    final y = _now().subtract(const Duration(days: 1));
     return '${y.year}-${y.month.toString().padLeft(2, '0')}-${y.day.toString().padLeft(2, '0')}';
   }
 }

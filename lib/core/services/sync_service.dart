@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'offline_queue_service.dart';
+import 'wird_marker_service.dart';
 import 'wird_service.dart';
 
 /// Service that syncs queued offline operations when connectivity is restored
@@ -28,6 +30,8 @@ class SyncService {
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid != null) {
         await WirdService.instance.syncToFirestore(uid);
+        // Retry a skipped marker push; never delays the queue replay below.
+        unawaited(WirdMarkerService.instance.syncMarker());
       }
 
       final queue = _queueService.getQueue();

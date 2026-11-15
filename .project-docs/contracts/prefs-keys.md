@@ -70,9 +70,14 @@ daily-summary notifications always English, daily summary time reverting to 21:0
 ## Dart-only keys (FlutterSharedPreferences; no Kotlin reader found)
 - Tasks: `task_notifications_enabled`, `task_reminder_minutes` (also desktop), `task_sort_order`, `task_category_filter`,
   `task_streak_count`, `task_streak_date`.
-- Wird: `wird_settings` (JSON), `wird_streak_count`, `wird_streak_date`, `wird_total_pages_read`,
+- Wird: `wird_settings` (JSON), `wird_streak_count`, `wird_streak_date`,
   `wird_total_days_completed`, `wird_progress_history` (JSON, pruned to 90 days), `wird_completed_juz` (JSON list),
   `wird_khatm_count`, `wird_khatm_dates` (JSON list) — all in `wird_service.dart`.
+  `wird_total_pages_read` is no longer written or read (P4b of wird-marker): `creditPages`, `removePages`, `resetAllProgress`,
+  `getFullState` and the `wird/data` sync skip it, and `achievement_service.dart` reads the marker instead. The legacy
+  `recordPagesRead` still writes it until P5 deletes that method (no UI path calls it). Old values stay in prefs unused.
+- Wird marker: `wird_marker` (JSON, the marker record; mirrors `users/{uid}/wird/marker`) and `wird_marker_undo` (JSON,
+  one-step undo record, local only, never synced) — both in `wird_marker_service.dart`.
 - Auth / guest: `is_guest` (`AppConstants.keyIsGuest`; via `SharedPreferencesService.isGuest` / `setGuest`; written by
   `login_screen.dart` and `auth_provider.dart`, read by Splash routing and `_syncUserData`), `pending_guest_migration_uid`
   (String uid; written in `auth_provider.dart` `_syncUserData` when a guest with local tasks signs in; read and removed by `guest_migration_provider.dart`).

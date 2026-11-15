@@ -1,3 +1,5 @@
+import 'wird_marker.dart';
+
 enum WirdUnit { page, juz }
 
 class WirdSettings {
@@ -76,6 +78,8 @@ class WirdProgress {
   final int currentPage;
   final bool isCompleted;
   final List<int> juzCompletedToday; // juz numbers (1-30) completed today
+  // True when the day was completed by "Mark Complete". Absent in old data = false.
+  final bool manualCredit;
 
   const WirdProgress({
     required this.date,
@@ -84,6 +88,7 @@ class WirdProgress {
     this.currentPage = 1,
     this.isCompleted = false,
     this.juzCompletedToday = const [],
+    this.manualCredit = false,
   });
 
   int get juzRead => juzCompletedToday.length;
@@ -98,6 +103,8 @@ class WirdProgress {
         'currentPage': currentPage,
         'isCompleted': isCompleted,
         'juzCompletedToday': juzCompletedToday,
+        // Written only when true, so existing entries serialize as before.
+        if (manualCredit) 'manualCredit': true,
       };
 
   factory WirdProgress.fromJson(Map<String, dynamic> json) {
@@ -117,6 +124,7 @@ class WirdProgress {
               ?.map((e) => e as int)
               .toList() ??
           [],
+      manualCredit: json['manualCredit'] as bool? ?? false,
     );
   }
 
@@ -127,6 +135,7 @@ class WirdProgress {
     int? currentPage,
     bool? isCompleted,
     List<int>? juzCompletedToday,
+    bool? manualCredit,
   }) =>
       WirdProgress(
         date: date ?? this.date,
@@ -135,6 +144,7 @@ class WirdProgress {
         currentPage: currentPage ?? this.currentPage,
         isCompleted: isCompleted ?? this.isCompleted,
         juzCompletedToday: juzCompletedToday ?? this.juzCompletedToday,
+        manualCredit: manualCredit ?? this.manualCredit,
       );
 }
 
@@ -174,6 +184,11 @@ class WirdState {
   final List<int> allCompletedJuz; // all juz (1-30) ever completed
   final int khatmCount;
   final List<String> khatmDates; // "YYYY-MM-DD" for each khatma
+  // Wird marker (null until composed from the marker record).
+  final WirdMarkerRecord? marker;
+  final WirdUndoRecord? undo;
+  // Legacy juz-mode khatma count (khatmCount holds the combined value once composed).
+  final int juzKhatmCount;
 
   const WirdState({
     this.settings = const WirdSettings(),
@@ -185,6 +200,9 @@ class WirdState {
     this.allCompletedJuz = const [],
     this.khatmCount = 0,
     this.khatmDates = const [],
+    this.marker,
+    this.undo,
+    this.juzKhatmCount = 0,
   });
 
   WirdState copyWith({
@@ -197,6 +215,11 @@ class WirdState {
     List<int>? allCompletedJuz,
     int? khatmCount,
     List<String>? khatmDates,
+    WirdMarkerRecord? marker,
+    bool clearMarker = false,
+    WirdUndoRecord? undo,
+    bool clearUndo = false,
+    int? juzKhatmCount,
   }) =>
       WirdState(
         settings: settings ?? this.settings,
@@ -208,5 +231,8 @@ class WirdState {
         allCompletedJuz: allCompletedJuz ?? this.allCompletedJuz,
         khatmCount: khatmCount ?? this.khatmCount,
         khatmDates: khatmDates ?? this.khatmDates,
+        marker: clearMarker ? null : (marker ?? this.marker),
+        undo: clearUndo ? null : (undo ?? this.undo),
+        juzKhatmCount: juzKhatmCount ?? this.juzKhatmCount,
       );
 }

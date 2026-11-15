@@ -18,8 +18,12 @@ import 'package:aura_app/features/main/main_wrapper_screen.dart' show desktopSid
 import 'package:aura_app/core/widgets/tutorial_overlay.dart';
 import 'package:aura_app/core/services/shared_preferences_service.dart';
 import 'package:aura_app/core/models/wird.dart';
+import 'package:aura_app/core/models/wird_marker.dart';
 import 'package:aura_app/core/providers/wird_provider.dart';
+import 'package:aura_app/core/services/wird_marker_logic.dart'
+    show kLastQuranPage, khatmaPages, needsBigMoveConfirm;
 import 'khatma_celebration_screen.dart';
+import 'wird_marker_widgets.dart';
 import 'quran_page_direction.dart';
 import 'quran_reader_bottom_bar.dart';
 import 'package:aura_app/core/theme/app_typography.dart';
@@ -142,6 +146,10 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
 
   @override
   void dispose() {
+    // The snackbar belongs to the app-level messenger and would otherwise stay
+    // on the Wird tab. Cleared after the frame, as the tree is locked here.
+    final messenger = _messenger;
+    WidgetsBinding.instance.addPostFrameCallback((_) => messenger?.clearSnackBars());
     WakelockPlus.disable();
     if (_isDesktop) {
       try { ref.read(desktopSidebarVisibleProvider.notifier).state = true; } catch (_) {}
@@ -188,24 +196,106 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
     }
   }
 
-void _togglePageBookmark() {
-    final meta = _surahForPage(_currentPage);
-    if (meta == null) return;
-    final id = 'page_$_currentPage';
-    final bookmarks = ref.read(quranBookmarksProvider).valueOrNull ?? [];
-    if (bookmarks.any((b) => b.id == id)) {
-      ref.read(quranBookmarksProvider.notifier).removeBookmark(id);
-    } else {
-      ref.read(quranBookmarksProvider.notifier).addBookmark(QuranBookmark(
-        id: id,
-        suraNo: meta.suraNo,
-        ayaNo: 1,
-        page: _currentPage,
-        suraNameAr: meta.nameAr,
-        suraNameEn: meta.nameEn,
-        ayaText: '',
-        createdAt: DateTime.now(),
-      ));
+  ScaffoldMessengerState? _messenger;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _messenger = ScaffoldMessenger.maybeOf(context);
+  }
+
+  /// Moves the marker to [page]: asks first when the move is bigger than the daily
+  /// goal, moves, closes the verse sheet (when [sheetContext] is given) and shows
+  /// a snackbar with an Undo action.
+  Future<void> _moveMarkerToPage(int page, {BuildContext? sheetContext}) async {
+    final wirdState = ref.read(wirdStateProvider).valueOrNull;
+    final from = wirdState?.marker?.markerPage;
+    if (wirdState == null || from == null || page <= from) return;
+    final pages = page - from;
+    if (needsBigMoveConfirm(pages, wirdState.settings.dailyPageGoal)) {
+      final ok = await showBigMoveConfirm(sheetContext ?? context, pages);
+      if (!ok || !mounted) return;
+    }
+    final outcome = await ref.read(wirdStateProvider.notifier).moveMarker(page);
+    if (!mounted) return;
+    if (sheetContext != null && sheetContext.mounted) Navigator.pop(sheetContext);
+    switch (outcome) {
+      case Moved(markerPage: final landed):
+        final lang = context.locale.languageCode;
+        showMarkerMovedSnackBar(
+          ScaffoldMessenger.of(context),
+          message: 'wird_marker_moved'.tr().replaceAll(
+              '%d', NumberFormatter.withArabicNumeralsByLanguage(landed.toString(), lang)),
+          undoLabel: 'wird_undo'.tr(),
+          onUndo: () async {
+            final undone = await ref.read(wirdStateProvider.notifier).undoMove();
+            if (mounted) showUndoOutcome(context, undone);
+          },
+        );
+      case MoveFailed(failure: final f):
+        debugPrint('⚠️ [WIRD] Marker move failed: $f');
+    }
+  }
+
+  /// "Set Wird marker here" (no marker yet): closes the verse sheet (when
+  /// [sheetContext] is given), asks for the page (shown) and a color on the start
+  /// sheet, places the marker and shows a snackbar with no Undo (a wrong first
+  /// placement is corrected by Restart Wird).
+  Future<void> _setMarkerAtPage(int page, {BuildContext? sheetContext}) async {
+    if (sheetContext != null && sheetContext.mounted) Navigator.pop(sheetContext);
+    if (!mounted) return;
+    final choice = await showWirdStartSheetRemembered(
+      context,
+      ref,
+      page: page,
+      readingMode: false,
+    );
+    if (choice is! StartHere || !mounted) return;
+    final outcome = await ref
+        .read(wirdStateProvider.notifier)
+        .placeMarker(page, choice.color.toARGB32());
+    if (!mounted) return;
+    switch (outcome) {
+      case Placed():
+        final lang = context.locale.languageCode;
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(
+            content: Text('wird_marker_placed'.tr().replaceAll(
+                '%d',
+                NumberFormatter.withArabicNumeralsByLanguage(
+                    page.toString(), lang))),
+            duration: const Duration(seconds: 3),
+          ));
+      case PlaceFailed(failure: final f):
+        debugPrint('⚠️ [WIRD] Marker not placed: $f');
+    }
+  }
+
+  /// Tap on the top-bar Wird icon: set (start sheet), move (move sheet), or, when
+  /// the marker is on this page or behind it, show where the marker is.
+  Future<void> _onWirdIconTap(VerseSheetMarkerAction action) async {
+    switch (action) {
+      case VerseSheetMarkerAction.set:
+        await _setMarkerAtPage(_currentPage);
+      case VerseSheetMarkerAction.move:
+        final ok = await WirdMoveSheet.show(context, page: _currentPage);
+        if (ok != true || !mounted) return;
+        await _moveMarkerToPage(_currentPage);
+      case VerseSheetMarkerAction.none:
+        final markerPage =
+            ref.read(wirdStateProvider).valueOrNull?.marker?.markerPage;
+        if (markerPage == null) return;
+        final lang = context.locale.languageCode;
+        ScaffoldMessenger.of(context)
+          ..clearSnackBars()
+          ..showSnackBar(SnackBar(
+            content: Text('wird_marker_page_label'.tr().replaceAll(
+                '%d',
+                NumberFormatter.withArabicNumeralsByLanguage(
+                    markerPage.toString(), lang))),
+            duration: const Duration(seconds: 2),
+          ));
     }
   }
 
@@ -223,9 +313,21 @@ void _togglePageBookmark() {
           final bookmarks = ref.watch(quranBookmarksProvider).valueOrNull ?? [];
           final id = '${ayah.suraNo}_${ayah.ayaNo}';
           final existing = bookmarks.where((b) => b.id == id).firstOrNull;
+          final wirdNow = ref.watch(wirdStateProvider).valueOrNull;
+          final markerAction = wirdNow == null
+              ? VerseSheetMarkerAction.none
+              : verseSheetMarkerAction(
+                  unit: wirdNow.settings.wirdUnit,
+                  markerPage: wirdNow.marker?.markerPage,
+                  ayahPage: ayah.page,
+                );
 
           return _AyahSheet(
             ayah: ayah,
+            markerAction: markerAction,
+            onMarkerAction: () => markerAction == VerseSheetMarkerAction.set
+                ? _setMarkerAtPage(ayah.page, sheetContext: ctx)
+                : _moveMarkerToPage(ayah.page, sheetContext: ctx),
             lang: lang,
             isDark: isDark,
             primary: primary,
@@ -257,8 +359,8 @@ void _togglePageBookmark() {
               showDialog(
                 context: sheetCtx,
                 builder: (dialogCtx) => AlertDialog(
-                  title: Text('wird_bookmark_pages_title'.tr()),
-                  content: Text('wird_bookmark_mode_desc'.tr()),
+                  title: Text('bookmark_dialog_title'.tr()),
+                  content: Text('bookmark_dialog_question'.tr()),
                   actionsAlignment: MainAxisAlignment.spaceEvenly,
                   actions: [
                     OutlinedButton(
@@ -266,7 +368,7 @@ void _togglePageBookmark() {
                         Navigator.pop(dialogCtx);
                         ref.read(quranBookmarksProvider.notifier).addBookmark(newBm);
                       },
-                      child: Text('wird_bookmark_mode_new'.tr()),
+                      child: Text('bookmark_dialog_add'.tr()),
                     ),
                     FilledButton(
                       onPressed: () {
@@ -290,7 +392,7 @@ void _togglePageBookmark() {
                           ),
                         );
                       },
-                      child: Text('wird_bookmark_mode_update'.tr()),
+                      child: Text('bookmark_dialog_replace'.tr()),
                     ),
                   ],
                 ),
@@ -309,16 +411,16 @@ void _togglePageBookmark() {
   Widget build(BuildContext context) {
     final lang = context.locale.languageCode;
     final isArabic = lang == 'ar';
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = AppConstants.getPrimary(isDark);
     final meta = _surahForPage(_currentPage);
-    final bookmarks = ref.watch(quranBookmarksProvider).valueOrNull ?? [];
-    final isBookmarked = bookmarks.any((b) => b.id == 'page_$_currentPage');
 
     final wirdState = ref.watch(wirdStateProvider).valueOrNull;
     final isPageModeWird = wirdState?.settings.wirdUnit == WirdUnit.page;
-    final wirdAlreadyDone = wirdState?.todayProgress?.isCompleted == true;
-    final showWirdPrompt = _currentPage == 604 && isPageModeWird && !wirdAlreadyDone;
+    final wirdMarker = wirdState?.marker;
+    // No goal gate: the prompt shows on every close at the last page when a
+    // marker exists, even if today's goal is already met.
+    final showWirdPrompt = _currentPage == kLastQuranPage &&
+        isPageModeWird &&
+        wirdMarker?.markerPage != null;
 
     final popScope = PopScope(
       canPop: false,
@@ -331,8 +433,16 @@ void _togglePageBookmark() {
           final choice = await showDialog<String>(
             context: context,
             builder: (ctx) => AlertDialog(
-              title: Text('khatma_finished_title'.tr()),
-              content: Text('khatma_finished_body'.tr()),
+              title: Text('khatma_finished_title'.tr().replaceAll(
+                  '%d',
+                  NumberFormatter.withArabicNumeralsByLanguage(
+                      khatmaPages(wirdMarker!).toString(), lang))),
+              content: Text(wirdMarker.markerPage == kLastQuranPage
+                  ? 'khatma_finished_body_on_last'.tr().replaceAll(
+                      '%d',
+                      NumberFormatter.withArabicNumeralsByLanguage(
+                          kLastQuranPage.toString(), lang))
+                  : 'khatma_finished_body'.tr()),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx, 'keep'),
@@ -351,16 +461,23 @@ void _togglePageBookmark() {
           );
           if (choice == 'keep' || choice == null) return;
           if (choice == 'yes') {
-            final count = await ref.read(wirdStateProvider.notifier).recordPageKhatma();
-            await ref.read(wirdStateProvider.notifier).markComplete();
+            // One call: counts the pages to 604 and starts a new cycle. It
+            // gives the streak credit through creditPages, so markComplete()
+            // is not called (it would set manualCredit and duplicate it).
+            final outcome = await ref.read(wirdStateProvider.notifier).completeKhatma();
             if (!mounted) return;
+            if (outcome is! Completed) {
+              debugPrint('⚠️ [WIRD] Khatma not completed: $outcome');
+              return;
+            }
             if (_isDesktop) {
               try { ref.read(desktopSidebarVisibleProvider.notifier).state = true; } catch (_) {}
             }
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (_) => KhatmaCelebrationScreen(khatmCount: count, date: DateTime.now()),
+                builder: (_) => KhatmaCelebrationScreen(
+                    khatmCount: outcome.khatmCount, date: DateTime.now()),
               ),
             );
             return;
@@ -433,7 +550,7 @@ void _togglePageBookmark() {
               // When zoomed in on mobile, lock swipe so panning the page works.
               // (Prev/Next arrows still navigate programmatically.)
               physics: _pageZoomed ? const NeverScrollableScrollPhysics() : null,
-              itemCount: 604,
+              itemCount: kLastQuranPage,
               onPageChanged: _onPageChanged,
               itemBuilder: (context, index) {
                 return AnimatedBuilder(
@@ -499,9 +616,11 @@ void _togglePageBookmark() {
                       : (meta?.nameEn ?? ''),
                   pageNo: _currentPage,
                   lang: lang,
-                  isBookmarked: isBookmarked,
-                  primary: primary,
-                  onBookmarkToggle: _togglePageBookmark,
+                  wirdAction: WirdMarkerTopBarButton(
+                    state: wirdState,
+                    currentPage: _currentPage,
+                    onTap: _onWirdIconTap,
+                  ),
                   onClose: () {
                     Navigator.of(context).maybePop();
                   },
@@ -514,7 +633,7 @@ void _togglePageBookmark() {
                 bottom: 0, left: 0, right: 0,
                 child: QuranReaderBottomBar(
                   currentPage: _currentPage,
-                  totalPages: 604,
+                  totalPages: kLastQuranPage,
                   lang: lang,
                   reverseNav: _reversePages(context),
                   onGoToPrevious: _currentPage > 1
@@ -523,7 +642,7 @@ void _togglePageBookmark() {
                             curve: Curves.easeInOut,
                           )
                       : null,
-                  onGoToNext: _currentPage < 604
+                  onGoToNext: _currentPage < kLastQuranPage
                       ? () => _pageController.nextPage(
                             duration: const Duration(milliseconds: 350),
                             curve: Curves.easeInOut,
@@ -959,6 +1078,9 @@ class _AyahSheet extends StatelessWidget {
   final QuranBookmark? existingBookmark;
   final void Function(BuildContext context, BookmarkColor color) onBookmark;
   final VoidCallback onRemove;
+  // True in page mode with a marker behind this verse's page.
+  final VerseSheetMarkerAction markerAction;
+  final VoidCallback onMarkerAction;
 
   static const _colorMap = {
     BookmarkColor.red: Color(0xFFE53935),
@@ -974,6 +1096,8 @@ class _AyahSheet extends StatelessWidget {
     required this.existingBookmark,
     required this.onBookmark,
     required this.onRemove,
+    required this.markerAction,
+    required this.onMarkerAction,
   });
 
   @override
@@ -1065,6 +1189,17 @@ class _AyahSheet extends StatelessWidget {
                 ),
             ],
           ),
+          if (markerAction != VerseSheetMarkerAction.none) ...[
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: onMarkerAction,
+              icon: const Icon(Icons.bookmark_added_outlined, size: 18),
+              label: Text((markerAction == VerseSheetMarkerAction.set
+                      ? 'wird_marker_set_here'
+                      : 'wird_marker_move_here')
+                  .tr()),
+            ),
+          ],
         ],
       ),
     );
@@ -1345,19 +1480,18 @@ class _TopBar extends StatelessWidget {
   final String surahName;
   final int pageNo;
   final String lang;
-  final bool isBookmarked;
-  final Color primary;
-  final VoidCallback onBookmarkToggle;
+
+  /// The Wird marker icon: the only trailing icon, in the slot the ordinary
+  /// bookmark button used to take (null = none).
+  final Widget? wirdAction;
   final VoidCallback onClose;
 
   const _TopBar({
     required this.surahName,
     required this.pageNo,
     required this.lang,
-    required this.isBookmarked,
-    required this.primary,
-    required this.onBookmarkToggle,
     required this.onClose,
+    this.wirdAction,
   });
 
   @override
@@ -1391,14 +1525,7 @@ class _TopBar extends StatelessWidget {
               ),
             ),
           ),
-          IconButton(
-            icon: Icon(
-              isBookmarked ? Icons.bookmark : Icons.bookmark_outline,
-              color: isBookmarked ? primary : theme.hintColor,
-            ),
-            onPressed: onBookmarkToggle,
-            iconSize: 22,
-          ),
+          if (wirdAction != null) wirdAction!,
         ],
       ),
     );

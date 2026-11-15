@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/shared_preferences_service.dart';
 import '../services/wird_service.dart';
+import '../services/wird_marker_service.dart';
 import '../services/task_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_data.dart';
@@ -87,6 +89,7 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<User?>> {
         }
         // Pull wird data from Firestore
         await WirdService.instance.syncFromFirestore(uid);
+        unawaited(WirdMarkerService.instance.syncMarker());
       } else {
         // New user or guest converting to account
         debugPrint('🆕 New user account - migrating local preferences to Firestore');
@@ -119,6 +122,7 @@ class AuthStateNotifier extends StateNotifier<AsyncValue<User?>> {
           debugPrint('✅ Firestore user data created with migrated preferences');
           // Push any local wird data accumulated as guest
           await WirdService.instance.syncToFirestore(uid);
+          unawaited(WirdMarkerService.instance.syncMarker());
         } catch (e) {
           // Firestore not set up or unavailable - continue with local only
           debugPrint('⚠️ Firestore user data creation failed: $e');

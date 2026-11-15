@@ -45,7 +45,8 @@ and the khatma celebration and dua screens. Data comes from `../../core/` and is
   and restores it on every exit path. Drag ≥ 80 px horizontal to turn pages; keys: arrows, `+` / `-`, Esc. Vertical pan
   only, zoom 0.5–8. Mobile: pinch zoom 1.0–6.0 or A− / A+ in the bottom bar (×0.8 / ×1.25, same limits); page swipe is locked while zoomed.
 - **Wird modes** (`settings.wirdUnit`): page mode shows `pagesRead / dailyPageGoal` and the range
-  `startPage..startPage+goal−1` (clamped to 604). Juz mode shows a 30-cell grid (tap = `toggleJuzCompleted`) and the
+  `start..start+goal−1` (clamped to 604), where start is the page today's reading began, else the Wird marker page,
+  else 1 (`wirdRangeStart`). Start/Continue Reading opens the reader at the marker page (`wirdReadingPage`). Juz mode shows a 30-cell grid (tap = `toggleJuzCompleted`) and the
   days-left estimate. Goals: pages 1–604, juz 1–30.
 - **Wird khatma**: juz mode only, in `ref.listen` (completed juz reaches 30, guarded by `_khatmaHandled`) →
   `resetJuzForKhatma` → celebration. Page-mode khatma only happens in the reader back prompt.
@@ -58,7 +59,8 @@ and the khatma celebration and dua screens. Data comes from `../../core/` and is
 - **"Reset All Progress"** (`wird_reset_today` key) calls `resetAllProgress` after a confirm. It wipes streak,
   totals, history, completed juz and khatma count and keeps settings. That is the intended behavior (the key name is
   misleading).
-- **Manual recording**: count mode → `currentPage + N` (no clamp); range mode needs 1 ≤ from ≤ to ≤ 604.
+- **Manual recording**: removed from the Wird tab in P4a. Pages are counted by moving the Wird marker in the reader or
+  by "Add from Bookmarks" (`WirdMarkerService.placeMarker` / `moveMarker`).
 - **Reminders**: `HH:mm` strings, max 10, new time defaults to 06:00; scheduling happens in `WirdService`.
 - **Search**: 500 ms debounce, ≥ 2 trimmed chars, `QuranService.searchAyahs` is a plain substring match on
   `aya_text_emlaey` (no normalization, no limit).

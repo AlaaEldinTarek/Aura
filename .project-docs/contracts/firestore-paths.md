@@ -10,6 +10,7 @@ changes without an approved spec. Guest user id is `'guest_user'` (`task_service
 | `users/{uid}/achievements/…` | `achievement_service.dart:30,56,401` | uid | Verified |
 | `users/{uid}/dhikr_sessions/…` | `dhikr_service.dart:25–154` | uid | Verified |
 | `users/{uid}/wird/data` | `wird_service.dart:497,517–520` | uid | Verified |
+| `users/{uid}/wird/marker` | `wird_marker_service.dart` (`FirestoreWirdMarkerCloud`; `Source.server` read, plain `set()`; spec `docs/designs/wird-marker.md`) | uid | Added with the code (P3); not yet verified on a device |
 | `users/{uid}/{operation.collection}` | `sync_service.dart:87,106` (offline queue; values `prayer_records`, `dhikr_sessions`, `tasks` per `offline_queue_service.dart:9`) | collection | Partial — no `QueuedOperation(` producer found (UNKNOWN whether queue is populated) |
 | `_` (local id generation only, never written) | `task_service.dart:34` | — | Verified |
 
