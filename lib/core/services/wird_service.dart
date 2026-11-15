@@ -349,6 +349,27 @@ class WirdService {
     _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
   }
 
+  /// Empties the juz data for the Juz -> Pages switch (mode-separation spec,
+  /// decisions A, B, D, K): the checked cards (`wird_completed_juz`) and
+  /// today's `juzCompletedToday`. Local first and at once; the cloud push runs
+  /// in the background, so it works offline. Khatma count and dates, streak,
+  /// day count, the day's completed flag and the marker are not touched.
+  Future<void> emptyJuzData() async {
+    final prefs = await _prefs;
+    await prefs.setString(_completedJuzKey, jsonEncode([]));
+
+    final history = await _loadHistory();
+    final today = _todayKey();
+    final entry = history.where((p) => p.dateKey == today).firstOrNull;
+    if (entry != null && entry.juzCompletedToday.isNotEmpty) {
+      await _saveHistory([
+        for (final p in history)
+          p.dateKey == today ? p.copyWith(juzCompletedToday: const []) : p,
+      ]);
+    }
+    _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
+  }
+
   // ── Streak ───────────────────────────────────────────────────────────────
 
   Future<int> getStreakCount() async {

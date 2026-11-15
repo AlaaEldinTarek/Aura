@@ -8,6 +8,7 @@ import 'prayer_tracking_service.dart';
 import 'dhikr_service.dart';
 import 'task_service.dart';
 import 'wird_marker_service.dart';
+import 'wird_service.dart';
 
 /// The Wird achievements the marker values qualify for. [khatmaCount] and
 /// [pages] come from `WirdMarkerService.khatmaCountLocal` and `progressTotalLocal`.
@@ -38,7 +39,18 @@ List<String> wirdJuzAchievementIds({
   ];
 }
 
-/// PROPOSAL (owner to confirm): how long the Juz -> Pages switch waits for the
+/// The juz achievements the locally stored juz data qualifies for: the khatma
+/// count and the checked cards, read from prefs (no network). Used by the Wird
+/// block of [AchievementService.checkAndAward]. [wird] is for tests.
+Future<List<String>> localWirdJuzAchievementIds({WirdService? wird}) async {
+  final service = wird ?? WirdService.instance;
+  return wirdJuzAchievementIds(
+    juzKhatmCount: await service.getKhatmCount(),
+    checkedJuz: (await service.getCompletedJuz()).length,
+  );
+}
+
+/// How long the Juz -> Pages switch waits for the
 /// juz achievement check before it gives up and empties the cards anyway
 /// (decision L). See the M1 report for the reasoning.
 const Duration kJuzSwitchCheckTimeout = Duration(seconds: 5);
@@ -397,6 +409,15 @@ class AchievementService {
       if (!earnedIds.contains('wird_pages_300')) {
         if (wirdIds.contains('wird_pages_300')) {
           await _award(userId, 'wird_pages_300', now, newlyEarned);
+        }
+      }
+
+      // Juz achievements: khatmas x 30 + checked cards (mode-separation, H, J).
+      // A juz user earns them without switching modes.
+      final wirdJuzIds = await localWirdJuzAchievementIds();
+      for (final id in wirdJuzIds) {
+        if (!earnedIds.contains(id)) {
+          await _award(userId, id, now, newlyEarned);
         }
       }
 
