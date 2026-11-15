@@ -1522,6 +1522,16 @@ Labels: REPORTED = told by Aladdin after testing on the phone (nova 5T), not che
 *   **Juz mode gap (VERIFIED in the code, older than P4b):** the three Wird page achievements read the marker, which only page mode writes, so a user in juz mode cannot earn them. This is handled by the separate draft `docs/designs/mode-separation.md` (branch `docs/mode-separation`), not here.
 *   **Still to run:** the two-device sync check and the permissions-page hint. Until they run, they stay open in the Verification Plan above.
 
+### Merged build reported on 2026-11-15 (main merged into the branch)
+
+Labels: REPORTED = told by Aladdin after testing on the phone, not checked item by item and not re-run by Claude. VERIFIED = confirmed by a run in this session. UNKNOWN as usual.
+
+*   **Build (VERIFIED):** `origin/main` was merged into `feat/wird-marker` as `1bff298` (one conflict, the import block of `quran_reader_screen.dart`, both lines kept). A release APK, version 1.1.0+60, was built from that merge and installed over the previous app with `adb install -r` (the install printed "Success").
+*   **Runs on the merged branch (VERIFIED):** `flutter analyze` 409 issues (0 errors, 89 warnings), with no issue added compared with the branch before the merge; `flutter test` 715 passed, 0 failed.
+*   **Phone checklist (REPORTED):** Aladdin tested the merged build and reported "pass" for: reader swipe in English and Arabic (main's page-direction change together with the Wird reader changes); the Wird top-bar icon and "Set Wird marker here"; the Wird tab start sheet and the stats label in both languages; the permissions screen; the Fire test adhan tile; and his Wird data still present after the update. The individual items were not recorded one by one, so no single item has its own result here.
+*   **Installed build (UNKNOWN by hash):** the SHA-256 of the installed APK was not compared with the built file. The version number does not tell builds apart (1.1.0+60 before and after), so it is UNKNOWN by hash that the phone ran exactly this build.
+*   **Still not run:** the two-device sync check and the permissions-page hint listed above (the "permissions screen" pass reported here is a separate item and does not replace the hint check, GUESS that they differ; the hint check is the one named in the Verification Plan).
+
 --------------------------------------------------------------------------------
 
 <!-- Provenance: Indicates initial structural drafting via EGM. -->
