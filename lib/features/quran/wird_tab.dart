@@ -16,7 +16,6 @@ import 'quran_reader_screen.dart';
 import 'khatma_celebration_screen.dart';
 import 'wird_marker_widgets.dart';
 import 'package:aura_app/core/theme/app_typography.dart';
-import 'package:aura_app/core/theme/app_spacing.dart';
 
 /// Computes the counted-pages set for page-mode "Choose One" (F38c).
 ///
