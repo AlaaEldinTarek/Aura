@@ -7,4 +7,4 @@ Fix-track specs (ADR 0001):
   Decision record: `fx-0-decisions.md`.
 
 Feature specs:
-- `wird-marker.md` — Wird marker: one saved page and color per cycle replaces bookmark counting in Wird page mode. ADR 0002. Phases P2 to P6 done (PRs #25 and #27 merged, P6 docs on `docs/p6-and-state`); two-device sync, the permissions-page hint and the Windows build are not run.
+- `wird-marker.md` — Wird marker: one saved page and color per cycle replaces bookmark counting in Wird page mode. ADR 0002. Phases P2 to P6 done (PRs #25 and #27 merged, P6 docs on `docs/p6-and-state`); the two-device sync check and the permissions-page hint were reported pass by Aladdin on 2026-11-15 (method not recorded); S48 to S50 and the Windows build are not run.
