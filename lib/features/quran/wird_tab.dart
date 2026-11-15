@@ -15,6 +15,7 @@ import 'package:aura_app/core/services/shared_preferences_service.dart';
 import 'quran_reader_screen.dart';
 import 'khatma_celebration_screen.dart';
 import 'wird_marker_widgets.dart';
+import 'wird_mode_switch.dart';
 import 'package:aura_app/core/theme/app_typography.dart';
 
 class WirdTab extends ConsumerWidget {
@@ -1099,8 +1100,12 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
                     ButtonSegment(value: WirdUnit.juz, label: Text('wird_unit_juz'.tr())),
                   ],
                   selected: {state.settings.wirdUnit},
-                  onSelectionChanged: (sel) =>
-                      ref.read(wirdStateProvider.notifier).setWirdUnit(sel.first),
+                  onSelectionChanged: (sel) => changeWirdUnit(
+                    context,
+                    ref,
+                    sel.first,
+                    lang: widget.lang,
+                  ),
                   style: const ButtonStyle(
                     visualDensity: VisualDensity.compact,
                   ),

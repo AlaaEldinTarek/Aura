@@ -68,8 +68,10 @@ class _StatsContent extends StatelessWidget {
             children: [
               Expanded(child: _BadgeCard(
                 emoji: '📖',
-                value: _n(stats.totalPages),
-                label: 'quran_stats_header_pages'.tr(),
+                value: _n(isJuz ? stats.allCompletedJuz.length : stats.totalPages),
+                label: isJuz
+                    ? 'quran_stats_juz'.tr()
+                    : 'quran_stats_header_pages'.tr(),
                 primary: primary,
                 isDark: isDark,
               )),
@@ -159,26 +161,30 @@ class _StatsContent extends StatelessWidget {
           ),
           SizedBox(height: ts.scale(16.0)),
 
-          // ── Khatm progress ────────────────────────────────────────────────
-          _SectionCard(
-            isDark: isDark,
-            child: Column(
-              children: [
-                Text(
-                  'quran_stats_khatm_progress'.tr(),
-                  style: AppTypography.headingS.copyWith(fontWeight: FontWeight.w600),
-                ),
-                SizedBox(height: ts.scale(20.0)),
-                _KhatmCircle(
-                  done: stats.allCompletedJuz.length,
-                  total: 30,
-                  primary: primary,
-                  secondary: secondary,
-                  isArabic: isArabic,
-                ),
-              ],
+          // Decision E: the juz progress circle belongs to juz mode only.
+          if (isJuz) ...[
+            // ── Khatm progress ────────────────────────────────────────────────
+            _SectionCard(
+              isDark: isDark,
+              child: Column(
+                children: [
+                  Text(
+                    'quran_stats_khatm_progress'.tr(),
+                    style: AppTypography.headingS.copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  SizedBox(height: ts.scale(20.0)),
+                  _KhatmCircle(
+                    done: stats.allCompletedJuz.length,
+                    total: 30,
+                    primary: primary,
+                    secondary: secondary,
+                    isArabic: isArabic,
+                  ),
+                ],
+              ),
             ),
-          ),
+
+          ],
 
           SizedBox(height: ts.scale(32.0).clamp(0.0, 48.0)),
         ],

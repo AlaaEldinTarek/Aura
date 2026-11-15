@@ -87,12 +87,6 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
   final _topBarKey = GlobalKey();
   final _bottomBarKey = GlobalKey();
 
-  static const _juzStartPages = [
-    1, 22, 42, 62, 82, 102, 122, 142, 162, 182,
-    202, 222, 242, 262, 282, 302, 322, 342, 362, 382,
-    402, 422, 442, 462, 482, 502, 522, 542, 562, 582,
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -162,7 +156,7 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
   int _getStartPage() {
     if (widget.initialJuz != null) {
       final juz = widget.initialJuz!;
-      if (juz >= 1 && juz <= 30) return _juzStartPages[juz - 1];
+      if (juz >= 1 && juz <= 30) return kJuzStartPages[juz - 1];
     }
     final meta = QuranService.getSurahMeta(widget.suraNo);
     return meta?.startPage ?? 1;

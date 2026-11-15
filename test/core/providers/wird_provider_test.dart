@@ -130,7 +130,8 @@ void main() {
       final st = await _stats();
       expect(st.totalPages, 583);
       expect(st.averageDaily, 583 / 2);
-      expect(st.khatmCount, 3, reason: '1 legacy juz khatma + 2 marker khatmas');
+      expect(st.khatmCount, 2,
+          reason: 'page mode shows the marker khatmas only (decision E)');
     });
 
     test('juz mode: average counts juz, not pages', () async {
@@ -145,6 +146,27 @@ void main() {
           markerPage: 40, startPage: 31, runningTotal: 574, version: 2));
       final st = await _stats();
       expect(st.averageDaily, (2 * 30 + 3) / 4);
+    });
+
+    test('juz mode: khatma count is the juz khatmas, not the marker khatmas',
+        () async {
+      _build(prefs: {
+        'wird_settings':
+            jsonEncode(const WirdSettings(wirdUnit: WirdUnit.juz).toJson()),
+        'wird_total_days_completed': 4,
+        'wird_khatm_count': 2,
+        'wird_completed_juz': jsonEncode([1, 2, 3]),
+      });
+      await marker.save(_rec(
+          markerPage: 40,
+          startPage: 31,
+          runningTotal: 574,
+          khatmaCount: 5,
+          version: 2));
+      final st = await _stats();
+      expect(st.khatmCount, 2,
+          reason: 'juz mode shows the juz khatmas only (decision E)');
+      expect(st.allCompletedJuz, [1, 2, 3]);
     });
 
     test('no completed day gives 0.0', () async {

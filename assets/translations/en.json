@@ -527,5 +527,8 @@
   "permissions_some_missing": "Some permissions are missing",
   "permissions_check_by_hand": "Check by hand",
   "permissions_check_by_hand_button": "How to check",
-  "permissions_denied_hint": "If it stays off, turn it on in the app's settings."
+  "permissions_denied_hint": "If it stays off, turn it on in the app's settings.",
+  "wird_mode_switch_title": "Switch from Juz to Pages?",
+  "wird_mode_switch_body": "Your checked juz cards will be emptied. Your khatm history and earned achievements stay. If you come back to Juz, you start with empty cards.",
+  "wird_mode_switch_confirm": "Switch"
 }

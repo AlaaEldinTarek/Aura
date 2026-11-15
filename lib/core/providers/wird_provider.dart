@@ -61,7 +61,11 @@ final quranStatsProvider = FutureProvider.autoDispose<QuranStatsData>((ref) asyn
       checkedJuzCount: wirdState.allCompletedJuz.length,
       totalDaysCompleted: totalDays,
     ),
-    khatmCount: wirdState.khatmCount,
+    // Decision E: only the active mode's khatmas (the combined count stays in
+    // WirdState and the merged Khatm History, decision C).
+    khatmCount: wirdState.settings.wirdUnit == WirdUnit.juz
+        ? wirdState.juzKhatmCount
+        : (wirdState.marker?.khatmaCount ?? 0),
     allCompletedJuz: wirdState.allCompletedJuz,
     wirdUnit: wirdState.settings.wirdUnit,
   );
