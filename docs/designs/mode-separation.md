@@ -74,12 +74,36 @@ Same collection and shape as today (`users/{uid}/achievements/{id}`, `achievemen
 | `wird_juz_15` | Half the Quran | نصف القرآن | at least 15 juz in total | same value |
 | `wird_juz_khatma` | Juz Khatma | ختمة بالأجزاء | `wird_khatm_count >= 1` | `WirdService.getKhatmCount` (`wird_service.dart:379-382`) |
 
+Descriptions, in the style of the existing ones (VERIFIED examples: "Read 100 total pages through Wird" / "اقرأ 100 صفحة إجمالاً عبر الورد", "7-day Wird streak" / "تتابع ورد 7 أيام", `achievement.dart:349-415`). Inline strings (Decision I). All Arabic is DRAFT for the owner's review.
+
+| Id | English description | Arabic description (DRAFT) |
+|---|---|---|
+| `wird_juz_5` | Read 5 juz through Wird | اقرأ 5 أجزاء عبر الورد |
+| `wird_juz_15` | Read 15 juz through Wird | اقرأ 15 جزءاً عبر الورد |
+| `wird_juz_khatma` | Complete a khatma through Juz | أكمل ختمة عبر الأجزاء |
+
+*   The existing Arabic descriptions use plain digits inside inline strings (VERIFIED, "100 صفحة"), which breaks the CLAUDE.md Arabic-numerals rule. The new ones follow the same pattern (Decision I) and are not a cleanup of it.
+
 *   **Pure function (GUESS on the name):** `wirdJuzAchievementIds({required int juzKhatmCount, required int checkedJuz})` beside `wirdAchievementIds` (`achievement_service.dart:15-21`).
 *   **Inputs (VERIFIED mechanism, Decision H):** worked out each time as `khatmas × 30 + checked cards`, with no new prefs key, no new `wird/data` field and no contract change. `wird_completed_juz` is emptied by `resetAllJuz` at each khatma (`wird_service.dart:404-408`) and, under Decision A, on leaving juz mode, so the value drops at those moments. Earned achievements stay (Decision B). The rule "Check before emptying" below stops the user losing one he was about to earn.
 *   **Names are inline, not translation keys (VERIFIED):** the existing definitions hold `nameEn` and `nameAr` directly (`achievement.dart:379-415`). This draft follows that pattern. CLAUDE.md says every UI string goes through `.tr()`; the existing achievements do not (VERIFIED), so this is a known deviation. Decision I: use inline `nameEn` and `nameAr` to match the existing achievements. CLAUDE.md says to use translation keys, and the existing Wird achievements already break that rule (VERIFIED, `achievement.dart:349-415`); the new ones follow the existing pattern and are not a cleanup of it.
 *   **Counts shown (VERIFIED the screen groups by category, `achievements_screen.dart:152`):** the Quran group goes from 1/7 style counts to a total of 10 (the three new ids). Per-user states are unaffected.
 *   **When the check runs (UNKNOWN as of now):** achievements are checked only on a prayer record, a task completion and Profile badge grid mount (VERIFIED, see `wird-achievements-juz.md`). This spec does not change that; the timing question stays in that draft.
 *   **Gaming (VERIFIED the cause):** cards are checked by tapping today, so these achievements can be earned by tapping. This is the same as the page-mode caveat for juz estimates and goes away only if `juz-auto-check.md` is built.
+
+### Marker suggestion text (shown after the switch)
+
+No new text is needed. The suggestion reuses the existing start sheet, so the page the marker will start from is already in its title (VERIFIED, `wird_start_sheet_title`, filled with the page by `startSheetTitle`, `wird_marker_widgets.dart`).
+
+| Part | English | Arabic |
+|---|---|---|
+| Title (existing key `wird_start_sheet_title`) | Start your Wird from page %d? | هل تبدأ وردك من الصفحة %d؟ |
+| Start button (existing key `wird_start_here`) | Start here | ابدأ من هنا |
+| Cancel button (existing key `cancel`) | Cancel | إلغاء |
+
+*   These texts already exist in the app (VERIFIED in `en.json` and `ar.json`), so they are not DRAFT. `%d` is the suggested page. It is filled after `.tr()` with the Arabic-numeral formatter, as the existing sheet does (VERIFIED by `startSheetTitle`).
+*   Example (VERIFIED against the juz start table): cards 1 to 4 checked suggest page 82, so the title reads "Start your Wird from page 82?".
+*   A one-line explanation such as "Continue from where your juz cards end" was considered and not added: the owner's decision F adds no new button or screen, and the title already states the page (GUESS that no extra line is wanted).
 
 ### Check before emptying (Decision H, new rule)
 
@@ -99,33 +123,21 @@ Same collection and shape as today (`users/{uid}/achievements/{id}`, `achievemen
 
 ### Warning dialog texts
 
-Keys are new and must go into both `assets/translations/en.json` and `ar.json` (VERIFIED rule, CLAUDE.md). The two buttons reuse the existing `cancel` key (VERIFIED used by the wird-marker sheets, `wird-marker.md` "Reused as they are"). The Arabic is a DRAFT for the owner's review.
+The words match the app. VERIFIED from `assets/translations/en.json` and `ar.json` (2026-11-15): the Page/Juz segmented button uses `wird_unit_page` = "Pages" / "صفحات" and `wird_unit_juz` = "Juz" / "أجزاء"; `cancel` = "Cancel" / "إلغاء"; the Khatm History title (`khatma_history_title`) = "Khatm History" / "سجل الختمات"; the Arabic word the app uses for achievements is "الإنجازات" (`empty_achievements_title`). The dialog therefore says "Pages" and "Juz", not "Page mode".
 
-| Key (proposed) | English | Arabic (DRAFT) |
+Three keys are new and must go into both `assets/translations/en.json` and `ar.json` (VERIFIED rule, CLAUDE.md). The Cancel button reuses the existing key `cancel`, so it adds no new key. All Arabic below is DRAFT for the owner's review.
+
+| Key | English | Arabic (DRAFT) |
 |---|---|---|
-| `wird_mode_switch_title` | Switch to Page mode? | التبديل إلى وضع الصفحات؟ |
-| `wird_mode_switch_body` | Your checked juz cards will be emptied. Your khatm history and earned achievements stay. If you come back to Juz mode you start with empty cards. | سيتم تفريغ بطاقات الأجزاء التي حددتها. يبقى سجل الختمات والإنجازات التي حصلت عليها. إذا عدت إلى وضع الأجزاء فستبدأ ببطاقات فارغة. |
-| `wird_mode_switch_confirm` | Switch | تبديل |
+| `wird_mode_switch_title` (new) | Switch from Juz to Pages? | التبديل من أجزاء إلى صفحات؟ |
+| `wird_mode_switch_body` (new) | Your checked juz cards will be emptied. Your khatm history and earned achievements stay. If you come back to Juz, you start with empty cards. | سيتم تفريغ بطاقات الأجزاء التي حددتها. يبقى سجل الختمات والإنجازات التي حصلت عليها. إذا عدت إلى أجزاء فستبدأ ببطاقات فارغة. |
+| `wird_mode_switch_confirm` (new, Confirm button) | Switch | تبديل |
+| `cancel` (existing, Cancel button) | Cancel | إلغاء |
 
+*   **Message check (VERIFIED against the text above):** the message has three sentences: (1) the checked cards will be emptied; (2) the khatm history and earned achievements stay; (3) coming back to Juz starts with empty cards. The Arabic has the same three sentences, written as one line.
 *   The body text states Decision B (history and earned achievements stay). If the owner changes A or B the text changes.
 *   No number is interpolated into these strings, so no Arabic-numeral formatting is needed (VERIFIED by the texts above).
-*   The page-to-juz direction has no dialog (Decision A).
-
-## Decisions (owner, 2026-11-15)
-
-The owner answered "yes" to the recommended list. Each item keeps the question text of the earlier draft, with his answer. The marks describe the state of the code the answer touches, not the owner's choice.
-
-*   **A. Which switch empties the juz cards?** Answer: only Juz → Page empties the checked juz cards (`wird_completed_juz` and today's `juzCompletedToday`), after a warning dialog. Page → Juz changes nothing and shows no dialog. (Mechanism VERIFIED to be new: today `setWirdUnit` only writes the setting, `wird_provider.dart:235-239`.)
-*   **B. Do Khatm History and earned achievements stay when cards are emptied?** Answer: yes, both stay. (VERIFIED that the khatma list lives in `wird_khatm_count` and `wird_khatm_dates`, which the emptying does not touch, `wird_service.dart:392-408`; earned achievements live in Firestore, `achievement_service.dart:401-405`.)
-*   **C. Khatm History: one merged list or split per mode?** Answer: one merged list, as today. (VERIFIED, `khatma_dua_screen.dart:36`, `wird_marker_logic.dart:181-185`.)
-*   **D. Streak and day count: shared or per mode?** Answer: shared between the modes, as today. Per-mode streaks are out of scope and need their own design. (VERIFIED as today, `wird_service.dart:353-364`.)
-*   **E. Stats screen: only the active mode's numbers?** Answer: yes, show only the active mode's numbers. (See "Stats screen shows only the active mode's numbers" for the effect.)
-*   **F. How does the user change the suggested page?** Answer: only through the reader's "Choose another page". No new button in the tab sheet. (VERIFIED that the reader sheet offers it and the tab sheet does not, `wird-marker.md` items 9 to 11.)
-*   **G. A marker already exists when going to page mode.** Answer: show no suggestion. (VERIFIED: placement fails with `markerExists`, `wird_marker_logic.dart:63-75`.)
-*   **H. Persisted cumulative juz counter, or derived?** Answer: derived each time (`khatmas × 30 + checked cards`). No new prefs key, no new `wird/data` field, no contract change. New rule: run the achievement check just before the cards are emptied, in the same step as the switch (see "Check before emptying").
-*   **I. Inline achievement names or `.tr()` keys?** Answer: inline `nameEn` and `nameAr`, to match the existing achievements. CLAUDE.md says to use translation keys, and the existing achievements already break that rule (VERIFIED, `achievement.dart:349-415`).
-*   **J. Thresholds and names.** Answer: `wird_juz_5` (5 juz), `wird_juz_15` (15 juz) and `wird_juz_khatma` (one juz khatma), with the draft names. The Arabic names stay DRAFT until the owner reviews them.
-*   **K. Offline and sign-out.** Answer: empty locally at once, sync later. It must work offline. (VERIFIED mechanism: `updateSettings` and the cloud push run in the background, `wird_service.dart:57-66`.)
+*   The Page → Juz direction has no dialog (Decision A).
 
 ### Still open
 
