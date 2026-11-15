@@ -8,8 +8,6 @@ class WirdSettings {
   final WirdUnit wirdUnit;
   final List<String> reminderTimes; // "HH:mm" format, max 10
   final bool remindersEnabled;
-  final String? linkedBookmarkColor; // 'red', 'orange', 'green' or null
-  final List<int> countedBookmarkPages; // pages already synced from bookmarks
 
   const WirdSettings({
     this.dailyPageGoal = 5,
@@ -17,8 +15,6 @@ class WirdSettings {
     this.wirdUnit = WirdUnit.page,
     this.reminderTimes = const [],
     this.remindersEnabled = true,
-    this.linkedBookmarkColor,
-    this.countedBookmarkPages = const [],
   });
 
   Map<String, dynamic> toJson() => {
@@ -27,8 +23,6 @@ class WirdSettings {
         'wirdUnit': wirdUnit.name,
         'reminderTimes': reminderTimes,
         'remindersEnabled': remindersEnabled,
-        'linkedBookmarkColor': linkedBookmarkColor,
-        'countedBookmarkPages': countedBookmarkPages,
       };
 
   factory WirdSettings.fromJson(Map<String, dynamic> json) => WirdSettings(
@@ -43,11 +37,6 @@ class WirdSettings {
                 .toList() ??
             [],
         remindersEnabled: json['remindersEnabled'] as bool? ?? true,
-        linkedBookmarkColor: json['linkedBookmarkColor'] as String?,
-        countedBookmarkPages: (json['countedBookmarkPages'] as List<dynamic>?)
-                ?.map((e) => e as int)
-                .toList() ??
-            [],
       );
 
   WirdSettings copyWith({
@@ -56,9 +45,6 @@ class WirdSettings {
     WirdUnit? wirdUnit,
     List<String>? reminderTimes,
     bool? remindersEnabled,
-    String? linkedBookmarkColor,
-    bool clearLinkedColor = false,
-    List<int>? countedBookmarkPages,
   }) =>
       WirdSettings(
         dailyPageGoal: dailyPageGoal ?? this.dailyPageGoal,
@@ -66,8 +52,6 @@ class WirdSettings {
         wirdUnit: wirdUnit ?? this.wirdUnit,
         reminderTimes: reminderTimes ?? this.reminderTimes,
         remindersEnabled: remindersEnabled ?? this.remindersEnabled,
-        linkedBookmarkColor: clearLinkedColor ? null : (linkedBookmarkColor ?? this.linkedBookmarkColor),
-        countedBookmarkPages: countedBookmarkPages ?? this.countedBookmarkPages,
       );
 }
 

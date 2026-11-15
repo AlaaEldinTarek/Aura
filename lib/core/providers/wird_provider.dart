@@ -155,13 +155,6 @@ class WirdNotifier extends StateNotifier<AsyncValue<WirdState>> {
     await setReminderTimes(newTimes);
   }
 
-  Future<void> recordPagesRead(int additionalPages, int currentPage) async {
-    await _wird.recordPagesRead(additionalPages, currentPage);
-    final updatedState = await _wird.getFullState();
-    if (!mounted) return;
-    state = AsyncValue.data(updatedState);
-  }
-
   Future<void> markComplete() async {
     await _wird.markDayComplete();
     final updatedState = await _wird.getFullState();
@@ -253,46 +246,6 @@ class WirdNotifier extends StateNotifier<AsyncValue<WirdState>> {
     state = AsyncValue.data(updatedState);
   }
 
-  /// Mark a set of juz from bookmark pages and update counted pages.
-  Future<int> markJuzFromBookmarks(Set<int> newJuzNos, Set<int> allBookmarkPages) async {
-    final current = state.value;
-    if (current == null) return 0;
-
-    // Only mark juz not already completed
-    final toMark = newJuzNos.difference(current.allCompletedJuz.toSet());
-    for (final juzNo in toMark) {
-      await _wird.toggleJuzCompleted(juzNo);
-    }
-
-    // Update counted pages so we don't reprocess them
-    final updatedCounted = {...current.settings.countedBookmarkPages, ...allBookmarkPages}.toList()..sort();
-    final newSettings = current.settings.copyWith(countedBookmarkPages: updatedCounted);
-    await _wird.updateSettings(newSettings);
-
-    final updatedState = await _marker.compose(await _wird.getFullState());
-    if (!mounted) return toMark.length;
-    state = AsyncValue.data(updatedState);
-    return toMark.length;
-  }
-
-  Future<void> setLinkedBookmarkColor(String colorName, Set<int> initialPages) async {
-    await _wird.setLinkedBookmarkColor(colorName, initialPages);
-    final updatedState = await _marker.compose(await _wird.getFullState());
-    if (!mounted) return;
-    state = AsyncValue.data(updatedState);
-  }
-
-  /// Sync new bookmark pages. Returns count of newly added pages.
-  Future<int> syncBookmarkPages(Set<int> currentBookmarkPages) async {
-    final added = await _wird.syncBookmarkPages(currentBookmarkPages);
-    if (added > 0) {
-      final updatedState = await _marker.compose(await _wird.getFullState());
-      if (!mounted) return added;
-      state = AsyncValue.data(updatedState);
-    }
-    return added;
-  }
-
   Future<void> resetAllProgress() async {
     // Wipes streak, totals, history, juz and legacy khatma data, then saves a
     // restarted marker record (a tombstone when there was none).
@@ -306,15 +259,6 @@ class WirdNotifier extends StateNotifier<AsyncValue<WirdState>> {
   Future<int> resetJuzForKhatma() async {
     final count = await _wird.recordKhatma();
     await _wird.resetAllJuz();
-    final updatedState = await _marker.compose(await _wird.getFullState());
-    if (!mounted) return count;
-    state = AsyncValue.data(updatedState);
-    return count;
-  }
-
-  /// Records a khatma without resetting juz (used for page mode completion). Returns new khatm count.
-  Future<int> recordPageKhatma() async {
-    final count = await _wird.recordKhatma();
     final updatedState = await _marker.compose(await _wird.getFullState());
     if (!mounted) return count;
     state = AsyncValue.data(updatedState);

@@ -38,7 +38,7 @@ const List<Color> kWirdMarkerPalette = [
 String _digits(int n, String lang) =>
     NumberFormatter.withArabicNumeralsByLanguage(n.toString(), lang);
 
-// ── Ribbon ──────────────────────────────────────────────────────────────────
+// ── Reading page helpers ────────────────────────────────────────────────────
 
 /// Page the Start/Continue Reading button opens: the marker page when one
 /// exists, else the day's progress page, else the start page.
@@ -49,117 +49,6 @@ int wirdReadingPage(WirdState state, int? progressPage, int startPage) =>
 /// reading began, else the marker page, else 1.
 int wirdRangeStart(WirdState state, int? progressStartPage) =>
     progressStartPage ?? state.marker?.markerPage ?? 1;
-
-/// The ribbon shows only in page mode, on the page the marker is on.
-bool shouldShowWirdRibbon({
-  required WirdUnit unit,
-  required int? markerPage,
-  required int currentPage,
-}) =>
-    unit == WirdUnit.page && markerPage != null && currentPage == markerPage;
-
-/// A small ribbon: outline from the app text color (so it shows in dark mode),
-/// fill from the stored marker color.
-class WirdMarkerRibbon extends StatelessWidget {
-  static const double width = 14;
-  static const double height = 30;
-
-  final Color color;
-  final int page;
-
-  const WirdMarkerRibbon({super.key, required this.color, required this.page});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final lang = Localizations.localeOf(context).languageCode;
-    return Semantics(
-      label:
-          'wird_marker_ribbon_label'.tr().replaceAll('%d', _digits(page, lang)),
-      child: SizedBox(
-        width: width,
-        height: height,
-        child: CustomPaint(
-          painter: _RibbonPainter(
-            fill: color,
-            outline: isDark ? Colors.white : Colors.black87,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RibbonPainter extends CustomPainter {
-  final Color fill;
-  final Color outline;
-
-  const _RibbonPainter({required this.fill, required this.outline});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width, h = size.height;
-    final path = Path()
-      ..moveTo(0, 0)
-      ..lineTo(w, 0)
-      ..lineTo(w, h)
-      ..lineTo(w / 2, h - 7)
-      ..lineTo(0, h)
-      ..close();
-    canvas.drawPath(path, Paint()..color = fill);
-    canvas.drawPath(
-      path,
-      Paint()
-        ..color = outline
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5
-        ..strokeJoin = StrokeJoin.round,
-    );
-  }
-
-  @override
-  bool shouldRepaint(_RibbonPainter old) =>
-      old.fill != fill || old.outline != outline;
-}
-
-/// Place this as a child of a `Stack`. It draws nothing unless the ribbon
-/// should show (see [shouldShowWirdRibbon]). [top] is the measured top bar
-/// height while the bar is visible, else 0.
-class WirdMarkerRibbonLayer extends StatelessWidget {
-  final WirdState state;
-  final int currentPage;
-  final double top;
-
-  const WirdMarkerRibbonLayer({
-    super.key,
-    required this.state,
-    required this.currentPage,
-    required this.top,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final marker = state.marker;
-    final page = marker?.markerPage;
-    if (marker == null ||
-        page == null ||
-        !shouldShowWirdRibbon(
-          unit: state.settings.wirdUnit,
-          markerPage: page,
-          currentPage: currentPage,
-        )) {
-      return const SizedBox.shrink();
-    }
-    return Positioned(
-      top: top,
-      right: 8,
-      child: WirdMarkerRibbon(
-        color: Color(marker.color ?? kWirdMarkerPalette.first.toARGB32()),
-        page: page,
-      ),
-    );
-  }
-}
 
 // ── Undo and restart controls ───────────────────────────────────────────────
 

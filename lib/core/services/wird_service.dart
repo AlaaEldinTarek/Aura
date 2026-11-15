@@ -34,7 +34,6 @@ class WirdService {
   static const _settingsKey = 'wird_settings';
   static const _streakCountKey = 'wird_streak_count';
   static const _streakDateKey = 'wird_streak_date';
-  static const _totalPagesKey = 'wird_total_pages_read';
   static const _totalDaysKey = 'wird_total_days_completed';
   static const _historyKey = 'wird_progress_history';
   static const _completedJuzKey = 'wird_completed_juz';
@@ -75,63 +74,6 @@ class WirdService {
     } catch (_) {
       return null;
     }
-  }
-
-  Future<WirdProgress> recordPagesRead(
-    int additionalPages,
-    int currentPage,
-  ) async {
-    final settings = await getSettings();
-    var history = await _loadHistory();
-    final today = _todayKey();
-    final now = _now();
-
-    WirdProgress todayProgress;
-    try {
-      todayProgress = history.firstWhere((p) => p.dateKey == today);
-    } catch (_) {
-      todayProgress = WirdProgress(
-        date: now,
-        startPage: currentPage,
-        currentPage: currentPage,
-      );
-      history.add(todayProgress);
-    }
-
-    final newPagesRead = todayProgress.pagesRead + additionalPages;
-    final wasCompleted = todayProgress.isCompleted;
-    final nowCompleted = newPagesRead >= settings.dailyPageGoal;
-
-    todayProgress = todayProgress.copyWith(
-      pagesRead: newPagesRead,
-      currentPage: currentPage,
-      isCompleted: nowCompleted,
-    );
-
-    // Update history
-    history = history.map((p) => p.dateKey == today ? todayProgress : p).toList();
-    if (!history.any((p) => p.dateKey == today)) {
-      history.add(todayProgress);
-    }
-    await _saveHistory(history);
-
-    // Streak + stats on first completion
-    if (nowCompleted && !wasCompleted) {
-      await _incrementStreak();
-      final prefs = await _prefs;
-      final totalPages = (prefs.getInt(_totalPagesKey) ?? 0) + additionalPages;
-      final totalDays = (prefs.getInt(_totalDaysKey) ?? 0) + 1;
-      await prefs.setInt(_totalPagesKey, totalPages);
-      await prefs.setInt(_totalDaysKey, totalDays);
-    } else if (!nowCompleted) {
-      // Update total pages even if not completed
-      final prefs = await _prefs;
-      final totalPages = (prefs.getInt(_totalPagesKey) ?? 0) + additionalPages;
-      await prefs.setInt(_totalPagesKey, totalPages);
-    }
-
-    _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
-    return todayProgress;
   }
 
   /// Credits [pages] to today's entry for a marker move (or a khatma) and
@@ -405,39 +347,6 @@ class WirdService {
     final prefs = await _prefs;
     await prefs.setString(_completedJuzKey, jsonEncode([]));
     _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
-  }
-
-  // ── Bookmark Sync ───────────────────────────────────────────────────────
-
-  /// Sync bookmark pages with Wird progress.
-  /// Returns the number of newly added pages (0 if nothing new).
-  Future<int> syncBookmarkPages(Set<int> currentBookmarkPages) async {
-    final settings = await getSettings();
-    if (settings.linkedBookmarkColor == null) return 0;
-
-    final counted = settings.countedBookmarkPages.toSet();
-    final newPages = currentBookmarkPages.difference(counted);
-    if (newPages.isEmpty) return 0;
-
-    final newCount = newPages.length;
-    final maxPage = newPages.reduce((a, b) => a > b ? a : b);
-    await recordPagesRead(newCount, maxPage);
-
-    final updatedCounted = {...counted, ...newPages}.toList()..sort();
-    final newSettings = settings.copyWith(countedBookmarkPages: updatedCounted);
-    await updateSettings(newSettings);
-
-    return newCount;
-  }
-
-  /// Set the linked bookmark color and save initial counted pages.
-  Future<void> setLinkedBookmarkColor(String colorName, Set<int> initialPages) async {
-    final settings = await getSettings();
-    final newSettings = settings.copyWith(
-      linkedBookmarkColor: colorName,
-      countedBookmarkPages: initialPages.toList()..sort(),
-    );
-    await updateSettings(newSettings);
   }
 
   // ── Streak ───────────────────────────────────────────────────────────────
