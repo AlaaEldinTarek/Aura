@@ -64,19 +64,27 @@ Wird has two units, pages and juz. Today they share one screen, one streak, one 
 
 Order of the Juz → Page step (all in one step, after the user confirms; see "Check before emptying"): 1. read the khatma count and the checked cards, 2. run the juz achievement check on those values, 3. empty the cards, 4. set the unit to page, 5. offer the marker suggestion.
 
+### Marker suggestion on the way to page mode (Goal 4)
+
+*   **Rule (b), the owner's suggestion, GUESS on details:** the suggested page is the first page of the juz after the last consecutively checked juz. Let N be the largest number such that juz 1 to N are all checked. If N is 0, there is no suggestion. If N is 30, there is no suggestion (the khatma path resets the cards at 30, `wird_tab.dart:176-188`, VERIFIED). Otherwise the page is `startPages[N]` (zero-based list: juz N+1 starts there). Example: cards 1, 2, 3 and 5 checked gives N = 3 and page 62 (VERIFIED against the table `quran_reader_screen.dart:85-89`: juz 4 starts at page 62).
+*   **Juz table (UNKNOWN whether the two tables agree):** the reader's static list (`quran_reader_screen.dart:85-89`) and `juzListProvider` (`quran_provider.dart:14`). The pure function takes the list as a parameter. Phase M1 compares them before use.
+*   **Where it appears (GUESS):** after the user confirms leaving juz mode and the cards are emptied, if there is no marker (`applySetup` needs none, VERIFIED) and N is above 0, the existing start sheet opens with the suggested page (`WirdStartSheet` with `readingMode: false`, as `_setMarkerFromTab` does, `wird_tab.dart:337-345`). "Start here" places the marker (`placeMarker`, `wird_provider.dart:199-203`) and "Cancel" skips it. The texts are in "Marker suggestion text" below.
+*   **Changing the suggested page (Decision F):** only through the reader's "Choose another page". No new button in the tab sheet. The tab version of the sheet offers only Start here and Cancel (VERIFIED, spec `wird-marker.md` items 9 to 11). How the user gets from the suggestion to the reader's sheet is not written in the decision (GUESS: cancel the suggestion, then start reading from the Wird tab or the reader, which opens the reader's start sheet).
+*   **A marker already exists (Decision G, VERIFIED: placement fails with `markerExists`):** no suggestion is shown.
+
 ### New juz achievements (Goal 2)
 
-Same collection and shape as today (`users/{uid}/achievements/{id}`, `achievement_service.dart:401-405`, contract row `firestore-paths.md:10`), so no schema change. Ids and thresholds are the owner's decision J. The Arabic names stay DRAFT until the owner reviews them.
+Same collection and shape as today (`users/{uid}/achievements/{id}`, `achievement_service.dart:401-405`, contract row `firestore-paths.md:10`), so no schema change. Ids and thresholds are the owner's decision J. The Arabic names were reviewed by the owner on 2026-11-15 (REVIEWED BY OWNER).
 
-| Id (decision J) | English name | Arabic name (DRAFT) | Condition | Reads |
+| Id (decision J) | English name | Arabic name (REVIEWED BY OWNER, 2026-11-15) | Condition | Reads |
 |---|---|---|---|---|
 | `wird_juz_5` | Five Juz | خمسة أجزاء | at least 5 juz read in total | `wird_khatm_count × 30 + checked juz count` |
 | `wird_juz_15` | Half the Quran | نصف القرآن | at least 15 juz in total | same value |
 | `wird_juz_khatma` | Juz Khatma | ختمة بالأجزاء | `wird_khatm_count >= 1` | `WirdService.getKhatmCount` (`wird_service.dart:379-382`) |
 
-Descriptions, in the style of the existing ones (VERIFIED examples: "Read 100 total pages through Wird" / "اقرأ 100 صفحة إجمالاً عبر الورد", "7-day Wird streak" / "تتابع ورد 7 أيام", `achievement.dart:349-415`). Inline strings (Decision I). All Arabic is DRAFT for the owner's review.
+Descriptions, in the style of the existing ones (VERIFIED examples: "Read 100 total pages through Wird" / "اقرأ 100 صفحة إجمالاً عبر الورد", "7-day Wird streak" / "تتابع ورد 7 أيام", `achievement.dart:349-415`). Inline strings (Decision I). The Arabic below was reviewed by the owner on 2026-11-15 (REVIEWED BY OWNER).
 
-| Id | English description | Arabic description (DRAFT) |
+| Id | English description | Arabic description (REVIEWED BY OWNER, 2026-11-15) |
 |---|---|---|
 | `wird_juz_5` | Read 5 juz through Wird | اقرأ 5 أجزاء عبر الورد |
 | `wird_juz_15` | Read 15 juz through Wird | اقرأ 15 جزءاً عبر الورد |
@@ -125,9 +133,9 @@ No new text is needed. The suggestion reuses the existing start sheet, so the pa
 
 The words match the app. VERIFIED from `assets/translations/en.json` and `ar.json` (2026-11-15): the Page/Juz segmented button uses `wird_unit_page` = "Pages" / "صفحات" and `wird_unit_juz` = "Juz" / "أجزاء"; `cancel` = "Cancel" / "إلغاء"; the Khatm History title (`khatma_history_title`) = "Khatm History" / "سجل الختمات"; the Arabic word the app uses for achievements is "الإنجازات" (`empty_achievements_title`). The dialog therefore says "Pages" and "Juz", not "Page mode".
 
-Three keys are new and must go into both `assets/translations/en.json` and `ar.json` (VERIFIED rule, CLAUDE.md). The Cancel button reuses the existing key `cancel`, so it adds no new key. All Arabic below is DRAFT for the owner's review.
+Three keys are new and must go into both `assets/translations/en.json` and `ar.json` (VERIFIED rule, CLAUDE.md). The Cancel button reuses the existing key `cancel`, so it adds no new key. All Arabic below was reviewed by the owner on 2026-11-15 (REVIEWED BY OWNER): the title, the message and the Confirm button (new keys) and the Cancel button (existing key `cancel`). The message stays exactly as written, with "إلى أجزاء".
 
-| Key | English | Arabic (DRAFT) |
+| Key | English | Arabic (REVIEWED BY OWNER, 2026-11-15) |
 |---|---|---|
 | `wird_mode_switch_title` (new) | Switch from Juz to Pages? | التبديل من أجزاء إلى صفحات؟ |
 | `wird_mode_switch_body` (new) | Your checked juz cards will be emptied. Your khatm history and earned achievements stay. If you come back to Juz, you start with empty cards. | سيتم تفريغ بطاقات الأجزاء التي حددتها. يبقى سجل الختمات والإنجازات التي حصلت عليها. إذا عدت إلى أجزاء فستبدأ ببطاقات فارغة. |
@@ -152,7 +160,7 @@ The owner answered "yes" to the recommended list (questions A to K) and, separat
 *   **G. A marker already exists when going to page mode.** Answer: show no suggestion. (VERIFIED: placement fails with `markerExists`, `wird_marker_logic.dart:63-75`.)
 *   **H. Persisted cumulative juz counter, or derived?** Answer: derived each time (`khatmas × 30 + checked cards`). No new prefs key, no new `wird/data` field, no contract change. New rule: run the achievement check just before the cards are emptied, in the same step as the switch (see "Check before emptying").
 *   **I. Inline achievement names or `.tr()` keys?** Answer: inline `nameEn` and `nameAr`, to match the existing achievements. CLAUDE.md says to use translation keys, and the existing achievements already break that rule (VERIFIED, `achievement.dart:349-415`).
-*   **J. Thresholds and names.** Answer: `wird_juz_5` (5 juz), `wird_juz_15` (15 juz) and `wird_juz_khatma` (one juz khatma), with the draft names. The Arabic names stay DRAFT until the owner reviews them.
+*   **J. Thresholds and names.** Answer: `wird_juz_5` (5 juz), `wird_juz_15` (15 juz) and `wird_juz_khatma` (one juz khatma), with the draft names. The Arabic names were reviewed by the owner on 2026-11-15 (REVIEWED BY OWNER).
 *   **K. Offline and sign-out.** Answer: empty locally at once, sync later. It must work offline. (VERIFIED mechanism: `updateSettings` and the cloud push run in the background, `wird_service.dart:57-66`.)
 *   **L. Missed achievement when the check cannot finish.** The question: if the user is offline (or the check fails) at the moment of the switch, the cards are still emptied (Decision K), so a user who was about to earn a juz achievement can miss it. The options were: (1) accept the loss and wait only a short bounded time for the check; (2) keep a small "pending award" marker locally and retry later, which needs a new prefs key and so conflicts with Decision H; (3) block the switch until online, which conflicts with Decision K. Answer (owner, 2026-11-15): option 1. When switching Juz → Pages while offline, wait a short bounded time for the achievement check, catch errors the same way `checkAndAward` does, then empty the cards anyway. No pending-award note, no new key. (The mechanism is VERIFIED to need no new key: the check reads the earned list and writes with `_award`, `achievement_service.dart:67, 393-405`; the Firestore offline behavior stays UNKNOWN, see "Check before emptying".)
 
@@ -193,10 +201,10 @@ No Kotlin file is touched (GUESS: nothing native reads these keys; no Kotlin rea
 
 | Phase | Content | Gate |
 |---|---|---|
-| M0 | The owner's answers are recorded (this file, 2026-11-15), including L. The Arabic texts remain for his review. | owner (done for A to L; the Arabic texts pending) |
+| M0 | The owner's answers are recorded (this file, 2026-11-15), including L. The Arabic texts were reviewed by him on 2026-11-15. | owner (done for A to L; the Arabic texts reviewed by the owner on 2026-11-15) |
 | M1 | Design detail: choose the length of the bounded wait (Decision L). Tests first (red run): `suggestMarkerPageAfterJuz` (N = 0, 3 with a gap, 30, unsorted input, both juz tables compared); `wirdJuzAchievementIds` (khatma 0 and 1, checked 0, 4, 5, 14, 15, 30, boundaries of `khatmas × 30 + checked`); the method that empties only the juz data (keeps khatma fields, streak, marker, undo record); the **check-before-emptying order**: the inputs are captured before emptying and the check sees the full cards even when emptying follows at once; guest returns early and the cards are still emptied; a check that throws or times out still lets the cards be emptied. | owner's go-ahead for M1 |
 | M2 | The service, provider, logic and achievement code behind those tests: the narrow check method, the bounded wait (length chosen in the M1 design), the derived juz ids in the Wird block of `checkAndAward`, and the three definitions with inline names. | owner's go-ahead for M2 |
-| M3 | The switch dialog and its keys (Arabic DRAFT reviewed by the owner), the marker suggestion hand-off (no suggestion when a marker exists, change only through the reader), and the stats screen change (Decision E) with the `quranStatsProvider` update and its tests. | owner's go-ahead for M3 |
+| M3 | The switch dialog and its keys (Arabic REVIEWED BY OWNER, 2026-11-15), the marker suggestion hand-off (no suggestion when a marker exists, change only through the reader), and the stats screen change (Decision E) with the `quranStatsProvider` update and its tests. | owner's go-ahead for M3 |
 | M4 | Docs (re-check the contracts: none expected), the P4b stats mapping note in `wird-marker.md`, and the phone checks. | owner's go-ahead for M4 |
 
 ## Test Plan
