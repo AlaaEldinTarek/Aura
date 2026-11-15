@@ -142,7 +142,14 @@ class WirdService {
 
     final wasCompleted = existing.isCompleted;
     final newPagesRead = existing.pagesRead - pages < 0 ? 0 : existing.pagesRead - pages;
-    final nowCompleted = newPagesRead >= settings.dailyPageGoal || existing.manualCredit;
+    // Credit rule (mode-separation, decision M): the other mode's work and Mark
+    // Complete still complete the day, and pages take the credit back only if
+    // pages were what completed it (pages reached the goal before this undo).
+    final juzDone = existing.juzCompletedToday.length >= settings.dailyJuzGoal;
+    final nowCompleted = newPagesRead >= settings.dailyPageGoal ||
+        existing.manualCredit ||
+        juzDone;
+    final pagesEarnedIt = existing.pagesRead >= settings.dailyPageGoal;
 
     final entry = existing.copyWith(
       pagesRead: newPagesRead,
@@ -153,7 +160,7 @@ class WirdService {
     await _saveHistory(history);
 
     final prefs = await _prefs;
-    if (removeCredit && wasCompleted && !nowCompleted) {
+    if (removeCredit && wasCompleted && !nowCompleted && pagesEarnedIt) {
       await _rollbackStreakCredit(prefs, _todayKey());
       final days = (prefs.getInt(_totalDaysKey) ?? 0) - 1;
       await prefs.setInt(_totalDaysKey, days < 0 ? 0 : days);
@@ -223,9 +230,9 @@ class WirdService {
     final existing = history.where((p) => p.dateKey == today).firstOrNull;
     if (existing == null || !existing.manualCredit) return;
 
-    final stillComplete = settings.wirdUnit == WirdUnit.page
-        ? existing.pagesRead >= settings.dailyPageGoal
-        : existing.juzCompletedToday.length >= settings.dailyJuzGoal;
+    // Either mode's own work keeps the credit (decision M), whatever the unit.
+    final stillComplete = existing.pagesRead >= settings.dailyPageGoal ||
+        existing.juzCompletedToday.length >= settings.dailyJuzGoal;
     final entry = existing.copyWith(manualCredit: false, isCompleted: stillComplete);
     history = [for (final p in history) p.dateKey == today ? entry : p];
     await _saveHistory(history);
@@ -296,8 +303,10 @@ class WirdService {
     }
 
     final wasCompletedToday = todayProgress.isCompleted;
-    final nowCompleted =
-        juzToday.length >= settings.dailyJuzGoal || todayProgress.manualCredit;
+    // Credit rule (decision M): pages and Mark Complete still complete the day.
+    final nowCompleted = juzToday.length >= settings.dailyJuzGoal ||
+        todayProgress.manualCredit ||
+        todayProgress.pagesRead >= settings.dailyPageGoal;
 
     todayProgress = todayProgress.copyWith(
       juzCompletedToday: juzToday,
