@@ -306,8 +306,10 @@ class WirdService {
     history = history.map((p) => p.dateKey == today ? todayProgress : p).toList();
     await _saveHistory(history);
 
-    // Streak + stats on first daily completion
-    if (nowCompleted && !wasCompletedToday) {
+    // Streak + stats on first daily completion. Today's credit is given once,
+    // whichever mode earned it (same check as creditPages).
+    final creditedToday = prefs.getString(_streakDateKey) == today;
+    if (nowCompleted && !wasCompletedToday && !creditedToday) {
       await _incrementStreak();
       await prefs.setInt(_totalDaysKey, (prefs.getInt(_totalDaysKey) ?? 0) + 1);
     } else if (!nowCompleted && wasCompletedToday) {

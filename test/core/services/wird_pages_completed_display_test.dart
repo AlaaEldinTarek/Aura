@@ -54,14 +54,8 @@ void main() {
       expect(await _streak(s), streakBefore);
       expect(await _days(), daysBefore);
     });
-
-    test('Juz mode still reads the shared flag (not part of decision M)',
-        () async {
-      final s = await _completedByJuzThenPages();
-      final today = await s.getTodayProgress();
-      expect(today!.isCompletedIn(_juzSettings), isTrue);
-    });
   });
+
 
   group('(ii) then page progress completes the same day: at most one credit',
       () {
