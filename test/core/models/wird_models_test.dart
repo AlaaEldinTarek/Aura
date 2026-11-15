@@ -1,5 +1,5 @@
-// P2 cases only. The WirdSettings legacy-field cases (linkedBookmarkColor,
-// countedBookmarkPages) belong to P5 and are not here.
+// P2 cases, plus the P5 WirdSettings legacy-field cases (linkedBookmarkColor,
+// countedBookmarkPages are ignored on read and omitted on write).
 import 'dart:convert';
 
 import 'package:aura_app/core/models/wird.dart';
@@ -264,6 +264,55 @@ void main() {
       final s = composeWirdState(const WirdState(), rec, null, '2026-11-13');
       expect(s.khatmCount, 1);
       expect(s.khatmDates, ['2026-05-05']);
+    });
+  });
+
+  group('WirdSettings legacy bookmark fields (P5)', () {
+    test('fromJson ignores linkedBookmarkColor and countedBookmarkPages', () {
+      final s = WirdSettings.fromJson({
+        'dailyPageGoal': 7,
+        'dailyJuzGoal': 2,
+        'wirdUnit': 'juz',
+        'reminderTimes': ['08:00'],
+        'remindersEnabled': false,
+        'linkedBookmarkColor': 'red',
+        'countedBookmarkPages': [10, 50, 100],
+      });
+      expect(s.dailyPageGoal, 7);
+      expect(s.dailyJuzGoal, 2);
+      expect(s.wirdUnit, WirdUnit.juz);
+      expect(s.reminderTimes, ['08:00']);
+      expect(s.remindersEnabled, isFalse);
+    });
+
+    test('toJson omits the legacy fields', () {
+      final json = const WirdSettings().toJson();
+      expect(json.containsKey('linkedBookmarkColor'), isFalse);
+      expect(json.containsKey('countedBookmarkPages'), isFalse);
+      expect(json.keys.toSet(), {
+        'dailyPageGoal',
+        'dailyJuzGoal',
+        'wirdUnit',
+        'reminderTimes',
+        'remindersEnabled',
+      });
+    });
+
+    test('a JSON round trip of old data drops the legacy fields', () {
+      final old = {
+        'dailyPageGoal': 5,
+        'dailyJuzGoal': 1,
+        'wirdUnit': 'page',
+        'reminderTimes': <String>[],
+        'remindersEnabled': true,
+        'linkedBookmarkColor': 'green',
+        'countedBookmarkPages': [1, 2, 3],
+      };
+      final back = WirdSettings.fromJson(
+          jsonDecode(jsonEncode(WirdSettings.fromJson(old).toJson()))
+              as Map<String, dynamic>);
+      expect(back.toJson().containsKey('linkedBookmarkColor'), isFalse);
+      expect(back.toJson().containsKey('countedBookmarkPages'), isFalse);
     });
   });
 }

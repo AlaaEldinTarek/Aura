@@ -75,7 +75,8 @@ daily-summary notifications always English, daily summary time reverting to 21:0
   `wird_khatm_count`, `wird_khatm_dates` (JSON list) — all in `wird_service.dart`.
   `wird_total_pages_read` is no longer written or read (P4b of wird-marker): `creditPages`, `removePages`, `resetAllProgress`,
   `getFullState` and the `wird/data` sync skip it, and `achievement_service.dart` reads the marker instead. The legacy
-  `recordPagesRead` still writes it until P5 deletes that method (no UI path calls it). Old values stay in prefs unused.
+  `recordPagesRead`, the last writer, was deleted in P5 together with `_totalPagesKey`. Old values stay in prefs unused
+  and are not deleted by the app; the cloud `totalPagesRead` field is likewise ignored, not deleted.
 - Wird marker: `wird_marker` (JSON, the marker record; mirrors `users/{uid}/wird/marker`) and `wird_marker_undo` (JSON,
   one-step undo record, local only, never synced) — both in `wird_marker_service.dart`.
 - Auth / guest: `is_guest` (`AppConstants.keyIsGuest`; via `SharedPreferencesService.isGuest` / `setGuest`; written by
