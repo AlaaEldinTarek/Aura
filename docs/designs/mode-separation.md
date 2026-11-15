@@ -1,7 +1,7 @@
 # Wird Mode Separation: Page Mode and Juz Mode as Independent Modes
 
 *   **Author:** Alaa Eldin Tarek (drafted with Claude)
-*   **Status:** Draft, not approved. Every "decided" in this file is the owner's requirement text of 2026-11-15; everything marked GUESS or OPEN QUESTION is not decided.
+*   **Status:** Draft, not approved. On 2026-11-15 the owner answered every open question (his answers are recorded under "Decisions"); nothing else in this file is decided, and no phase has been started.
 *   **Date:** 2026-11-15
 *   **Branch:** `docs/mode-separation` (from `feat/wird-marker` at `c81b429`, docs only)
 *   **Reference convention:** file:line refs are on `feat/wird-marker` at `c81b429` unless marked `[M]` (main `31f1bcd`). Marks: VERIFIED (read in code or git, 2026-11-15), UNKNOWN (not checked), GUESS (inference).
@@ -53,41 +53,49 @@ Wird has two units, pages and juz. Today they share one screen, one streak, one 
 
 *   **Page mode (GUESS that this is what the owner means; it matches today's page UI):** the marker progress, start entry points, undo, restart. No juz cards.
 *   **Juz mode (VERIFIED as today):** the 30-card scroll row, the daily juz goal, no marker control (`wird-marker.md:190, 474`). Nothing about the marker.
-*   **Display independence, remaining gaps (GUESS, to verify before code):** the shared streak and day count, the shared Khatm History and the stats screen still mix both modes. See open questions C, D and E.
+*   **Display independence, remaining gaps (GUESS, to verify before code):** the shared streak and day count, the shared Khatm History and the stats screen still mix both modes. Decisions C, D and E settle this: Khatm History stays one merged list, the streak and day count stay shared, and the stats screen shows only the active mode's numbers (see Decisions).
 
 ### What a mode switch deletes and what it keeps
 
 | Switch | Warning | Deletes | Keeps |
 |---|---|---|---|
-| Page → Juz | none proposed (GUESS) | nothing | marker record and undo record |
-| Juz → Page | yes (Goal 3) | the checked juz cards: `wird_completed_juz` and today's `juzCompletedToday` (GUESS, see open question A) | marker, khatm history, earned achievements, streak (GUESS, open questions B to E) |
+| Page → Juz | none (Decision A) | nothing | marker record and undo record, khatm history, earned achievements, streak |
+| Juz → Page | yes (Goal 3, Decision A) | the checked juz cards: `wird_completed_juz` and today's `juzCompletedToday` | marker record and undo record, khatm history and juz khatma count, earned achievements, streak and day count (Decisions A, B, D) |
 
-The owner's wording is "going back to the other mode will empty the checked juz cards". It is not certain which direction empties the cards. This draft assumes it is leaving juz mode. OPEN QUESTION A asks.
-
-### Marker suggestion on the way to page mode (Goal 4)
-
-*   **Rule (b), the owner's suggestion, GUESS on details:** the suggested page is the first page of the juz after the last consecutively checked juz. Let N be the largest number such that juz 1 to N are all checked. If N is 0, there is no suggestion. If N is 30, there is no suggestion (the khatma path resets the cards at 30, `wird_tab.dart:176-188`, VERIFIED). Otherwise the page is `startPages[N]` (zero-based list: juz N+1 starts there). Example: cards 1, 2, 3 and 5 checked gives N = 3 and page 62 (VERIFIED against the table `quran_reader_screen.dart:85-89`: juz 4 starts at page 62).
-*   **Juz table (UNKNOWN whether the two tables agree):** the reader's static list (`quran_reader_screen.dart:85-89`) and `juzListProvider` (`quran_provider.dart:14`). The pure function takes the list as a parameter. Phase 1 compares them before use.
-*   **Where it appears (GUESS):** after the user confirms leaving juz mode, if there is no marker (`applySetup` needs none, VERIFIED) and N is above 0, the existing start sheet opens with the suggested page (`WirdStartSheet` with `readingMode: false`, as `_setMarkerFromTab` does, `wird_tab.dart:337-345`). "Start here" places the marker (`placeMarker`, `wird_provider.dart:199-203`) and "Cancel" skips it. The sheet title "Start your Wird from page N?" is already translated.
-*   **"The user can change it" (UNKNOWN how):** the tab version of the sheet offers only Start here and Cancel (spec `wird-marker.md` items 9 to 11). The reader version offers "Choose another page" and "Just read". This draft assumes the user can use "Choose another page" in the reader (GUESS). OPEN QUESTION F asks.
-*   **A marker already exists (VERIFIED: placement fails with `markerExists`):** no suggestion is shown. OPEN QUESTION G asks whether to offer a move instead.
+Order of the Juz → Page step (all in one step, after the user confirms; see "Check before emptying"): 1. read the khatma count and the checked cards, 2. run the juz achievement check on those values, 3. empty the cards, 4. set the unit to page, 5. offer the marker suggestion.
 
 ### New juz achievements (Goal 2)
 
-Same collection and shape as today (`users/{uid}/achievements/{id}`, `achievement_service.dart:401-405`, contract row `firestore-paths.md:10`), so no schema change. Names are DRAFT.
+Same collection and shape as today (`users/{uid}/achievements/{id}`, `achievement_service.dart:401-405`, contract row `firestore-paths.md:10`), so no schema change. Ids and thresholds are the owner's decision J. The Arabic names stay DRAFT until the owner reviews them.
 
-| Id (proposed) | English name | Arabic name (DRAFT) | Condition (GUESS on thresholds) | Reads |
+| Id (decision J) | English name | Arabic name (DRAFT) | Condition | Reads |
 |---|---|---|---|---|
 | `wird_juz_5` | Five Juz | خمسة أجزاء | at least 5 juz read in total | `wird_khatm_count × 30 + checked juz count` |
 | `wird_juz_15` | Half the Quran | نصف القرآن | at least 15 juz in total | same value |
 | `wird_juz_khatma` | Juz Khatma | ختمة بالأجزاء | `wird_khatm_count >= 1` | `WirdService.getKhatmCount` (`wird_service.dart:379-382`) |
 
 *   **Pure function (GUESS on the name):** `wirdJuzAchievementIds({required int juzKhatmCount, required int checkedJuz})` beside `wirdAchievementIds` (`achievement_service.dart:15-21`).
-*   **Inputs and the emptying problem (VERIFIED mechanism):** `wird_completed_juz` is emptied by `resetAllJuz` at each khatma (`wird_service.dart:404-408`) and, under this spec, on leaving juz mode. The derived total `khatmas × 30 + checked` therefore drops when cards are emptied by a switch. An achievement that was already earned stays earned. One that was not yet awarded can be missed if the cards are emptied before the next check. OPEN QUESTION H asks whether to add a persisted cumulative juz counter instead.
-*   **Names are inline, not translation keys (VERIFIED):** the existing definitions hold `nameEn` and `nameAr` directly (`achievement.dart:379-415`). This draft follows that pattern. CLAUDE.md says every UI string goes through `.tr()`; the existing achievements do not (VERIFIED), so this is flagged OPEN QUESTION I.
+*   **Inputs (VERIFIED mechanism, Decision H):** worked out each time as `khatmas × 30 + checked cards`, with no new prefs key, no new `wird/data` field and no contract change. `wird_completed_juz` is emptied by `resetAllJuz` at each khatma (`wird_service.dart:404-408`) and, under Decision A, on leaving juz mode, so the value drops at those moments. Earned achievements stay (Decision B). The rule "Check before emptying" below stops the user losing one he was about to earn.
+*   **Names are inline, not translation keys (VERIFIED):** the existing definitions hold `nameEn` and `nameAr` directly (`achievement.dart:379-415`). This draft follows that pattern. CLAUDE.md says every UI string goes through `.tr()`; the existing achievements do not (VERIFIED), so this is a known deviation. Decision I: use inline `nameEn` and `nameAr` to match the existing achievements. CLAUDE.md says to use translation keys, and the existing Wird achievements already break that rule (VERIFIED, `achievement.dart:349-415`); the new ones follow the existing pattern and are not a cleanup of it.
 *   **Counts shown (VERIFIED the screen groups by category, `achievements_screen.dart:152`):** the Quran group goes from 1/7 style counts to a total of 10 (the three new ids). Per-user states are unaffected.
 *   **When the check runs (UNKNOWN as of now):** achievements are checked only on a prayer record, a task completion and Profile badge grid mount (VERIFIED, see `wird-achievements-juz.md`). This spec does not change that; the timing question stays in that draft.
 *   **Gaming (VERIFIED the cause):** cards are checked by tapping today, so these achievements can be earned by tapping. This is the same as the page-mode caveat for juz estimates and goes away only if `juz-auto-check.md` is built.
+
+### Check before emptying (Decision H, new rule)
+
+*   **Rule:** in the same step as the switch, after the user confirms the dialog and before any card is emptied, the app runs the juz achievement check, so a user who was about to earn `wird_juz_5`, `wird_juz_15` or `wird_juz_khatma` does not lose it by switching.
+*   **Why `checkAndAward` as it is does not fit (VERIFIED):** `checkAndAward({required String userId})` (`achievement_service.dart:62`) first reads the earned list and 365 days of prayer statistics, the prayer streak, month data and task statistics, and only reaches the Wird block near the end (`:263-306`), where it reads the cards from prefs. Called as the first step of the switch it would still read the cards late. If the switch emptied the cards before it reached that block, or ran concurrently with it, the cards would already be gone (GUESS on the race; the order of awaits is VERIFIED).
+*   **Proposed shape (GUESS on names):** capture the two inputs from prefs first (`getKhatmCount` and `getCompletedJuz`, VERIFIED to exist, `wird_service.dart:311, 379`). Then call a narrow method, for example `AchievementService.checkJuzAchievements(userId, juzKhatmCount, checkedJuz)`, that reads only the earned list, runs `wirdJuzAchievementIds` on the captured values and calls `_award` for the missing ids. Then empty the cards. The normal `checkAndAward` also gets the juz ids in its Wird block, so the achievements are also checked at the usual moments (prayer record, task completion, Profile badge grid; VERIFIED, see `wird-achievements-juz.md`). Both paths share the one pure function.
+*   **Guest user (VERIFIED):** `checkAndAward` returns `[]` at once for `guest_user` (`achievement_service.dart:62-63`), and achievements are Firestore-backed. The narrow method must do the same. A guest has no achievements, so nothing is checked and the cards are emptied as usual.
+*   **Offline (UNKNOWN, risk):** the earned-list read is a Firestore `get()`, and `_award` is a Firestore `set()`. The code does not configure persistence explicitly (VERIFIED: no `persistenceEnabled` or cache settings found in `lib/`), so the SDK default applies (GUESS: on for Android, UNKNOWN for Windows). Offline, the `get()` may return cached data or throw, and an awaited `set()` may not complete until the server acknowledges it (GUESS). Decision K says the switch must work offline, so the switch must not wait indefinitely on this check.
+*   **Proposed offline behavior (GUESS):** wait for the check for a short bounded time (the length is a number to choose in phase M2, for example a few seconds), catch every error the way `checkAndAward` does (`:312`), then empty the cards whatever the result. The cards are emptied locally at once (Decision K). If the check could not finish, the user can miss an achievement he was about to earn. That residual loss is listed as item L below, because it follows from Decisions H and K together.
+*   **Dialog text (GUESS):** the body already says earned achievements stay. It does not mention the check, and no user-facing text is needed for it.
+
+### Stats screen shows only the active mode's numbers (Decision E)
+
+*   **Today (VERIFIED):** `quran_stats_screen.dart` already branches on juz mode for the weekly chart (`:100`), the average unit (`:143-144`) and the juz grid (`:173`), but shows the combined `stats.khatmCount` (`:79`) and the page-derived `stats.totalPages` (`:71`) in both modes. `QuranStatsData.khatmCount` is the combined count (`wird-marker.md:959`, "Stats input mapping").
+*   **Proposed (GUESS on the exact set):** page mode shows the marker's pages and the marker's khatma count; juz mode shows the checked cards, the juz khatma count (`WirdState.juzKhatmCount`, VERIFIED to exist, `wird.dart:191`) and the juz average. Streak, best streak and days stay shared (Decision D). This changes the P4b "Stats input mapping" rule (`khatmCount` combined) and the stats cases in `test/core/providers/wird_provider_test.dart` (the page-mode case expects a combined count of 3, VERIFIED in the P4b tests). Khatm History is not affected (Decision C).
+*   **Files (GUESS):** `lib/core/providers/wird_provider.dart` (`quranStatsProvider`), `lib/features/quran/quran_stats_screen.dart`, possibly `lib/core/models/wird.dart` (a field), and the stats tests. Any new label is a string key in both languages.
 
 ### Warning dialog texts
 
@@ -99,73 +107,87 @@ Keys are new and must go into both `assets/translations/en.json` and `ar.json` (
 | `wird_mode_switch_body` | Your checked juz cards will be emptied. Your khatm history and earned achievements stay. If you come back to Juz mode you start with empty cards. | سيتم تفريغ بطاقات الأجزاء التي حددتها. يبقى سجل الختمات والإنجازات التي حصلت عليها. إذا عدت إلى وضع الأجزاء فستبدأ ببطاقات فارغة. |
 | `wird_mode_switch_confirm` | Switch | تبديل |
 
-*   The body text states what GUESS (a) assumes (history and achievements stay). If the owner answers question A or B differently the text changes.
+*   The body text states Decision B (history and earned achievements stay). If the owner changes A or B the text changes.
 *   No number is interpolated into these strings, so no Arabic-numeral formatting is needed (VERIFIED by the texts above).
-*   The page-to-juz direction has no dialog in this draft. If the owner wants one in that direction too, a second pair of keys is added.
+*   The page-to-juz direction has no dialog (Decision A).
 
-## Open Questions for Aladdin
+## Decisions (owner, 2026-11-15)
 
-*   **A. Which switch empties the juz cards?** (1) Leaving juz mode (juz → page); proposed. (2) Leaving page mode (page → juz) too, so juz always starts empty. (3) Never on a switch, only on a khatma (today's behavior), and the warning only explains that cards stay. Cost: (1) one deletion in `setWirdUnit` plus the dialog; (2) the same in both directions; (3) no deletion, dialog text only. Risk: (1) and (2) delete user data, and the blind `wird/data` push can restore or lose `completedJuz` on a second device (`wird-marker.md` risk 12, VERIFIED to exist in the spec).
-*   **B. (GUESS a) Khatm history and earned achievements stay when cards are emptied.** Alternative: also empty juz khatma entries, which would change the Khatm History and `wird_juz_khatma` logic. Proposed: keep.
-*   **C. (GUESS c) Khatm History: one merged list (today) or split per mode.** One list needs no change. Split needs two lists on the Khatm Du'a screen (`khatma_dua_screen.dart:36`) and a source tag on each entry (the data already knows its source: legacy fields versus marker fields, VERIFIED), plus new strings.
-*   **D. Streak and day count.** One shared streak (today, VERIFIED) or one per mode. A per-mode streak needs new prefs keys, new `wird/data` fields and contract rows. Proposed: leave shared, because "fully independent" in the owner's text most likely concerns progress and display (GUESS).
-*   **E. Stats screen.** Show only the active mode's numbers (the average already differs by mode, VERIFIED) or keep the shared totals.
-*   **F. Changing the suggested page.** Offer "Choose another page" in the tab sheet or only through the reader.
-*   **G. Marker already exists on the way to page mode.** No suggestion (proposed) or offer to move it.
-*   **H. A persisted cumulative juz counter for the achievements** (new prefs key, `wird/data` field, contract rows) or the derived value above (proposed).
-*   **I. Inline achievement names (follows the existing pattern, proposed) or `.tr()` keys (CLAUDE.md rule).**
-*   **J. Thresholds** (5 and 15 juz) and the achievement names above.
-*   **K. Offline and sign-out.** Emptying `wird_completed_juz` locally is pushed in the background (`updateSettings` and `_pushToCloud`, `wird_service.dart:57-66`, VERIFIED mechanism). Whether the owner wants the emptying to wait for a connection is UNKNOWN.
+The owner answered "yes" to the recommended list. Each item keeps the question text of the earlier draft, with his answer. The marks describe the state of the code the answer touches, not the owner's choice.
 
-## Files Touched (GUESS, for the proposed answers)
+*   **A. Which switch empties the juz cards?** Answer: only Juz → Page empties the checked juz cards (`wird_completed_juz` and today's `juzCompletedToday`), after a warning dialog. Page → Juz changes nothing and shows no dialog. (Mechanism VERIFIED to be new: today `setWirdUnit` only writes the setting, `wird_provider.dart:235-239`.)
+*   **B. Do Khatm History and earned achievements stay when cards are emptied?** Answer: yes, both stay. (VERIFIED that the khatma list lives in `wird_khatm_count` and `wird_khatm_dates`, which the emptying does not touch, `wird_service.dart:392-408`; earned achievements live in Firestore, `achievement_service.dart:401-405`.)
+*   **C. Khatm History: one merged list or split per mode?** Answer: one merged list, as today. (VERIFIED, `khatma_dua_screen.dart:36`, `wird_marker_logic.dart:181-185`.)
+*   **D. Streak and day count: shared or per mode?** Answer: shared between the modes, as today. Per-mode streaks are out of scope and need their own design. (VERIFIED as today, `wird_service.dart:353-364`.)
+*   **E. Stats screen: only the active mode's numbers?** Answer: yes, show only the active mode's numbers. (See "Stats screen shows only the active mode's numbers" for the effect.)
+*   **F. How does the user change the suggested page?** Answer: only through the reader's "Choose another page". No new button in the tab sheet. (VERIFIED that the reader sheet offers it and the tab sheet does not, `wird-marker.md` items 9 to 11.)
+*   **G. A marker already exists when going to page mode.** Answer: show no suggestion. (VERIFIED: placement fails with `markerExists`, `wird_marker_logic.dart:63-75`.)
+*   **H. Persisted cumulative juz counter, or derived?** Answer: derived each time (`khatmas × 30 + checked cards`). No new prefs key, no new `wird/data` field, no contract change. New rule: run the achievement check just before the cards are emptied, in the same step as the switch (see "Check before emptying").
+*   **I. Inline achievement names or `.tr()` keys?** Answer: inline `nameEn` and `nameAr`, to match the existing achievements. CLAUDE.md says to use translation keys, and the existing achievements already break that rule (VERIFIED, `achievement.dart:349-415`).
+*   **J. Thresholds and names.** Answer: `wird_juz_5` (5 juz), `wird_juz_15` (15 juz) and `wird_juz_khatma` (one juz khatma), with the draft names. The Arabic names stay DRAFT until the owner reviews them.
+*   **K. Offline and sign-out.** Answer: empty locally at once, sync later. It must work offline. (VERIFIED mechanism: `updateSettings` and the cloud push run in the background, `wird_service.dart:57-66`.)
+
+### Still open
+
+None of questions A to K is open. One item follows from decisions H and K together and was not asked:
+
+*   **L. Missed achievement when the check cannot finish.** If the user is offline (or the check fails) at the moment of the switch, the cards are still emptied (Decision K), so a user who was about to earn a juz achievement can miss it. Options: (1) accept the loss and wait only a short bounded time for the check (proposed, GUESS); (2) keep a small "pending award" marker locally and retry later, which needs a new prefs key and so conflicts with Decision H; (3) block the switch until online, which conflicts with Decision K. Recommended: (1) (GUESS). The size of the bounded wait is a detail for phase M2.
+
+## Files Touched (GUESS, from the decisions)
 
 | File | Change |
 |---|---|
-| `lib/core/providers/wird_provider.dart` | `setWirdUnit` stays; new `switchToPageMode` (or a flag) that empties juz data, only after the dialog (OPEN A) |
+| `lib/core/providers/wird_provider.dart` | a new "switch to page mode" action (capture, check, empty, set unit); `setWirdUnit` stays for page → juz; `quranStatsProvider` shows the active mode's numbers (Decision E) |
 | `lib/core/services/wird_service.dart` | a method that empties `wird_completed_juz` and today's `juzCompletedToday` without touching khatma fields or streak |
 | `lib/core/services/wird_marker_logic.dart` | pure `suggestMarkerPageAfterJuz(checked, juzStartPages)` |
-| `lib/core/services/achievement_service.dart` | `wirdJuzAchievementIds` and its checks in the Wird block |
-| `lib/core/models/achievement.dart` | three new definitions |
-| `lib/features/quran/wird_tab.dart` | the segmented button handler (dialog, then switch, then the optional start sheet) |
-| `assets/translations/en.json`, `ar.json` | the three dialog keys (and any answer to C or F) |
-| `.project-docs/contracts/prefs-keys.md`, `firestore-paths.md` | only if OPEN D or H adds keys (the proposed answers add none) |
-| Tests | `wird_marker_logic_test.dart` (suggestion), a new `achievement_wird_juz_test.dart`, a provider test for the switch, a widget test for the dialog |
+| `lib/core/services/achievement_service.dart` | `wirdJuzAchievementIds`, its checks in the Wird block, and the narrow check-before-emptying method (guest guard, error handling like `checkAndAward`) |
+| `lib/core/models/achievement.dart` | three new definitions with inline names (Decision I) |
+| `lib/features/quran/wird_tab.dart` | the segmented button handler: dialog (Juz → Page only), then the switch action, then the marker suggestion when allowed |
+| `lib/features/quran/quran_stats_screen.dart` | the active mode's numbers (Decision E) |
+| `lib/core/models/wird.dart` | possibly a field for the stats split (GUESS) |
+| `assets/translations/en.json`, `ar.json` | the three dialog keys, plus any stats label that changes |
+| `.project-docs/contracts/` | no change under Decision H (no new key, no new field). Re-check at phase M4 |
+| Tests | `wird_marker_logic_test.dart` (suggestion), new `achievement_wird_juz_test.dart`, provider tests for the switch and the stats split, a widget test for the dialog, an update of the P4b stats cases |
 
-No Kotlin file is touched (GUESS: nothing native reads these keys; the contracts list no Kotlin reader for `wird_*`, VERIFIED `prefs-keys.md:74`).
+No Kotlin file is touched (GUESS: nothing native reads these keys; no Kotlin reader of `wird_*` is listed, VERIFIED `prefs-keys.md:74`).
 
 ## Risks
 
-*   Deleting `wird_completed_juz` on a switch is data loss; the dialog is the only safeguard (OPEN A).
-*   A second signed-in device can push a stale `completedJuz` back through the blind `wird/data` merge (VERIFIED risk in `wird-marker.md`, risk 12). The emptying would not be durable across devices until the push order is fixed.
-*   Achievements derived from checked cards can be missed or earned by tapping (see above).
-*   "Fully independent" and the shared streak, history and Khatm History do not fully agree (OPEN C, D, E).
-*   The two juz tables may disagree (UNKNOWN), which would put the marker suggestion on the wrong page.
-*   The marker suggestion in one flow combines a dialog, a mode change and a bottom sheet; the order and cancel paths need careful tests (GUESS on complexity).
+*   Emptying `wird_completed_juz` is data loss; the dialog is the only safeguard.
+*   A second signed-in device can push a stale `completedJuz` back through the blind `wird/data` merge (VERIFIED risk in `wird-marker.md`, risk 12). The emptying is not durable across devices until that push order is fixed. Not in scope here.
+*   Missed achievement when offline at the switch (item L).
+*   An awaited Firestore call during the switch could hang offline (GUESS). The bounded wait is there for this.
+*   Achievements derived from checked cards can be earned by tapping until `juz-auto-check.md` is built (VERIFIED cause).
+*   The two juz tables may disagree (UNKNOWN), which would put the marker suggestion on the wrong page. Phase M1 compares them.
+*   The stats change alters the P4b stats mapping and its tests (VERIFIED they exist); the screen is also used in page mode.
+*   One flow combines a dialog, a data change, an achievement check and a bottom sheet; the order and cancel paths need careful tests (GUESS on complexity).
 
-## Phases (all need the owner's go-ahead first; no phase is open)
+## Phases (no phase has been started; each needs the owner's explicit go-ahead first)
 
 | Phase | Content | Gate |
 |---|---|---|
-| M0 | The owner answers questions A to K; this file is updated. | the owner |
-| M1 | Tests first (red run): `suggestMarkerPageAfterJuz` (N = 0, 3 with a gap, 30, unsorted input, both juz tables compared), `wirdJuzAchievementIds` (khatma 0 and 1, checked 0, 4, 5, 14, 15, 30), the new method that empties only the juz data. | "approve phase M1" |
-| M2 | The service, provider and logic code behind those tests, plus the three achievement definitions. | "approve phase M2" |
-| M3 | The switch dialog, the new keys (Arabic DRAFT reviewed by the owner), the start-sheet hand-off. | "approve phase M3" |
-| M4 | Docs, contract rows if any, and the phone checks. | "approve phase M4" |
+| M0 | The owner's answers are recorded (this file, 2026-11-15). Item L and the Arabic names remain for his review. | owner (done for A to K; L and the Arabic texts pending) |
+| M1 | Tests first (red run): `suggestMarkerPageAfterJuz` (N = 0, 3 with a gap, 30, unsorted input, both juz tables compared); `wirdJuzAchievementIds` (khatma 0 and 1, checked 0, 4, 5, 14, 15, 30, boundaries of `khatmas × 30 + checked`); the method that empties only the juz data (keeps khatma fields, streak, marker, undo record); the **check-before-emptying order**: the inputs are captured before emptying and the check sees the full cards even when emptying follows at once; guest returns early and the cards are still emptied; a check that throws or times out still lets the cards be emptied. | owner's go-ahead for M1 |
+| M2 | The service, provider, logic and achievement code behind those tests: the narrow check method, the bounded wait, the derived juz ids in the Wird block of `checkAndAward`, and the three definitions with inline names. | owner's go-ahead for M2 |
+| M3 | The switch dialog and its keys (Arabic DRAFT reviewed by the owner), the marker suggestion hand-off (no suggestion when a marker exists, change only through the reader), and the stats screen change (Decision E) with the `quranStatsProvider` update and its tests. | owner's go-ahead for M3 |
+| M4 | Docs (re-check the contracts: none expected), the P4b stats mapping note in `wird-marker.md`, and the phone checks. | owner's go-ahead for M4 |
 
 ## Test Plan
 
 *   **Pure-function tests:**
     *   Marker suggestion: no cards, cards 1 to 3 (page 62), cards 1, 2, 4 (N = 2, page 42), all 30 (no suggestion), a list in any order, a juz table with 30 entries.
-    *   Juz achievements: every boundary of 5 and 15, khatma count 0 and 1, derived total with and without leftover cards.
-    *   Existing `wirdAchievementIds` tests must still pass unchanged (the page-mode ids do not read juz data).
-*   **Provider tests:** the switch empties only juz data and leaves the marker, undo record, khatma fields, streak and settings alone; page → juz changes nothing; a cancelled dialog changes nothing.
-*   **Widget test:** the dialog shows both languages and the two buttons; "Cancel" keeps the mode.
-*   **Phone checks (not testable otherwise):** check 5 cards, switch to page, read the warning in English and Arabic (RTL), cancel once, then confirm; see the cards emptied when returning to juz; see the suggested page 82 (juz 5 starts there, after cards 1 to 4); place the marker and open the reader at that page; check Khatm History and the Quran achievements group; sign in on a second device and compare `completedJuz`.
-*   **Not covered by tests:** Firestore push order on two devices, the exact Arabic wording, real-device layout of the dialog at the largest font.
+    *   Juz achievements: every boundary of 5 and 15, khatma count 0 and 1, the derived total with and without leftover cards.
+    *   Existing `wirdAchievementIds` tests stay unchanged (the page-mode ids do not read juz data).
+*   **Check before emptying (new):** with a fake achievement store and a fake clock or timeout: (1) cards 1 to 5 checked, no earned ids: switching awards `wird_juz_5` and then empties the cards; (2) 4 cards checked: nothing is awarded and the cards are emptied; (3) guest: no award call, cards emptied; (4) the store throws: cards still emptied, no exception reaches the caller; (5) the store never answers: the bounded wait ends and the cards are emptied; (6) the award is made from values captured before emptying, not from prefs read afterwards.
+*   **Provider tests:** the switch empties only juz data and leaves the marker, undo record, khatma fields, streak and settings alone; Page → Juz changes nothing; a cancelled dialog changes nothing; the stats provider shows the page numbers in page mode and the juz numbers in juz mode, with the streak shared.
+*   **Widget tests:** the dialog shows in both languages with the two buttons and only on Juz → Page; "Cancel" keeps the mode and the cards; the stats screen shows only the active mode's tiles.
+*   **Phone checks (not testable otherwise):** check 5 cards, switch to page, read the warning in English and Arabic (RTL), cancel once, then confirm; see `wird_juz_5` in the Quran group after the switch; see the cards empty when returning to juz; see the suggested page 82 (juz 5 starts there, after cards 1 to 4) and place the marker, then use "Choose another page" in the reader; with a marker already placed, confirm there is no suggestion; repeat the switch in airplane mode and check it still empties the cards; check Khatm History and the stats screen in both modes; sign in on a second device and compare `completedJuz`.
+*   **Not covered by tests:** Firestore behavior offline and the push order on two devices, the exact Arabic wording, real-device layout of the dialog at the largest font.
 *   **Baseline:** `flutter test` and `flutter analyze` numbers recorded before M1 and after every phase.
 
 ## Out of Scope
 
 *   Checking a juz card automatically from reading: see `docs/designs/juz-auto-check.md` (draft, branch `docs/juz-followups`).
-*   The achievement check timing: see `docs/designs/wird-achievements-juz.md` item 2.
-*   A per-mode streak (OPEN D) unless the owner decides it, which would need its own design.
+*   The achievement check timing in general: see `docs/designs/wird-achievements-juz.md` item 2 (this spec only adds the check at the switch).
+*   Per-mode streaks and day counts (Decision D): they need their own design.
+*   A persisted cumulative juz counter and a pending-award retry (they conflict with Decision H).
