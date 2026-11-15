@@ -111,7 +111,11 @@ class WirdService {
     await _saveHistory(history);
 
     final prefs = await _prefs;
-    final granted = nowCompleted && !wasCompleted;
+    // Today's credit is given once, whichever mode earned it: if the streak date
+    // is already today (e.g. juz work completed the day, then the flag went false
+    // while pages were below the goal), reaching the page goal adds no second credit.
+    final creditedToday = prefs.getString(_streakDateKey) == _todayKey();
+    final granted = nowCompleted && !wasCompleted && !creditedToday;
     if (granted) {
       await _incrementStreak();
       await prefs.setInt(_totalDaysKey, (prefs.getInt(_totalDaysKey) ?? 0) + 1);

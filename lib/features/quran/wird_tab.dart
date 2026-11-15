@@ -173,7 +173,8 @@ class _WirdContentViewState extends ConsumerState<_WirdContentView> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final primary = AppConstants.getPrimary(isDark);
     final progress = state.todayProgress;
-    final isCompleted = progress?.isCompleted ?? false;
+    // Decision M: Pages shows completed only from page progress; Juz as before.
+    final isCompleted = progress?.isCompletedIn(state.settings) ?? false;
 
     // Page mode vars
     final goal = state.settings.dailyPageGoal;

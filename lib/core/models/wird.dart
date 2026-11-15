@@ -77,6 +77,15 @@ class WirdProgress {
 
   int get juzRead => juzCompletedToday.length;
 
+  /// Whether this day shows as completed in the mode of [settings]
+  /// (mode-separation spec, decision M). Pages mode: only from page progress
+  /// (the page goal, or "Mark Complete"), never from juz work. Juz mode: the
+  /// stored flag, as before. The streak and day credit are not affected.
+  bool isCompletedIn(WirdSettings settings) =>
+      settings.wirdUnit == WirdUnit.juz
+          ? isCompleted
+          : (pagesRead >= settings.dailyPageGoal || manualCredit);
+
   String get dateKey =>
       '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
