@@ -20,6 +20,69 @@ List<String> wirdAchievementIds({required int khatmaCount, required int pages}) 
   ];
 }
 
+/// The juz achievements a total qualifies for (docs/designs/mode-separation.md,
+/// decisions H and J). The total is worked out each time as
+/// `juzKhatmCount * 30 + checkedJuz`; nothing is stored. Pure, so it is tested
+/// without Firebase.
+List<String> wirdJuzAchievementIds({
+  required int juzKhatmCount,
+  required int checkedJuz,
+}) {
+  final khatmas = juzKhatmCount < 0 ? 0 : juzKhatmCount;
+  final cards = checkedJuz < 0 ? 0 : checkedJuz;
+  final total = khatmas * 30 + cards;
+  return [
+    if (total >= 5) 'wird_juz_5',
+    if (total >= 15) 'wird_juz_15',
+    if (khatmas >= 1) 'wird_juz_khatma',
+  ];
+}
+
+/// PROPOSAL (owner to confirm): how long the Juz -> Pages switch waits for the
+/// juz achievement check before it gives up and empties the cards anyway
+/// (decision L). See the M1 report for the reasoning.
+const Duration kJuzSwitchCheckTimeout = Duration(seconds: 5);
+
+/// The check-before-emptying step (decisions H, K, L). The caller captures
+/// [juzKhatmCount] and [checkedJuz] first, calls this, and empties the cards
+/// afterwards whatever the outcome: this never throws and never waits longer
+/// than [timeout]. A guest returns at once (achievements are Firestore-backed).
+/// Returns the ids awarded before the end of the wait.
+///
+/// [loadEarnedIds] and [award] are injected so the logic is tested without
+/// Firebase; [AchievementService.checkJuzAchievements] wires the real ones.
+Future<List<String>> awardJuzAchievementsBeforeEmptying({
+  required String userId,
+  required int juzKhatmCount,
+  required int checkedJuz,
+  required Future<Set<String>> Function() loadEarnedIds,
+  required Future<void> Function(String id) award,
+  Duration timeout = kJuzSwitchCheckTimeout,
+}) async {
+  if (userId == 'guest_user') return [];
+  final awarded = <String>[];
+  try {
+    await () async {
+      final ids = wirdJuzAchievementIds(
+        juzKhatmCount: juzKhatmCount,
+        checkedJuz: checkedJuz,
+      );
+      if (ids.isEmpty) return;
+      final earned = await loadEarnedIds();
+      for (final id in ids) {
+        if (earned.contains(id)) continue;
+        await award(id);
+        awarded.add(id);
+      }
+    }()
+        .timeout(timeout);
+  } catch (e) {
+    // TimeoutException (offline), or any store error: same as checkAndAward.
+    debugPrint('❌ Error checking juz achievements: $e');
+  }
+  return List.of(awarded);
+}
+
 /// Service for checking and awarding achievements.
 /// Listen to [newAchievements] stream to show UI notifications on unlock.
 class AchievementService {
@@ -55,6 +118,37 @@ class AchievementService {
       debugPrint('❌ Error getting achievements: $e');
       return [];
     }
+  }
+
+  /// Juz achievement check for the Juz -> Pages switch, run on values captured
+  /// before the cards are emptied. See [awardJuzAchievementsBeforeEmptying].
+  Future<List<Achievement>> checkJuzAchievements({
+    required String userId,
+    required int juzKhatmCount,
+    required int checkedJuz,
+    Duration timeout = kJuzSwitchCheckTimeout,
+  }) async {
+    final newlyEarned = <Achievement>[];
+    final now = DateTime.now();
+    await awardJuzAchievementsBeforeEmptying(
+      userId: userId,
+      juzKhatmCount: juzKhatmCount,
+      checkedJuz: checkedJuz,
+      timeout: timeout,
+      loadEarnedIds: () async {
+        final snapshot = await _firestore
+            .collection('users')
+            .doc(userId)
+            .collection('achievements')
+            .get();
+        return snapshot.docs.map((doc) {
+          final data = doc.data();
+          return data['id'] as String? ?? doc.id;
+        }).toSet();
+      },
+      award: (id) => _award(userId, id, now, newlyEarned),
+    );
+    return List.of(newlyEarned);
   }
 
   /// Check and award any newly earned achievements.

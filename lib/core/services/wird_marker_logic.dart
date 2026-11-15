@@ -76,6 +76,31 @@ MarkerResult<WirdMarkerRecord> applySetup(
   ));
 }
 
+/// The page to suggest as the Wird marker when the user leaves juz mode
+/// (docs/designs/mode-separation.md, rule b): the first page of the juz after
+/// the last consecutively checked juz. [checkedJuz] is the list of checked
+/// cards (1 to 30, any order, duplicates allowed); [juzStartPages] is the
+/// 30-entry start table (index 0 = juz 1).
+///
+/// Null when no suggestion applies: juz 1 is not checked, all 30 are checked
+/// (the khatma path resets the cards), a marker already exists in [existing]
+/// (the same test as [applySetup]), or the table does not have 30 entries.
+int? suggestMarkerPageAfterJuz(
+  List<int> checkedJuz,
+  List<int> juzStartPages, {
+  WirdMarkerRecord? existing,
+}) {
+  if (existing != null && existing.markerPage != null) return null;
+  if (juzStartPages.length != 30) return null;
+  final checked = checkedJuz.toSet();
+  var n = 0;
+  while (n < 30 && checked.contains(n + 1)) {
+    n++;
+  }
+  if (n == 0 || n == 30) return null;
+  return juzStartPages[n];
+}
+
 /// Moves the marker forward to [target]. [today] is part of the contract so
 /// every function takes the date the same way; a move does not use it.
 MarkerResult<({WirdMarkerRecord record, int pagesAdded})> applyMove(

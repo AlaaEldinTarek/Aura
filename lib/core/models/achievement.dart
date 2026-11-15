@@ -415,6 +415,36 @@ class AchievementDefinitions {
       category: AchievementCategory.quran,
       threshold: 300,
     ),
+    Achievement(
+      id: 'wird_juz_5',
+      nameEn: 'Five Juz',
+      nameAr: 'خمسة أجزاء',
+      descriptionEn: 'Read 5 juz through Wird',
+      descriptionAr: 'اقرأ 5 أجزاء عبر الورد',
+      iconEmoji: '📗',
+      category: AchievementCategory.quran,
+      threshold: 5,
+    ),
+    Achievement(
+      id: 'wird_juz_15',
+      nameEn: 'Half the Quran',
+      nameAr: 'نصف القرآن',
+      descriptionEn: 'Read 15 juz through Wird',
+      descriptionAr: 'اقرأ 15 جزءاً عبر الورد',
+      iconEmoji: '📘',
+      category: AchievementCategory.quran,
+      threshold: 15,
+    ),
+    Achievement(
+      id: 'wird_juz_khatma',
+      nameEn: 'Juz Khatma',
+      nameAr: 'ختمة بالأجزاء',
+      descriptionEn: 'Complete a khatma through Juz',
+      descriptionAr: 'أكمل ختمة عبر الأجزاء',
+      iconEmoji: '🌙',
+      category: AchievementCategory.quran,
+      threshold: 1,
+    ),
 
     // Special
     Achievement(
