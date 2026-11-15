@@ -25,7 +25,7 @@ and the khatma celebration and dua screens. Data comes from `../../core/` and is
 | `khatma_dua_screen.dart` | `KhatmaDuaScreen()`: route `/khatma_dua`, also pushed from the celebration screen. Private consts `_duaArabic`, `_duaEnglish` |
 
 ### Invariants
-- **Opening the reader**: start page = `initialPage`, else `initialJuz` via the reader's hardcoded `_juzStartPages`
+- **Opening the reader**: start page = `initialPage`, else `initialJuz` via `kJuzStartPages` (`quran_service.dart`)
   (same table as `QuranService.getJuzList`), else `getSurahMeta(suraNo).startPage`, else 1. `scrollToAyaNo` is accepted
   but never used (findings F38). Juz and Wird callers pass `suraNo: 1` and rely on `initialJuz` / `initialPage`.
 - **Reader pages**: `PageView` of 604 (index = page − 1). Pages 1–2 use a 235×235 viewBox, the rest 345×550. SVGs are
