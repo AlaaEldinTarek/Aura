@@ -15,9 +15,10 @@ and the khatma celebration and dua screens. Data comes from `../../core/` and is
 | File | Public symbols / entry points |
 | --- | --- |
 | `quran_screen.dart` | `QuranScreen()`: route `/quran`, also bottom-nav tab page. Private tabs `_SurahListTab`, `_JuzTab`, `_BookmarksTab`; `_LastReadCard` |
-| `quran_reader_screen.dart` | `QuranReaderScreen({required suraNo, scrollToAyaNo, initialJuz, initialPage})`, always pushed via `MaterialPageRoute` (no named route). Private: `_MushafPage`, `_AyahSheet`, `_BookmarkReplaceSheet`, `_AyahMarkerColorizer`, top bar, desktop zoom controls |
+| `quran_reader_screen.dart` | `QuranReaderScreen({required suraNo, scrollToAyaNo, initialJuz, initialPage})`, always pushed via `MaterialPageRoute` (no named route). Private: `_MushafPage`, `_AyahSheet` (has "Set / Move Wird marker here"), `_BookmarkReplaceSheet`, `_AyahMarkerColorizer`, `_TopBar` (Wird icon beside the page bookmark), desktop zoom controls |
 | `quran_reader_bottom_bar.dart` | `QuranReaderBottomBar({currentPage, totalPages, lang, onGoToPrevious, onGoToNext})`: reader bottom bar (prev / next, page counter with Arabic numerals in Arabic); optional `onZoomOut` / `onZoomIn` add A− / A+ around the counter (mobile only, F58) |
-| `wird_tab.dart` | `WirdTab({required lang})`, the 4th tab of `QuranScreen`. Private: `_WirdContentView`, `_BookmarkPagesSheet`, `_BookmarkListSheet`, `_RecordPagesContent` |
+| `wird_tab.dart` | `WirdTab({required lang})`, the 4th tab of `QuranScreen`. Private: `_WirdContentView` (state `_WirdContentViewState`) |
+| `wird_marker_widgets.dart` | Wird marker UI: `WirdMarkerTopBarButton` (with `wirdTopBarIconSpec`), `WirdMoveSheet`, `WirdStartSheet` (`showWirdStartSheetRemembered`), `WirdColorGridSheet`, `WirdBookmarkPickSheet`, `WirdMarkerSetupCard`, `WirdUndoMoveButton`, `WirdRestartTile`, `showBigMoveConfirm`, helpers `wirdReadingPage` / `wirdRangeStart` / `kWirdMarkerPalette` |
 | `quran_search_screen.dart` | `QuranSearchScreen()`, opened only from the `QuranScreen` AppBar (`MaterialPageRoute`) |
 | `quran_stats_screen.dart` | `QuranStatsScreen()`: route `/quran_stats` (Wird streak card) |
 | `khatma_celebration_screen.dart` | `KhatmaCelebrationScreen({required khatmCount, required date})`, pushed by the reader (page mode) and Wird tab (juz mode) |
@@ -39,7 +40,7 @@ and the khatma celebration and dua screens. Data comes from `../../core/` and is
 - **Ayah marker colors**: SVG marker groups sorted by y get the color of the i-th ayah sorted by `ayaNo`. Only fill
   `#231f20` is replaced, and dark mode uses pre-inverted colors because the page is RGB-inverted.
 - **Reader back**: `PopScope(canPop: false)`. At page 604 in Wird page mode, with today not completed, a khatma prompt
-  appears ("yes" → `recordPageKhatma` + `markComplete` → celebration). Otherwise a "Close Reader?" confirm. The top-bar
+  appears ("yes" → `completeKhatma` → celebration). Otherwise a "Close Reader?" confirm. The top-bar
   close button calls `Navigator.maybePop()` and runs the same back path.
 - **Desktop reader** (`!kIsWeb` and Windows/macOS/Linux): hides the shell sidebar via `desktopSidebarVisibleProvider`
   and restores it on every exit path. Drag ≥ 80 px horizontal to turn pages; keys: arrows, `+` / `-`, Esc. Vertical pan
@@ -50,17 +51,18 @@ and the khatma celebration and dua screens. Data comes from `../../core/` and is
   days-left estimate. Goals: pages 1–604, juz 1–30.
 - **Wird khatma**: juz mode only, in `ref.listen` (completed juz reaches 30, guarded by `_khatmaHandled`) →
   `resetJuzForKhatma` → celebration. Page-mode khatma only happens in the reader back prompt.
-- **Bookmark auto-sync**: runs inside `build()` when `linkedBookmarkColor` is set. Pages of that color not in
-  `countedBookmarkPages` are synced (page mode: `syncBookmarkPages`; juz mode: mark juz 1..maxJuz). `_syncInProgress`
-  guards re-entry. "Choose one" in page mode links the color. On first link or a color change the counted set is
-  every page of that color, and only the chosen page is added to today's progress. When the color is already linked
-  the counted set is the existing counted pages plus the chosen page. It awaits the link before `recordPagesRead`, and
-  does not add an already-counted page twice when no sync is running and the counted set is current.
+- **Wird marker (page mode only, hidden in juz mode)**: one saved page and color per cycle (`WirdMarkerRecord`, see
+  `.project-docs/modules/wird.md`). The reader's top bar has a bookmark-shaped Wird icon beside the page bookmark
+  (`WirdMarkerTopBarButton`): in the marker color and filled on the marker page, outline elsewhere; with no marker it opens
+  the start sheet. The verse sheet offers "Set Wird marker here" / "Move Wird marker here". Moves go through
+  `moveMarker` (a move of more than the daily goal asks to confirm, `showBigMoveConfirm`) and show an Undo snackbar
+  (`undoMove`). The Wird tab has Start/Continue Reading, the setup card on a completed day (`WirdMarkerSetupCard`),
+  "Undo last move" and "Restart Wird" (`restartWird`, keeps the color). "Add from Bookmarks" (`WirdBookmarkPickSheet`)
+  only picks a start page; ordinary bookmarks are no longer counted.
 - **"Reset All Progress"** (`wird_reset_today` key) calls `resetAllProgress` after a confirm. It wipes streak,
   totals, history, completed juz and khatma count and keeps settings. That is the intended behavior (the key name is
   misleading).
-- **Manual recording**: removed from the Wird tab in P4a. Pages are counted by moving the Wird marker in the reader or
-  by "Add from Bookmarks" (`WirdMarkerService.placeMarker` / `moveMarker`).
+- **Manual recording**: removed from the Wird tab in P4a. Pages are counted only by moving the Wird marker (`WirdMarkerService.moveMarker`).
 - **Reminders**: `HH:mm` strings, max 10, new time defaults to 06:00; scheduling happens in `WirdService`.
 - **Search**: 500 ms debounce, ≥ 2 trimmed chars, `QuranService.searchAyahs` is a plain substring match on
   `aya_text_emlaey` (no normalization, no limit).
@@ -79,10 +81,11 @@ and the khatma celebration and dua screens. Data comes from `../../core/` and is
 ### Side Effects
 - `quranBookmarksProvider.notifier`: `addBookmark` / `removeBookmark` / `replaceBookmark` → prefs `quran_bookmarks`.
 - `quranReadingProgressProvider.notifier.saveProgress` → prefs `quran_reading_progress`.
-- `wirdStateProvider.notifier`: goals, unit, reminders, `recordPagesRead`, `markComplete` / `undoComplete`,
-  `toggleJuzCompleted`, `markJuzFromBookmarks`, `syncBookmarkPages`, `setLinkedBookmarkColor`, `resetJuzForKhatma`,
-  `recordPageKhatma`, `resetAllProgress`. These write `wird_*` prefs, push to Firestore `users/{uid}/wird/data` and
-  (re)schedule Wird reminders, all inside `WirdService`.
+- `wirdStateProvider.notifier`: goals, unit, reminders, `markComplete` / `undoComplete`, `toggleJuzCompleted`,
+  `resetJuzForKhatma`, `resetAllProgress`, and the marker actions `placeMarker`, `moveMarker`, `undoMove`, `completeKhatma`,
+  `restartWird`. Day, streak and juz data go through `WirdService` (`wird_*` prefs, Firestore `users/{uid}/wird/data`,
+  reminders). The marker goes through `WirdMarkerService` (prefs `wird_marker`, `wird_marker_undo`; Firestore
+  `users/{uid}/wird/marker`).
 - Network: `QuranSvgService` downloads pages from the jsDelivr CDN into `<appDocs>/quran_pages`.
 - Platform: `WakelockPlus.enable` / `disable` (no try-catch); share sheet; `RatingService.maybeRequest`.
 - Prefs tutorial flags via `SharedPreferencesService`: `tutorial_quran_seen`, `tutorial_juz_seen`,
@@ -96,10 +99,10 @@ and the khatma celebration and dua screens. Data comes from `../../core/` and is
 - Prefs keys `quran_bookmarks`, `quran_reading_progress`, `wird_*` and the tutorial flags are contracts
   ([prefs-keys](/.project-docs/contracts/prefs-keys.md)); Firestore path in
   [firestore-paths](/.project-docs/contracts/firestore-paths.md).
-- Bookmark colors (`BookmarkColor.name`: red / orange / green) are shared with Wird's `linkedBookmarkColor`.
+- Bookmark colors (`BookmarkColor.name`: red / orange / green) belong to ordinary bookmarks only. Wird no longer links to a bookmark color; the Wird marker has its own color (`kWirdMarkerPalette`).
 
 ## Global Side Effects
-- Wird state (local and Firestore) and Wird reminder notifications through `WirdService`; bookmark and progress prefs;
+- Wird state (local and Firestore) and Wird reminder notifications through `WirdService` and `WirdMarkerService`; bookmark and progress prefs;
   the SVG page cache on disk.
 
 ## System Verification
