@@ -19,7 +19,8 @@ changes without an approved spec.
 | `user_data.dart` | `UserData` (`create`, `copyWith`) | `fromFirestore` / `toFirestore` |
 | `achievement.dart` | `Achievement`, `AchievementCategory`, `AchievementDefinitions.all` (38 definitions) | `toFirestore`, `earnedFromFirestore(id, earnedAt)` |
 | `dhikr.dart` | `DhikrSession`, `DhikrPreset`, `DhikrPresets.builtIn` (5), `DhikrStatistics` | `DhikrSession.fromFirestore` / `toFirestore`; `DhikrPreset.fromJson` / `toJson` |
-| `wird.dart` | `WirdUnit`, `WirdSettings`, `WirdProgress`, `WirdState`, `QuranStatsData` | `WirdSettings` / `WirdProgress` `fromJson` / `toJson` |
+| `wird.dart` | `WirdUnit`, `WirdSettings`, `WirdProgress`, `WirdState`, `QuranStatsData` | `WirdSettings` / `WirdProgress` `fromJson` / `toJson` (`WirdSettings` ignores the old `linkedBookmarkColor` / `countedBookmarkPages` JSON fields and no longer writes them) |
+| `wird_marker.dart` | `WirdMarkerRecord`, `WirdUndoRecord`, `MarkerFailure`, `MarkerResult`, `MarkerSyncDecision`, `CloudRead`, `MarkerPushResult`, and the outcome types `PlaceOutcome`, `MoveOutcome`, `KhatmaOutcome`, `UndoOutcome` | `WirdMarkerRecord` / `WirdUndoRecord` `fromJson` / `toJson` |
 | `azkar.dart` | `AzkarCategory`, `ZikrItem`, `AzkarData` (12 morning + 12 evening), `AzkarState` | `AzkarState.fromJson(json, todayKey)` / `toJson` |
 | `quran_models.dart` | `Ayah`, `SurahMetaData`, `Surah`, `Juz`, `RevelationType`, `BookmarkColor`, `QuranBookmark`, `QuranReadingProgress`, `kSurahMetaData` (114 surahs) | `Ayah.fromJson` (asset); `QuranBookmark` / `QuranReadingProgress` `fromJson` / `toJson` |
 | `islamic_event.dart` | `IslamicEvent`, `IslamicEventWithDate` | none |
@@ -55,7 +56,7 @@ changes without an approved spec.
   becomes "Unknown" (category special). No app-mode filtering in this file.
 - **Azkar**: `AzkarState.fromJson` clears both completed sets when the stored `dateKey` is not today. A session is complete
   when every `AzkarData` id for that category is done.
-- **Wird defaults**: page goal 5, juz goal 1, unit `page`, reminders enabled, no linked bookmark color. The model doesn't
+- **Wird defaults**: page goal 5, juz goal 1, unit `page`, reminders enabled. The model doesn't
   clamp them; `WirdNotifier` does (providers README).
 - **Quran data**: `kSurahMetaData` covers surahs 1–114, pages 1–604; `Ayah` keys are snake_case from the bundled asset.
   ⚠ Revelation type wrong for 4 surahs — findings F21.

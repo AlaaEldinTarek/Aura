@@ -27,7 +27,7 @@ Verified against code 2026-11-07 (reference/2026-11-07_DRIFT_REPORT.md). Wird (d
 - No ayah highlight: `_AyahHighlightPainter` and `_selectedAyah` were removed; tapping goes straight to `_AyahSheet`.
 - Wakelock: `WakelockPlus.enable()` in `initState`, `disable()` in `dispose` (screen stays on; no button).
 - Back: `PopScope(canPop: false, onPopInvokedWithResult: ...)` wraps the `Scaffold`. On page 604 with page-mode wird not
-  completed → khatma dialog (yes → `recordPageKhatma()`, `markComplete()`, `pushReplacement` to
+  completed → khatma dialog (yes → `completeKhatma()`, `pushReplacement` to
   `KhatmaCelebrationScreen`); otherwise "Close Reader?" `AlertDialog` ("Keep Reading" / "Close", "Your progress is
   saved."). The top-bar close button calls `Navigator.maybePop()`, so it runs the same handler as back and Esc.
 - Uses `import 'dart:ui' as ui show TextDirection;` (see ui-kit.md § TextDirection conflict).
@@ -36,10 +36,10 @@ Verified against code 2026-11-07 (reference/2026-11-07_DRIFT_REPORT.md). Wird (d
 - Bookmarks tab: delete icon per item with confirmation dialog + undo Snackbar (NOT long-press delete).
 - Reader bookmark color: `_AyahSheet.onBookmark` is `void Function(BuildContext context, BookmarkColor color)` — the sheet
   context is passed so nested dialogs can show from inside the sheet. The callback (built in `_handleAyahTap`) shows an
-  `AlertDialog` when the color already has bookmarks ("Add New" / "Choose One", keys `wird_bookmark_mode_new` /
-  `wird_bookmark_mode_update`). "Choose One" opens `_BookmarkReplaceSheet` (DraggableScrollableSheet); on selection
+  `AlertDialog` when the color already has bookmarks ("Add New" / "Choose One", keys `bookmark_dialog_title`,
+  `bookmark_dialog_question`, `bookmark_dialog_add`). "Choose One" opens `_BookmarkReplaceSheet` (DraggableScrollableSheet); on selection
   `nav.pop(); nav.pop();` (screen navigator) closes both.
-- Colors: red / orange / green (Wird can link one: wird.md).
+- Colors: red / orange / green. Ordinary bookmarks only: Wird no longer links to a bookmark color (it has its own marker, wird.md). The reader's top bar has a Wird marker icon beside the page bookmark icon.
 
 ## Other routes
 - `/quran_stats` → `QuranStatsScreen` (`quran_stats_screen.dart`): wird stats from `quranStatsProvider` (totals, khatm

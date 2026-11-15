@@ -19,7 +19,9 @@ Native names used here are contracts: [method-channels](/.project-docs/contracts
 | `prayer_times_service.dart` | `PrayerTimesService()`: `getPrayerTimes` (calculated for the requested date itself; Umm al-Qura Dhuhr +3), `getNextPrayer`, `getCurrentPrayer`, `getTimeRemaining`, static `loadIqamaMinutes` |
 | `prayer_tracking_service.dart` | `PrayerTrackingService`: `recordPrayer`, `deletePrayerRecord`, day/range/month reads, `watchDay` stream, `getStatistics`, `calculateCurrentStreak`, `cleanupFuturePrayerRecords` |
 | `task_service.dart` | `TaskService`: task stream/once/paging, add/update/toggle/delete/reorder, `getStatistics`, guest migration, `rescheduleAllTaskReminders`; `TaskStatistics` |
-| `wird_service.dart` | `WirdService`: settings, daily progress, juz/khatma, bookmark sync, streak/stats, reminders, `syncToFirestore` / `syncFromFirestore` |
+| `wird_service.dart` | `WirdService`: settings, daily progress (`creditPages` / `removePages`), juz/khatma (legacy), streak/stats, reminders, `syncToFirestore` / `syncFromFirestore` |
+| `wird_marker_service.dart` | `WirdMarkerService.instance`: the Wird marker record (prefs `wird_marker`, undo record `wird_marker_undo`, Firestore `users/{uid}/wird/marker`): `placeMarker`, `moveMarker`, `undoMove`, `completeKhatma`, `restartWird`, `resetAll`, `syncMarker`, `compose`, `khatmaCountLocal`, `progressTotalLocal` |
+| `wird_marker_logic.dart` | Pure marker rules, no I/O: `applySetup`, `applyMove`, `applyKhatma`, `applyRestart`, `applyUndo`, `decideSync`, `progressTotal`, `composeWirdState`, `averagePerCompletedDay` |
 | `achievement_service.dart` | `AchievementService`: `checkAndAward`, `getEarnedAchievements`, `newAchievements` stream |
 | `dhikr_service.dart` | `DhikrService`: `recordSession`, range/recent reads, `getStatistics` |
 | `auth_service.dart` | `AuthService`: email auth, Google sign-in (plugin on mobile, PKCE loopback on desktop), sign-out, delete account |
@@ -70,7 +72,10 @@ Native names used here are contracts: [method-channels](/.project-docs/contracts
 - **Tasks**: desktop polls Firestore every 15 s (no `snapshots()`); mobile streams. Reminder re-arm is throttled to once
   per 6 h and skipped on desktop. Statistics use the 100 newest tasks.
 - **Wird**: history pruned to 90 days; `syncFromFirestore` overwrites local data (cloud wins, 5 s timeout);
-  `wird_progress_history` is not synced; `_pushToCloud` runs fire-and-forget after each change.
+  `wird_progress_history` is not synced; `_pushToCloud` runs fire-and-forget after each change. The Wird marker is a
+  separate record: `syncMarker` (called on sign-in, on queue replay and at startup) compares local and cloud by
+  (`cycle`, `version`), the higher wins, a guest marker is claimed by the first account that signs in.
+  `wird_total_pages_read` and the cloud `totalPagesRead` field are no longer written or read (ignored, not deleted).
 - **Foreground service** does not start when `background_notification_enabled` is false.
 - **Desktop**: tray close hides the window instead of quitting; prayer timers cover today only (callers reschedule);
   auto-start is on by default and re-registered on every launch (the MSIX path changes).
@@ -82,7 +87,7 @@ Native names used here are contracts: [method-channels](/.project-docs/contracts
 - **MethodChannels**: `prayer_alarms` (NotificationService ×2 objects, PrayerAlarmService, PlatformChannelService),
   `background_service`, `widgets`, `adhan`, `focus_mode`, `silent_mode` (no native handler). Methods: see the contract.
 - **Local notifications**: `flutter_local_notifications` on mobile non-native paths; Windows toasts via `local_notifier`.
-- **Firestore**: `users/{uid}` and its subcollections `tasks`, `prayer_records`, `achievements`, `dhikr_sessions`, `wird/data`,
+- **Firestore**: `users/{uid}` and its subcollections `tasks`, `prayer_records`, `achievements`, `dhikr_sessions`, `wird/data`, `wird/marker`,
   plus offline-queue replay to `{collection}` (the queue is never filled — findings F16).
 - **SharedPreferences (Dart-only key groups)**: `guest_tasks`, `guest_prayer_records`, `wird_*`, `quran_bookmarks`,
   `quran_reading_progress`, `manual_*`, `desktop_ip_*`, `notify_<prayer>`,
