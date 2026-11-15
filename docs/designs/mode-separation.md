@@ -112,7 +112,7 @@ No new text is needed. The suggestion reuses the existing start sheet, so the pa
 *   **Proposed shape (GUESS on names):** capture the two inputs from prefs first (`getKhatmCount` and `getCompletedJuz`, VERIFIED to exist, `wird_service.dart:311, 379`). Then call a narrow method, for example `AchievementService.checkJuzAchievements(userId, juzKhatmCount, checkedJuz)`, that reads only the earned list, runs `wirdJuzAchievementIds` on the captured values and calls `_award` for the missing ids. Then empty the cards. The normal `checkAndAward` also gets the juz ids in its Wird block, so the achievements are also checked at the usual moments (prayer record, task completion, Profile badge grid; VERIFIED, see `wird-achievements-juz.md`). Both paths share the one pure function.
 *   **Guest user (VERIFIED):** `checkAndAward` returns `[]` at once for `guest_user` (`achievement_service.dart:62-63`), and achievements are Firestore-backed. The narrow method must do the same. A guest has no achievements, so nothing is checked and the cards are emptied as usual.
 *   **Offline (UNKNOWN, risk):** the earned-list read is a Firestore `get()`, and `_award` is a Firestore `set()`. The code does not configure persistence explicitly (VERIFIED: no `persistenceEnabled` or cache settings found in `lib/`), so the SDK default applies (GUESS: on for Android, UNKNOWN for Windows). Offline, the `get()` may return cached data or throw, and an awaited `set()` may not complete until the server acknowledges it (GUESS). Decision K says the switch must work offline, so the switch must not wait indefinitely on this check.
-*   **Proposed offline behavior (GUESS):** wait for the check for a short bounded time (the length is a number to choose in phase M2, for example a few seconds), catch every error the way `checkAndAward` does (`:312`), then empty the cards whatever the result. The cards are emptied locally at once (Decision K). If the check could not finish, the user can miss an achievement he was about to earn. That residual loss is listed as item L below, because it follows from Decisions H and K together.
+*   **Offline behavior (Decision L):** when the switch happens offline (or the check fails), the app waits only a short bounded time for the achievement check, catches every error the same way `checkAndAward` does (`achievement_service.dart:312`, the outer `catch` that logs and returns), and then empties the cards anyway (cards emptied locally at once, Decision K). The length of the wait is not fixed here: it is an open detail for the M1 design (GUESS: a few seconds). If the check could not finish, the user can miss an achievement he was about to earn; the owner accepted that loss (Decision L). There is no pending-award note and no new key.
 *   **Dialog text (GUESS):** the body already says earned achievements stay. It does not mention the check, and no user-facing text is needed for it.
 
 ### Stats screen shows only the active mode's numbers (Decision E)
@@ -139,11 +139,26 @@ Three keys are new and must go into both `assets/translations/en.json` and `ar.j
 *   No number is interpolated into these strings, so no Arabic-numeral formatting is needed (VERIFIED by the texts above).
 *   The Page → Juz direction has no dialog (Decision A).
 
+## Decisions (owner, 2026-11-15)
+
+The owner answered "yes" to the recommended list (questions A to K) and, separately, chose option 1 for L. Each item keeps the question text of the earlier draft, with his answer. The marks describe the state of the code the answer touches, not the owner's choice.
+
+*   **A. Which switch empties the juz cards?** Answer: only Juz → Page empties the checked juz cards (`wird_completed_juz` and today's `juzCompletedToday`), after a warning dialog. Page → Juz changes nothing and shows no dialog. (Mechanism VERIFIED to be new: today `setWirdUnit` only writes the setting, `wird_provider.dart:235-239`.)
+*   **B. Do Khatm History and earned achievements stay when cards are emptied?** Answer: yes, both stay. (VERIFIED that the khatma list lives in `wird_khatm_count` and `wird_khatm_dates`, which the emptying does not touch, `wird_service.dart:392-408`; earned achievements live in Firestore, `achievement_service.dart:401-405`.)
+*   **C. Khatm History: one merged list or split per mode?** Answer: one merged list, as today. (VERIFIED, `khatma_dua_screen.dart:36`, `wird_marker_logic.dart:181-185`.)
+*   **D. Streak and day count: shared or per mode?** Answer: shared between the modes, as today. Per-mode streaks are out of scope and need their own design. (VERIFIED as today, `wird_service.dart:353-364`.)
+*   **E. Stats screen: only the active mode's numbers?** Answer: yes, show only the active mode's numbers. (See "Stats screen shows only the active mode's numbers" for the effect.)
+*   **F. How does the user change the suggested page?** Answer: only through the reader's "Choose another page". No new button in the tab sheet. (VERIFIED that the reader sheet offers it and the tab sheet does not, `wird-marker.md` items 9 to 11.)
+*   **G. A marker already exists when going to page mode.** Answer: show no suggestion. (VERIFIED: placement fails with `markerExists`, `wird_marker_logic.dart:63-75`.)
+*   **H. Persisted cumulative juz counter, or derived?** Answer: derived each time (`khatmas × 30 + checked cards`). No new prefs key, no new `wird/data` field, no contract change. New rule: run the achievement check just before the cards are emptied, in the same step as the switch (see "Check before emptying").
+*   **I. Inline achievement names or `.tr()` keys?** Answer: inline `nameEn` and `nameAr`, to match the existing achievements. CLAUDE.md says to use translation keys, and the existing achievements already break that rule (VERIFIED, `achievement.dart:349-415`).
+*   **J. Thresholds and names.** Answer: `wird_juz_5` (5 juz), `wird_juz_15` (15 juz) and `wird_juz_khatma` (one juz khatma), with the draft names. The Arabic names stay DRAFT until the owner reviews them.
+*   **K. Offline and sign-out.** Answer: empty locally at once, sync later. It must work offline. (VERIFIED mechanism: `updateSettings` and the cloud push run in the background, `wird_service.dart:57-66`.)
+*   **L. Missed achievement when the check cannot finish.** The question: if the user is offline (or the check fails) at the moment of the switch, the cards are still emptied (Decision K), so a user who was about to earn a juz achievement can miss it. The options were: (1) accept the loss and wait only a short bounded time for the check; (2) keep a small "pending award" marker locally and retry later, which needs a new prefs key and so conflicts with Decision H; (3) block the switch until online, which conflicts with Decision K. Answer (owner, 2026-11-15): option 1. When switching Juz → Pages while offline, wait a short bounded time for the achievement check, catch errors the same way `checkAndAward` does, then empty the cards anyway. No pending-award note, no new key. (The mechanism is VERIFIED to need no new key: the check reads the earned list and writes with `_award`, `achievement_service.dart:67, 393-405`; the Firestore offline behavior stays UNKNOWN, see "Check before emptying".)
+
 ### Still open
 
-None of questions A to K is open. One item follows from decisions H and K together and was not asked:
-
-*   **L. Missed achievement when the check cannot finish.** If the user is offline (or the check fails) at the moment of the switch, the cards are still emptied (Decision K), so a user who was about to earn a juz achievement can miss it. Options: (1) accept the loss and wait only a short bounded time for the check (proposed, GUESS); (2) keep a small "pending award" marker locally and retry later, which needs a new prefs key and so conflicts with Decision H; (3) block the switch until online, which conflicts with Decision K. Recommended: (1) (GUESS). The size of the bounded wait is a detail for phase M2.
+No question is open. The only open detail is the length of the bounded wait (Decision L): it is not fixed in this spec and is to be chosen in the M1 design (GUESS: a few seconds).
 
 ## Files Touched (GUESS, from the decisions)
 
@@ -167,8 +182,8 @@ No Kotlin file is touched (GUESS: nothing native reads these keys; no Kotlin rea
 
 *   Emptying `wird_completed_juz` is data loss; the dialog is the only safeguard.
 *   A second signed-in device can push a stale `completedJuz` back through the blind `wird/data` merge (VERIFIED risk in `wird-marker.md`, risk 12). The emptying is not durable across devices until that push order is fixed. Not in scope here.
-*   Missed achievement when offline at the switch (item L).
-*   An awaited Firestore call during the switch could hang offline (GUESS). The bounded wait is there for this.
+*   Missed achievement when offline at the switch: accepted by the owner (Decision L).
+*   An awaited Firestore call during the switch could hang offline (GUESS). The bounded wait is there for this (Decision L).
 *   Achievements derived from checked cards can be earned by tapping until `juz-auto-check.md` is built (VERIFIED cause).
 *   The two juz tables may disagree (UNKNOWN), which would put the marker suggestion on the wrong page. Phase M1 compares them.
 *   The stats change alters the P4b stats mapping and its tests (VERIFIED they exist); the screen is also used in page mode.
@@ -178,9 +193,9 @@ No Kotlin file is touched (GUESS: nothing native reads these keys; no Kotlin rea
 
 | Phase | Content | Gate |
 |---|---|---|
-| M0 | The owner's answers are recorded (this file, 2026-11-15). Item L and the Arabic names remain for his review. | owner (done for A to K; L and the Arabic texts pending) |
-| M1 | Tests first (red run): `suggestMarkerPageAfterJuz` (N = 0, 3 with a gap, 30, unsorted input, both juz tables compared); `wirdJuzAchievementIds` (khatma 0 and 1, checked 0, 4, 5, 14, 15, 30, boundaries of `khatmas × 30 + checked`); the method that empties only the juz data (keeps khatma fields, streak, marker, undo record); the **check-before-emptying order**: the inputs are captured before emptying and the check sees the full cards even when emptying follows at once; guest returns early and the cards are still emptied; a check that throws or times out still lets the cards be emptied. | owner's go-ahead for M1 |
-| M2 | The service, provider, logic and achievement code behind those tests: the narrow check method, the bounded wait, the derived juz ids in the Wird block of `checkAndAward`, and the three definitions with inline names. | owner's go-ahead for M2 |
+| M0 | The owner's answers are recorded (this file, 2026-11-15), including L. The Arabic texts remain for his review. | owner (done for A to L; the Arabic texts pending) |
+| M1 | Design detail: choose the length of the bounded wait (Decision L). Tests first (red run): `suggestMarkerPageAfterJuz` (N = 0, 3 with a gap, 30, unsorted input, both juz tables compared); `wirdJuzAchievementIds` (khatma 0 and 1, checked 0, 4, 5, 14, 15, 30, boundaries of `khatmas × 30 + checked`); the method that empties only the juz data (keeps khatma fields, streak, marker, undo record); the **check-before-emptying order**: the inputs are captured before emptying and the check sees the full cards even when emptying follows at once; guest returns early and the cards are still emptied; a check that throws or times out still lets the cards be emptied. | owner's go-ahead for M1 |
+| M2 | The service, provider, logic and achievement code behind those tests: the narrow check method, the bounded wait (length chosen in the M1 design), the derived juz ids in the Wird block of `checkAndAward`, and the three definitions with inline names. | owner's go-ahead for M2 |
 | M3 | The switch dialog and its keys (Arabic DRAFT reviewed by the owner), the marker suggestion hand-off (no suggestion when a marker exists, change only through the reader), and the stats screen change (Decision E) with the `quranStatsProvider` update and its tests. | owner's go-ahead for M3 |
 | M4 | Docs (re-check the contracts: none expected), the P4b stats mapping note in `wird-marker.md`, and the phone checks. | owner's go-ahead for M4 |
 
