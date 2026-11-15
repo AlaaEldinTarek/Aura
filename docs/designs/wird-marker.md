@@ -1503,6 +1503,24 @@ After `APPLY_CLOUD` or `DISCARD_LOCAL` the undo record is cleared when it no lon
     *   **Single bookmark-shaped Wird icon (fifth amendment 2026-11-14, P4a-6):** (1) the top bar shows the close button, the surah name and ONE bookmark-shaped icon, in English and in Arabic (outer end, mirrored in Arabic); (2) no marker: a neutral outline bookmark, and a tap opens the start sheet; (3) marker on this page: a filled bookmark in the marker color, a tap shows "Wird marker: page N"; (4) other pages: an outline in the marker color, ahead of the marker a tap opens the move sheet, behind it an info snackbar; (5) the outline reads clearly at 22 dp on a light page with the lightest and darkest palette colors, and in dark mode; (6) juz mode: no icon, and the title stays centered; (7) the verse sheet still creates a colored verse bookmark, and it shows in the Bookmarks tab; an old whole-page bookmark made before this phase is still listed and can be deleted; (8) the first-run reader tutorial text mentions setting the Wird marker, in English and Arabic; (9) the completed-day setup card button shows the bookmark outline; (10) 320 and 360 dp widths and the largest font: the title fits.
 *   Every device check is reported as run or not run. None is reported as passed unless it ran.
 
+### Phone results reported on 2026-11-15 (P4b build)
+
+Labels: REPORTED = told by Aladdin after testing on the phone (nova 5T), not checked item by item by Claude. VERIFIED = confirmed by the code. UNKNOWN and GUESS as usual. No claim below was re-run by Claude.
+
+| Check | Result | Label |
+|---|---|---|
+| Restart Wird | Passes: it starts a new cycle and keeps the color. | REPORTED |
+| Reset All Progress | Passes. | REPORTED |
+| Wird achievements, clean state after Reset All Progress, page mode, signed-in user: marker moved from page 1 to page 105 | The Wird tab showed total pages 104. Opening Profile showed the "Achievement Unlocked: Page Turner" banner. The Achievements screen showed Quran 2/7. | REPORTED |
+| Then the marker moved to page 604 and the khatma was accepted once | The celebration showed Khatm #1 (one entry for one pass). Achievements showed Khatma Complete, Page Turner and Half Khatma unlocked (Quran 4/7). | REPORTED |
+| Two-device sync check | Not tested yet. | REPORTED (not run) |
+| Permissions-page hint | Not tested yet. | REPORTED (not run) |
+
+*   **Why the numbers can be expected (VERIFIED by the code, not by the phone):** the total comes from the marker (`progressTotal`), and `wirdAchievementIds` awards Page Turner at 100 pages, Half Khatma at 300 pages and Khatma Complete at 1 khatma (`achievement_service.dart`, tests in `achievement_wird_pages_test.dart`). Page 105 after a start at page 1 gives 104 pages, which matches the reported total.
+*   **Known limitation, observed (REPORTED), cause VERIFIED in the code:** Wird achievements are evaluated only when the Profile badge grid mounts, or after a prayer record or a task completion (`checkAndAward` call sites: `profile_screen.dart:1193`, `prayer_tracking_service.dart:134`, `task_service.dart:531`). They are not evaluated right after a marker move or a khatma. Fixing the timing is a separate change and is not part of this PR.
+*   **Juz mode gap (VERIFIED in the code, older than P4b):** the three Wird page achievements read the marker, which only page mode writes, so a user in juz mode cannot earn them. This is handled by the separate draft `docs/designs/mode-separation.md` (branch `docs/mode-separation`), not here.
+*   **Still to run:** the two-device sync check and the permissions-page hint. Until they run, they stay open in the Verification Plan above.
+
 --------------------------------------------------------------------------------
 
 <!-- Provenance: Indicates initial structural drafting via EGM. -->
