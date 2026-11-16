@@ -96,9 +96,26 @@ to end it there.
 **Logging.** A `debugPrint` line at each step, in the file's existing convention (emoji prefix and the
 `[TRAY]` tag, as in `✅ [TRAY] System tray initialized`): quit requested, second call ignored, menu wait
 done, tray icon destroyed, preventClose off, window destroy called, fallback timer fired, and any error.
-The exact texts are chosen in T2. UNKNOWN: whether `debugPrint` output is visible in a release build on
-the owner's PC; if it is not, T2 says how the owner can read the lines (for example a debug or profile
-run), and does not add a new log mechanism without asking.
+The exact texts are chosen in T2. UNKNOWN: whether `debugPrint` output is visible in a Windows release
+build on the owner's PC.
+
+**Temporary file log (owner's decision, 2026-11-16).** Because `debugPrint` may not be visible in a
+Windows release build (UNKNOWN), T2 also writes a few lines to a small text file, ONLY on the quit path:
+"quit clicked", "tray destroyed", "window destroyed" and "fallback fired", each with a timestamp. Nothing
+else in the app writes to this file.
+
+- **Folder:** the app's data folder from `getApplicationSupportDirectory()` (`path_provider`, already
+  used at `lib/main.dart:10, 71` for the prefs backup, VERIFIED). On Windows the plugin builds it from
+  the exe's version info, `CompanyName` = `com.aura` and `ProductName` = `aura_app`
+  (`windows/runner/Runner.rc:92, 98`, VERIFIED), so the expected folder is
+  `%APPDATA%\com.aura\aura_app` (GUESS from the plugin's rule). The real path on the owner's PC is
+  UNKNOWN (not checked there; an MSIX install may redirect it). T2 prints the full path once with
+  `debugPrint` and reports it.
+- **File name (a detail of this draft):** `tray_quit_log.txt`. Lines are appended and each write is
+  flushed at once, so a line survives a hang or a forced exit right after it. A write error is caught
+  and never stops the quit.
+- **Temporary:** T2 marks the file-log code for removal (a comment at the code and the follow-up item
+  below). It is removed once the owner confirms the fix works.
 
 **Order of step 3 (a detail of this draft, GUESS on the owner's intent):** the owner's text lists the
 fallback timer last. This draft starts it before the awaited steps, for the reason given above. If the
@@ -110,7 +127,7 @@ owner wants it started last, T2 follows that.
 
 | File | Change |
 |---|---|
-| `lib/core/services/desktop_tray_service.dart` | `_quit()` only, as above. Desktop-only: the service does nothing unless `isDesktop` (`:21-25`). |
+| `lib/core/services/desktop_tray_service.dart` | `_quit()` only, as above, plus the temporary file-log helper used only by it. Desktop-only: the service does nothing unless `isDesktop` (`:21-25`). |
 | `test/` (new case, if possible) | A pure test of the double-call guard, if the guard can be extracted without changing behavior (for example a small function or class that runs an action at most once). |
 
 **What cannot be tested without the Windows build:** that the menu click reaches `_quit()`, that
@@ -119,7 +136,8 @@ fallback `exit(0)` ends it when the orderly path does not, and the 100 ms and 2 
 real menu. The plugin calls are platform channels and have no fake in the project.
 
 No prefs key, MethodChannel, notification ID, Firestore path or other contract changes. No new string
-(the log lines are not UI strings).
+(the log lines are not UI strings). The temporary log file is a new file in the app's data folder; it is
+not read by any code.
 
 --------------------------------------------------------------------------------
 
@@ -143,8 +161,8 @@ Each phase needs the owner's own go-ahead.
   desktop rule, the Android build is also run to show the desktop change did not affect it.
 - **T3, manual check by the owner:** click Quit; the window, the tray icon and the process all end. Run
   it several times, including right after a prayer-time menu rebuild. Also with the window hidden to the
-  tray (after X) and with the window visible. The owner reads the `[TRAY]` log lines and reports which
-  ones appeared.
+  tray (after X) and with the window visible. The owner opens the temporary log file and reports which
+  lines appeared (and the `[TRAY]` lines, if they are visible).
 
 --------------------------------------------------------------------------------
 
@@ -159,6 +177,8 @@ Each phase needs the owner's own go-ahead.
   change listed under Non-Goals.
 - **`trayManager.destroy()` and `windowManager.destroy()` on these plugin versions are untested here
   (UNKNOWN).** The log lines show which step fails.
+- **The temporary file log adds a file write on the quit path.** It is small, its errors are caught, and
+  it is removed later (Follow-ups).
 - **Hypothesis 2 is not fixed.** If the click never reaches `_quit()`, Quit still does nothing after this
   change; the log (no "quit requested" line) will show it.
 - **Android:** not affected if the edit stays in this desktop-only file (VERIFIED: guarded by
@@ -172,6 +192,9 @@ Revert the T2 commit. `_quit()` returns to `setPreventClose(false)` plus `exit(0
 
 ## Follow-ups (not part of this spec)
 
+- **Remove the temporary file log** (the helper in `desktop_tray_service.dart` and the
+  `tray_quit_log.txt` writes) once the owner confirms the fix works. It needs its own go-ahead, as a
+  code change.
 - **Stale menu item ids after a rebuild while the menu is open** (hypothesis 2): a click can be dropped
   silently. Needs its own small spec.
 - **Native `TerminateProcess` in `windows/runner`:** only if T3 shows the process still stays.
