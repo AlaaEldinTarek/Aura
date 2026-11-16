@@ -307,8 +307,8 @@ Each phase needs the owner's own "approve phase".
 
 | Phase | Content | Status |
 |---|---|---|
-| A0 | This spec only. | Done 2026-11-16 on `fix/desktop-single-adhan-popup` (docs only), not pushed. |
-| A1 | DONE 2026-11-16 (commit 7c0f406, not pushed, not merged); see "A1 as built". Scope: code in the two files above (including the two doc comments in `desktop_notification_service.dart`), `flutter analyze`, `flutter test`, the Windows and Android release builds, docs (`STATE.md`, the log, `lib/features/main/README.md`, which names the adhan overlay at lines 8, 76, 83, 87, 107). Branch `fix/desktop-single-adhan-popup` from `main`. | DONE 2026-11-16 (commit 7c0f406), not pushed, not merged |
+| A0 | This spec only. | DONE 2026-11-16 (docs only); merged to main via PR #34 (merge d92080d). |
+| A1 | DONE 2026-11-16 (commit 7c0f406, merged via PR #34); see "A1 as built". Scope: code in the two files above (including the two doc comments in `desktop_notification_service.dart`), `flutter analyze`, `flutter test`, the Windows and Android release builds, docs (`STATE.md`, the log, `lib/features/main/README.md`, which names the adhan overlay at lines 8, 76, 83, 87, 107). Branch `fix/desktop-single-adhan-popup` from `main`. | DONE 2026-11-16 (commit 7c0f406); merged to main via PR #34 (merge d92080d). |
 | A2 | The owner's check on Windows (device steps above). A failure in step 5 blocks A1 sign-off; step 6 was accepted by the owner. | Run 2026-11-16 on the build of 4f7da95 (A1 + tray fix + toast fix), PID 4608. Steps 1, 2, 3, 4, 5, 7: pass (marks VERIFIED or REPORTED per step in "A2 results"). Step 6: FAILS as built (VERIFIED in the log), accepted by the owner for A1; the toast and the Notification Center are the stop controls. Step 8 (other popups): NOT RUN. |
 
 ### A1 as built (2026-11-16)
