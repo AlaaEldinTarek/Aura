@@ -89,45 +89,83 @@ class DesktopTrayService with TrayListener, WindowListener {
     await _rebuildMenu();
   }
 
+  // ── Menu items ────────────────────────────────────────────────────────────
+  // Created ONCE and reused in every rebuild, so their ids never change. A
+  // click is matched to an item by id only; a menu already on screen keeps the
+  // ids it was built with, so new ids on a rebuild made every click find no
+  // item (docs/designs/tray-quit-fix.md, "T3 result and T2b").
+
+  static const _loadingLabel = 'Loading prayer times…';
+
+  late final MenuItem _nextPrayerItem = MenuItem(
+    key: 'next_prayer',
+    label: _loadingLabel,
+    disabled: true,
+  );
+  late final MenuItem _stopAdhanItem = MenuItem(
+    key: 'stop_adhan',
+    label: '🔇 Stop Adhan',
+    onClick: (_) {
+      DesktopAdhanService.instance.stop();
+      setAdhanPlaying(false);
+    },
+  );
+  late final MenuItem _openItem = MenuItem(
+    key: 'open',
+    label: 'Open Aura',
+    onClick: (_) => showWindow(),
+  );
+  late final MenuItem _testNotifItem = MenuItem(
+    key: 'test_notif',
+    label: '🔔 Test Notification',
+    onClick: (_) {
+      debugPrint('🔔 [TRAY] test_notif onClick fired');
+      DesktopPrayerScheduler.instance.fireTestAdhan();
+    },
+  );
+  late final MenuItem _quitItem = MenuItem(
+    key: 'quit',
+    label: 'Quit',
+    onClick: (_) => _quit(),
+  );
+  late final MenuItem _sepAfterNextPrayer = MenuItem.separator();
+  late final MenuItem _sepAfterStopAdhan = MenuItem.separator();
+  late final MenuItem _sepAfterOpen = MenuItem.separator();
+  late final MenuItem _sepAfterTestNotif = MenuItem.separator();
+
+  // What the last menu sent to the tray showed; null until the first send.
+  String? _sentLabel;
+  bool? _sentAdhanPlaying;
+
+  /// The tray menu for the given state, built from the reused items. Only the
+  /// label of the disabled next-prayer item changes between builds.
+  @visibleForTesting
+  Menu buildMenu({required String? nextLabel, required bool adhanPlaying}) {
+    _nextPrayerItem.label = nextLabel ?? _loadingLabel;
+    return Menu(items: [
+      _nextPrayerItem,
+      _sepAfterNextPrayer,
+      if (adhanPlaying) _stopAdhanItem,
+      if (adhanPlaying) _sepAfterStopAdhan,
+      _openItem,
+      _sepAfterOpen,
+      _testNotifItem,
+      _sepAfterTestNotif,
+      _quitItem,
+    ]);
+  }
+
   Future<void> _rebuildMenu() async {
-    await trayManager.setContextMenu(Menu(items: [
-      MenuItem(
-        key: 'next_prayer',
-        label: _nextLabel ?? 'Loading prayer times…',
-        disabled: true,
-      ),
-      MenuItem.separator(),
-      if (_adhanPlaying)
-        MenuItem(
-          key: 'stop_adhan',
-          label: '🔇 Stop Adhan',
-          onClick: (_) {
-            DesktopAdhanService.instance.stop();
-            setAdhanPlaying(false);
-          },
-        ),
-      if (_adhanPlaying) MenuItem.separator(),
-      MenuItem(
-        key: 'open',
-        label: 'Open Aura',
-        onClick: (_) => showWindow(),
-      ),
-      MenuItem.separator(),
-      MenuItem(
-        key: 'test_notif',
-        label: '🔔 Test Notification',
-        onClick: (_) {
-          debugPrint('🔔 [TRAY] test_notif onClick fired');
-          DesktopPrayerScheduler.instance.fireTestAdhan();
-        },
-      ),
-      MenuItem.separator(),
-      MenuItem(
-        key: 'quit',
-        label: 'Quit',
-        onClick: (_) => _quit(),
-      ),
-    ]));
+    final label = _nextLabel ?? _loadingLabel;
+    final adhanPlaying = _adhanPlaying;
+    // Nothing visible changed since the last send: do not resend.
+    if (_sentLabel == label && _sentAdhanPlaying == adhanPlaying) return;
+    await trayManager.setContextMenu(
+      buildMenu(nextLabel: _nextLabel, adhanPlaying: adhanPlaying),
+    );
+    _sentLabel = label;
+    _sentAdhanPlaying = adhanPlaying;
+    debugPrint('🔁 [TRAY] menu rebuilt: $label');
   }
 
   void dispose() {
@@ -146,6 +184,7 @@ class DesktopTrayService with TrayListener, WindowListener {
 
   @override
   void onTrayMenuItemClick(MenuItem menuItem) {
+    debugPrint('🖱️ [TRAY] menu click: ${menuItem.key}');
     switch (menuItem.key) {
       case 'stop_adhan':
         DesktopAdhanService.instance.stop();
