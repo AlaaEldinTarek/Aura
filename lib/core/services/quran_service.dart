@@ -2,6 +2,15 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:aura_app/core/models/quran_models.dart';
 
+/// First page of each juz (index 0 = juz 1). Moved from the reader screen's
+/// private `_juzStartPages`; the mode-separation suggestion uses it too. A test
+/// checks it equals the page table of [QuranService.getJuzList].
+const List<int> kJuzStartPages = [
+  1, 22, 42, 62, 82, 102, 122, 142, 162, 182,
+  202, 222, 242, 262, 282, 302, 322, 342, 362, 382,
+  402, 422, 442, 462, 482, 502, 522, 542, 562, 582,
+];
+
 class QuranService {
   static List<Ayah>? _cachedAyahs;
   static List<Surah>? _cachedSurahs;

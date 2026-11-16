@@ -111,7 +111,11 @@ class WirdService {
     await _saveHistory(history);
 
     final prefs = await _prefs;
-    final granted = nowCompleted && !wasCompleted;
+    // Today's credit is given once, whichever mode earned it: if the streak date
+    // is already today (e.g. juz work completed the day, then the flag went false
+    // while pages were below the goal), reaching the page goal adds no second credit.
+    final creditedToday = prefs.getString(_streakDateKey) == _todayKey();
+    final granted = nowCompleted && !wasCompleted && !creditedToday;
     if (granted) {
       await _incrementStreak();
       await prefs.setInt(_totalDaysKey, (prefs.getInt(_totalDaysKey) ?? 0) + 1);
@@ -138,7 +142,14 @@ class WirdService {
 
     final wasCompleted = existing.isCompleted;
     final newPagesRead = existing.pagesRead - pages < 0 ? 0 : existing.pagesRead - pages;
-    final nowCompleted = newPagesRead >= settings.dailyPageGoal || existing.manualCredit;
+    // Credit rule (mode-separation, decision M): the other mode's work and Mark
+    // Complete still complete the day, and pages take the credit back only if
+    // pages were what completed it (pages reached the goal before this undo).
+    final juzDone = existing.juzCompletedToday.length >= settings.dailyJuzGoal;
+    final nowCompleted = newPagesRead >= settings.dailyPageGoal ||
+        existing.manualCredit ||
+        juzDone;
+    final pagesEarnedIt = existing.pagesRead >= settings.dailyPageGoal;
 
     final entry = existing.copyWith(
       pagesRead: newPagesRead,
@@ -149,7 +160,7 @@ class WirdService {
     await _saveHistory(history);
 
     final prefs = await _prefs;
-    if (removeCredit && wasCompleted && !nowCompleted) {
+    if (removeCredit && wasCompleted && !nowCompleted && pagesEarnedIt) {
       await _rollbackStreakCredit(prefs, _todayKey());
       final days = (prefs.getInt(_totalDaysKey) ?? 0) - 1;
       await prefs.setInt(_totalDaysKey, days < 0 ? 0 : days);
@@ -219,9 +230,9 @@ class WirdService {
     final existing = history.where((p) => p.dateKey == today).firstOrNull;
     if (existing == null || !existing.manualCredit) return;
 
-    final stillComplete = settings.wirdUnit == WirdUnit.page
-        ? existing.pagesRead >= settings.dailyPageGoal
-        : existing.juzCompletedToday.length >= settings.dailyJuzGoal;
+    // Either mode's own work keeps the credit (decision M), whatever the unit.
+    final stillComplete = existing.pagesRead >= settings.dailyPageGoal ||
+        existing.juzCompletedToday.length >= settings.dailyJuzGoal;
     final entry = existing.copyWith(manualCredit: false, isCompleted: stillComplete);
     history = [for (final p in history) p.dateKey == today ? entry : p];
     await _saveHistory(history);
@@ -292,8 +303,10 @@ class WirdService {
     }
 
     final wasCompletedToday = todayProgress.isCompleted;
-    final nowCompleted =
-        juzToday.length >= settings.dailyJuzGoal || todayProgress.manualCredit;
+    // Credit rule (decision M): pages and Mark Complete still complete the day.
+    final nowCompleted = juzToday.length >= settings.dailyJuzGoal ||
+        todayProgress.manualCredit ||
+        todayProgress.pagesRead >= settings.dailyPageGoal;
 
     todayProgress = todayProgress.copyWith(
       juzCompletedToday: juzToday,
@@ -302,8 +315,10 @@ class WirdService {
     history = history.map((p) => p.dateKey == today ? todayProgress : p).toList();
     await _saveHistory(history);
 
-    // Streak + stats on first daily completion
-    if (nowCompleted && !wasCompletedToday) {
+    // Streak + stats on first daily completion. Today's credit is given once,
+    // whichever mode earned it (same check as creditPages).
+    final creditedToday = prefs.getString(_streakDateKey) == today;
+    if (nowCompleted && !wasCompletedToday && !creditedToday) {
       await _incrementStreak();
       await prefs.setInt(_totalDaysKey, (prefs.getInt(_totalDaysKey) ?? 0) + 1);
     } else if (!nowCompleted && wasCompletedToday) {
@@ -346,6 +361,27 @@ class WirdService {
   Future<void> resetAllJuz() async {
     final prefs = await _prefs;
     await prefs.setString(_completedJuzKey, jsonEncode([]));
+    _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
+  }
+
+  /// Empties the juz data for the Juz -> Pages switch (mode-separation spec,
+  /// decisions A, B, D, K): the checked cards (`wird_completed_juz`) and
+  /// today's `juzCompletedToday`. Local first and at once; the cloud push runs
+  /// in the background, so it works offline. Khatma count and dates, streak,
+  /// day count, the day's completed flag and the marker are not touched.
+  Future<void> emptyJuzData() async {
+    final prefs = await _prefs;
+    await prefs.setString(_completedJuzKey, jsonEncode([]));
+
+    final history = await _loadHistory();
+    final today = _todayKey();
+    final entry = history.where((p) => p.dateKey == today).firstOrNull;
+    if (entry != null && entry.juzCompletedToday.isNotEmpty) {
+      await _saveHistory([
+        for (final p in history)
+          p.dateKey == today ? p.copyWith(juzCompletedToday: const []) : p,
+      ]);
+    }
     _pushToCloud().catchError((e) => debugPrint('⚠️ [WIRD] Cloud sync failed: $e'));
   }
 

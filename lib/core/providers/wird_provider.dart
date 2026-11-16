@@ -1,14 +1,25 @@
 import 'dart:async';
 
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/wird.dart';
 import '../models/wird_marker.dart';
+import '../services/achievement_service.dart'
+    show AchievementService, kJuzSwitchCheckTimeout;
 import '../services/wird_marker_logic.dart'
     show averagePerCompletedDay, kLastQuranPage;
 import '../services/wird_marker_service.dart';
 import '../services/wird_service.dart';
 import 'auth_provider.dart' show authStateProvider;
+
+/// The juz achievement check run by the Juz -> Pages switch. Production:
+/// [AchievementService.checkJuzAchievements]. Replaced in tests.
+typedef JuzAchievementCheck = Future<void> Function({
+  required String userId,
+  required int juzKhatmCount,
+  required int checkedJuz,
+});
 
 /// The Wird service. Overridden in tests with a fake.
 final wirdServiceProvider = Provider<WirdService>((ref) => WirdService.instance);
@@ -50,7 +61,11 @@ final quranStatsProvider = FutureProvider.autoDispose<QuranStatsData>((ref) asyn
       checkedJuzCount: wirdState.allCompletedJuz.length,
       totalDaysCompleted: totalDays,
     ),
-    khatmCount: wirdState.khatmCount,
+    // Decision E: only the active mode's khatmas (the combined count stays in
+    // WirdState and the merged Khatm History, decision C).
+    khatmCount: wirdState.settings.wirdUnit == WirdUnit.juz
+        ? wirdState.juzKhatmCount
+        : (wirdState.marker?.khatmaCount ?? 0),
     allCompletedJuz: wirdState.allCompletedJuz,
     wirdUnit: wirdState.settings.wirdUnit,
   );
@@ -70,7 +85,9 @@ class WirdNotifier extends StateNotifier<AsyncValue<WirdState>> {
     WirdMarkerService? marker,
     String? Function()? uid,
     WirdMarkerCloud? cloud,
+    JuzAchievementCheck? juzCheck,
   })  : _wird = wird ?? WirdService.instance,
+        _juzCheck = juzCheck,
         _uid = uid ?? _defaultUid,
         _marker = marker ??
             ((uid != null || cloud != null)
@@ -89,6 +106,7 @@ class WirdNotifier extends StateNotifier<AsyncValue<WirdState>> {
   final WirdService _wird;
   final WirdMarkerService _marker;
   final String? Function() _uid;
+  final JuzAchievementCheck? _juzCheck;
 
   static String? _defaultUid() {
     final uid = FirebaseAuth.instance.currentUser?.uid;
@@ -228,6 +246,49 @@ class WirdNotifier extends StateNotifier<AsyncValue<WirdState>> {
     final newSettings = current.settings.copyWith(wirdUnit: unit);
     await _wird.updateSettings(newSettings);
     state = AsyncValue.data(current.copyWith(settings: newSettings));
+  }
+
+  /// Juz -> Pages (mode-separation spec, decisions A, B, K, L). In this order:
+  /// 1. the juz achievement check on the values captured now, waiting at most
+  /// [checkTimeout]; 2. empty the checked cards (locally, at once); 3. set the
+  /// unit. A check that fails or times out never stops the emptying. Does
+  /// nothing when the unit is already Pages. The warning dialog is the caller's
+  /// job (M3); Pages -> Juz stays [setWirdUnit] and empties nothing.
+  Future<void> switchToPageMode({
+    Duration checkTimeout = kJuzSwitchCheckTimeout,
+  }) async {
+    final current = state.value;
+    if (current == null || current.settings.wirdUnit == WirdUnit.page) return;
+
+    final khatmas = await _wird.getKhatmCount();
+    final checked = (await _wird.getCompletedJuz()).length;
+    final userId = _uid() ?? 'guest_user';
+    try {
+      final check = _juzCheck ??
+          ({
+            required String userId,
+            required int juzKhatmCount,
+            required int checkedJuz,
+          }) async {
+            await AchievementService.instance.checkJuzAchievements(
+              userId: userId,
+              juzKhatmCount: juzKhatmCount,
+              checkedJuz: checkedJuz,
+              timeout: checkTimeout,
+            );
+          };
+      await check(
+        userId: userId,
+        juzKhatmCount: khatmas,
+        checkedJuz: checked,
+      ).timeout(checkTimeout);
+    } catch (e) {
+      debugPrint('❌ Juz achievement check before switching failed: $e');
+    }
+
+    await _wird.emptyJuzData();
+    await setWirdUnit(WirdUnit.page);
+    await _reload();
   }
 
   Future<void> setDailyJuzGoal(int goal) async {
