@@ -1,8 +1,8 @@
 # Fix: one adhan popup on Windows (keep the toast, remove the in-app card)
 
 - **Author:** Alaa Eldin Tarek (drafted with Claude)
-- **Status:** Draft. Open Questions 2, 3 and 5 decided by the owner on 2026-11-16. The code phase (A1) is
-  not approved yet.
+- **Status:** A1 (code) approved by the owner on 2026-11-16 and built (commit 7c0f406); A2 (the owner's
+  device check) NOT RUN. Open Questions 2, 3 and 5 decided by the owner on 2026-11-16.
 - **Date:** 2026-11-16
 - **Level:** C (production code: `lib/`, `test/` cases; needs this spec approved and the phrase
   "approve phase A1", per `CLAUDE.md` Rules). This file itself is Level A (docs).
@@ -303,8 +303,32 @@ Each phase needs the owner's own "approve phase".
 | Phase | Content | Status |
 |---|---|---|
 | A0 | This spec only. | Done 2026-11-16 on `fix/desktop-single-adhan-popup` (docs only), not pushed. |
-| A1 | Code in the two files above (including the two doc comments in `desktop_notification_service.dart`), `flutter analyze`, `flutter test`, the Windows and Android release builds, docs (`STATE.md`, the log, `lib/features/main/README.md`, which names the adhan overlay at lines 8, 76, 83, 87, 107). Branch `fix/desktop-single-adhan-popup` from `main`. | NOT STARTED |
-| A2 | The owner's check on Windows (device steps above). A failure in step 5 or 6 blocks A1 sign-off. | NOT STARTED |
+| A1 | DONE 2026-11-16 (commit 7c0f406, not pushed, not merged); see "A1 as built". Scope: code in the two files above (including the two doc comments in `desktop_notification_service.dart`), `flutter analyze`, `flutter test`, the Windows and Android release builds, docs (`STATE.md`, the log, `lib/features/main/README.md`, which names the adhan overlay at lines 8, 76, 83, 87, 107). Branch `fix/desktop-single-adhan-popup` from `main`. | NOT STARTED |
+| A2 | The owner's check on Windows (device steps above). A failure in step 5 or 6 blocks A1 sign-off. | NOT RUN (device checks not run) |
+
+### A1 as built (2026-11-16)
+
+- **Pre-check (VERIFIED):** lines 1833-1875 of `main_wrapper_screen.dart` (the card's layout) use nothing
+  outside `_AdhanOverlay`: standard widgets, the build method's own locals, two inline strings and
+  `_dismiss` of `_AdhanOverlayState`. The tree was clean before the edit.
+- **Code (VERIFIED by the diff):** `main_wrapper_screen.dart` -196 lines, none added: the import, the
+  `_prayerSchedulerSub` field, listener and cancel, `_showAdhanOverlay`, `_AdhanOverlay` and
+  `_AdhanOverlayState`. `desktop_notification_service.dart` +8 -4: the toast's "Prayed ✓" (index 0)
+  records on time and then calls `DesktopAdhanService.instance.stop()`; the two doc comments of Approach 3.
+  `desktop_prayer_scheduler.dart` and `desktop_tray_service.dart` (temporary quit file log) have no diff.
+- **Search check (VERIFIED):** `_AdhanOverlay`, `_showAdhanOverlay` and `_prayerSchedulerSub` appear nowhere
+  in `lib/` or `test/`. `prayerTimeStream` remains only in `desktop_prayer_scheduler.dart` (its definition
+  and a doc comment) and now has no listener.
+- **Automated (VERIFIED, real runs):** `flutter analyze` 408 issues, 0 errors (last real run before the
+  change: 409 on 57195dd, same `lib/` apart from this change; one issue fewer, GUESS: the `withOpacity`
+  notice on the removed card, not compared issue by issue). `flutter test` 806 passed, 0 failed.
+- **Builds (VERIFIED, real runs, `aura_app.exe` ended first, none running):** `flutter build windows
+  --release` passed, 13:10:01 to 13:11:09, 68 s, exit code 0, `build\windows\x64\runner\Release\aura_app.exe`
+  (`data\app.so` rebuilt 13:10:56). `flutter build apk --release --obfuscate
+  --split-debug-info=build/debug-info` passed, 13:11:19 to 13:14:15, 177 s, exit code 0,
+  `build\app\outputs\flutter-apk\app-release.apk` (88.7 MB), not installed.
+- **NOT RUN:** all device steps (A2), including steps 5 and 6, which block A1 sign-off if they fail.
+  UNKNOWN: whether the toast alone is enough to stop the adhan (Risks).
 
 --------------------------------------------------------------------------------
 

@@ -5,7 +5,7 @@ The app shell after login/onboarding: `main_wrapper_screen.dart`, plus the deskt
 `desktop_shell_layout.dart` (F65). It hosts the 5 tabs, the mobile bottom
 nav or the desktop sidebar, and the desktop nested navigator with its route table. It also runs the app-level
 lifecycle work: resume refresh, widget intent hand-off, native navigation callbacks, untracked-prayer prompt,
-achievement toasts and desktop popups/adhan overlay. It owns no data; everything goes through `../../core/` services
+achievement toasts and desktop popups. It owns no data; everything goes through `../../core/` services
 and providers. Native contracts: [method-channels](/.project-docs/contracts/method-channels.md),
 [intent-extras](/.project-docs/contracts/intent-extras.md), [prefs-keys](/.project-docs/contracts/prefs-keys.md).
 Cross-folder views: `.project-docs/modules/notifications-native.md`, `.project-docs/modules/desktop.md`.
@@ -16,7 +16,7 @@ Behavior-preserving rule: no UI or logic change without an approved spec.
 ### Interface
 | File | Public symbols / entry points |
 | --- | --- |
-| `main_wrapper_screen.dart` | `MainWrapperScreen({int initialIndex = 0})`; `desktopSidebarVisibleProvider` (`StateProvider<bool>`, set by `quran_reader_screen.dart`). Private: `_DesktopShell` (+ `_generateDesktopRoute`), `_DesktopSidebar`, `_AdhanOverlay`, `_NotifPopup` (data), `_AchievementToast` (scale from `desktopTextScale`, `core/utils/window_size.dart`) |
+| `main_wrapper_screen.dart` | `MainWrapperScreen({int initialIndex = 0})`; `desktopSidebarVisibleProvider` (`StateProvider<bool>`, set by `quran_reader_screen.dart`). Private: `_DesktopShell` (+ `_generateDesktopRoute`), `_DesktopSidebar`, `_NotifPopup` (data), `_AchievementToast` (scale from `desktopTextScale`, `core/utils/window_size.dart`) |
 | `desktop_shell_layout.dart` | `kCompactSidebarBelow` (800), `useCompactSidebar(windowWidth)`, `DesktopShellLayout` (sidebar/content layout of `_DesktopShell`; owns only the in-memory overlay-open flag) |
 
 - **MethodChannel `com.aura.hala/navigation`** — Dart → native: `setCurrentRoute {route: '/home' | '/tab/<i>'}` on
@@ -73,18 +73,18 @@ Behavior-preserving rule: no UI or logic change without an approved spec.
   While a popup is active, `build` returns only the popup and the shell is unmounted (findings F34). Popup "Prayed"
   calls `DesktopNotificationService.recordPrayerOnTime` + `DesktopAdhanService.stop`; "Dismiss" does not stop the audio.
 - **Localization**: the guest-sync dialog, `press_again_to_exit` and the sidebar labels use `.tr()`. The popup,
-  adhan overlay, pickers and untracked sheet use inline `isArabic ? '…' : '…'`, with a local `_toArabicNumerals`.
+  pickers and untracked sheet use inline `isArabic ? '…' : '…'`, with a local `_toArabicNumerals`.
 
 ### Side Effects
 - Services: `TaskService` (`toggleTaskCompletion`, `rescheduleAllTaskReminders`); `PrayerAlarmService`
   (`syncNativePrayerStatuses`, `scheduleDailySummary`); `PrayerTrackingService.getPrayersForDate`;
   `SharedPreferencesService` (`isPrayerTrackingEnabled`, `getDailySummaryTime`); `AchievementService.newAchievements`;
   `NotificationService.showAchievementNotification`; desktop: `DesktopNotificationService` (stream, achievement,
-  `recordPrayerOnTime`), `DesktopPrayerScheduler.prayerTimeStream`, `DesktopAdhanService.stop`, `windowManager`.
+  `recordPrayerOnTime`), `DesktopAdhanService.stop`, `windowManager`.
 - Providers: `dailyPrayerStatusProvider` (`load`, `startLiveSync`, `stopLiveSync`, `markToday`), `guestMigrationProvider`
   (`refresh` before the dialog check, `markDialogShown`, `migrate`), and the resume invalidations above.
 - SharedPreferences: read + remove the 3 widget hand-off keys. Native alarms through `prayer_alarms` (above).
-- Timers / overlays: the status-sync timer, popup auto-dismiss, the adhan overlay (`OverlayEntry`, 5 min) and the
+- Timers / overlays: the status-sync timer, popup auto-dismiss and the
   achievement toast; haptics on mobile swipe and back.
 
 ## Subdirectories & System Boundaries
@@ -104,5 +104,5 @@ Behavior-preserving rule: no UI or logic change without an approved spec.
 - Run: `flutter test` (`test/features/main/desktop_shell_layout_test.dart`, 8 cases; nothing else in this folder is
   tested). Manual checks: S41 (desktop sidebar layout, pending); `.project-docs/reference/device-checklist.md`
   S06–S10 (statuses, pickers, summary route), S14–S15 (widget tab / task hand-off), S20 (guest migration),
-  S21; desktop popups and adhan overlay: `.project-docs/modules/desktop.md`.
+  S21; desktop popups: `.project-docs/modules/desktop.md`.
 - Known issues: findings F34 (verified) and F35 (scout backlog).
