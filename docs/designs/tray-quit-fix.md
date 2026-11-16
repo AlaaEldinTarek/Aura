@@ -1,7 +1,8 @@
 # Fix: tray "Quit" does not close the Windows app
 
 - **Author:** Alaa Eldin Tarek (drafted with Claude)
-- **Status:** Draft, not approved
+- **Status:** T2 approved by the owner on 2026-11-16 ("approve phase T2 ... Option B, as written in the
+  spec") and built; T3 (the owner's check) NOT RUN. The fix is not yet confirmed on a running app.
 - **Date:** 2026-11-16
 - **Level:** C (production code: `lib/`, `test/` cases; needs an approved spec and the phrase
   "approve phase T2", per `CLAUDE.md` Rules). This file itself is Level A (docs).
@@ -147,9 +148,43 @@ Each phase needs the owner's own go-ahead.
 
 | Phase | Content | Status |
 |---|---|---|
-| T1 | This spec only. | Done on `docs/tray-quit-spec` (2026-11-16), not merged. The spec is "Draft, not approved". |
-| T2 | The code change in `_quit()`, the guard test if it can be extracted, `flutter analyze`, `flutter test`, and the Windows release build. | NOT STARTED |
+| T1 | This spec only. | Done (2026-11-16), merged to `main` in PR #30 (merge 1e2bd81). |
+| T2 | The code change in `_quit()`, the guard test if it can be extracted, `flutter analyze`, `flutter test`, and the Windows release build. | Done on `fix/tray-quit` (2026-11-16, commit 32a8573, from `main` ae46faa), not pushed, not merged. See "T2 as built" below. |
 | T3 | The owner's manual check on his PC. | NOT STARTED |
+
+### T2 as built (2026-11-16, commit 32a8573)
+
+- **Code (VERIFIED by the diff):** only `lib/core/services/desktop_tray_service.dart` and the new test
+  `test/core/services/desktop_tray_run_once_guard_test.dart`. `_quit()` follows the Decision steps 1 to 7;
+  the fallback timer is started before the awaited steps. The guard is a small class `RunOnceGuard`
+  (`@visibleForTesting`) in the same file. Menu, labels and the X-button path are unchanged.
+- **One addition to the Decision order:** before the 100 ms wait, `_quit()` looks up the log folder
+  (`getApplicationSupportDirectory()`, bounded by a 1 s timeout, errors caught) and writes "quit clicked".
+  The file writes are synchronous (`writeAsStringSync`, append, `flush: true`), so the fallback callback
+  writes its line and calls `exit(0)` without waiting on anything.
+- **`debugPrint` texts:** `🚪 [TRAY] Quit requested`, `⚠️ [TRAY] Quit: second call ignored`,
+  `📝 [TRAY] Quit log file: <full path>`, `⏳ [TRAY] Quit: menu wait done`,
+  `⏲️ [TRAY] Quit: fallback timer started (2 s)`, `✅ [TRAY] Quit: tray icon destroyed`,
+  `✅ [TRAY] Quit: preventClose off`, `🚪 [TRAY] Quit: window destroy called`,
+  `✅ [TRAY] Quit: window destroy returned`, `⏰ [TRAY] Quit: fallback timer fired, calling exit(0)`.
+  Errors: `⚠️ [TRAY] Quit: tray destroy error: <e>`, `⚠️ [TRAY] Quit: setPreventClose error: <e>`,
+  `⚠️ [TRAY] Quit: window destroy error: <e>`, `⚠️ [TRAY] Quit log path error: <e>`,
+  `⚠️ [TRAY] Quit log write error: <e>`.
+- **File log lines (`tray_quit_log.txt`):** `<ISO timestamp> quit clicked`, `<ISO timestamp> tray destroyed`,
+  `<ISO timestamp> window destroyed`, `<ISO timestamp> fallback fired`.
+- **Reading the log (GUESS):** "window destroyed" is written after `windowManager.destroy()` returns. If
+  the process ends before the reply reaches Dart, that line and `window destroy returned` will be
+  missing even though the quit worked. A gone process with no "fallback fired" line means the orderly
+  path ended it.
+- **Automated (VERIFIED, real runs):** `flutter test` 802 passed, 0 failed (799 + 3 new guard tests);
+  `flutter analyze` 409 issues, 0 errors (same as the baseline).
+- **Builds (VERIFIED, real runs, `aura_app.exe` not running beforehand):** `flutter build windows
+  --release` passed, 12:01:53 to 12:03:01, 68 s, exit code 0, `build\windows\x64\runner\Release\aura_app.exe`
+  (`data\app.so` rebuilt 12:02:49). `flutter build apk --release --obfuscate
+  --split-debug-info=build/debug-info` passed, 12:04:11 to 12:12:11, 480 s, exit code 0,
+  `build\app\outputs\flutter-apk\app-release.apk` (88.7 MB). The APK was not installed.
+- **UNKNOWN until T3:** whether Quit now ends the app, which steps run, the real log folder, and whether
+  the 100 ms and 2 s timings suit the real menu. The app was not launched in T2.
 
 ### Test plan
 
