@@ -1,8 +1,10 @@
 # Fix: tray "Quit" does not close the Windows app
 
 - **Author:** Alaa Eldin Tarek (drafted with Claude)
-- **Status:** T2 approved by the owner on 2026-11-16 ("approve phase T2 ... Option B, as written in the
-  spec") and built; T3 (the owner's check) NOT RUN. The fix is not yet confirmed on a running app.
+- **Status:** T2 approved by the owner on 2026-11-16 and built; T3 (the owner's check) FAILED on
+  2026-11-16 (no tray menu item works); T2b (stable menu item ids) approved by the owner on 2026-11-16
+  and built, the owner's re-check NOT RUN. See "T3 result and T2b". The fix is not yet confirmed on a
+  running app.
 - **Date:** 2026-11-16
 - **Level:** C (production code: `lib/`, `test/` cases; needs an approved spec and the phrase
   "approve phase T2", per `CLAUDE.md` Rules). This file itself is Level A (docs).
@@ -68,8 +70,8 @@ to end it there.
 
 ## Non-Goals
 
-- **The stale-id dead-click path** (hypothesis 2). It is a separate small bug and is listed under
-  Follow-ups.
+- ~~The stale-id dead-click path (hypothesis 2).~~ No longer a Non-Goal: after the T3 failure it is
+  fixed in phase T2b (owner's go-ahead 2026-11-16), see "T3 result and T2b".
 - **A native `TerminateProcess` change in `windows/`.** Only if this fix is not enough, and as a
   separate decision by the owner.
 - Any change to the X button (hide to tray), the menu items, their labels, or Android.
@@ -150,7 +152,8 @@ Each phase needs the owner's own go-ahead.
 |---|---|---|
 | T1 | This spec only. | Done (2026-11-16), merged to `main` in PR #30 (merge 1e2bd81). |
 | T2 | The code change in `_quit()`, the guard test if it can be extracted, `flutter analyze`, `flutter test`, and the Windows release build. | Done on `fix/tray-quit` (2026-11-16, commit 32a8573, from `main` ae46faa), not pushed, not merged. See "T2 as built" below. |
-| T3 | The owner's manual check on his PC. | NOT STARTED |
+| T3 | The owner's manual check on his PC. | Run on 2026-11-16 on the T2 build: FAIL, REPORTED by Aladdin (no tray menu item works). See "T3 result and T2b". To be run again on the T2b build: NOT RUN. |
+| T2b | Stable tray menu item ids (hypothesis 2), added after the T3 failure. Owner's go-ahead 2026-11-16 ("approve phase T2b"). | Done on `fix/tray-quit` (2026-11-16, commit 57195dd), not pushed, not merged. |
 
 ### T2 as built (2026-11-16, commit 32a8573)
 
@@ -201,6 +204,95 @@ Each phase needs the owner's own go-ahead.
 
 --------------------------------------------------------------------------------
 
+## T3 result and T2b
+
+### T3 result, 2026-11-16: FAIL
+
+- **REPORTED by Aladdin (not observed by Claude):** on the T2 build the tray menu opens (from the `^`
+  hidden icons area), but NO item works: Test Notification (no adhan), Open Aura after X (the window did
+  not come back), Quit (nothing closed). So all tray menu clicks are lost, not only Quit.
+- **VERIFIED in the captured logs** (release exe, output redirected to a file; runs PID 17184, 12204,
+  16904): no `test_notif onClick fired` line and no `Quit requested` line in any run, and
+  `tray_quit_log.txt` was never created. The output file was being written live, so the lines were not
+  lost in a buffer. The click never reached Dart code.
+- **VERIFIED in the same logs:** full prayer-time reloads (`[PRAYER_TIMES] Loading prayer times`) come in
+  bursts while the app is in use, not only at start-up. Run 12204: 12:22:36, 12:22:50, then nothing for
+  over two minutes, then 12:25:14, 12:25:25, 12:25:29, 12:25:37, inside the window in which Quit was
+  clicked (between 12:23:38 and 12:26:39). The exact click times were not recorded, so that each reload
+  matches a menu opening is a GUESS.
+- The T2 quit code was therefore never run on a real click. Whether it ends the app is still UNKNOWN.
+
+### Cause (hypothesis 2, now the working cause)
+
+1. **VERIFIED:** a click is matched to an item by id only. Native sends `id = (int)wParam` from
+   `WM_COMMAND` (`tray_manager` `windows/tray_manager_plugin.cpp:178-184`); Dart looks it up in the
+   current menu and does nothing, with no log, if it is not found (`lib/src/tray_manager.dart:57-70`).
+2. **VERIFIED:** every `_rebuildMenu()` created new items, and each new item takes a new id from a global
+   counter (`menu_base` `menu_item.dart:13-22`). Dart's menu is replaced at once
+   (`tray_manager.dart:179`); a menu already on screen keeps its old ids.
+3. **VERIFIED:** opening the menu calls `SetForegroundWindow(hWnd)` on the main window just before
+   `TrackPopupMenu` (`tray_manager_plugin.cpp:306-308`).
+4. **VERIFIED:** on the app's "resumed" event, `lib/features/main/main_wrapper_screen.dart:106-114`
+   invalidates `prayerTimesProvider`; the reload calls `DesktopTrayService.instance.updateNextPrayer`
+   (`prayer_times_provider.dart:264`), which calls `_rebuildMenu()`.
+5. **GUESS:** the focus change in step 3 fires "resumed", so each time the menu opens the ids are replaced
+   before the click is looked up. Not read in the Flutter engine; supported by the reload bursts above.
+
+The tray icon left-click (restore the window) carries no id (`tray_manager_plugin.cpp:187-191`), which
+fits the report that it works (REPORTED by Aladdin, 2026-11-16).
+
+**Other ways a click can reach no Dart code, and why they do not fit:** no listener registered (the
+item's `onClick` runs inside the listener loop, `tray_manager.dart:42`; ruled out, the menu opens only
+through our listener, VERIFIED path); `WM_COMMAND` not reaching the plugin (the runner forwards messages,
+`windows/runner/flutter_window.cpp:57`, and no other plugin in the build handles `WM_COMMAND`, VERIFIED
+by search; whether `window_manager`'s hook can return early for it was not read).
+
+**History (VERIFIED by `git log`):** the tray service and `tray_manager: ^0.2.3` were added in 7db4702
+(2026-05-10); the "resumed" reload is older (2699736, 2026-04-18). No recorded tray menu click that
+worked was found in `device-checklist.md`, `modules/desktop.md` or `findings.md`. `pubspec.lock` is
+git-ignored, so the history of the resolved version (now 0.2.4) is not available.
+
+### T2b: keep the menu item ids stable (owner's go-ahead 2026-11-16, "approve phase T2b")
+
+Hypothesis 2 is moved from Non-Goals and Follow-ups into this phase. Only
+`lib/core/services/desktop_tray_service.dart` changes, plus one test.
+
+- The items (`next_prayer`, `stop_adhan`, `open`, `test_notif`, `quit`) and the four separators are
+  created ONCE as fields and reused in every rebuild, so their ids never change. `stop_adhan` and its
+  separator are still included only while adhan plays.
+- **The disabled next-prayer item is reused too**, and only its label is updated. This is safe: `label`
+  is a plain non-final field of `MenuItem` and `toJson()` reads it when the menu is sent (`menu_base`
+  `menu_item.dart:28, 88-100`, VERIFIED). Reusing it keeps every id in the menu stable, not only the
+  clickable ones.
+- `_rebuildMenu()` skips the `setContextMenu` call when the next-prayer label and the adhan state are
+  unchanged since the last send.
+- New log lines: `🔁 [TRAY] menu rebuilt: <label>` when a menu is actually sent, and
+  `🖱️ [TRAY] menu click: <key>` at the top of `onTrayMenuItemClick`.
+- Same items, labels and order. The T2 quit code and `RunOnceGuard` are unchanged. The "resumed" reload
+  in `main_wrapper_screen.dart` is not touched (shared with Android).
+
+**As built (2026-11-16, commit 57195dd on `fix/tray-quit`, not pushed, not merged):**
+
+- **Code (VERIFIED by the diff):** as above. The menu construction is the pure method `buildMenu()`
+  (`@visibleForTesting`).
+- **Test (VERIFIED, real run):** `test/core/services/desktop_tray_menu_ids_test.dart`, 4 cases: two
+  rebuilds keep the same ids; ids stay the same when Stop Adhan appears and disappears; every item in one
+  menu has its own id; items, labels and order are unchanged.
+- **Automated (VERIFIED, real runs):** `flutter test` 806 passed, 0 failed (802 + 4 new);
+  `flutter analyze` 409 issues, 0 errors (same as the baseline).
+- **Build (VERIFIED, real run, `aura_app.exe` not running beforehand):** `flutter build windows
+  --release` passed, 12:39:29 to 12:40:37, 68 s, exit code 0,
+  `build\windows\x64\runner\Release\aura_app.exe` (`data\app.so` rebuilt 12:40:24). The Android build
+  was NOT run for T2b: the change is in this desktop-only file and its test, and the T2 Android build
+  (same day) covered the file's imports.
+- **UNKNOWN until the owner's re-check:** whether menu clicks now reach Dart, whether Quit then ends the
+  app, and whether the "resumed" trigger (step 5) is the real one. The `menu rebuilt` and `menu click`
+  lines are there to show it.
+- **Known limit:** a rebuild that only changes the label while the menu is open leaves the old label on
+  screen until the menu is opened again. Clicks still work.
+
+--------------------------------------------------------------------------------
+
 ## Risks
 
 - **A forced exit can cut a pending Firestore write or prefs save.** The fallback `exit(0)` does not wait
@@ -214,8 +306,8 @@ Each phase needs the owner's own go-ahead.
   (UNKNOWN).** The log lines show which step fails.
 - **The temporary file log adds a file write on the quit path.** It is small, its errors are caught, and
   it is removed later (Follow-ups).
-- **Hypothesis 2 is not fixed.** If the click never reaches `_quit()`, Quit still does nothing after this
-  change; the log (no "quit requested" line) will show it.
+- **Hypothesis 2 was not fixed by T2.** T3 showed exactly this: the click never reached `_quit()` (no
+  "Quit requested" line). It is fixed in T2b; whether that is enough is UNKNOWN until the re-check.
 - **Android:** not affected if the edit stays in this desktop-only file (VERIFIED: guarded by
   `isDesktop`).
 
@@ -230,6 +322,6 @@ Revert the T2 commit. `_quit()` returns to `setPreventClose(false)` plus `exit(0
 - **Remove the temporary file log** (the helper in `desktop_tray_service.dart` and the
   `tray_quit_log.txt` writes) once the owner confirms the fix works. It needs its own go-ahead, as a
   code change.
-- **Stale menu item ids after a rebuild while the menu is open** (hypothesis 2): a click can be dropped
-  silently. Needs its own small spec.
+- ~~Stale menu item ids after a rebuild while the menu is open (hypothesis 2).~~ Moved into this spec
+  as phase T2b (2026-11-16).
 - **Native `TerminateProcess` in `windows/runner`:** only if T3 shows the process still stays.
