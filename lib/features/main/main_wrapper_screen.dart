@@ -20,7 +20,6 @@ import '../../core/services/achievement_service.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/desktop_notification_service.dart';
 import '../../core/services/desktop_adhan_service.dart';
-import '../../core/services/desktop_prayer_scheduler.dart';
 import '../../core/services/prayer_alarm_service.dart';
 import '../../core/services/prayer_tracking_service.dart';
 import '../../core/models/prayer_record.dart';
@@ -73,7 +72,6 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
   late int _currentIndex;
   StreamSubscription<Achievement>? _achievementSub;
   StreamSubscription<DesktopInAppNotif>? _desktopNotifSub;
-  StreamSubscription<DesktopPrayerEvent>? _prayerSchedulerSub;
 
   // Desktop notification popup queue (replaces in-app banners)
   _NotifPopup? _activePopup;
@@ -173,13 +171,6 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
           title: notif.title,
           body: notif.body,
         ));
-      });
-
-      // Desktop: adhan overlay with action buttons when prayer time fires.
-      _prayerSchedulerSub =
-          DesktopPrayerScheduler.instance.prayerTimeStream.listen((event) {
-        if (!mounted) return;
-        _showAdhanOverlay(event.name, event.nameAr);
       });
     }
 
@@ -286,7 +277,6 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     _popupAnimCtrl?.dispose();
     _achievementSub?.cancel();
     _desktopNotifSub?.cancel();
-    _prayerSchedulerSub?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _tabController.dispose();
     _pageController.dispose();
@@ -301,33 +291,6 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
         achievement: achievement,
         isArabic: isArabic,
         onDone: () => entry.remove(),
-      ),
-    );
-    overlay.insert(entry);
-  }
-
-  void _showAdhanOverlay(String prayerName, String prayerNameAr) {
-    // Make window visible first (it may be hidden in tray)
-    try {
-      windowManager.show();
-    } catch (_) {}
-
-    final overlay = Overlay.of(context);
-    late OverlayEntry entry;
-    entry = OverlayEntry(
-      builder: (_) => _AdhanOverlay(
-        prayerName: prayerName,
-        prayerNameAr: prayerNameAr,
-        onDismiss: () => entry.remove(),
-        onPrayed: () {
-          entry.remove();
-          DesktopNotificationService.instance.recordPrayerOnTime(prayerName);
-          DesktopAdhanService.instance.stop();
-        },
-        onStopAdhan: () {
-          entry.remove();
-          DesktopAdhanService.instance.stop();
-        },
       ),
     );
     overlay.insert(entry);
@@ -1751,165 +1714,6 @@ class _DesktopSidebar extends ConsumerWidget {
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-/// Desktop in-app adhan popup overlay (bottom-right corner, stays for 5 min).
-class _AdhanOverlay extends StatefulWidget {
-  final String prayerName;
-  final String prayerNameAr;
-  final VoidCallback onDismiss;
-  final VoidCallback onPrayed;
-  final VoidCallback onStopAdhan;
-
-  const _AdhanOverlay({
-    required this.prayerName,
-    required this.prayerNameAr,
-    required this.onDismiss,
-    required this.onPrayed,
-    required this.onStopAdhan,
-  });
-
-  @override
-  State<_AdhanOverlay> createState() => _AdhanOverlayState();
-}
-
-class _AdhanOverlayState extends State<_AdhanOverlay>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<Offset> _slide;
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _slide = Tween<Offset>(
-      begin: const Offset(1, 0),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
-    _ctrl.forward();
-    _timer = Timer(const Duration(minutes: 5), _dismiss);
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  void _dismiss() {
-    if (!mounted) return;
-    _ctrl.reverse().then((_) => widget.onDismiss());
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primary = isDark ? const Color(0xFFF5B301) : const Color(0xFFB5821B);
-    final bg = isDark ? const Color(0xFF1A1B1E) : Colors.white;
-    final name = isArabic ? widget.prayerNameAr : widget.prayerName;
-
-    return Positioned(
-      right: 16,
-      bottom: 16,
-      child: SlideTransition(
-        position: _slide,
-        child: Material(
-          elevation: 8,
-          borderRadius: BorderRadius.circular(12),
-          color: bg,
-          child: Container(
-            width: 300,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: primary.withOpacity(0.4), width: 1.5),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Text('🕌', style: TextStyle(fontSize: 20)),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        isArabic ? 'حان وقت الصلاة' : 'Prayer Time',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                          color: primary,
-                        ),
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: _dismiss,
-                      child: Icon(Icons.close,
-                          size: 16,
-                          color: isDark ? Colors.white38 : Colors.black38),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  isArabic ? 'حان موعد صلاة $name' : "Time for $name prayer",
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: isDark ? Colors.white70 : Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () {
-                        _timer?.cancel();
-                        widget.onStopAdhan();
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor:
-                            isDark ? Colors.white54 : Colors.black45,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
-                        textStyle: const TextStyle(fontSize: 12),
-                      ),
-                      child: Text(isArabic ? 'إيقاف الأذان' : 'Stop Adhan'),
-                    ),
-                    const SizedBox(width: 6),
-                    FilledButton(
-                      onPressed: () {
-                        _timer?.cancel();
-                        widget.onPrayed();
-                      },
-                      style: FilledButton.styleFrom(
-                        backgroundColor: primary,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        textStyle: const TextStyle(fontSize: 12),
-                      ),
-                      child: Text(
-                        isArabic ? 'صليت ✓' : 'Prayed ✓',
-                        style: const TextStyle(color: Colors.black87),
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
