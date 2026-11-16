@@ -62,7 +62,12 @@ Verified against code 2026-11-07 (reference/2026-11-07_DRIFT_REPORT.md); updated
 
 ## Achievements & tutorial
 - `AchievementCategory.quran`: `wird_first` (1 day), `wird_streak_7`, `wird_streak_30`, `wird_streak_100`,
-  `wird_pages_100`, `wird_pages_300`, `wird_khatma`. The last three read the marker (`wirdAchievementIds`: 100 pages, 300 pages,
-  one khatma). Wird code never calls `checkAndAward` (F52h): the check runs from the Profile badge grid, after a prayer record
-  and after a task completion. Juz-mode users cannot earn those three (see `docs/designs/mode-separation.md`, draft).
+  `wird_pages_100`, `wird_pages_300`, `wird_khatma`, plus three juz ids `wird_juz_5`, `wird_juz_15`, `wird_juz_khatma`
+  (on `feat/mode-separation-m1`, not merged). The three page ids read the marker (`wirdAchievementIds`: 100 pages, 300 pages,
+  one khatma) and still cannot be earned by juz-mode users. The three juz ids come from `wirdJuzAchievementIds` (khatmas x 30 +
+  checked cards: 5, 15, and one khatma); nothing is stored. Wird code never calls `checkAndAward` (F52h). It runs from the
+  Profile badge grid, after a prayer record and after a task completion; its Wird block adds the juz ids from local prefs
+  (`localWirdJuzAchievementIds`). One more check runs at the Juz -> Pages switch (`checkJuzAchievements`, before the cards are
+  emptied, guest skipped, 5 s bounded wait `kJuzSwitchCheckTimeout`). UNKNOWN: the 5 s wait was never measured against real
+  Firestore offline (a missed award there is accepted, decision L). Spec: `docs/designs/mode-separation.md` (draft, not approved).
 - Wird tutorial launches from `_WirdContentViewState.initState` — do NOT add a tab-level Wird tutorial in `_onTabChanged`.
