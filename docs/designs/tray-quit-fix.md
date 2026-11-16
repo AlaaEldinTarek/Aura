@@ -1,10 +1,10 @@
 # Fix: tray "Quit" does not close the Windows app
 
 - **Author:** Alaa Eldin Tarek (drafted with Claude)
-- **Status:** T2 approved by the owner on 2026-11-16 and built; T3 (the owner's check) FAILED on
-  2026-11-16 (no tray menu item works); T2b (stable menu item ids) approved by the owner on 2026-11-16
-  and built, the owner's re-check NOT RUN. See "T3 result and T2b". The fix is not yet confirmed on a
-  running app.
+- **Status:** T2 and T2b approved by the owner on 2026-11-16 and built. T3 (the owner's check): FAILED on
+  the T2 build (no tray menu item works), then PASS on the T2b build for one run, REPORTED by Aladdin
+  2026-11-16; Quit on the orderly path VERIFIED in the logs. See "T3 result and T2b". NOT RUN: Quit with
+  the window hidden, repeated runs.
 - **Date:** 2026-11-16
 - **Level:** C (production code: `lib/`, `test/` cases; needs an approved spec and the phrase
   "approve phase T2", per `CLAUDE.md` Rules). This file itself is Level A (docs).
@@ -152,7 +152,7 @@ Each phase needs the owner's own go-ahead.
 |---|---|---|
 | T1 | This spec only. | Done (2026-11-16), merged to `main` in PR #30 (merge 1e2bd81). |
 | T2 | The code change in `_quit()`, the guard test if it can be extracted, `flutter analyze`, `flutter test`, and the Windows release build. | Done on `fix/tray-quit` (2026-11-16, commit 32a8573, from `main` ae46faa), not pushed, not merged. See "T2 as built" below. |
-| T3 | The owner's manual check on his PC. | Run on 2026-11-16 on the T2 build: FAIL, REPORTED by Aladdin (no tray menu item works). See "T3 result and T2b". To be run again on the T2b build: NOT RUN. |
+| T3 | The owner's manual check on his PC. | Run on 2026-11-16 on the T2 build: FAIL, REPORTED by Aladdin (no tray menu item works). See "T3 result and T2b". Run again on the T2b build (57195dd), 2026-11-16: PASS for one run, REPORTED by Aladdin (Test Notification, Open Aura after X, Quit); Quit reaching Dart and ending the app on the orderly path VERIFIED in the logs. NOT RUN: Quit with the window hidden, repeated runs. See "T3 re-check on the T2b build". |
 | T2b | Stable tray menu item ids (hypothesis 2), added after the T3 failure. Owner's go-ahead 2026-11-16 ("approve phase T2b"). | Done on `fix/tray-quit` (2026-11-16, commit 57195dd), not pushed, not merged. |
 
 ### T2 as built (2026-11-16, commit 32a8573)
@@ -290,6 +290,39 @@ Hypothesis 2 is moved from Non-Goals and Follow-ups into this phase. Only
   lines are there to show it.
 - **Known limit:** a rebuild that only changes the label while the menu is open leaves the old label on
   screen until the menu is opened again. Clicks still work.
+
+### T3 re-check on the T2b build, 2026-11-16: PASS (one run)
+
+- **REPORTED by Aladdin (not observed by Claude), about 12:44, build 57195dd, PID 14360:** PASS. Test
+  Notification: the adhan played. Open Aura after X: the window came back. Quit: the window, the tray
+  icon and the process were all gone.
+- **VERIFIED in the captured log of PID 14360** (launched 12:42:09, copy kept as
+  `%TEMP%\aura_tray_run_14360.txt`; the log was not overwritten, the later PID 21316 was started by the
+  owner without capture): one menu click, Quit, and it reached Dart. Lines, in order:
+  `🚪 [TRAY] Quit requested`, `🖱️ [TRAY] menu click: quit`, `⚠️ [TRAY] Quit: second call ignored`,
+  `📝 [TRAY] Quit log file: C:\Users\alaae\AppData\Roaming\com.aura\aura_app\tray_quit_log.txt`,
+  `⏳ [TRAY] Quit: menu wait done`, `⏲️ [TRAY] Quit: fallback timer started (2 s)`,
+  `✅ [TRAY] Quit: tray icon destroyed`, `✅ [TRAY] Quit: preventClose off`,
+  `🚪 [TRAY] Quit: window destroy called`. The log ends there.
+- **VERIFIED, `tray_quit_log.txt`** (created 12:42:46, two lines):
+  `2026-11-16T12:42:46.304797 quit clicked`, `2026-11-16T12:42:46.414287 tray destroyed`.
+- **Quit path: orderly, not the fallback.** VERIFIED: no "fallback fired" line in the file (it is written
+  synchronously before `exit(0)`), and no `fallback timer fired` line in the output. The process ended at
+  `windowManager.destroy()`, before its reply reached Dart, so "window destroyed" and
+  `window destroy returned` are missing, as expected (see "T2 as built"). The whole quit took well under
+  the 2 s fallback (110 ms from "quit clicked" to "tray destroyed").
+- **The double call is real and the guard works (VERIFIED):** `second call ignored` appears once.
+- **The real log folder (VERIFIED):** `%APPDATA%\com.aura\aura_app`, as expected.
+- **Not matched by the log:** the PID 14360 log has NO `test_notif onClick fired`, no
+  `menu click: test_notif` and no `menu click: open` line, and that run ended at 12:42:46, before the
+  reported 12:44. So the Test Notification and Open Aura checks are REPORTED only; GUESS: they were done
+  on the later run (PID 21316, same exe, started 12:42:49, output not captured). Whether the window was
+  visible or hidden when Quit was clicked on PID 14360 is not shown by the log.
+- **Still GUESS:** that "resumed" was the trigger of the rebuilds (cause step 5). The fix does not depend
+  on it.
+- **NOT RUN:** Quit with the window hidden to the tray, repeated runs, Quit right after a next-prayer
+  label change, Stop Adhan from the tray menu, the fallback path (never fired).
+- The temporary file log stays in the code; its removal is a follow-up that needs the owner's go-ahead.
 
 --------------------------------------------------------------------------------
 
