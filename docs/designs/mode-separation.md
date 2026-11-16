@@ -203,7 +203,7 @@ No Kotlin file is touched (GUESS: nothing native reads these keys; no Kotlin rea
 *   The stats change alters the P4b stats mapping and its tests (VERIFIED they exist); the screen is also used in page mode.
 *   One flow combines a dialog, a data change, an achievement check and a bottom sheet; the order and cancel paths need careful tests (GUESS on complexity).
 
-## Phases (M0 to M4 done; each needed the owner's explicit go-ahead; nothing is merged)
+## Phases (M0 to M4 done; each needed the owner's explicit go-ahead; merged in PR #29 on 2026-11-16)
 
 | Phase | Content | Gate |
 |---|---|---|
