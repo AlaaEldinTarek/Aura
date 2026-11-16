@@ -1,8 +1,10 @@
 # Fix: one adhan popup on Windows (keep the toast, remove the in-app card)
 
 - **Author:** Alaa Eldin Tarek (drafted with Claude)
-- **Status:** A1 (code) approved by the owner on 2026-11-16 and built (commit 7c0f406); A2 (the owner's
-  device check) NOT RUN. Open Questions 2, 3 and 5 decided by the owner on 2026-11-16.
+- **Status:** A1 (code) approved by the owner on 2026-11-16 and built (commit 7c0f406). A2 (the owner's
+  device check) done on 2026-11-16 on a build with A1, the tray fix and the toast fix: steps 1 to 5 and 7
+  pass, step 6 FAILS as built and is accepted by the owner, step 8 NOT RUN. See "A2 results". Open
+  Questions 2, 3 and 5 decided by the owner on 2026-11-16.
 - **Date:** 2026-11-16
 - **Level:** C (production code: `lib/`, `test/` cases; needs this spec approved and the phrase
   "approve phase A1", per `CLAUDE.md` Rules). This file itself is Level A (docs).
@@ -243,10 +245,12 @@ Nothing else in the file changes. The scheduler's comments stay as they are (sec
   returns once playback has started, not when it ends (GUESS, `audioplayers` not read). If so, the tray
   item is not a working way to stop the adhan, and the toast is the only one. Today the card covers this.
   Device step 6 checks it.
-- **A failure in device steps 5 or 6 blocks A1 sign-off.**
+- **A failure in device steps 5 or 6 blocks A1 sign-off.** Changed for step 6 by the owner on 2026-11-16:
+  step 6 fails as built and is accepted for A1 (see "A2 step 6 result and the owner's decision").
 - **No toast, no control.** If Windows notifications are off for Aura, or "Do not disturb" hides the
   toast, the adhan plays with nothing on screen to stop it (GUESS; today the card would still show).
-  **Accepted by the owner** (2026-11-16).
+  **Accepted by the owner** (2026-11-16). With step 6 failing, the tray item is not a way out either:
+  this is a known limit of A1.
 - **A hidden window stays hidden** at adhan time. This is wanted by the owner, and it changes today's
   behavior. The toast body click still brings the window back (`_bringToFront`, `:123`, `:135-140`).
 - **Shared file.** `main_wrapper_screen.dart` is used on Android. The removed code is desktop-only
@@ -288,7 +292,8 @@ release APK build (shared file).
 5. Let the toast fade, open the Action Center, press "Stop Adhan" there: the adhan stops. A failure
    here blocks A1 sign-off.
 6. During an adhan, open the tray menu: is "Stop Adhan" listed, and does it work? (Checks the finding
-   under Risks.) A failure here blocks A1 sign-off.
+   under Risks.) A failure here blocks A1 sign-off. (Result 2026-11-16: FAILS; accepted by the owner for
+   A1, see "A2 step 6 result and the owner's decision".)
 7. A real prayer time, when convenient: one toast, no card.
 8. Other popups unchanged: a pre-prayer reminder or a task reminder still shows as before.
 
@@ -303,8 +308,8 @@ Each phase needs the owner's own "approve phase".
 | Phase | Content | Status |
 |---|---|---|
 | A0 | This spec only. | Done 2026-11-16 on `fix/desktop-single-adhan-popup` (docs only), not pushed. |
-| A1 | DONE 2026-11-16 (commit 7c0f406, not pushed, not merged); see "A1 as built". Scope: code in the two files above (including the two doc comments in `desktop_notification_service.dart`), `flutter analyze`, `flutter test`, the Windows and Android release builds, docs (`STATE.md`, the log, `lib/features/main/README.md`, which names the adhan overlay at lines 8, 76, 83, 87, 107). Branch `fix/desktop-single-adhan-popup` from `main`. | NOT STARTED |
-| A2 | The owner's check on Windows (device steps above). A failure in step 5 or 6 blocks A1 sign-off. | NOT RUN (device checks not run) |
+| A1 | DONE 2026-11-16 (commit 7c0f406, not pushed, not merged); see "A1 as built". Scope: code in the two files above (including the two doc comments in `desktop_notification_service.dart`), `flutter analyze`, `flutter test`, the Windows and Android release builds, docs (`STATE.md`, the log, `lib/features/main/README.md`, which names the adhan overlay at lines 8, 76, 83, 87, 107). Branch `fix/desktop-single-adhan-popup` from `main`. | DONE 2026-11-16 (commit 7c0f406), not pushed, not merged |
+| A2 | The owner's check on Windows (device steps above). A failure in step 5 blocks A1 sign-off; step 6 was accepted by the owner. | Run 2026-11-16 on the build of 4f7da95 (A1 + tray fix + toast fix), PID 4608. Steps 1, 2, 3, 4, 5, 7: pass (marks VERIFIED or REPORTED per step in "A2 results"). Step 6: FAILS as built (VERIFIED in the log), accepted by the owner for A1; the toast and the Notification Center are the stop controls. Step 8 (other popups): NOT RUN. |
 
 ### A1 as built (2026-11-16)
 
@@ -327,8 +332,94 @@ Each phase needs the owner's own "approve phase".
   (`data\app.so` rebuilt 13:10:56). `flutter build apk --release --obfuscate
   --split-debug-info=build/debug-info` passed, 13:11:19 to 13:14:15, 177 s, exit code 0,
   `build\app\outputs\flutter-apk\app-release.apk` (88.7 MB), not installed.
-- **NOT RUN:** all device steps (A2), including steps 5 and 6, which block A1 sign-off if they fail.
-  UNKNOWN: whether the toast alone is enough to stop the adhan (Risks).
+- **NOT RUN at the time of the A1 build:** all device steps (A2). Step 6 was checked later the same day,
+  see below.
+
+### A2 step 6 result and the owner's decision (2026-11-16)
+
+Checked on the Windows release build of commit 4f7da95 (branch `fix/toast-listener-leak`: A1 plus the
+tray once-per-click fix 93ca04c and the adhan toast release fix 4f7da95), PID 4608, output captured.
+
+- **Step 6 FAILS as built (VERIFIED in the log):** `menu click: stop_adhan` appears 0 times across 15
+  "Test Notification" clicks. Around every `DesktopAdhanService: Playing bundled adhan` line the tray menu
+  is rebuilt twice, immediately before and immediately after it (`🔁 [TRAY] menu rebuilt`): the "Stop
+  Adhan" item is added and then removed again as soon as playback starts.
+- **Cause (VERIFIED in code):** `desktop_prayer_scheduler.dart:85-87` (real prayer) and `:110-112` (test)
+  call `setAdhanPlaying(true)`, await `playAdhan(...)`, then `setAdhanPlaying(false)`. `playAdhan` returns
+  when playback starts, not when it ends, so the flag flips back at once. This is older behavior
+  (`findings.md:135`), not something A1 changed; before A1 the in-app card covered the gap.
+- **Owner's decision, 2026-11-16: accepted for A1.** Step 6 no longer blocks A1 sign-off. The stop controls
+  are the Windows toast and the same toast in the Notification Center. This replaces the rule "a failure
+  in device steps 5 or 6 blocks A1 sign-off" for step 6 only; it still holds for step 5.
+- **Known limit:** if Windows notifications are off for Aura, or "Do not disturb" hides the toast, nothing
+  on screen can stop the adhan. Before A1 the in-app card covered this case.
+- **Also seen in the same run (VERIFIED in the log):** every stop from a toast button logs
+  `DesktopAdhanService: Error stopping adhan - TimeoutException after 0:00:30.000000: Future not completed`
+  about 30 s after the press, one per press. Cause UNKNOWN (`audioplayers` on Windows not read).
+
+### A2 results (2026-11-16)
+
+**Tested build:** the Windows release build of commit 4f7da95, PID 4608, output captured to a file. It
+contained A1 (7c0f406), the tray once-per-click fix (93ca04c, branch `fix/tray-double-fire`) and the adhan
+toast release fix (4f7da95, branch `fix/toast-listener-leak`). Marks: VERIFIED (read in the captured log or
+in code), REPORTED (told by the owner, not observed by Claude), NOT RUN.
+
+| Step | Result |
+|---|---|
+| 1. One popup per adhan, no in-app card | One toast per event: VERIFIED in the log (16 toasts for 16 adhan plays: 15 Test Notification clicks and the real Isha; 0 duplicates). No in-app card: REPORTED by the owner ("only toast", with a screenshot of the toast). |
+| 2. Toast "Stop Adhan" stops the sound | REPORTED by the owner: the sound stops in under 1 s. The log shows one stop call per press. |
+| 3. Toast "Prayed ✓" | Stops the sound: REPORTED. Records once: VERIFIED in the log (one `Recorded Fajr` line, the fourth toast with that identifier; before the toast fix that press would have recorded four times). |
+| 4. Hidden window stays hidden | VERIFIED: after the adhan fired with the window closed by X, the window read `visible=False`; the same after a toast button press. Checked after the adhan, not at the instant it fired. |
+| 5. Notification Center "Stop Adhan" | Stops the sound: REPORTED by the owner. One stop call: VERIFIED in the log. The buttons are behind the arrow on the collapsed card. |
+| 6. Tray "Stop Adhan" during the adhan | FAILS as built, accepted by the owner for A1; see "A2 step 6 result and the owner's decision". Not changed here. |
+| 7. A real prayer time | VERIFIED in the log: real Isha at 18:51, one toast (`adhan_isha`), one adhan. |
+| 8. Other popups unchanged | NOT RUN. To be checked at the next real pre-prayer reminder or task reminder. |
+
+- **Every stop logs a 30 s timeout:** each toast button press logged
+  `Error stopping adhan - TimeoutException after 0:00:30` about 30 s later (VERIFIED), although the sound
+  stopped (REPORTED). Cause UNKNOWN; see the `fix/adhan-stop` follow-up.
+- **PR order, bottom first:** A1 (`fix/desktop-single-adhan-popup`), tray (`fix/tray-double-fire`), toast
+  (`fix/toast-listener-leak`). Each branch is an ancestor of the next (VERIFIED with `git merge-base
+  --is-ancestor`). Nothing is pushed and no PR is open.
+
+### Findings from the A2 run (not part of A1)
+
+1. **Windows location is the hard-coded Makkah fallback (VERIFIED in code and in the saved prefs).**
+   `getBestLocation()` (`location_service.dart:173-192`) uses a manual location first, then a cached IP
+   location, then Mecca (21.4225, 39.8262). The IP lookup `_updateIpLocationInBackground()` has no caller,
+   so the cached step never succeeds. No location key is saved on this PC. Picking a city manually (Prayer
+   screen, location tile) is used first (VERIFIED in code; NOT RUN on the device). Do not press
+   "Auto-detect" in that dialog: it clears the manual location and calls `getBestLocation()`, which returns
+   Mecca again (VERIFIED in code). Today's Mecca vs Riyadh difference: 22 to 33 minutes earlier in Riyadh
+   (computed with the app's `adhan` package, Muslim World League, Shafi). Firestore sync cannot overwrite
+   the desktop location: no sync code touches the location keys (VERIFIED by search).
+2. **Other toasts have the same listener leak (VERIFIED in code; not tested on the device).** Only the adhan
+   toast is released now (`releasePrevious`). The post-prayer check (`post_prayer_<prayer>`) records its
+   status once per toast ever shown with that identifier, and the task reminder (`task_<id>`) runs "Mark
+   Done" once per toast. Pre-prayer, Wird and daily-digest toasts have the same build-up with harmless
+   callbacks.
+3. **A reload after the adhan cancels that prayer's post-prayer check (VERIFIED in code; older behavior).**
+   `schedulePrayerTimers` cancels all timers and skips any prayer whose time has passed
+   (`desktop_prayer_scheduler.dart:42, 50-51`), and the post-prayer check is scheduled inside that loop. The
+   app reloads prayer times several times an hour, so after the adhan the check is usually dropped.
+4. **"Test Notification" is to be removed after A2 (branch `chore/remove-test-notification`, NOT STARTED).**
+   The `test_notif` once-per-click guard in `desktop_tray_service.dart` is then unneeded. The `stop_adhan`
+   guard and `SameTurnGuard` itself stay until `fix/adhan-stop` decides about the Stop Adhan item.
+
+--------------------------------------------------------------------------------
+
+## Follow-ups (not part of this spec)
+
+- **Branch `fix/adhan-stop`:** keep the tray "Stop Adhan" item until playback ends or is stopped, and
+  diagnose the 30 s stop timeout together with it. It needs its own "approve phase", and a read-only
+  diagnosis first. Likely files: `desktop_prayer_scheduler.dart`, `desktop_adhan_service.dart` (neither is
+  touched by this spec).
+- **Branch `chore/remove-test-notification`:** remove the tray "Test Notification" item after A2 (NOT
+  STARTED, needs its own approval).
+- **Device check of step 8** at the next real pre-prayer reminder or task reminder.
+- **Findings 1 to 3 under "Findings from the A2 run"** (Windows location fallback, the listener leak of
+  the other toasts, the post-prayer check dropped by a reload): each needs its own spec if the owner
+  wants a fix.
 
 --------------------------------------------------------------------------------
 
