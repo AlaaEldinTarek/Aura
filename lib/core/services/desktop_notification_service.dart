@@ -29,8 +29,8 @@ class DesktopInAppNotif {
 /// Windows/macOS/Linux in-app notification service.
 /// Emits [DesktopInAppNotif] events to [notificationStream];
 /// [MainWrapperScreen] listens and shows the in-app banner overlay.
-/// Prayer-time popups are handled separately by the [DesktopPrayerScheduler]
-/// overlay in MainWrapperScreen.
+/// Prayer-time (adhan) popups are Windows toasts only, see
+/// [showAdhanNotification]; there is no in-app adhan overlay.
 class DesktopNotificationService {
   DesktopNotificationService._();
   static final DesktopNotificationService instance =
@@ -187,7 +187,8 @@ class DesktopNotificationService {
 
   // ─── Public prayer recording ──────────────────────────────────────────────
 
-  /// Record a prayer as prayed on-time (called from in-app adhan popup button).
+  /// Record a prayer as prayed on-time (called from the adhan layout of the
+  /// desktop popup queue in MainWrapperScreen).
   Future<void> recordPrayerOnTime(String prayerName) =>
       _recordPrayerStatus(prayerName, PrayerStatus.onTime);
 
@@ -280,7 +281,10 @@ class DesktopNotificationService {
         LocalNotificationAction(text: stopLabel),
       ],
       onActionClick: (idx) {
-        if (idx == 0) _recordPrayerStatus(prayerName, PrayerStatus.onTime);
+        if (idx == 0) {
+          _recordPrayerStatus(prayerName, PrayerStatus.onTime);
+          DesktopAdhanService.instance.stop();
+        }
         if (idx == 1) DesktopAdhanService.instance.stop();
       },
     );
