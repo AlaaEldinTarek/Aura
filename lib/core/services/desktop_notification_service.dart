@@ -59,6 +59,10 @@ class DesktopNotificationService {
 
   int _notifSeq = 0;
 
+  // Last toast shown per identifier, for toasts that ask to be released
+  // (see `releasePrevious` in [_showSystemToast]).
+  final Map<String, LocalNotification> _releasableToasts = {};
+
   /// Attach a [ProviderContainer] so notification action buttons can update app state.
   void attachContainer(ProviderContainer container) {
     _container = container;
@@ -108,9 +112,11 @@ class DesktopNotificationService {
     bool isArabic = false,
     List<LocalNotificationAction>? actions,
     void Function(int)? onActionClick,
+    bool releasePrevious = false,
   }) async {
     try {
       final id = identifier ?? 'notif_${++_notifSeq}';
+      if (releasePrevious) await _releasePreviousToast(id);
       final defaultLabel = isArabic ? 'فتح التطبيق' : 'Open Aura';
       final effectiveActions = actions ?? [LocalNotificationAction(text: defaultLabel)];
       debugPrint('🔔 [TOAST] show id=$id title="$title" actions=${effectiveActions.length}');
@@ -125,10 +131,29 @@ class DesktopNotificationService {
           (actionIndex) {
             if (actionIndex == 0) _bringToFront();
           };
+      if (releasePrevious) _releasableToasts[id] = notif;
       await notif.show();
       debugPrint('🔔 [TOAST] show() returned OK');
     } catch (e) {
       debugPrint('🔔 [TOAST] FAILED: $e');
+    }
+  }
+
+  /// Releases the previous toast shown with [id], if any. Every
+  /// [LocalNotification] registers itself as a plugin listener when it is
+  /// created and stays registered until `destroy()`; a button press is sent
+  /// to every listener with a matching identifier. Without this, one press
+  /// ran the callbacks of every toast ever shown with that identifier.
+  Future<void> _releasePreviousToast(String id) async {
+    final previous = _releasableToasts.remove(id);
+    if (previous == null) return;
+    try {
+      await previous.destroy();
+      debugPrint('🔔 [TOAST] released previous id=$id');
+    } catch (e) {
+      // destroy() closes first; if that fails the listener is still there.
+      localNotifier.removeListener(previous);
+      debugPrint('🔔 [TOAST] release failed, listener removed: $e');
     }
   }
 
@@ -276,6 +301,7 @@ class DesktopNotificationService {
       body,
       identifier: 'adhan_${prayerName.toLowerCase()}',
       isArabic: isArabic,
+      releasePrevious: true,
       actions: [
         LocalNotificationAction(text: prayedLabel),
         LocalNotificationAction(text: stopLabel),
