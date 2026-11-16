@@ -23,6 +23,22 @@ class RunOnceGuard {
   }
 }
 
+/// Lets a click through once per event-loop turn, per key. The tray plugin
+/// calls a menu item's `onClick` and then `onTrayMenuItemClick` in the same
+/// synchronous run (`tray_manager` `tray_manager.dart:61-64`), so both calls
+/// of ONE click share a turn; the next real click comes in a later turn.
+/// (Unlike [RunOnceGuard], which blocks every call after the first.)
+@visibleForTesting
+class SameTurnGuard {
+  final Set<String> _busy = {};
+
+  bool tryAcquire(String key) {
+    if (!_busy.add(key)) return false;
+    Timer.run(() => _busy.remove(key));
+    return true;
+  }
+}
+
 /// System-tray icon + minimize-to-tray for Windows/macOS/Linux.
 /// Shows next prayer in the tray menu and intercepts the window close
 /// button to hide the app instead of quitting it.
@@ -35,6 +51,7 @@ class DesktopTrayService with TrayListener, WindowListener {
   bool _adhanPlaying = false;
   bool _isHidden = false;
   final RunOnceGuard _quitGuard = RunOnceGuard();
+  final SameTurnGuard _clickGuard = SameTurnGuard();
 
   static bool get isDesktop =>
       !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
@@ -105,10 +122,7 @@ class DesktopTrayService with TrayListener, WindowListener {
   late final MenuItem _stopAdhanItem = MenuItem(
     key: 'stop_adhan',
     label: '🔇 Stop Adhan',
-    onClick: (_) {
-      DesktopAdhanService.instance.stop();
-      setAdhanPlaying(false);
-    },
+    onClick: (_) => _stopAdhanFromMenu(),
   );
   late final MenuItem _openItem = MenuItem(
     key: 'open',
@@ -120,7 +134,7 @@ class DesktopTrayService with TrayListener, WindowListener {
     label: '🔔 Test Notification',
     onClick: (_) {
       debugPrint('🔔 [TRAY] test_notif onClick fired');
-      DesktopPrayerScheduler.instance.fireTestAdhan();
+      _fireTestAdhanFromMenu();
     },
   );
   late final MenuItem _quitItem = MenuItem(
@@ -187,14 +201,13 @@ class DesktopTrayService with TrayListener, WindowListener {
     debugPrint('🖱️ [TRAY] menu click: ${menuItem.key}');
     switch (menuItem.key) {
       case 'stop_adhan':
-        DesktopAdhanService.instance.stop();
-        setAdhanPlaying(false);
+        _stopAdhanFromMenu();
         break;
       case 'open':
         showWindow();
         break;
       case 'test_notif':
-        DesktopPrayerScheduler.instance.fireTestAdhan();
+        _fireTestAdhanFromMenu();
         break;
       case 'quit':
         _quit();
@@ -223,6 +236,27 @@ class DesktopTrayService with TrayListener, WindowListener {
     await windowManager.setSkipTaskbar(false);
     if (!await windowManager.isVisible()) await windowManager.show();
     await windowManager.focus();
+  }
+
+  /// "Stop Adhan" from the tray menu. The plugin reports one click twice
+  /// (item `onClick` + `onTrayMenuItemClick`); only the first runs.
+  void _stopAdhanFromMenu() {
+    if (!_clickGuard.tryAcquire('stop_adhan')) {
+      debugPrint('⚠️ [TRAY] stop_adhan: second call ignored');
+      return;
+    }
+    DesktopAdhanService.instance.stop();
+    setAdhanPlaying(false);
+  }
+
+  /// "Test Notification" from the tray menu. Same double report as above;
+  /// without the guard one click showed two toasts and played the adhan twice.
+  void _fireTestAdhanFromMenu() {
+    if (!_clickGuard.tryAcquire('test_notif')) {
+      debugPrint('⚠️ [TRAY] test_notif: second call ignored');
+      return;
+    }
+    DesktopPrayerScheduler.instance.fireTestAdhan();
   }
 
   /// Orderly quit with a hard fallback (docs/designs/tray-quit-fix.md,
