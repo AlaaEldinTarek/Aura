@@ -7,8 +7,10 @@ Verified against code 2026-11-07 (reference/2026-11-07_DRIFT_REPORT.md). Native 
   (`startActivity`; no full-screen intent despite its KDoc). The activity calls `startLockTask()`.
 - At timer end `onCountdownComplete()` calls `stopLockTask()` and restores sound; "Did you complete?" → Yes stores the
   task id; Flutter reads it via `getFocusCompletedTaskId` and marks the task done.
-- No early exit exists: `onKeyDown` only swallows BACK/HOME/APP_SWITCH/RECENT_APPS. The task form text promising
-  "press volume up 3 times" is wrong (F52f).
+- Early exit exists and is intended: three quick VOLUME_UP presses end the session before the timer (F52f, fix commit
+  `5cedaf3`, S44 PASS on 2026-11-10). `onKeyDown` routes VOLUME_UP to `volumeExitDetector.recordPress()` and calls
+  `performExit(isEarly = true)` (`FocusModeActivity.kt:225-228`); BACK/HOME/APP_SWITCH/RECENT_APPS stay swallowed.
+  The task form text promising "press volume up 3 times" is correct. See `STATE.md:23`.
 - Accessibility auto-click is gone: `AuraAccessibilityService` is not in the manifest; `isAccessibilityServiceEnabled`
   always returns false, `requestAccessibilityPermission` is a no-op. `focus_a11y_ever_enabled` removed (bc765f6).
 
