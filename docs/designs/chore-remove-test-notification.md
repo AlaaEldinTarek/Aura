@@ -4,7 +4,7 @@
 The change is to hide it in release builds (Decision 5).*
 
 *   **Author:** Alaa Eldin Tarek (drafted with Claude)
-*   **Status:** Implemented on branch `chore/hide-test-notification-release` on 2026-11-17 (owner's "approve phase"); not pushed, not merged. Owner's Windows checks: release REPORTED pass, debug log-confirmed (owner has not yet observed the tray or heard the adhan). See "Results".
+*   **Status:** Implemented on branch `chore/hide-test-notification-release` on 2026-11-17 (owner's "approve phase"); pushed, PR #40 open, not merged. Owner's Windows checks: release REPORTED pass, debug log-confirmed (owner has not yet observed the tray or heard the adhan). See "Results".
 *   **Date:** 2026-11-16
 *   **Level:** C (production code: `lib/`, `test/` cases; needs this spec approved and the phrase
     "approve phase", per `CLAUDE.md` Rules). This file itself is Level A (docs).
