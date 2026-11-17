@@ -152,9 +152,16 @@ class DesktopTrayService with TrayListener, WindowListener {
   bool? _sentAdhanPlaying;
 
   /// The tray menu for the given state, built from the reused items. Only the
-  /// label of the disabled next-prayer item changes between builds.
+  /// label of the disabled next-prayer item changes between builds. The Test
+  /// Notification item and its separator are in the menu only when
+  /// [includeTestItem] is true, and it defaults to [kDebugMode], so only debug
+  /// builds show the item.
   @visibleForTesting
-  Menu buildMenu({required String? nextLabel, required bool adhanPlaying}) {
+  Menu buildMenu({
+    required String? nextLabel,
+    required bool adhanPlaying,
+    bool includeTestItem = kDebugMode,
+  }) {
     _nextPrayerItem.label = nextLabel ?? _loadingLabel;
     return Menu(items: [
       _nextPrayerItem,
@@ -163,8 +170,8 @@ class DesktopTrayService with TrayListener, WindowListener {
       if (adhanPlaying) _sepAfterStopAdhan,
       _openItem,
       _sepAfterOpen,
-      _testNotifItem,
-      _sepAfterTestNotif,
+      if (includeTestItem) _testNotifItem,
+      if (includeTestItem) _sepAfterTestNotif,
       _quitItem,
     ]);
   }

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:aura_app/core/services/desktop_tray_service.dart';
 import 'package:tray_manager/tray_manager.dart' show Menu;
@@ -95,6 +96,62 @@ void main() {
       ]);
       expect(playing.items!.first.label, 'Loading prayer times…');
       expect(playing.items![2].label, '🔇 Stop Adhan');
+    });
+  });
+
+  group(
+      'DesktopTrayService.buildMenu, release build (Test Notification hidden)',
+      () {
+    test('release-mode menu: exact keys and labels, and no test_notif', () {
+      final idle = service.buildMenu(
+        nextLabel: 'Next: Asr at 3:16 PM',
+        adhanPlaying: false,
+        includeTestItem: false,
+      );
+      expect(keys(idle), [
+        'next_prayer',
+        null,
+        'open',
+        null,
+        'quit',
+      ]);
+      expect([
+        for (final i in idle.items!)
+          if (i.key != null) i.label
+      ], [
+        'Next: Asr at 3:16 PM',
+        'Open Aura',
+        'Quit',
+      ]);
+      expect(keys(idle).contains('test_notif'), isFalse);
+
+      final playing = service.buildMenu(
+        nextLabel: null,
+        adhanPlaying: true,
+        includeTestItem: false,
+      );
+      expect(keys(playing), [
+        'next_prayer',
+        null,
+        'stop_adhan',
+        null,
+        'open',
+        null,
+        'quit',
+      ]);
+      expect(playing.items![2].label, '🔇 Stop Adhan');
+      expect(keys(playing).contains('test_notif'), isFalse);
+    });
+
+    test('default: no includeTestItem gives the same keys as kDebugMode', () {
+      expect(
+        keys(service.buildMenu(nextLabel: null, adhanPlaying: false)),
+        keys(service.buildMenu(
+          nextLabel: null,
+          adhanPlaying: false,
+          includeTestItem: kDebugMode,
+        )),
+      );
     });
   });
 }
