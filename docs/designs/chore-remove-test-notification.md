@@ -1,5 +1,8 @@
 # Chore: hide the tray "Test Notification" item in release builds (desktop)
 
+*The file name `chore-remove-test-notification.md` is kept from the earlier plan to remove the item.
+The change is to hide it in release builds (Decision 5).*
+
 *   **Author:** Alaa Eldin Tarek (drafted with Claude)
 *   **Status:** Implemented on branch `chore/hide-test-notification-release` on 2026-11-17 (owner's "approve phase"); not pushed, not merged. Owner's Windows checks NOT RUN. See "Results".
 *   **Date:** 2026-11-16
