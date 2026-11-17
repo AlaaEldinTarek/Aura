@@ -1,7 +1,7 @@
 # Chore: hide the tray "Test Notification" item in release builds (desktop)
 
 *   **Author:** Alaa Eldin Tarek (drafted with Claude)
-*   **Status:** Draft. Redesigned on 2026-11-16 (Decision 5). Not approved for implementation.
+*   **Status:** Implemented on branch `chore/hide-test-notification-release` on 2026-11-17 (owner's "approve phase"); not pushed, not merged. Owner's Windows checks NOT RUN. See "Results".
 *   **Date:** 2026-11-16
 *   **Level:** C (production code: `lib/`, `test/` cases; needs this spec approved and the phrase
     "approve phase", per `CLAUDE.md` Rules). This file itself is Level A (docs).
@@ -295,6 +295,16 @@ implementer; the last two are run by the owner.
     must show Test Notification, and clicking it must play the adhan and show the toast, as
     before. This check is NOT RUN until the owner does it, and the result is recorded as REPORTED,
     not VERIFIED.
+
+## Results (2026-11-17)
+
+*   Code commit b45fbf8; spec and review reports in commit bae6155. Branch from origin/main fad84b6.
+*   `flutter analyze`: 408 issues, 0 errors (baseline 408). VERIFIED by a real run.
+*   `flutter test`: 813 passed, 0 failed (baseline 811 + 2 new tests). VERIFIED by a real run.
+*   `dart format --output=none --set-exit-if-changed` on both changed files: exit 0. VERIFIED.
+*   `flutter build windows --release`: passed (70 s, exit code 0, aura_app.exe not running beforehand). VERIFIED.
+*   Search check: `includeTestItem` appears in `desktop_tray_service.dart` only in the parameter, its doc comment and the two conditions; `test_notif` in `test/` appears only in the menu-ids test and the guard test's sample key. VERIFIED.
+*   Not run: the owner's release-build check and debug-build check on Windows; the optional Android build.
 
 --------------------------------------------------------------------------------
 
