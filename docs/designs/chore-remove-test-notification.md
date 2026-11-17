@@ -4,7 +4,7 @@
 The change is to hide it in release builds (Decision 5).*
 
 *   **Author:** Alaa Eldin Tarek (drafted with Claude)
-*   **Status:** Implemented on branch `chore/hide-test-notification-release` on 2026-11-17 (owner's "approve phase"); not pushed, not merged. Owner's Windows checks: release REPORTED pass, debug partly VERIFIED in the log. See "Results".
+*   **Status:** Implemented on branch `chore/hide-test-notification-release` on 2026-11-17 (owner's "approve phase"); not pushed, not merged. Owner's Windows checks: release REPORTED pass, debug log-confirmed (owner has not yet observed the tray or heard the adhan). See "Results".
 *   **Date:** 2026-11-16
 *   **Level:** C (production code: `lib/`, `test/` cases; needs this spec approved and the phrase
     "approve phase", per `CLAUDE.md` Rules). This file itself is Level A (docs).
@@ -308,7 +308,7 @@ implementer; the last two are run by the owner.
 *   `flutter build windows --release`: passed (70 s, exit code 0, aura_app.exe not running beforehand). VERIFIED.
 *   Search check: `includeTestItem` appears in `desktop_tray_service.dart` only in the parameter, its doc comment and the two conditions; `test_notif` in `test/` appears only in the menu-ids test and the guard test's sample key. VERIFIED.
 *   Release-build check: REPORTED pass by the owner on 2026-11-17 (not observed by Claude): the tray menu of the release build showed no Test Notification item.
-*   Debug-build check (`flutter run -d windows`): VERIFIED in the captured log that the item was in the menu and was clicked (`test_notif onClick fired`, `menu click: test_notif`), the toast `show` returned OK, and `Playing bundled adhan for Fajr` was logged. Whether the adhan was heard and the toast seen: NOT reported yet.
+*   Debug-build check (`flutter run -d windows`): log-confirmed that the item was in the menu and was clicked (`test_notif onClick fired`, `menu click: test_notif`), the toast `show` returned OK, and `Playing bundled adhan for Fajr` was logged. Owner has not yet observed the tray or heard the adhan.
 *   Not run: the optional Android build.
 
 --------------------------------------------------------------------------------
