@@ -226,23 +226,6 @@ card and the Stop / Keep Vibration buttons). What is built:
     re-arm, the handlers, the Windows part.
 *   **Tests:** `PostCheckActionsTest` gained checks for `iconKey` and `isDark`. The layouts are checked on the device.
 
-#### Phase R1d (owner decision, 2026-11-18): compact collapsed layout that always shows the buttons
-
-After the R1c phone check the card looked right in English and Arabic, dark and light, but the Done / Late / Missed buttons
-were only visible after dragging the card down (the full custom card has no system expand arrow). Owner decision: option (d).
-
-*   **Collapsed view = a compact layout** that fits the ~64 dp collapsed slot: row 1 (~22 dp) the question "Did you pray
-    {prayer}?" 14 sp bold plus a small "Remind Later" pill (11 sp) at the end (English right, Arabic far left); row 2
-    (28 dp) the three tinted pills Done / Late / Missed (12 sp bold), colours per theme exactly as R1c. No icon, no
-    subtitle. Padding 5 dp top and bottom (about 63 dp in total).
-*   **Four files:** `notification_post_check_compact.xml`, `_compact_dark`, `_compact_rtl`, `_compact_dark_rtl`, picked by
-    the same rule as R1c (app theme, app language). Arabic order from the right: صلّيت · متأخر · فاتتني (the RTL file lists
-    Missed, Late, Done from the left).
-*   **Expanded view unchanged** (R1c: icon, question, subtitle, Remind Later, buttons).
-*   **Same PendingIntents and request codes in both views** (`notificationId+1..+4`).
-*   **Device check:** shade collapsed and expanded in English dark, Arabic dark, English light, Arabic light, plus the lock
-    screen; see the report of the R1d run for what was captured.
-
 ### What does not change
 
 The handlers (`handlePostPrayerCheckAction`), the 15-minute re-arm, the alarm request codes (3001–3006), notification IDs
