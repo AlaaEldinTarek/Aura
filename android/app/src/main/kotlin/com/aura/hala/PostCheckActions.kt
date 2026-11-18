@@ -55,4 +55,10 @@ object PostCheckActions {
         "light" -> false
         else -> systemNight
     }
+
+    /** The question and subtitle of the card (notification and popup); [prayerLabel] is already in the card's language. */
+    fun question(prayerLabel: String, isArabic: Boolean): String =
+        if (isArabic) "هل صليت $prayerLabel؟" else "Did you pray $prayerLabel?"
+
+    fun subtitle(isArabic: Boolean): String = if (isArabic) "سجّل صلاتك الآن" else "Log your prayer now"
 }

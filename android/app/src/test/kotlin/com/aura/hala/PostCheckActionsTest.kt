@@ -114,4 +114,12 @@ class PostCheckActionsTest {
         assertEquals(false, PostCheckActions.isDark("system", false))
         assertEquals(false, PostCheckActions.isDark("anything-else", false))
     }
+
+    @Test
+    fun `question and subtitle texts are the existing English and Arabic strings`() {
+        assertEquals("Did you pray Asr?", PostCheckActions.question("Asr", false))
+        assertEquals("هل صليت العصر؟", PostCheckActions.question("العصر", true))
+        assertEquals("Log your prayer now", PostCheckActions.subtitle(false))
+        assertEquals("سجّل صلاتك الآن", PostCheckActions.subtitle(true))
+    }
 }

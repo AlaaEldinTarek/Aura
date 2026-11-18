@@ -71,6 +71,18 @@
         </activity>
 
         <!-- Adhan Full-Screen Activity - Shows over lock screen when prayer time arrives -->
+        <!-- Tap popup of the post-prayer check card (docs/designs/fix-post-check-remind-later.md, R1e) -->
+        <activity
+            android:name=".PostCheckPopupActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:showWhenLocked="true"
+            android:turnScreenOn="true"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.PostCheckPopup"
+            android:configChanges="orientation|keyboardHidden|screenSize|smallestScreenSize|screenLayout|uiMode|layoutDirection|locale|fontScale|density" />
         <activity
             android:name=".AdhanFullScreenActivity"
             android:exported="false"

@@ -226,6 +226,56 @@ card and the Stop / Keep Vibration buttons). What is built:
     re-arm, the handlers, the Windows part.
 *   **Tests:** `PostCheckActionsTest` gained checks for `iconKey` and `isDark`. The layouts are checked on the device.
 
+#### Phase R1d (REVERTED, owner decision 2026-11-18): compact collapsed layout
+
+Tried after the R1c phone check, to show the three buttons in the collapsed card: four compact layouts (question, small
+Remind Later pill, button row, ~63 dp). Owner decision: reverted. Reason (owner screenshot 17:35): the R1c collapsed card
+(icon, question, Remind Later) is visible on the lock screen in Arabic; R1d broke that. The commits are kept in history
+(`f4b87bf` and its revert `9bd52eb`). The collapsed card is the R1c one again; the buttons show when the card is expanded.
+
+Lock-screen note (VERIFIED on the device, 2026-11-18): this notification is `VISIBILITY_PRIVATE` (not changed). On a locked
+phone whose face unlock has not matched yet ("Touch twice for Face Recognition") Android hides it; after the face matches
+("Slide up to open") it shows, as in the owner's screenshots. A public version was considered and not built.
+
+#### Phase R1e (owner decision, 2026-11-18): swipe-down hint on the collapsed card
+
+The expanded card is reached by dragging the collapsed card down (no system arrow on a full custom card). To show that:
+
+*   **Shape:** two chevrons stacked and touching slightly (one double-chevron icon), centred at the bottom of the
+    collapsed card, 16 dp wide by 12 dp high (the owner asked for about 16 x 14). Gold `#F5B301` on the dark card,
+    `#B5821B` on the light card (`ic_post_check_hint_{a,b,c}[_dark].xml`, vector drawables).
+*   **Animation:** notifications cannot run normal animations, so a `ViewFlipper` (allowed in `RemoteViews`) with
+    `autoStart="true"`, `flipInterval="400"` and a fade in / fade out cycles three frames: upper chevron bright and lower
+    dim, upper dim and lower bright, both dim (about 1.2 s per cycle). If EMUI freezes the flipper (for example on the lock
+    screen) the arrows stay static, which is accepted.
+*   **Collapsed only:** the expanded view hides the flipper (`setViewVisibility(GONE)`); the collapsed view hides the
+    button row.
+*   **Room:** the 64 dp collapsed slot had no room for 16 x 12 under the icon row, so the shared layouts got a 36 dp icon
+    circle (was 40) and 6 dp top and bottom padding (was 12); the text is not cut. The expanded card is a little tighter.
+*   Same in left-to-right and right-to-left (centred), light and dark. Same `PendingIntent`s and request codes.
+
+*   **Tap on the card = a small Aura popup (R1e).** What the tap did before (VERIFIED, `PrayerAlarmReceiver.kt`): the content
+    intent opened `MainActivity` (flags `NEW_TASK | CLEAR_TOP`, no extras, request code `notificationId+5`) and
+    `setAutoCancel(true)` cancelled the card. Android does not let an app expand its own notification on a tap, so the tap
+    now opens `PostCheckPopupActivity` instead and **replaces "open the app"** (the app is still one tap away on the
+    launcher; the S09 "tap the body, the app opens" check no longer applies).
+    *   A translucent activity with a bottom card in the notification's style: it inflates the same four layouts (app theme
+        light / dark, app language LTR / RTL, explicit left/right) in a rounded container on a dimmed background, with the
+        prayer icon, "Did you pray {prayer}?", the subtitle and the four buttons Done / Late / Missed / Remind Later in the
+        same colours. The swipe-down hint is hidden in the popup.
+    *   A button sends the **same `PendingIntent`** as the notification button (`PostCheckCard.actionPending`, request code
+        `notificationId+1..+4`, broadcast to `PrayerAlarmReceiver`): the status is written once there and the notification
+        is cancelled by the same handler (Remind Later re-arms in 15 min), then the popup finishes. Back or a tap outside
+        closes only the popup: nothing is recorded and the notification stays (so `setAutoCancel(false)` now).
+    *   Over the lock screen: `showWhenLocked` and `turnScreenOn` (manifest and code), like `AdhanFullScreenActivity`;
+        `taskAffinity=""`, `excludeFromRecents`, `noHistory`, so it never pulls `MainActivity` up. On a secure lock screen
+        Android may still ask to unlock before it starts an activity from a notification tap (observed on the device,
+        see the R1e report); that is the system's rule.
+    *   No new text: the question, subtitle and button labels are the existing ones (`PostCheckActions.question` /
+        `subtitle` / `label`, shared by the notification and the popup).
+    *   Shared helpers: `PostCheckCard.kt` (theme, language, layout, icon, action and popup `PendingIntent`s), used by
+        `PrayerAlarmReceiver` and the popup. Test: `PostCheckActionsTest` gained the question / subtitle strings.
+
 ### What does not change
 
 The handlers (`handlePostPrayerCheckAction`), the 15-minute re-arm, the alarm request codes (3001–3006), notification IDs
