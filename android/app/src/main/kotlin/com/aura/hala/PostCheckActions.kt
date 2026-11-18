@@ -2,9 +2,9 @@ package com.aura.hala
 
 /**
  * The four actions of the post-prayer check notification (IDs 6001-6006).
- * Spec: docs/designs/fix-post-check-remind-later.md (F72, phase R1b). All four live in the custom
- * layout (system action buttons cannot be coloured per button on EMUI): Done / Late / Missed as a
- * coloured row in the expanded view, Remind Later as the corner button. Pure data: the PendingIntents
+ * Spec: docs/designs/fix-post-check-remind-later.md (F72, phases R1b/R1c). All four live in the custom
+ * card (system action buttons cannot be coloured per button on EMUI): Done / Late / Missed as a
+ * tinted row (expanded view), Remind Later as the pill at the end of the top row. Pure data: the PendingIntents
  * are built in PrayerAlarmReceiver from this table.
  */
 object PostCheckActions {
@@ -38,4 +38,21 @@ object PostCheckActions {
     fun contentRequestCode(notificationId: Int): Int = notificationId + CONTENT_OFFSET
 
     fun label(spec: Spec, isArabic: Boolean): String = if (isArabic) spec.labelAr else spec.labelEn
+
+    /** Per-prayer icon, same mapping as the foreground "Next Prayer" notification. */
+    fun iconKey(prayerName: String): String = when (prayerName) {
+        "Fajr", "Sunrise" -> "fajr"
+        "Zuhr", "Dhuhr" -> "dhuhr"
+        "Asr" -> "afternoon"
+        "Maghrib" -> "maghrib"
+        "Isha" -> "isha"
+        else -> "mosque"
+    }
+
+    /** App theme pick, same rule as PrayerForegroundService.isDarkTheme (amoled counts as dark, system follows the phone). */
+    fun isDark(themeMode: String, systemNight: Boolean): Boolean = when (themeMode) {
+        "dark", "amoled" -> true
+        "light" -> false
+        else -> systemNight
+    }
 }

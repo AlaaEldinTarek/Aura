@@ -190,24 +190,41 @@ languages (owner-observed PASS for F72's main goal). Changes requested, same bra
     `later`). The layout is checked on the device.
 *   **Windows part unchanged.**
 
-#### Phase R1c (owner, 2026-11-18, after the R1b phone check: screenshots 16:12 Arabic, 16:13 English)
+#### Phase R1c (owner decision, 2026-11-18; replaces the R1b/R1c styling above)
 
-R1b phone check: English positions OK; Arabic **wrong on the device** (my R1b report said it was right: it was not checked on
-the device). Observed in Arabic: "ذكّرني لاحقاً" at the right next to the question, the question in the middle, the row not
-mirrored (صلّيت at the left). Cause (inference, UNVERIFIED): `layoutDirection="rtl"` on the root plus `start`/`end`
-positions did not mirror as intended inside the notification (applied twice or not at all). Changes:
+R1b phone check (screenshots 16:12 Arabic, 16:13 English): English positions OK; Arabic **wrong on the device** (my R1b report
+said it was right without a device check): "ذكّرني لاحقاً" at the right next to the question, the question in the middle, the
+row not mirrored. Owner then asked for the card to match Aura's existing notification design (the foreground "Next Prayer"
+card and the Stop / Keep Vibration buttons). What is built:
 
-*   **Explicit positions, no `start`/`end`, no `gravity="start"`.** Every layout forces `layoutDirection="ltr"` on the root
-    and on the button row, so the system locale cannot mirror it a second time, and places things with `left`/`right`.
-    The app language picks the file: English `notification_post_check[_expanded].xml`; Arabic
-    `notification_post_check[_expanded]_rtl.xml` (Remind Later `alignParentLeft`; the two text lines `alignParentRight`,
-    right-aligned, to the right of the button; row written left to right as Missed, Late, Done so it reads Done · Late ·
-    Missed from the right).
-*   **Outlined pills** (both languages): transparent fill, 1.5 dp stroke and text in the same colour, 32 dp high, 13 sp bold,
-    16 dp corner radius, 6 dp gap. Colours: night theme = the app's own `success` `#4CAF50` / `warning` `#FF9800` /
-    `error` `#F44336`; light theme = darker shades `#388E3C` / `#F57C00` / `#D32F2F` for contrast on a light shade
-    (text and stroke are the same colour in each theme).
-*   Unchanged: PendingIntents and request codes, Remind Later gold 13 sp, title 16 sp bold, subtitle 14 sp.
+*   **How the existing card is built (VERIFIED, `PrayerForegroundService.kt`, `notification_large*.xml`):** full custom
+    view (no `DecoratedCustomViewStyle`), the background is drawn by the layout (`bg_notification` `#FFF8EB`,
+    `bg_notification_dark` `#1A1B1E`), four layout files by theme and language (`_dark`, `_rtl`, `_dark_rtl`), theme from
+    the `theme_mode` pref (`dark`/`amoled` dark, `light` light, `system` the phone), language from the `language` pref.
+    The post-check card now does exactly that (no `DecoratedCustomViewStyle`).
+*   **Files:** `notification_post_check.xml`, `_dark`, `_rtl`, `_dark_rtl` (the owner wrote `post_check*.xml`; I kept the
+    existing `notification_` prefix). The receiver picks the file by `PostCheckActions.isDark(theme_mode, phone night)` and
+    the app language, never by the system locale. Collapsed and expanded use the same layout: the collapsed view hides the
+    button row with `setViewVisibility(GONE)`, so the collapsed card is the top row only. The three buttons need the
+    expanded view (they do not fit the collapsed height).
+*   **Top row:** the per-prayer icon (same mapping as the Next Prayer card: `ic_prayer_fajr` / `_dhuhr` / `_afternoon` /
+    `_maghrib` / `_isha`, `ic_mosque` otherwise; `PostCheckActions.iconKey`) in a 40 dp circle with a soft gold tint
+    (`bg_post_check_icon`); the question "Did you pray {prayer}?" 17 sp bold and "Log your prayer now" 12 sp; "Remind
+    Later" as a small pill in the `bg_vibration_button` / `bg_vibration_button_dark` style (14 dp radius, 12 sp bold).
+    English: icon at the left, Remind Later at the right end. Arabic: icon at the right, text right-aligned against it,
+    "ذكّرني لاحقاً" at the far left end.
+*   **Button row:** three equal tinted pills, no stroke, 14 dp radius, 32 dp high, 13 sp bold, 6 dp gaps. The Arabic file
+    lists Missed, Late, Done from the left, so it reads صلّيت · متأخر · فاتتني from the right.
+*   **Colours:**
+    *   Dark card: title `#FFFFFF`, subtitle `#99FFFFFF`, Remind Later text `#F5B301`; Done `#4CAF50`, Late `#FF9800`,
+        Missed `#F44336`, each on an 18% fill (`#2E` alpha) of the same colour.
+    *   Light card: title `#2A2418`, subtitle `#992A2418`, Remind Later text `#B5821B`; Done `#2E7D32`, Late `#E65100`,
+        Missed `#C62828`, each on a 15% fill (`#26` alpha).
+*   **Explicit positions:** left/right only (no `start`/`end`, no `gravity="start"`), and the root and the button row are
+    forced `layoutDirection="ltr"`, so the system locale cannot mirror the card a second time.
+*   **Unchanged:** `PendingIntent`s and request codes (`notificationId+1..+4`, body tap `+5`), the 15-minute Remind Later
+    re-arm, the handlers, the Windows part.
+*   **Tests:** `PostCheckActionsTest` gained checks for `iconKey` and `isDark`. The layouts are checked on the device.
 
 ### What does not change
 

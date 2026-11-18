@@ -92,4 +92,26 @@ class PostCheckActionsTest {
     fun `keys are done late missed later and unique`() {
         assertEquals(listOf("done", "late", "missed", "later"), PostCheckActions.ALL.map { it.key })
     }
+
+    @Test
+    fun `prayer icon key follows the Next Prayer card mapping`() {
+        assertEquals("fajr", PostCheckActions.iconKey("Fajr"))
+        assertEquals("fajr", PostCheckActions.iconKey("Sunrise"))
+        assertEquals("dhuhr", PostCheckActions.iconKey("Zuhr"))
+        assertEquals("dhuhr", PostCheckActions.iconKey("Dhuhr"))
+        assertEquals("afternoon", PostCheckActions.iconKey("Asr"))
+        assertEquals("maghrib", PostCheckActions.iconKey("Maghrib"))
+        assertEquals("isha", PostCheckActions.iconKey("Isha"))
+        assertEquals("mosque", PostCheckActions.iconKey("Other"))
+    }
+
+    @Test
+    fun `theme pick is dark for dark and amoled, light for light, phone for system`() {
+        assertTrue(PostCheckActions.isDark("dark", false))
+        assertTrue(PostCheckActions.isDark("amoled", false))
+        assertEquals(false, PostCheckActions.isDark("light", true))
+        assertEquals(true, PostCheckActions.isDark("system", true))
+        assertEquals(false, PostCheckActions.isDark("system", false))
+        assertEquals(false, PostCheckActions.isDark("anything-else", false))
+    }
 }

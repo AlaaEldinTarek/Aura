@@ -1044,21 +1044,49 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Custom content, option B (F72, R1b). Collapsed: the question, the subtitle and Remind Later in the
-        // end corner (the coloured row does not fit the collapsed height). Expanded: the same plus the
-        // coloured Done / Late / Missed row. Android shows only three system action buttons and they
-        // cannot be coloured per button on EMUI, so no addAction is used. The layout direction follows
-        // the APP language (the _rtl layouts), not the system locale.
-        val collapsedLayout = if (isArabic) R.layout.notification_post_check_rtl else R.layout.notification_post_check
-        val expandedLayout = if (isArabic) R.layout.notification_post_check_expanded_rtl else R.layout.notification_post_check_expanded
-        fun contentView(layoutId: Int, withRow: Boolean): android.widget.RemoteViews {
+        // Same card style as the foreground "Next Prayer" notification (F72, R1c): full custom view (no
+        // DecoratedCustomViewStyle), background from the layout. The APP theme and the APP language pick one
+        // of four layouts (light / dark x LTR / RTL), like notification_large*; direction never comes from
+        // the system locale. Collapsed = top row (icon, question, Remind Later); expanded adds the
+        // Done / Late / Missed row. No addAction: Android shows at most three and EMUI cannot colour them.
+        val themeMode = FlutterPrefs.getString(context, "theme_mode", "system")
+        val systemNight = (context.resources.configuration.uiMode and
+            android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+        val dark = PostCheckActions.isDark(themeMode, systemNight)
+        val layoutId = when {
+            dark && isArabic -> R.layout.notification_post_check_dark_rtl
+            dark -> R.layout.notification_post_check_dark
+            isArabic -> R.layout.notification_post_check_rtl
+            else -> R.layout.notification_post_check
+        }
+        val iconRes = when (PostCheckActions.iconKey(prayerName)) {
+            "fajr" -> R.drawable.ic_prayer_fajr
+            "dhuhr" -> R.drawable.ic_prayer_dhuhr
+            "afternoon" -> R.drawable.ic_prayer_afternoon
+            "maghrib" -> R.drawable.ic_prayer_maghrib
+            "isha" -> R.drawable.ic_prayer_isha
+            else -> R.drawable.ic_mosque
+        }
+        fun iconBitmap(): android.graphics.Bitmap? = try {
+            androidx.core.content.res.ResourcesCompat.getDrawable(context.resources, iconRes, null)?.let { d ->
+                val bmp = android.graphics.Bitmap.createBitmap(128, 128, android.graphics.Bitmap.Config.ARGB_8888)
+                d.setBounds(0, 0, 128, 128)
+                d.draw(android.graphics.Canvas(bmp))
+                bmp
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [POST_CHECK] icon load failed: ${e.message}")
+            null
+        }
+        fun contentView(expanded: Boolean): android.widget.RemoteViews {
             val view = android.widget.RemoteViews(context.packageName, layoutId)
             view.setTextViewText(R.id.post_check_title, title)
             view.setTextViewText(R.id.post_check_body, body)
+            iconBitmap()?.let { view.setImageViewBitmap(R.id.post_check_icon, it) }
             val corner = PostCheckActions.corner()
             view.setTextViewText(R.id.btn_remind_later, PostCheckActions.label(corner, isArabic))
             view.setOnClickPendingIntent(R.id.btn_remind_later, actionPending(corner))
-            if (withRow) {
+            if (expanded) {
                 for (spec in PostCheckActions.buttons()) {
                     val viewId = when (spec.key) {
                         "done" -> R.id.btn_done
@@ -1068,6 +1096,8 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
                     view.setTextViewText(viewId, PostCheckActions.label(spec, isArabic))
                     view.setOnClickPendingIntent(viewId, actionPending(spec))
                 }
+            } else {
+                view.setViewVisibility(R.id.post_check_buttons, android.view.View.GONE)
             }
             return view
         }
@@ -1076,9 +1106,8 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(body)
-            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
-            .setCustomContentView(contentView(collapsedLayout, false))
-            .setCustomBigContentView(contentView(expandedLayout, true))
+            .setCustomContentView(contentView(false))
+            .setCustomBigContentView(contentView(true))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true)

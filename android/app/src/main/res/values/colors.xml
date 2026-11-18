@@ -23,9 +23,4 @@
 	<color name="adhan_fullscreen_text_primary">#FFFFFF</color>
 	<color name="adhan_fullscreen_text_secondary">#FFEACC</color>
 
-	<!-- Post-prayer check corner button (docs/designs/fix-post-check-remind-later.md) -->
-	<color name="post_check_action">#B5821B</color>
-	<color name="post_check_done">#388E3C</color>
-	<color name="post_check_late">#F57C00</color>
-	<color name="post_check_missed">#D32F2F</color>
 </resources>
