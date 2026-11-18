@@ -37,7 +37,6 @@ import '../settings/asr_madhab_dialog.dart';
 import '../settings/adhan_calculation_method.dart';
 import '../settings/asr_madhab_selection.dart';
 import '../../core/utils/haptic_feedback.dart' as haptic;
-import '../../core/providers/preferences_provider.dart';
 import '../../core/utils/prayer_time_rules.dart';
 import '../../core/providers/daily_prayer_status_provider.dart';
 import '../../core/widgets/tutorial_overlay.dart';

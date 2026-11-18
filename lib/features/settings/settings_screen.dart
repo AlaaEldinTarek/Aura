@@ -399,18 +399,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: kReminderMinuteOptions
-              .map((mins) => RadioListTile<int>(
-                    value: mins,
-                    groupValue: current,
+              .map((mins) => ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      mins == current
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      color: AppConstants.getPrimary(isDark),
+                    ),
                     title: Text(reminderOptionLabel(mins, isArabic: isArabic)),
-                    activeColor: AppConstants.getPrimary(isDark),
-                    onChanged: (v) async {
-                      if (v != null) {
-                        await ref
-                            .read(reminderMinutesProvider.notifier)
-                            .setMinutes(v);
-                        if (ctx.mounted) Navigator.pop(ctx);
-                      }
+                    onTap: () async {
+                      await ref
+                          .read(reminderMinutesProvider.notifier)
+                          .setMinutes(mins);
+                      if (ctx.mounted) Navigator.pop(ctx);
                     },
                   ))
               .toList(),
