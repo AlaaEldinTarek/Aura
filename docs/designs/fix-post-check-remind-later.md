@@ -44,7 +44,7 @@ top corner of the notification (top-right in English, top-left in Arabic), using
 
 *   **Q1 — Option B** (`DecoratedCustomViewStyle`). Remind Later just under the system header is fine. Corner = right in
     English, left in Arabic.
-*   **Q2 — Dev trigger:** checked, there is none (see "Debug-only test post-check"). A DEBUG-ONLY item is added.
+*   **Q2 — Dev trigger:** checked, there is none (see "Test post-check (hidden dev tile)"). A "Test post-check" item is added, **not** debug-only (owner correction, same day).
 *   **Q3 — Windows:** traced read-only (see "Windows"). Remind Later is missing there, so a Windows part is added.
 
 ## How the existing card is built (VERIFIED, `PrayerForegroundService.kt:663-730`)
@@ -126,25 +126,27 @@ None needs changing: all four are short enough for a button, and "ذكّرني �
 12 sp corner. Like the current buttons these are native strings chosen by the `language` pref, not `.tr()` (existing
 native-notification pattern; no new keys, so `en.json` / `ar.json` are untouched). The owner reviews the Arabic.
 
-### Debug-only "Test post-check" (Q2)
+### Test post-check in the hidden dev tile (Q2; owner correction: NOT debug-only)
 
 *   **Checked (VERIFIED):** no dev trigger for a post-check exists. The only one is the hidden dev tile in
     `lib/features/profile/profile_version_tile.dart` (seven taps on the Version tile; `fireTestAdhan` → `testAdhanNow`,
     native `MainActivity.kt:440`, request code 9999, `EXTRA_IS_TEST`), and it fires the adhan only. A real post-check
     appears ~30 min after a real adhan, or 15 min after a Remind Later.
-*   **Added (owner):** a second item in that same hidden dev tile, "Test post-check", **debug builds only**, hidden in
-    release builds. It posts the post-check for the **next prayer** right away (no 30-minute wait).
-*   **How:** Dart: the item is shown only when a constructor parameter `showPostCheckTest` (default `kDebugMode`, the same
-    pattern as `DesktopTrayService` `includeTestItem`) is true, so a widget test can drive both values. It calls a new
-    `PrayerAlarmService.testPostCheckNow(prayerName, prayerNameAr, prayerTime)` → MethodChannel `testPostCheckNow` (new
-    method; `contracts/method-channels.md` updated in the same commit) → `PrayerAlarmReceiver` shows the same notification
-    through the same `showPostPrayerCheckNotification` (not a copy), so the test exercises the real path, including the
-    corner button and the real `ACTION_POST_LATER` re-arm. The native side also refuses the call when the app is not
-    debuggable (`ApplicationInfo.FLAG_DEBUGGABLE`), so a release build cannot post it even if Dart were changed.
-*   **Consequence for the device check:** a release APK has no such item. S08 on a release build needs a real prayer
-    (+30 min). The debug item needs a debug build installed (it would replace the release build on the phone; same package
-    `com.aura.hala`; same signing key: UNKNOWN, a signature mismatch would force an uninstall and lose data). The owner
-    decides which build to use for the check.
+*   **Added (owner):** a second item in that same hidden dev tile, "Test post-check". It has **the same visibility rule as
+    the test adhan: seven taps on the Version tile, and it works in release builds** (the tile has no `kDebugMode` gate
+    today; VERIFIED in the file). It posts the post-check for the **next prayer** right away (no 30-minute wait).
+*   **Why not debug-only (owner):** a debug build has a different signing key, so installing it on the nova 5T would need an
+    uninstall and would wipe the owner's data. The check must run on the release APK.
+*   **How:** Dart: a second tile under the existing one, shown by the same `_unlocked` flag, with an injectable
+    `firePostCheck` function (default `PrayerAlarmService.testPostCheckNow(prayerName, prayerNameAr, prayerTime)`) so a widget
+    test can drive it. New MethodChannel method `testPostCheckNow` on `prayer_alarms` (**`contracts/method-channels.md`**,
+    listed under "planned" until the code lands; updated in the same commit as the code) → `PrayerAlarmReceiver` shows the
+    notification through the same `showPostPrayerCheckNotification` (not a copy), so the test exercises the real path,
+    including the corner button and the real `ACTION_POST_LATER` re-arm. Like `testAdhanNow`, the native handler has no
+    debuggable guard.
+*   **Safety of a release-visible dev item:** it only posts a notification for the next prayer (same as a real post-check)
+    and does not write any status by itself; the owner reaches it only after seven taps. A confirm dialog like the adhan
+    one is optional (open: Q5).
 *   Strings for the dev item go through `.tr()` in `en.json` and `ar.json` like the existing `dev_test_adhan_*` keys.
 
 ### Windows (Q3)
@@ -189,8 +191,8 @@ The handlers (`handlePostPrayerCheckAction`), the 15-minute re-arm, the alarm re
     `+5`. Written first, run failing (helper missing), then the helper.
 *   **What the unit test does not prove:** that the `PendingIntent`s and the layout are right on a device. That is the
     device check.
-*   **Dart (dev item):** widget test for `ProfileVersionTile`: after seven taps, "Test post-check" is shown with
-    `showPostCheckTest: true`, hidden with `false`; the tap calls the injected function with the next prayer.
+*   **Dart (dev item):** widget test for `ProfileVersionTile`: the "Test post-check" tile is hidden before seven taps and
+    shown after seven (same as the test adhan tile); the tap calls the injected function with the next prayer.
 *   **Dart (Windows):** test that the Remind Later action starts exactly one 15-minute timer per prayer, that a second tap
     replaces it, and that the timer calls `showPostPrayerCheck` again (fake timer / injected clock).
 *   Regression: existing Kotlin tests (51) and Dart tests (830 on `fix/prayer-reminder`) unchanged; `flutter analyze` count
@@ -198,8 +200,8 @@ The handlers (`handlePostPrayerCheckAction`), the 15-minute re-arm, the alarm re
 
 ## Device check (after the fix; Android 10, nova 5T)
 
-Needs a post-check: a real prayer (~30 min after the adhan; release build) or the debug-only "Test post-check" item (debug
-build only, see above).
+Needs a post-check: a real prayer (~30 min after the adhan; release build) or the "Test post-check" item of the hidden dev tile
+(seven taps on Version; release build; see above).
 
 1.  Post-check arrives: `dumpsys notification --noredact` shows `actions=3` for ID 600x, a custom content view, and the log
     line `📋 [POST_CHECK] Notification shown for <prayer>`.
@@ -214,7 +216,7 @@ build only, see above).
 7.  **Done / Late** still work (one each on later prayers): status written once, notification cancelled.
 8.  **Dark theme and light theme:** the corner text is readable in both (colours).
 9.  Long Arabic title and a large system font size: the title does not run under the corner button.
-10. Debug build: "Test post-check" appears in the dev tile and posts the card at once; the release build has no such item.
+10. Release build: after seven taps on Version, "Test post-check" appears next to the test adhan and posts the card at once for the next prayer.
 11. Windows (observe only): the post-check toast shows four buttons; Remind Later → the toast comes back after 15 min.
 
 ## Phases (proposal)
@@ -222,7 +224,7 @@ build only, see above).
 | Phase | Content | Level |
 |---|---|---|
 | R1 | Tests first (`PostCheckActions`); the helper; the layout files; builder change in `showPostPrayerCheckNotification`; build + tests | C |
-| R1b | Debug-only "Test post-check" (Dart item, channel method, contract) | C |
+| R1b | "Test post-check" in the hidden dev tile (Dart item, channel method, contract) | C |
 | R1c | Windows Remind Later button + timer | C |
 | R2 | Device check S08 (both halves) + record | A |
 
@@ -230,6 +232,6 @@ build only, see above).
 
 *   Q1-Q3 are answered above.
 *   **Q4 (unchanged):** a tap on a secure lock screen is left as the system decides.
-*   **Q5:** which build for the Android device check: release (wait for a real post-check) or a debug build (has the test
-    item)? A debug install over the release one may need an uninstall if the signing keys differ (UNKNOWN).
+*   **Q5:** should "Test post-check" ask for confirmation like the test adhan dialog? (Suggest: no, it only posts a
+    notification.)
 *   **Q6:** Windows timer ownership and "replace on second tap" (see Windows).
