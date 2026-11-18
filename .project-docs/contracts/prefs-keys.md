@@ -55,7 +55,10 @@ daily-summary notifications always English, daily summary time reverting to 21:0
 
 ## Native-only keys (Kotlin ↔ Kotlin; listed so refactors don't drop them)
 - `aura_prayer_times`: `adhan_active`, `adhan_end_time`, `adhan_iqama_time` (abs ms, 0 = none), `adhan_prayer_name(_ar)`,
-  `reminder_active`, `reminder_prayer_name(_ar)`, `reminder_prayer_time`, `combined_widget_tab_{widgetId}`,
+  `reminder_active`, `reminder_prayer_name(_ar)`, `reminder_prayer_time`, `reminder_kind` (`pre` = pre-prayer reminder),
+  `reminder_minutes` (lead time the alarm was armed with), `reminder_target_{Prayer}` (next prayer time recorded when a
+  reminder is armed, so `rearmReminderAlarms` works without today's times; Fajr, Zuhr, Asr, Maghrib, Isha),
+  `combined_widget_tab_{widgetId}`,
   `last_adhan_fired_{name}` (6 h duplicate guard, `PrayerAlarmReceiver`), `fg_user_stopped` (`PrayerForegroundService`;
   cleared by `startService`, so boot ignores it — findings F51i).
 - `aura_focus_state` (`FocusModeService`): write-only, no reader. `aura_focus_mode` (`FocusModeReceiver`): written
@@ -94,3 +97,5 @@ daily-summary notifications always English, daily summary time reverting to 21:0
 - Tutorial-seen flags (`app_constants.dart` `keyTutorial*`, via `SharedPreferencesService`): `tutorial_completed`,
   `tutorial_prayer_seen`, `tutorial_quran_seen`, `tutorial_tasks_seen`, `tutorial_juz_seen`, `tutorial_bookmarks_seen`,
   `tutorial_wird_seen`, `tutorial_reader_seen`.
+
+Added 2026-11-18 (S05 reminder, `docs/designs/fix-prayer-reminder.md`): Flutter prefs `notification_reminder_minutes` (5/10/15/30, default 10; any other value reads as 10) is now read natively through `FlutterPrefs` in `PrayerAlarmReceiver.scheduleReminderAlarm`, and `prayer_notifications_enabled` (the Prayer-screen "Reminder Prayer" switch, the only on/off) is read natively too.

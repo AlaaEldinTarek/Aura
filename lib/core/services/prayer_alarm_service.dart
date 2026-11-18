@@ -226,6 +226,35 @@ class PrayerAlarmService {
     }
   }
 
+  /// Re-arm only the pre-prayer reminder alarms (request codes 2101-2106) with
+  /// the current lead time. Touches no adhan, post-check or azkar alarm.
+  Future<void> rearmReminderAlarms() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      await _channel.invokeMethod('rearmReminderAlarms');
+      debugPrint('PrayerAlarmService: Reminder alarms re-armed');
+    } catch (e) {
+      debugPrint('PrayerAlarmService: Error re-arming reminder alarms - $e');
+    }
+  }
+
+  /// Cancel only the pre-prayer reminder alarms (request codes 2101-2106).
+  Future<void> cancelReminderAlarms() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      await _channel.invokeMethod('cancelReminderAlarms');
+      debugPrint('PrayerAlarmService: Reminder alarms cancelled');
+    } catch (e) {
+      debugPrint('PrayerAlarmService: Error cancelling reminder alarms - $e');
+    }
+  }
+
   /// Schedule a post-prayer check alarm 30 minutes after prayer time
   Future<void> schedulePostPrayerCheck({
     required String prayerName,
