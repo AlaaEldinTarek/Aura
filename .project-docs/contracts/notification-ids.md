@@ -19,7 +19,7 @@ Verified 2026-11-06 at 4aa1022 by static grep (Step 2). Do NOT modify IDs. All I
 | 5996 | Focus Mode relaunch full-screen notification (cancelled on stop) | — | `FocusModeService` `relaunchActivity` | No | Partial (added 2026-11-07, F51f) |
 | 5998 | Focus Mode foreground service | — | `FocusModeService.kt:32` | No | Partial |
 | 5999 | Focus Mode end notification — never posted (dead path, F51q) | — | `FocusModeReceiver.kt:38` | No | Partial |
-| 6001–6006 | Post-prayer "Did you pray?" checks | `notification_service.dart:1285,1341,1371` (`6000 + id`; scheduler at :1265 has no caller found — F12) | `PrayerAlarmReceiver.kt:65–70, :97` | No | Verified (both sides) |
+| 6001–6006 | Post-prayer "Did you pray?" checks | `notification_service.dart:1285,1341,1371` (`6000 + id`; scheduler at :1265 has no caller found — F12) | `PrayerAlarmReceiver.kt:65–70, :97`; card = Done / Late / Missed system buttons (PendingIntent request codes id+1..+3) + Remind Later corner button in a custom view (id+4), body tap id+5; table in `PostCheckActions.kt` (F72) | No | Verified (both sides) |
 | 7001 | Daily prayer summary | `_jumuahNotificationId = 7001` cancelled at `notification_service.dart:1390,1401` | `DailySummaryReceiver.kt:20` | No | Verified — collision F7 |
 | 7100–8099 | Achievement unlocked, `7100 + hash % 1000` | `notification_service.dart:1171` | — | Yes (hash) | Verified — overlaps 8001 (F4) |
 | 8001 | Jumu'ah reminder | — | `JumuahReminderReceiver.kt:19` | No | Partial (Kotlin only) |
