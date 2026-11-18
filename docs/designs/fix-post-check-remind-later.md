@@ -190,6 +190,25 @@ languages (owner-observed PASS for F72's main goal). Changes requested, same bra
     `later`). The layout is checked on the device.
 *   **Windows part unchanged.**
 
+#### Phase R1c (owner, 2026-11-18, after the R1b phone check: screenshots 16:12 Arabic, 16:13 English)
+
+R1b phone check: English positions OK; Arabic **wrong on the device** (my R1b report said it was right: it was not checked on
+the device). Observed in Arabic: "ذكّرني لاحقاً" at the right next to the question, the question in the middle, the row not
+mirrored (صلّيت at the left). Cause (inference, UNVERIFIED): `layoutDirection="rtl"` on the root plus `start`/`end`
+positions did not mirror as intended inside the notification (applied twice or not at all). Changes:
+
+*   **Explicit positions, no `start`/`end`, no `gravity="start"`.** Every layout forces `layoutDirection="ltr"` on the root
+    and on the button row, so the system locale cannot mirror it a second time, and places things with `left`/`right`.
+    The app language picks the file: English `notification_post_check[_expanded].xml`; Arabic
+    `notification_post_check[_expanded]_rtl.xml` (Remind Later `alignParentLeft`; the two text lines `alignParentRight`,
+    right-aligned, to the right of the button; row written left to right as Missed, Late, Done so it reads Done · Late ·
+    Missed from the right).
+*   **Outlined pills** (both languages): transparent fill, 1.5 dp stroke and text in the same colour, 32 dp high, 13 sp bold,
+    16 dp corner radius, 6 dp gap. Colours: night theme = the app's own `success` `#4CAF50` / `warning` `#FF9800` /
+    `error` `#F44336`; light theme = darker shades `#388E3C` / `#F57C00` / `#D32F2F` for contrast on a light shade
+    (text and stroke are the same colour in each theme).
+*   Unchanged: PendingIntents and request codes, Remind Later gold 13 sp, title 16 sp bold, subtitle 14 sp.
+
 ### What does not change
 
 The handlers (`handlePostPrayerCheckAction`), the 15-minute re-arm, the alarm request codes (3001–3006), notification IDs

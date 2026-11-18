@@ -1,21 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Post-prayer check, expanded view (docs/designs/fix-post-check-remind-later.md, option B, phase R1b):
-     used with DecoratedCustomViewStyle. Remind Later sits in the end corner (right in English, left in
-     Arabic); the _rtl file sets layoutDirection from the APP language, like the other _rtl layouts. -->
+<!-- Post-prayer check, expanded view, English (left-to-right) (docs/designs/fix-post-check-remind-later.md, option B, R1c).
+     Used with DecoratedCustomViewStyle. EXPLICIT left/right positions only (no start/end, no gravity start):
+     the root is forced LTR so the system locale cannot mirror it a second time. The app language picks
+     this file or its _rtl twin. -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="wrap_content"
+    android:layoutDirection="ltr">
 
     <TextView
         android:id="@+id/btn_remind_later"
         android:layout_width="wrap_content"
         android:layout_height="40dp"
-        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
         android:gravity="center"
         android:maxLines="1"
-        android:paddingStart="8dp"
-        android:paddingEnd="8dp"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
         android:clickable="true"
         android:focusable="true"
         android:text="Remind Later"
@@ -27,9 +29,9 @@
         android:id="@+id/post_check_texts"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
         android:layout_alignParentTop="true"
-        android:layout_toStartOf="@id/btn_remind_later"
+        android:layout_toLeftOf="@id/btn_remind_later"
         android:orientation="vertical">
 
         <TextView
@@ -37,7 +39,7 @@
             style="@style/TextAppearance.Compat.Notification.Title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="start"
+            android:gravity="left"
             android:maxLines="1"
             android:ellipsize="end"
             android:text="Did you pray Zuhr?"
@@ -49,59 +51,58 @@
             style="@style/TextAppearance.Compat.Notification"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="start"
+            android:gravity="left"
             android:maxLines="1"
             android:ellipsize="end"
             android:text="Log your prayer now"
             android:textSize="14sp" />
     </LinearLayout>
 
-    <!-- Done / Late / Missed: same child order in both files; the _rtl root mirrors the row
-         (Arabic: Done at the right, Missed at the left). -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/post_check_texts"
         android:layout_marginTop="8dp"
+        android:layoutDirection="ltr"
         android:orientation="horizontal"
         android:weightSum="3">
 
         <TextView
             android:id="@+id/btn_done"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="32dp"
             android:layout_weight="1"
-            android:layout_marginEnd="6dp"
+            android:layout_marginRight="6dp"
             android:gravity="center"
             android:maxLines="1"
             android:background="@drawable/bg_post_check_done"
             android:clickable="true"
             android:focusable="true"
             android:text="Done"
-            android:textSize="15sp"
+            android:textSize="13sp"
             android:textStyle="bold"
-            android:textColor="@color/post_check_button_text" />
+            android:textColor="@color/post_check_done" />
 
         <TextView
             android:id="@+id/btn_late"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="32dp"
             android:layout_weight="1"
-            android:layout_marginEnd="6dp"
+            android:layout_marginRight="6dp"
             android:gravity="center"
             android:maxLines="1"
             android:background="@drawable/bg_post_check_late"
             android:clickable="true"
             android:focusable="true"
             android:text="Late"
-            android:textSize="15sp"
+            android:textSize="13sp"
             android:textStyle="bold"
-            android:textColor="@color/post_check_button_text" />
+            android:textColor="@color/post_check_late" />
 
         <TextView
             android:id="@+id/btn_missed"
             android:layout_width="0dp"
-            android:layout_height="40dp"
+            android:layout_height="32dp"
             android:layout_weight="1"
             android:gravity="center"
             android:maxLines="1"
@@ -109,8 +110,8 @@
             android:clickable="true"
             android:focusable="true"
             android:text="Missed"
-            android:textSize="15sp"
+            android:textSize="13sp"
             android:textStyle="bold"
-            android:textColor="@color/post_check_button_text" />
+            android:textColor="@color/post_check_missed" />
     </LinearLayout>
 </RelativeLayout>
