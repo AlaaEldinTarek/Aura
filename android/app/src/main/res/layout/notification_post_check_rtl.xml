@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Post-prayer check content (docs/designs/fix-post-check-remind-later.md, option B: used with
-     DecoratedCustomViewStyle, collapsed and expanded). Remind Later sits in the end corner:
-     right in English, left in Arabic (the _rtl file sets layoutDirection, like the other _rtl layouts). -->
+<!-- Post-prayer check, collapsed view (docs/designs/fix-post-check-remind-later.md, option B, phase R1b):
+     used with DecoratedCustomViewStyle. Remind Later sits in the end corner (right in English, left in
+     Arabic); the _rtl file sets layoutDirection from the APP language, like the other _rtl layouts. -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -21,11 +21,12 @@
         android:clickable="true"
         android:focusable="true"
         android:text="Remind Later"
-        android:textSize="12sp"
+        android:textSize="13sp"
         android:textStyle="bold"
         android:textColor="@color/post_check_action" />
 
     <LinearLayout
+        android:id="@+id/post_check_texts"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentStart="true"
@@ -38,17 +39,22 @@
             style="@style/TextAppearance.Compat.Notification.Title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="start"
             android:maxLines="1"
             android:ellipsize="end"
-            android:text="Did you pray Zuhr?" />
+            android:text="Did you pray Zuhr?"
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
         <TextView
             android:id="@+id/post_check_body"
             style="@style/TextAppearance.Compat.Notification"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="start"
             android:maxLines="1"
             android:ellipsize="end"
-            android:text="Log your prayer now" />
+            android:text="Log your prayer now"
+            android:textSize="14sp" />
     </LinearLayout>
 </RelativeLayout>

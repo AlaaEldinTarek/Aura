@@ -89,21 +89,21 @@ styling. The corner button sits under the header row, not in it (accepted). Opti
 
 | Button | Action | Request code | Where it lives after the fix |
 |---|---|---|---|
-| Done | `ACTION_POST_DONE` | `notificationId+1` | `addAction` (as today) |
-| Late | `ACTION_POST_LATE` | `notificationId+2` | `addAction` (as today) |
-| Missed | `ACTION_POST_MISSED` | `notificationId+3` | `addAction` (as today) |
-| Remind Later | `ACTION_POST_LATER` | `notificationId+4` | corner button, `setOnClickPendingIntent`; **removed from `addAction`** |
+| Done | `ACTION_POST_DONE` | `notificationId+1` | green button in the expanded custom view (was `addAction`; see "Design change") |
+| Late | `ACTION_POST_LATE` | `notificationId+2` | orange button in the expanded custom view |
+| Missed | `ACTION_POST_MISSED` | `notificationId+3` | red button in the expanded custom view |
+| Remind Later | `ACTION_POST_LATER` | `notificationId+4` | corner button (collapsed and expanded), `setOnClickPendingIntent`; **no action uses `addAction` any more** |
 | Tap on the body | open the app | `notificationId+5` | unchanged |
 
-The fourth `addAction` is removed so the notification no longer depends on how an OEM treats a 4th action (`actions=3`
-expected in the log). No notification ID, channel, action string, extra or request code changes (contracts untouched; a
+No `addAction` is used after the design change (expected `actions=0` in the log), so the card no longer depends on how an
+OEM treats a 4th action. No notification ID, channel, action string, extra or request code changes (contracts untouched; a
 note about the corner button goes in `contracts/notification-ids.md` if the owner wants it).
 
 ### Collapsed, expanded and lock screen
 
-*   **Collapsed:** title + body + the corner button are all visible (this is the improvement over today, where no button is
-    visible collapsed). Done / Late / Missed still appear only after expanding (system behaviour, unchanged).
-*   **Expanded:** the same layout, with Done / Late / Missed below.
+*   **Collapsed:** title + body + the corner button are all visible. Done / Late / Missed appear only after expanding
+    (see "Design change": they are now coloured buttons in the expanded custom view, not system actions).
+*   **Expanded:** the same layout, with the coloured Done / Late / Missed row below.
 *   **Lock screen:** visibility stays PRIVATE (not changed). With the owner's lock-screen settings the card shows
     (owner screenshot, collapsed). Whether a tap on the corner button on a **secure** lock screen asks for unlock first:
     UNKNOWN (it is the same rule the three system buttons follow; to be observed in the device check). With "hide
@@ -162,6 +162,33 @@ native-notification pattern; no new keys, so `en.json` / `ar.json` are untouched
     `rescheduleReminders()` or a tile change does not cancel it, and whether a repeated tap replaces the pending timer
     (suggest: yes, one pending timer per prayer). A pure Dart test of the timer helper is written first.
 *   Not in this spec: the Windows adhan toast and the pre-prayer reminder toast (separate specs).
+
+### Design change after the first phone check (owner, 2026-11-18, "approve phase R1b")
+
+First phone check (PR #60 head, screenshots 15:54 Arabic / 15:55 English): Remind Later is visible in the corner in both
+languages (owner-observed PASS for F72's main goal). Changes requested, same branch:
+
+*   **Buttons move into the custom expanded layout.** Done / Late / Missed are no longer system `addAction` buttons
+    (standard action buttons cannot be coloured per button on EMUI). Same `PendingIntent`s, same request codes
+    `notificationId+1..+4`, same handlers.
+*   **Colours:** Done green `#4CAF50`, Late orange `#FF9800`, Missed red `#F44336` (the app's `AppConstants.success` /
+    `warning` / `error`), as filled pills with dark text `#212121`, readable on a light and on a dark notification
+    background (dark text on these fills, same fill in both themes). Remind Later keeps its gold (`#B5821B` light,
+    `#F5B301` dark).
+*   **Sizes:** question title 16 sp bold, subtitle 14 sp, Done / Late / Missed 15 sp bold in 40 dp high pills (three
+    equal-weight buttons, about 95 dp each at 360 dp, one line), Remind Later 13 sp bold.
+*   **Collapsed vs expanded:** collapsed = the question, the subtitle and Remind Later in the corner. The coloured
+    buttons do **not** fit the collapsed height (about 64 dp for two text lines plus a 40 dp button row), so they show
+    **only when expanded** (decision recorded; owner asked "tell me which").
+*   **Arabic (RTL):** question and subtitle pinned to the right edge, Remind Later at the top left, the row mirrored:
+    صلّيت (right) · متأخر · فاتتني (left). The direction follows the **app language** (`language` pref), not the system
+    locale: separate `_rtl` layouts set `layoutDirection="rtl"` on the root, as before. Child order is Done, Late,
+    Missed in both files; the RTL root mirrors the row.
+*   **Files:** `notification_post_check[_rtl].xml` (collapsed), `notification_post_check_expanded[_rtl].xml` (expanded),
+    `bg_post_check_{done,late,missed}.xml`, colours in `values/colors.xml`.
+*   **Test:** `PostCheckActionsTest` unchanged except a new check of the action keys (`done`, `late`, `missed`,
+    `later`). The layout is checked on the device.
+*   **Windows part unchanged.**
 
 ### What does not change
 

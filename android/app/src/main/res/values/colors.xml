@@ -25,4 +25,8 @@
 
 	<!-- Post-prayer check corner button (docs/designs/fix-post-check-remind-later.md) -->
 	<color name="post_check_action">#B5821B</color>
+	<color name="post_check_done">#4CAF50</color>
+	<color name="post_check_late">#FF9800</color>
+	<color name="post_check_missed">#F44336</color>
+	<color name="post_check_button_text">#212121</color>
 </resources>

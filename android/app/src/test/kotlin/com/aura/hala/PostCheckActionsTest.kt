@@ -87,4 +87,9 @@ class PostCheckActionsTest {
         assertNotEquals(PostCheckActions.requestCode(6003, PostCheckActions.corner()),
             PostCheckActions.contentRequestCode(6003))
     }
+
+    @Test
+    fun `keys are done late missed later and unique`() {
+        assertEquals(listOf("done", "late", "missed", "later"), PostCheckActions.ALL.map { it.key })
+    }
 }

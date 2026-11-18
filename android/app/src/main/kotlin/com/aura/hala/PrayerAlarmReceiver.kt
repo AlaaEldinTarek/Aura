@@ -1044,16 +1044,31 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        // Custom content (collapsed and expanded) with Remind Later in the end corner: Android shows at
-        // most three action buttons, so Remind Later is no longer an addAction (F72).
-        val layoutId = if (isArabic) R.layout.notification_post_check_rtl else R.layout.notification_post_check
-        fun contentView(): android.widget.RemoteViews {
+        // Custom content, option B (F72, R1b). Collapsed: the question, the subtitle and Remind Later in the
+        // end corner (the coloured row does not fit the collapsed height). Expanded: the same plus the
+        // coloured Done / Late / Missed row. Android shows only three system action buttons and they
+        // cannot be coloured per button on EMUI, so no addAction is used. The layout direction follows
+        // the APP language (the _rtl layouts), not the system locale.
+        val collapsedLayout = if (isArabic) R.layout.notification_post_check_rtl else R.layout.notification_post_check
+        val expandedLayout = if (isArabic) R.layout.notification_post_check_expanded_rtl else R.layout.notification_post_check_expanded
+        fun contentView(layoutId: Int, withRow: Boolean): android.widget.RemoteViews {
             val view = android.widget.RemoteViews(context.packageName, layoutId)
             view.setTextViewText(R.id.post_check_title, title)
             view.setTextViewText(R.id.post_check_body, body)
             val corner = PostCheckActions.corner()
             view.setTextViewText(R.id.btn_remind_later, PostCheckActions.label(corner, isArabic))
             view.setOnClickPendingIntent(R.id.btn_remind_later, actionPending(corner))
+            if (withRow) {
+                for (spec in PostCheckActions.buttons()) {
+                    val viewId = when (spec.key) {
+                        "done" -> R.id.btn_done
+                        "late" -> R.id.btn_late
+                        else -> R.id.btn_missed
+                    }
+                    view.setTextViewText(viewId, PostCheckActions.label(spec, isArabic))
+                    view.setOnClickPendingIntent(viewId, actionPending(spec))
+                }
+            }
             return view
         }
 
@@ -1062,15 +1077,12 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.DecoratedCustomViewStyle())
-            .setCustomContentView(contentView())
-            .setCustomBigContentView(contentView())
+            .setCustomContentView(contentView(collapsedLayout, false))
+            .setCustomBigContentView(contentView(expandedLayout, true))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true)
             .setContentIntent(contentPending)
-        PostCheckActions.buttons().forEach { spec ->
-            builder.addAction(0, PostCheckActions.label(spec, isArabic), actionPending(spec))
-        }
 
         try {
             val notificationManager = NotificationManagerCompat.from(context)
