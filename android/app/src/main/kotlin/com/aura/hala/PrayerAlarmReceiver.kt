@@ -991,9 +991,9 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
     }
 
     /**
-     * Show post-prayer check notification with Done/Late/Missed/Remind Later buttons
+     * Show post-prayer check notification: Done/Late/Missed buttons + Remind Later in the corner (F72)
      */
-    private fun showPostPrayerCheckNotification(
+    fun showPostPrayerCheckNotification(
         context: Context,
         prayerName: String,
         prayerNameAr: String,
@@ -1021,76 +1021,56 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
 
         val notificationId = getPostCheckNotificationId(prayerName)
 
-        // Done button
-        val doneIntent = Intent(context, PrayerAlarmReceiver::class.java).apply {
-            action = ACTION_POST_DONE
-            putExtra(EXTRA_PRAYER_NAME, prayerName)
-            putExtra(EXTRA_PRAYER_NAME_AR, prayerNameAr)
-            putExtra(EXTRA_PRAYER_TIME, prayerTime)
+        // One PendingIntent per action, request codes notificationId+1..+4 (PostCheckActions, F72).
+        fun actionPending(spec: PostCheckActions.Spec): PendingIntent {
+            val intent = Intent(context, PrayerAlarmReceiver::class.java).apply {
+                action = spec.action
+                putExtra(EXTRA_PRAYER_NAME, prayerName)
+                putExtra(EXTRA_PRAYER_NAME_AR, prayerNameAr)
+                putExtra(EXTRA_PRAYER_TIME, prayerTime)
+            }
+            return PendingIntent.getBroadcast(
+                context, PostCheckActions.requestCode(notificationId, spec), intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
         }
-        val donePending = PendingIntent.getBroadcast(
-            context, notificationId + 1, doneIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // Late button
-        val lateIntent = Intent(context, PrayerAlarmReceiver::class.java).apply {
-            action = ACTION_POST_LATE
-            putExtra(EXTRA_PRAYER_NAME, prayerName)
-            putExtra(EXTRA_PRAYER_NAME_AR, prayerNameAr)
-            putExtra(EXTRA_PRAYER_TIME, prayerTime)
-        }
-        val latePending = PendingIntent.getBroadcast(
-            context, notificationId + 2, lateIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // Missed button
-        val missedIntent = Intent(context, PrayerAlarmReceiver::class.java).apply {
-            action = ACTION_POST_MISSED
-            putExtra(EXTRA_PRAYER_NAME, prayerName)
-            putExtra(EXTRA_PRAYER_NAME_AR, prayerNameAr)
-            putExtra(EXTRA_PRAYER_TIME, prayerTime)
-        }
-        val missedPending = PendingIntent.getBroadcast(
-            context, notificationId + 3, missedIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // Remind Later button → opens app picker
-        val laterIntent = Intent(context, PrayerAlarmReceiver::class.java).apply {
-            action = ACTION_POST_LATER
-            putExtra(EXTRA_PRAYER_NAME, prayerName)
-            putExtra(EXTRA_PRAYER_NAME_AR, prayerNameAr)
-            putExtra(EXTRA_PRAYER_TIME, prayerTime)
-        }
-        val laterPending = PendingIntent.getBroadcast(
-            context, notificationId + 4, laterIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
 
         // Tap notification → opens app
         val contentIntent = Intent(context, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
         val contentPending = PendingIntent.getActivity(
-            context, notificationId + 5, contentIntent,
+            context, PostCheckActions.contentRequestCode(notificationId), contentIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+
+        // Custom content (collapsed and expanded) with Remind Later in the end corner: Android shows at
+        // most three action buttons, so Remind Later is no longer an addAction (F72).
+        val layoutId = if (isArabic) R.layout.notification_post_check_rtl else R.layout.notification_post_check
+        fun contentView(): android.widget.RemoteViews {
+            val view = android.widget.RemoteViews(context.packageName, layoutId)
+            view.setTextViewText(R.id.post_check_title, title)
+            view.setTextViewText(R.id.post_check_body, body)
+            val corner = PostCheckActions.corner()
+            view.setTextViewText(R.id.btn_remind_later, PostCheckActions.label(corner, isArabic))
+            view.setOnClickPendingIntent(R.id.btn_remind_later, actionPending(corner))
+            return view
+        }
 
         val builder = NotificationCompat.Builder(context, "prayer_tracking")
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            .setCustomContentView(contentView())
+            .setCustomBigContentView(contentView())
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setAutoCancel(true)
             .setContentIntent(contentPending)
-            .addAction(0, if (isArabic) "صلّيت" else "Done", donePending)
-            .addAction(0, if (isArabic) "متأخر" else "Late", latePending)
-            .addAction(0, if (isArabic) "فاتتني" else "Missed", missedPending)
-            .addAction(0, if (isArabic) "ذكّرني لاحقاً" else "Remind Later", laterPending)
+        PostCheckActions.buttons().forEach { spec ->
+            builder.addAction(0, PostCheckActions.label(spec, isArabic), actionPending(spec))
+        }
 
         try {
             val notificationManager = NotificationManagerCompat.from(context)
