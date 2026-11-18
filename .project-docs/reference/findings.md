@@ -1019,6 +1019,17 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   The S05 reminder spec only makes sure the reminder alarms are cancelled on logout and not on adhan-off (D4); the
   adhan side is not fixed there.
 
+## F71 — "Reminder Prayer" master switch does nothing on Android; per-prayer notify keys have no UI (found during the S05 reminder spec, 2026-11-18) — VERIFIED (static), device impact UNVERIFIED
+- **Tag: LOW now, becomes visible when the reminder is armed (see `docs/designs/fix-prayer-reminder.md`, D8/D9).** The Prayer
+  screen settings sheet has a switch "Reminder Prayer" / "تذكير الصلاة" (subtitle "Remind 10 minutes before prayer time")
+  that writes `prayer_notifications_enabled` (`prayer_screen.dart:1251-1266`). No Kotlin file reads that key, and the only
+  Dart readers are the dead `NotificationService.schedulePrayerNotification` (`notification_service.dart:295`) and the
+  Windows toast (`desktop_notification_service.dart:236-238`), so on Android the switch has no effect today. The subtitle
+  is hard-coded (no `.tr()`) with a raw `10` in the Arabic text. `notify_<prayer>`: its only writer
+  `togglePrayerNotification` (`notification_service.dart:1205`) has no caller, so no UI writes it; readers are
+  `notification_service.dart:992` (dead) and the Windows toast (`:239-241`, always true today). Whether the desktop build
+  shows the same sheet: UNKNOWN. Searched: `lib/`, `android/app/src/main/kotlin`; reflection not checked.
+
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
 - `ringer_mode` handler is in `MainActivity`, not `SilentModeAutomation.kt`.
