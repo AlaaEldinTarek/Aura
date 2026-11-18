@@ -2,7 +2,7 @@
 
 *   **Author:** Alaa Eldin Tarek
 *   **Status:** Draft, not approved. Docs only: no code is written until the owner says "approve phase".
-*   **Date:** 2026-11-18 (owner decisions D1–D3 added the same day)
+*   **Date:** 2026-11-18 (owner decisions D1–D7 added the same day)
 *   **Source:** device check S05 FAIL, 2026-11-17 (nova 5T, 1.1.0+60). Known gap, listed out of scope in the FX-0 review.
 
 Labels: VERIFIED = read in code, UNVERIFIED = not run on a device, UNKNOWN = not checked.
@@ -18,6 +18,10 @@ The pre-prayer reminder never fires on Android: the receiving side exists, but n
 *   **D1 — One key, one default:** `notification_reminder_minutes`, default **10** on Android, Windows and the Dart path. The hard-coded 45 in `PrayerAlarmReceiver.kt` goes away.
 *   **D2 — Settings tile, not "no UI":** a "Pre-prayer reminder" tile next to "Jumu'ah Reminder" in `settings_screen.dart` (~`:225`), choices **Off / 5 / 10 / 15 / 30 min** (Off = 0), English + Arabic via `.tr()` keys in `en.json` and `ar.json`. Changing it cancels and re-arms the reminder alarms right away. The same tile controls Windows (same key). Reason: nothing writes the key today, so arming without a tile would turn on 5 notifications a day for everyone with no way to stop them.
 *   **D3 — Arm inside `schedulePrayerAlarm`, with safeguards:** (a) the adhan alarm is set first and the reminder runs in its own try/catch, so a reminder failure can never block or delay the adhan; (b) every path that cancels a prayer alarm also cancels that prayer's reminder alarm (table below); (c) reminder request codes must not clash with adhan, post-check or snooze codes (code table below).
+*   **D4 — Independent of the adhan toggle:** the Settings tile is the only control of the reminder. Switching the adhan off does not cancel or change the reminder.
+*   **D5 — Snooze/reminder-button code stays as is** (dead code). Recorded as finding F69 for P6 cleanup; not part of this fix.
+*   **D6 — Own request-code range for the pre-prayer reminder.** The owner asked for 4001–4006 after a free-range check. **The check found 4001–4006 is NOT free** (see "Request codes"), so the spec proposes **2101–2106** instead; this needs the owner's confirmation.
+*   **D7 — Texts (the owner reviews the Arabic himself):** see "Texts".
 *   **Owner preference on content:** the pre-prayer reminder is information only: "Zuhr in 10 minutes" / "الظهر بعد ١٠ دقائق" (Arabic numerals in Arabic). No tracking buttons. The snooze reminder keeps its current buttons (see "What the user sees" for what that means in the current code).
 
 ## What the user sees today (VERIFIED, code read)
@@ -32,7 +36,7 @@ Both cases go through one function, `PrayerForegroundService.showReminderModeNot
 | Real "Done / Late / Missed / Remind Later" buttons | None | They live on the **post-prayer check** notification (IDs 6001–6006, `PrayerAlarmReceiver.kt:933-1000`), 30 min after the adhan; its Remind Later re-arms that check in 15 min (`:1046-1055`). That is the real after-adhan tracking flow and is not touched. |
 
 Consequences for the owner preference:
-*   The pre-prayer reminder as designed by this spec ("Zuhr in 10 minutes", no question, no buttons) needs a **distinguishing flag**, because both cases share `EXTRA_IS_REMINDER` and `reminder_active`. Proposal: new extra `EXTRA_REMINDER_KIND` ("pre") written by the alarm receiver to a new native pref `reminder_kind` in `aura_prayer_times` (same file as the other `reminder_*` keys; contracts/prefs-keys.md line 58 updated in the same commit). `showReminderModeNotification` renders "{Prayer} in N minutes" when `reminder_kind == "pre"` and the current text otherwise (legacy and any revived snooze). `handleReminderAction` and the snooze code stay untouched.
+*   The pre-prayer reminder as designed by this spec ("Zuhr in 10 minutes", no question, no buttons) needs a **distinguishing flag**, because both cases share `EXTRA_IS_REMINDER` and `reminder_active`. Proposal: new extra `EXTRA_REMINDER_KIND` ("pre") written by the alarm receiver to a new native pref `reminder_kind` in `aura_prayer_times` (same file as the other `reminder_*` keys; contracts/prefs-keys.md line 58 updated in the same commit). `showReminderModeNotification` renders the "Texts" below when `reminder_kind == "pre"` and the current text otherwise (legacy and any revived snooze). `handleReminderAction` and the snooze code stay untouched.
 *   "The snooze keeps its current buttons" is true only as "unchanged": it has none today. Whether to give the snooze notification real buttons is a separate decision (D5 below).
 
 ## The Problem (VERIFIED)
@@ -46,7 +50,21 @@ Consequences for the owner preference:
 ## Answers to the open UNKNOWNs
 
 *   **`FlutterPrefs.getInt` with a Long: VERIFIED OK.** `FlutterPrefs.kt:28-33` reads the raw value and maps `is Long -> v.toInt()`, `is Int -> v`, else the default. A Dart `setInt` (stored as Long) is read correctly. R1 still adds a unit test for Long, Int and absent.
-*   **Arabic reminder text:** the current text is "هل صليت الظهر؟" / "بعد ٥ دقيقة أذان" (numerals are Eastern Arabic, correct per CLAUDE.md). The phrase "بعد N دقيقة أذان" is grammatically awkward and "دقيقة" is singular for 5–10; the new text "الظهر بعد ١٠ دقائق" needs plural handling (دقيقة 1, دقيقتان 2, دقائق 3–10, دقيقة 11+). **The owner (native Arabic speaker) must review the final Arabic strings** (as with `wird_bookmark_already_counted`). The native service uses `isArabic` ternaries, not `.tr()` (Kotlin cannot call `.tr()`); the tile strings use `.tr()`.
+*   **Arabic reminder text:** the current text is "هل صليت الظهر؟" / "بعد ٥ دقيقة أذان" (Eastern Arabic numerals via `toEasternArabic`, correct per CLAUDE.md). It is replaced by the owner's strings under "Texts". The native service uses `isArabic` ternaries, not `.tr()` (Kotlin cannot call `.tr()`); the tile strings use `.tr()`. The current Windows toast interpolates a raw number into the Arabic text (`desktop_notification_service.dart:246`); the new text fixes that.
+
+## Texts (owner-provided, 2026-11-18; the owner reviews the Arabic)
+
+| Where | English | Arabic |
+|---|---|---|
+| Notification / toast title | Prayer reminder | تذكير بالصلاة |
+| Body | `{prayer} in {N} minutes` | `أذان {prayer} بعد {N} {unit}` |
+| Tile title | Pre-prayer reminder | التذكير قبل الصلاة |
+| Tile options | Off / 5 / 10 / 15 / 30 min | إيقاف / ٥ / ١٠ / ١٥ / ٣٠ دقيقة |
+
+*   Arabic numerals in Arabic (٥ / ١٠ / ١٥ / ٣٠): Dart through `NumberFormatter.withArabicNumerals`, Kotlin through `toEasternArabic`.
+*   **The unit is chosen by N, never built by concatenating one word:** N = 5 and 10 give "دقائق"; N = 15 and 30 give "دقيقة". Examples: "أذان الظهر بعد ١٠ دقائق", "أذان العصر بعد ١٥ دقيقة". A helper `arabicMinuteUnit(n)` returns the unit; the tile offers only these four values and any other stored value falls back to 10, so no other N reaches the text.
+*   **Windows uses the same text:** the toast built by `showPrePrayerNotification` (`desktop_notification_service.dart:233-251`) is changed to this title and body. The strings live in two places (Kotlin and Dart), so a Kotlin unit test and a Dart unit test assert the same expected strings.
+*   Tile keys in BOTH `en.json` and `ar.json`: `pre_prayer_reminder`, `pre_prayer_reminder_off`, `pre_prayer_reminder_minutes`, plus keys for the Windows toast title and body.
 
 ## Design
 
@@ -54,9 +72,9 @@ Consequences for the owner preference:
 
 **2. Arm in `schedulePrayerAlarm` (D3).** After the adhan alarm is set and logged, call `scheduleReminderAlarm` for names other than Sunrise inside `try { ... } catch (e: Exception) { Log.e(TAG, "❌ [REMINDER] ...") }`. The adhan path returns before and does not depend on the result. `PrayerAlarmReceiver.kt` is an "edit carefully" file: the change is one guarded call plus the helper, and the adhan code path is not reordered.
 
-**3. Fire-time guard.** In the `isReminder` branch, re-read `N`; if `N <= 0` drop the alarm (belt and braces for a failed cancel). Write `reminder_kind=pre` only for alarms armed by step 2.
+**3. Fire-time guard.** In the `isReminder` branch, re-read `N`; if `N <= 0` drop the alarm (belt and braces for a failed cancel). Write `reminder_kind=pre` and `reminder_minutes=N` (new native prefs beside the other `reminder_*` keys) only for alarms armed by step 2.
 
-**4. Content.** Pre-prayer: header unchanged; title "Zuhr in 10 minutes" / "الظهر بعد ١٠ دقائق"; subtitle: the time of the prayer; no question, no buttons. The minutes shown are `ceil((prayerTime - now) / 60000)` at each service update, using `getDisplayPrayerName` (Jumu'ah on Fridays). Cleared at prayer time as today (`:465-467`).
+**4. Content.** Pre-prayer: title "Prayer reminder" / "تذكير بالصلاة", body per "Texts" below; no question, no buttons. `{prayer}` comes from `getDisplayPrayerName` (Jumu'ah on Fridays); `{N}` is the lead time the alarm was armed with (5/10/15/30), stored with `reminder_kind`, so the text is fixed and never counts down (a countdown would show values such as 7 min that have no unit rule). Cleared at prayer time as today (`:465-467`).
 
 **5. Settings tile (Dart).** New provider in `preferences_provider.dart`, modeled on `JumuahReminderNotifier` (`:472-495`): `notification_reminder_minutes`, default 10, allowed 0/5/10/15/30. Tile in the Notifications card; tapping opens a picker of the five choices (pattern of `_showReminderMinsPicker`, `:375`). New `.tr()` keys in BOTH `en.json` and `ar.json`: `pre_prayer_reminder`, `pre_prayer_reminder_subtitle`, `pre_prayer_reminder_off`, `pre_prayer_reminder_minutes` (number through `NumberFormatter.withArabicNumerals`).
 *   **On change, Android:** `Off` calls a new native method `cancelReminderAlarms` (cancels the reminder request codes and clears `reminder_active`/`reminder_*`); any other value re-arms by running the existing recalculation effects (`prayerEffects` → `scheduleDailyPrayerAlarms` → `schedulePrayerAlarm`, which replaces by request code). UNKNOWN whether the provider exposes a public re-run; the first R1 task is to confirm, otherwise a small public method is added.
@@ -70,26 +88,40 @@ Consequences for the owner preference:
 | 00:05 native recalc | `NativePrayerCalculator.reschedule` (`:216`) re-arms | Same helper, so covered |
 | Boot / app update | `PrayerRescheduleService` (`:133`) re-arms | Same helper, so covered |
 | `cancelAllAlarms` (native, MethodChannel `cancelAllPrayerAlarms`) | Cancels 1001–1006 only (`:301-318`); **no Dart caller found** | Extend to cancel the reminder codes |
-| Adhan switched off | **Nothing is cancelled**: the adhan alarm stays armed and the receiver skips playback at fire time (`AdhanPlayer` "Enabled" check) | Not affected: the reminder has its own Off in the tile (D4 below) |
-| Logout | **Nothing is cancelled**: prayer alarms are device-level, not account-level | Not affected |
+| Adhan switched off | **Nothing is cancelled** (existing issue, F66 and F70, not fixed here): the adhan alarm stays armed and only the sound is skipped at fire time (`AdhanPlayer.kt:162-164`, `:220`) | **Unchanged by design (D4):** the reminder keeps working; only the tile controls it |
+| Logout (`profile_screen.dart:1038` → `AuthService.signOut`, `auth_service.dart:244`) | **Nothing is cancelled** (existing issue F70, not fixed here); local data stays (F47f, F59) | **Reminder alarms are cancelled on logout** (owner request): the sign-out path calls `cancelReminderAlarms` (new native method). The adhan alarm, post-checks and azkar stay armed as today. The owner's "make sure the REMINDER alarms are cancelled on those paths" is applied to logout; for adhan-off D4 says the reminder is independent, so it is NOT cancelled there. Please confirm this reading. |
 | Tile Off / change | n/a | New: cancel or re-arm immediately (design step 5) |
 
-**7. Request codes (D3c), one table.** PendingIntent identity is component + request code, so only codes within the same receiver class can clash.
+**7. Request codes (D3c / D6), one table.** Grep result (2026-11-18, `android/app/src`, `lib`, `test`; Kotlin and Dart): every ID and request code found is listed. PendingIntent identity is component + request code, so only codes within the same receiver class can clash with each other; notification IDs share one namespace (contracts/notification-ids.md).
 
-| Request code(s) | Owner / class | Meaning | Source |
-|---|---|---|---|
-| 1001–1006 | `PrayerAlarmReceiver` | Adhan alarm (`getNotificationId`) | `:262`, cancel `:301-318` |
-| **4001–4006 (new)** | `PrayerAlarmReceiver` | **Pre-prayer reminder** (`requestCode + 3000`) | new; 4xxx is unused anywhere in `android/` (grep, VERIFIED) |
-| 2001–2006 | `PrayerAlarmReceiver` | After-adhan snooze (`scheduleDelayedReminder` via `getReminderNotificationId`); the pre-prayer reminder used `+1000` = 2001–2006 before this spec, which would let a snooze replace it, so it moves to 4001–4006 | `:889-895`, `:60-92` |
-| 7005, 7010, … (`7000 + delayMinutes`) | `PrayerAlarmReceiver` | Dart snooze picker (dead path) | `main_wrapper_screen.dart:823` |
-| 3001–3006 | `PrayerAlarmReceiver` | Post-prayer check (`requestCode + 2000`, from 1001–1006) | `:347-372` |
-| 3001–3006 | `AzkarAlarmReceiver` | Azkar after iqama | `AzkarAlarmReceiver.kt:44-52` (different class, no clash; same numbers) |
-| 9999 | `PrayerAlarmReceiver` | Test adhan | `MainActivity.kt:460-466` |
-| 3999 | `SilentOffReceiver`, `ToggleSilentModeReceiver` | Silent-mode off | `PrayerAlarmReceiver.kt:737`, `ToggleSilentModeReceiver.kt:35` |
-| 5000–5999 | `FocusModeReceiver` | Focus alarms | `FocusModeReceiver.kt:36-49` |
-| 7001, 8001, 9100 | Summary / Jumu'ah / Recalc receivers | Daily summary, Jumu'ah, 00:05 recalc | respective files |
+**4001–4006 is NOT free.** `notification_service.dart:1021` posts the daily task digest as notification **4001**, and `:669` gives task reminders `4000 + hash % 1000` (4000–4999, Dart and native via `scheduleNativeTaskReminder`). A request code on `PrayerAlarmReceiver` would not technically collide with those notification IDs (different namespaces and receivers), but it would sit inside a range the contract reserves for tasks and invite a wrong future edit. The spec therefore proposes **2101–2106** (`requestCode + 1100`): grep finds no 21xx value in Kotlin, Dart or tests, and it sits beside the 2001–2006 reminder family. The owner confirms or picks another free range.
 
-Notification IDs are unchanged (1001–1006, 6001–6006, 9999; the 2001–2006 `REMINDER_*` IDs stay reserved). Request codes are not notification IDs, but `contracts/notification-ids.md` row 2001–2006 ("Pre-prayer reminders") is reworded and a 4001–4006 request-code row added in the same commit as the code.
+| Request code / ID | Kind | Owner / class | Meaning | Source |
+|---|---|---|---|---|
+| 1–6 | Notification ID | Dart `NotificationService` | Flutter prayer notifications (no caller) | `notification_service.dart:74-79` |
+| 1001–1006 | Request code + notification ID | `PrayerAlarmReceiver` | Adhan alarm and adhan notification | `PrayerAlarmReceiver.kt:48-53`, `:262`, cancel `:301-318` |
+| 2000 | Notification ID | `PrayerRescheduleService` | Boot reschedule foreground notification | `PrayerRescheduleService.kt:30` |
+| 2001–2006 | Request code (+ unused `REMINDER_*` IDs) | `PrayerAlarmReceiver` | After-adhan snooze (`scheduleDelayedReminder`, dead path F69). Before this spec the pre-prayer reminder also used 2001–2006 (`requestCode + 1000`) | `:56-61`, `:889-895` |
+| **2101–2106 (new)** | Request code only | `PrayerAlarmReceiver` | **Pre-prayer reminder** (`requestCode + 1100`); posts no notification of its own | new |
+| 3001–3006 | Request code | `PrayerAlarmReceiver` | Post-prayer check (`requestCode + 2000`) | `:347-372` |
+| 3001–3006 | Request code | `AzkarAlarmReceiver` | Azkar after iqama (other class, same numbers) | `AzkarAlarmReceiver.kt:44-52` |
+| 3999 | Request code / Dart ID | `SilentOffReceiver`, `ToggleSilentModeReceiver`; Dart | Silent-mode restore; task daily summary notification | `ToggleSilentModeReceiver.kt:35`, `PrayerAlarmReceiver.kt:737`, `notification_service.dart:805` |
+| 4000–4999 (incl. 4001) | Notification ID (+ native request codes id, id+1, id+2 on their own receivers) | Dart, `NativeNotificationReceiver`, `TaskReminderReceiver` | Task reminders `4000 + hash % 1000`; daily task digest 4001 | `notification_service.dart:669`, `:1021` |
+| 5000–5999 | Request code | `FocusModeReceiver` | Focus alarms (`5000 + abs(hash % 1000)`) | `FocusModeReceiver.kt:36-49` |
+| 5001–5006 | Notification ID | Dart | Flutter-side prayer notifications | `notification_service.dart:431` |
+| 5100–5119 | Notification ID | Dart / native | Wird reminders | `notification_service.dart:1105-1159` |
+| 5996, 5998, 5999 | Notification ID | Focus Mode | Relaunch, service, end (dead) | `FocusModeService.kt`, `FocusModeReceiver.kt:38` |
+| 6001–6006 | Notification ID | `PrayerAlarmReceiver` | Post-prayer check notifications | `:65-70` |
+| 7001 | Request code + notification ID | `DailySummaryReceiver` | Daily prayer summary (also the legacy Dart Jumu'ah ID, F7) | `DailySummaryReceiver.kt:21-22` |
+| 7005, 7010, 7015 … (`7000 + delayMinutes`) | Request code | `PrayerAlarmReceiver` | Dart snooze picker (dead path F69) | `main_wrapper_screen.dart:823` |
+| 7100–8099 | Notification ID | Dart | Achievements (`7100 + hash % 1000`) | `notification_service.dart:1171` |
+| 8001 | Request code + notification ID | `JumuahReminderReceiver` | Jumu'ah reminder | `JumuahReminderReceiver.kt:19-21` |
+| 9000–9006 | Notification ID | `AzkarAlarmReceiver` | Post-prayer azkar | contracts/notification-ids.md |
+| 9100 | Request code | `DailyRecalcReceiver` | 00:05 recalc | `DailyRecalcReceiver.kt:25` |
+| 9101, 9102 | Request code | `PrayerForegroundService` to `ToggleSilentModeReceiver` | Stop / Keep Vibration | `PrayerForegroundService.kt:82-83` |
+| 9999 | Notification ID; also test-adhan request code | `PrayerForegroundService`; `MainActivity` | Foreground service; test adhan | `PrayerForegroundService.kt:32`, `MainActivity.kt:460-466` |
+
+Within `PrayerAlarmReceiver` the request codes are 1001–1006, 2001–2006, **2101–2106**, 3001–3006, 7005–7030 (Dart snooze steps) and 9999: all unique. Widget request codes (`TasksWidget` widgetId +1000/+2000/+5000, another class) are outside this table. Notification IDs are unchanged (the pre-prayer reminder posts none; it only sets the foreground notification's mode). In the same commit as the code, `contracts/notification-ids.md` is updated: row 2001–2006 becomes "After-adhan snooze request codes (dead, F69)", a new row 2101–2106 "Pre-prayer reminder request codes", and the request-code offset note gains `+1100`.
 
 **8. Doze / Android 10.** The reminder uses `setExactAndAllowWhileIdle` (API 23+); on S+ a missing exact-alarm permission only logs a warning (as for the adhan alarm). No manifest change. Android 10 (nova 5T, API 29) takes the same path. UNVERIFIED for the reminder until R2. The adhan doze check S03 is a separate run.
 
@@ -109,21 +141,20 @@ Notification IDs are unchanged (1001–1006, 6001–6006, 9999; the 2001–2006 
 
 ## Decisions still open
 
-*   **D4 — Reminder when the adhan is off.** Recommended: independent (the tile's Off is the control). The adhan toggle does not cancel any alarm today, so there is nothing to mirror.
-*   **D5 — Snooze notification buttons.** The snooze has no live buttons or producer. Recommended: leave it as dead code now; if you want it revived, that is its own spec.
-*   **D6 — Request codes 4001–4006 for the pre-prayer reminder** (recommended, avoids the snooze overlap) vs keeping 2001–2006 (matches the existing contract row but a revived snooze would replace the reminder).
-*   **D7 — Arabic strings:** native-speaker review before release.
+*   **D6 confirmation:** request codes 2101–2106 instead of the requested 4001–4006 (4001 and 4000–4999 are task notification IDs).
+*   **Logout vs adhan-off:** reminder cancelled on logout, kept on adhan-off (D4); confirm this reading.
+*   **D8 — Windows gates.** The Windows reminder checks `prayer_notifications_enabled` and `notify_<prayer>` (`desktop_notification_service.dart:236-241`); the Android reminder as designed checks neither. UNKNOWN whether Android reads those keys anywhere. The owner decides whether the tile is the only gate on both platforms (recommended, consistent with D4) or the old toggles still apply.
 
 ## Tests to write first
 
-*   Kotlin unit (`./gradlew :app:testDebugUnitTest`): `reminderTriggerTime` for 5/10/15/30, 0, negative, and a past time (returns null); `FlutterPrefs.getInt` Long, Int, absent; the Arabic title builder for 1, 2, 3–10, 11+ minutes (Eastern numerals).
-*   Dart: provider test (default 10, set/get, invalid value falls back to 10); a widget test for the tile if `settings_screen` has an existing harness (UNKNOWN); `DesktopPrayerScheduler` skips the reminder timer when minutes is 0 and uses the stored value; `en.json` / `ar.json` key parity (existing check if any, UNKNOWN).
+*   Kotlin unit (`./gradlew :app:testDebugUnitTest`): `reminderTriggerTime` for 5/10/15/30, 0, negative, and a past time (returns null); `FlutterPrefs.getInt` Long, Int, absent; the Arabic body builder for N = 5, 10, 15, 30 (exact strings from "Texts", Eastern numerals, unit chosen by N) and the fallback for any other N.
+*   Dart: provider test (default 10, set/get, invalid value falls back to 10); a widget test for the tile if `settings_screen` has an existing harness (UNKNOWN); `DesktopPrayerScheduler` skips the reminder timer when minutes is 0 and uses the stored value; the Windows toast title and body equal the Kotlin strings for N = 5, 10, 15, 30 in both languages; `en.json` / `ar.json` key parity (existing check if any, UNKNOWN).
 *   Regression: existing Dart tests unchanged, `flutter analyze` count unchanged (408).
 
 ## Device check (after the fix)
 
 S05 (Android 10, nova 5T), steps also recorded in `reference/device-checklist.md`:
-1.  Tile **Off** → no reminder alarms (`dumpsys alarm` shows none with request codes 4001–4006), no reminder.
+1.  Tile **Off** → no reminder alarms (`dumpsys alarm` shows none with request codes 2101–2106), no reminder.
 2.  Tile **10** → reminder 10 min before a prayer: foreground notification shows "{Prayer} in 10 minutes", no buttons, no `MainActivity` launch; the adhan still fires at prayer time.
 3.  Change **10 → 5** → re-armed right away (`dumpsys alarm` shows the new trigger time; no duplicate).
 4.  **Reboot** → still armed.
@@ -140,7 +171,7 @@ S05 (Android 10, nova 5T), steps also recorded in `reference/device-checklist.md
 
 ## Open questions
 
-*   D4–D7 above.
 *   UNKNOWN: whether OEM battery policy on the nova 5T delays the reminder alarm (same question as S02/S03).
 *   UNKNOWN: whether `prayer_times_provider.dart` exposes a public way to re-run `prayerEffects` for the tile (first R1 task).
 *   UNKNOWN: tap behavior of the foreground notification in reminder mode (not traced).
+*   Related findings, outside this fix: F66 (adhan off only stops the sound), F69 (dead reminder-button and picker code), F70 (adhan alarms, post-checks and azkar are not cancelled on adhan-off or logout; `cancelAllAlarms` has no caller).
