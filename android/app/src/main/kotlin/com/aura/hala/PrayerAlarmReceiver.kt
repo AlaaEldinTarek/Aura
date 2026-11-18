@@ -1047,8 +1047,8 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         // Same card style as the foreground "Next Prayer" notification (F72, R1c): full custom view (no
         // DecoratedCustomViewStyle), background from the layout. The APP theme and the APP language pick one
         // of four layouts (light / dark x LTR / RTL), like notification_large*; direction never comes from
-        // the system locale. Collapsed = top row (icon, question, Remind Later); expanded adds the
-        // Done / Late / Missed row. No addAction: Android shows at most three and EMUI cannot colour them.
+        // the system locale. Collapsed (R1d) = compact: question, Remind Later, the three buttons; expanded = icon, question,
+        // subtitle, Remind Later and the buttons. No addAction: Android shows at most three and EMUI cannot colour them.
         val themeMode = FlutterPrefs.getString(context, "theme_mode", "system")
         val systemNight = (context.resources.configuration.uiMode and
             android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
@@ -1058,6 +1058,13 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             dark -> R.layout.notification_post_check_dark
             isArabic -> R.layout.notification_post_check_rtl
             else -> R.layout.notification_post_check
+        }
+        // R1d: compact collapsed layout (question + Remind Later + the three buttons, no icon, no subtitle)
+        val compactLayoutId = when {
+            dark && isArabic -> R.layout.notification_post_check_compact_dark_rtl
+            dark -> R.layout.notification_post_check_compact_dark
+            isArabic -> R.layout.notification_post_check_compact_rtl
+            else -> R.layout.notification_post_check_compact
         }
         val iconRes = when (PostCheckActions.iconKey(prayerName)) {
             "fajr" -> R.drawable.ic_prayer_fajr
@@ -1079,25 +1086,24 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             null
         }
         fun contentView(expanded: Boolean): android.widget.RemoteViews {
-            val view = android.widget.RemoteViews(context.packageName, layoutId)
+            val view = android.widget.RemoteViews(context.packageName, if (expanded) layoutId else compactLayoutId)
             view.setTextViewText(R.id.post_check_title, title)
-            view.setTextViewText(R.id.post_check_body, body)
-            iconBitmap()?.let { view.setImageViewBitmap(R.id.post_check_icon, it) }
             val corner = PostCheckActions.corner()
             view.setTextViewText(R.id.btn_remind_later, PostCheckActions.label(corner, isArabic))
             view.setOnClickPendingIntent(R.id.btn_remind_later, actionPending(corner))
             if (expanded) {
-                for (spec in PostCheckActions.buttons()) {
-                    val viewId = when (spec.key) {
-                        "done" -> R.id.btn_done
-                        "late" -> R.id.btn_late
-                        else -> R.id.btn_missed
-                    }
-                    view.setTextViewText(viewId, PostCheckActions.label(spec, isArabic))
-                    view.setOnClickPendingIntent(viewId, actionPending(spec))
+                view.setTextViewText(R.id.post_check_body, body)
+                iconBitmap()?.let { view.setImageViewBitmap(R.id.post_check_icon, it) }
+            }
+            // Both views carry the three buttons (same PendingIntents / request codes).
+            for (spec in PostCheckActions.buttons()) {
+                val viewId = when (spec.key) {
+                    "done" -> R.id.btn_done
+                    "late" -> R.id.btn_late
+                    else -> R.id.btn_missed
                 }
-            } else {
-                view.setViewVisibility(R.id.post_check_buttons, android.view.View.GONE)
+                view.setTextViewText(viewId, PostCheckActions.label(spec, isArabic))
+                view.setOnClickPendingIntent(viewId, actionPending(spec))
             }
             return view
         }
