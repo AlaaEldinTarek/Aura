@@ -7,6 +7,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/providers/auth_provider.dart';
 import '../../core/providers/preferences_provider.dart';
+import '../../core/providers/prayer_times_provider.dart';
+import '../../core/services/prayer_alarm_service.dart';
 import '../../core/utils/haptic_feedback.dart';
 import '../../core/utils/number_formatter.dart';
 import '../../core/theme/app_typography.dart';
@@ -305,6 +307,17 @@ class ProfileScreen extends ConsumerWidget {
                       return ProfileVersionTile(
                         title: isArabic ? 'الإصدار' : 'Version',
                         version: version,
+                        // Dev tile item (7 taps): the post-prayer check for the next prayer, now.
+                        firePostCheck: () async {
+                          final state = ref.read(prayerTimesProvider);
+                          final next = state.nextPrayer ??
+                              (state.prayerTimes.isNotEmpty
+                                  ? state.prayerTimes.first
+                                  : null);
+                          if (next == null) return;
+                          await PrayerAlarmService.instance.testPostCheckNow(
+                              next.name, next.nameAr, next.time);
+                        },
                       );
                     },
                   );

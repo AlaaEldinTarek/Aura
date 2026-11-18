@@ -40,3 +40,28 @@ Future<void> tapVersion(WidgetTester tester, int times) async {
     await tester.pump();
   }
 }
+
+/// Hosts the tile with the post-check dev item (docs/designs/fix-post-check-remind-later.md).
+Future<void> pumpTileWithPostCheck(
+  WidgetTester tester, {
+  required Future<void> Function() firePostCheck,
+  Locale locale = const Locale('en'),
+}) async {
+  tester.view.physicalSize = const Size(360, 640);
+  tester.view.devicePixelRatio = 1.0;
+  addTearDown(tester.view.reset);
+  await tester.pumpWidget(MaterialApp(
+    locale: locale,
+    home: Scaffold(
+      body: SingleChildScrollView(
+        child: ProfileVersionTile(
+          title: kVersionTitle,
+          version: kVersionValue,
+          fireTestAdhan: (_) async {},
+          canScheduleExactAlarms: () async => true,
+          firePostCheck: firePostCheck,
+        ),
+      ),
+    ),
+  ));
+}

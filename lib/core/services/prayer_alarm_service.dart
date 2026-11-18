@@ -184,6 +184,25 @@ class PrayerAlarmService {
     }
   }
 
+  /// Dev tile only (7 taps on Version): shows the real post-prayer check for [prayerName] now
+  /// (docs/designs/fix-post-check-remind-later.md).
+  Future<void> testPostCheckNow(
+      String prayerName, String prayerNameAr, DateTime prayerTime) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      await _channel.invokeMethod('testPostCheckNow', {
+        'prayerName': prayerName,
+        'prayerNameAr': prayerNameAr,
+        'prayerTime': prayerTime.millisecondsSinceEpoch,
+      });
+    } catch (e) {
+      debugPrint('❌ [PRAYER ALARMS] Error showing test post-check - $e');
+    }
+  }
+
   /// Check if exact alarm permission is granted
   Future<bool> canScheduleExactAlarms() async {
     if (!_isInitialized) {

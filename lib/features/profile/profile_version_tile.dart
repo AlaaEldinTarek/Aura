@@ -20,12 +20,17 @@ class ProfileVersionTile extends StatefulWidget {
   /// Defaults to [PrayerAlarmService.canScheduleExactAlarms].
   final Future<bool> Function()? canScheduleExactAlarms;
 
+  /// Shows the post-prayer check for the next prayer now (docs/designs/fix-post-check-remind-later.md).
+  /// When null the "Test post-check" item is not shown.
+  final Future<void> Function()? firePostCheck;
+
   const ProfileVersionTile({
     super.key,
     required this.title,
     required this.version,
     this.fireTestAdhan,
     this.canScheduleExactAlarms,
+    this.firePostCheck,
   });
 
   @override
@@ -84,6 +89,14 @@ class _ProfileVersionTileState extends State<ProfileVersionTile> {
     );
   }
 
+  Future<void> _firePostCheck() async {
+    final messenger = ScaffoldMessenger.of(context);
+    await widget.firePostCheck!();
+    messenger.showSnackBar(
+      SnackBar(content: Text('dev_test_post_check_sent'.tr())),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -102,6 +115,14 @@ class _ProfileVersionTileState extends State<ProfileVersionTile> {
             title: 'dev_test_adhan_title'.tr(),
             subtitle: 'dev_test_adhan_subtitle'.tr(),
             onTap: _confirmAndFire,
+            showChevron: false,
+          ),
+        if (_unlocked && widget.firePostCheck != null)
+          SettingTile(
+            icon: Icons.fact_check_outlined,
+            title: 'dev_test_post_check_title'.tr(),
+            subtitle: 'dev_test_post_check_subtitle'.tr(),
+            onTap: _firePostCheck,
             showChevron: false,
           ),
       ],
