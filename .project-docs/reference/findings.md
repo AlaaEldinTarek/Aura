@@ -994,6 +994,44 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   from `PrayerForegroundService.showAdhanModeNotification()`. The foreground service custom layout and the
   full-screen activity stay unchanged. Needs new notification ID + channel assignment (contracts update).
 
+## F69 — Dead reminder-button and picker code (found during the S05 reminder spec, 2026-11-18) — VERIFIED (static) — P6 cleanup
+- **Tag: P6 cleanup, LOW; not part of `docs/designs/fix-prayer-reminder.md` (owner decision D5, 2026-11-18).**
+  `ACTION_REMINDER_PRAYED/LATE/MISSED/LATER` appear only as constants (`PrayerAlarmReceiver.kt:35-38`), in the
+  dispatch (`:432-433`) and in `handleReminderAction` (`:845-897`); no `PendingIntent` is built with any of them, so no
+  reminder button exists on any notification. `open_reminder_picker` is read in `MainActivity.kt:94` but never set
+  anywhere in `android/` or `lib/` (same family as F13), so the Dart picker (`main_wrapper_screen.dart:245`) and
+  `_scheduleRemindLater` (`:803`) are unreachable, and `scheduleDelayedReminder` (`PrayerAlarmReceiver.kt:186`) has
+  no live caller. The "Remind Later" button that does exist is on the post-prayer check (6001-6006, `:967-1000`) and
+  is unrelated. The earlier plan note (reminder buttons "done") was wrong; the code never had them in the current tree.
+  Device impact: none (dead code). Searched: `android/`, `lib/`; reflection and generated code not checked.
+
+## F70 — Adhan-off and logout cancel no prayer alarms; `cancelAllAlarms` is unused (found during the S05 reminder spec, 2026-11-18) — VERIFIED (static), impact UNVERIFIED
+- **Tag: MEDIUM, needs an owner decision (related to F66, F59).** What stays armed:
+  - **Adhan off:** nothing is cancelled. The adhan alarms (request codes 1001-1006), post-prayer checks (3001-3006), azkar
+    alarms (`AzkarAlarmReceiver`, 3001-3006) and the 00:05 recalc keep firing; only sound is skipped at fire time
+    (`AdhanPlayer.kt:162-164`, `:220`). The fire path still runs (see F66).
+  - **Logout:** `profile_screen.dart:1038` -> `AuthService.signOut` (`auth_service.dart:244`) signs out of Firebase and
+    Google only; no alarm is cancelled and local data stays (F47f, F59). The next user on a shared phone keeps the same
+    prayer alarms.
+  - **`cancelAllAlarms` (`PrayerAlarmReceiver.kt:301-318`)** cancels only the six adhan alarms (1001-1006) and has no
+    Dart caller (`PrayerAlarmService.cancelAllAlarms`, `prayer_alarm_service.dart:216`, is never called): it would not
+    cancel post-checks, azkar, snooze or the new reminder alarms.
+  Owner decision 2026-11-18: **logout must cancel all alarm kinds in one place, including the pre-prayer reminder 2101–2106**
+  (adhan 1001-1006, post-checks 3001-3006, azkar, snooze, reminder). The S05 reminder spec does not cancel anything on
+  logout (a reminder-only cancel would come back at the 00:05 re-arm) and does not touch the adhan side; adhan-off keeps
+  the reminder armed (D4). No sign-out flag.
+
+## F71 — "Reminder Prayer" master switch does nothing on Android; per-prayer notify keys have no UI (found during the S05 reminder spec, 2026-11-18) — VERIFIED (static), device impact UNVERIFIED
+- **Tag: LOW now, becomes visible when the reminder is armed (see `docs/designs/fix-prayer-reminder.md`, D8/D9).** The Prayer
+  screen settings sheet has a switch "Reminder Prayer" / "تذكير الصلاة" (subtitle "Remind 10 minutes before prayer time")
+  that writes `prayer_notifications_enabled` (`prayer_screen.dart:1251-1266`). No Kotlin file reads that key, and the only
+  Dart readers are the dead `NotificationService.schedulePrayerNotification` (`notification_service.dart:295`) and the
+  Windows toast (`desktop_notification_service.dart:236-238`), so on Android the switch has no effect today. The subtitle
+  is hard-coded (no `.tr()`) with a raw `10` in the Arabic text. `notify_<prayer>`: its only writer
+  `togglePrayerNotification` (`notification_service.dart:1205`) has no caller, so no UI writes it; readers are
+  `notification_service.dart:992` (dead) and the Windows toast (`:239-241`, always true today). Whether the desktop build
+  shows the same sheet: UNKNOWN. Searched: `lib/`, `android/app/src/main/kotlin`; reflection not checked.
+
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
 - `ringer_mode` handler is in `MainActivity`, not `SilentModeAutomation.kt`.

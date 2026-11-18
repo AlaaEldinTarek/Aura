@@ -7,7 +7,8 @@ Verified 2026-11-06 at 4aa1022 by static grep (Step 2). Do NOT modify IDs. All I
 | --- | --- | --- | --- | --- | --- |
 | 1–6 | Flutter prayer notifications (`_fajrNotificationId`…) | `notification_service.dart:74–79` | — | No | Partial (Dart only) |
 | 1001–1006 | Adhan notification (Fajr, Sunrise, Dhuhr/Zuhr, Asr, Maghrib, Isha) | — | `PrayerAlarmReceiver.kt:48–53, getNotificationId :73` | No | Partial (Kotlin only) |
-| 2001–2006 | Pre-prayer reminders | — | `PrayerAlarmReceiver.kt:56–61, :85` | No | Partial (Kotlin only) |
+| 2001–2006 | Reminder IDs / request codes: after-adhan snooze (`scheduleDelayedReminder`); the notification-ID constants are unused (no separate reminder notification exists; the reminder is a mode of 9999). Dead path, finding F69 | — | `PrayerAlarmReceiver.kt:56–61, :85, :889–895` | No | Partial (Kotlin only) |
+| 2101–2106 | **PLANNED, not in code yet** (spec `docs/designs/fix-prayer-reminder.md`, owner-confirmed 2026-11-18): pre-prayer reminder **request codes only** (`requestCode + 1100`, `PrayerAlarmReceiver`); posts no notification of its own | — | not implemented | No | Spec only |
 | 2000 | PrayerRescheduleService foreground notification | — | `PrayerRescheduleService.kt:30` | No | Partial (Kotlin only) |
 | 3999 | Task daily summary | `notification_service.dart:805` | (`cancelNativeNotification` passthrough) | No | Verified |
 | 4001 | Daily task digest (08:00) | `notification_service.dart:1021` | — | No | Partial — inside 4000–4999 (F8) |
@@ -26,7 +27,7 @@ Verified 2026-11-06 at 4aa1022 by static grep (Step 2). Do NOT modify IDs. All I
 | 9999 | Prayer foreground service | — | `PrayerForegroundService.kt:32` | No | Partial |
 
 PendingIntent request-code offsets (not notification IDs, but must stay unique): `PrayerAlarmReceiver` +1000/+2000
-(`:147,:348,:372,:810`), `FocusModeReceiver` base 5000, `TasksWidget` widgetId +1000/+2000/+5000.
+(`:147,:348,:372,:810`; planned +1100 for the pre-prayer reminder, 2101–2106), `FocusModeReceiver` base 5000, `TasksWidget` widgetId +1000/+2000/+5000.
 Added 2026-11-07 (Kotlin EGM): silent restore 3999 (`SilentOffReceiver`), azkar 3000–3006, daily summary 7001,
 Jumu'ah 8001, daily recalc 9100, test adhan 9999, `NativeNotificationReceiver` / `TaskReminderReceiver` id, id+1, id+2 (+3),
 Focus relaunch 5996. Foreground-service silent buttons 8001/8002 removed (dead code, F68).
@@ -51,3 +52,5 @@ channel at launch. Spec: `docs/designs/fix-silent-mode-buttons-in-fgs.md`. Full 
 | `focus_mode_service` | — | `FocusModeService.kt:31` | Partial |
 | `prayer_reschedule` | — | `PrayerRescheduleService.kt:31` | Partial |
 | `channel_id` | — | `NativeNotificationReceiver.kt:44` is the **extra key**, not a channel; channel comes from Dart | — |
+
+Added 2026-11-18 (S05 reminder spec): 4001–4006 was checked for the reminder and is NOT free (4001 = daily task digest, 4000–4999 = task reminders), so the reminder uses 2101–2106. No 21xx value is used anywhere in `android/app/src/main`, `lib` or `test`. Full request-code table: `docs/designs/fix-prayer-reminder.md`.
