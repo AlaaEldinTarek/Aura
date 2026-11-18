@@ -1072,6 +1072,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             .setCustomBigContentView(contentView(true))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC) // same as the Next Prayer card; not sensitive
             .setAutoCancel(false) // tapping the card opens the popup; the notification stays until an answer
             .setContentIntent(contentPending)
 
