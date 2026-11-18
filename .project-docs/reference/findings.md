@@ -1032,6 +1032,23 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   `notification_service.dart:992` (dead) and the Windows toast (`:239-241`, always true today). Whether the desktop build
   shows the same sheet: UNKNOWN. Searched: `lib/`, `android/app/src/main/kotlin`; reflection not checked.
 
+## F72 — Post-prayer check: "Remind Later" is never visible (4 action buttons, Android shows 3) (owner report + code read, 2026-11-18) — HIGH — code VERIFIED, on-screen limit owner-reported + UNVERIFIED on other devices
+- **Tag: HIGH — a visible feature that the user cannot reach.** `PrayerAlarmReceiver.showPostPrayerCheckNotification`
+  (`PrayerAlarmReceiver.kt:996`) adds four actions with `addAction`: Done (`:1026`, request code `notificationId+1`), Late
+  (`:1038`, `+2`), Missed (`:1050`, `+3`), Remind Later (`:1062`, `+4`, action `ACTION_POST_LATER`). Standard Android
+  notifications show at most three action buttons, so the fourth is not shown. The owner only ever sees Done / Late /
+  Missed. `ACTION_POST_LATER` (handler `:1139`, cancels the notification and re-arms the post-check 15 min later) cannot be
+  reached from the UI.
+- **Device evidence (2026-11-18, nova 5T, Zuhr post-check):** logcat shows the notification posted with `actions=4`
+  (`NotificationService enqueueNotificationInternal … id=6003 … actions=4`, 12:09:00); the owner saw three buttons; the only
+  tap logged was Late (12:09:19, `Marked Zuhr as late`); no `Re-scheduled for Zuhr` line and no 3003 alarm in
+  `dumpsys alarm` at 12:35. That the limit is three on every Android version and every OEM: UNVERIFIED (AOSP constant, not
+  checked on other devices).
+- **Effect:** scenario S08's "remind again" half is BLOCKED (cannot be run from the UI). The second remind-again path in the
+  Dart/other code was not traced. Spec: `docs/designs/fix-post-check-remind-later.md` (Draft).
+- Searched: `PrayerAlarmReceiver.kt`, `PrayerForegroundService.kt`, `res/layout/notification_*.xml`; Windows toast path not
+  checked.
+
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
 - `ringer_mode` handler is in `MainActivity`, not `SilentModeAutomation.kt`.
