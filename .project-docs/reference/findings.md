@@ -1016,8 +1016,10 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   - **`cancelAllAlarms` (`PrayerAlarmReceiver.kt:301-318`)** cancels only the six adhan alarms (1001-1006) and has no
     Dart caller (`PrayerAlarmService.cancelAllAlarms`, `prayer_alarm_service.dart:216`, is never called): it would not
     cancel post-checks, azkar, snooze or the new reminder alarms.
-  The S05 reminder spec only makes sure the reminder alarms are cancelled on logout and not on adhan-off (D4); the
-  adhan side is not fixed there.
+  Owner decision 2026-11-18: **logout must cancel all alarm kinds in one place, including the pre-prayer reminder 2101–2106**
+  (adhan 1001-1006, post-checks 3001-3006, azkar, snooze, reminder). The S05 reminder spec does not cancel anything on
+  logout (a reminder-only cancel would come back at the 00:05 re-arm) and does not touch the adhan side; adhan-off keeps
+  the reminder armed (D4). No sign-out flag.
 
 ## F71 — "Reminder Prayer" master switch does nothing on Android; per-prayer notify keys have no UI (found during the S05 reminder spec, 2026-11-18) — VERIFIED (static), device impact UNVERIFIED
 - **Tag: LOW now, becomes visible when the reminder is armed (see `docs/designs/fix-prayer-reminder.md`, D8/D9).** The Prayer
