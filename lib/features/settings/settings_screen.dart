@@ -17,6 +17,8 @@ import '../../core/widgets/permission_dialog.dart';
 import '../../core/widgets/setting_tile.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/utils/app_language.dart';
+import '../../core/utils/pre_prayer_reminder.dart';
+import '../../core/utils/pre_prayer_reminder_labels.dart';
 import 'adhan_calculation_method.dart';
 import 'asr_madhab_dialog.dart';
 import 'asr_madhab_selection.dart';
@@ -81,6 +83,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final notifEnabled = ref.watch(taskNotificationsEnabledProvider).valueOrNull ?? true;
     final reminderMins = ref.watch(taskReminderMinutesProvider).valueOrNull ?? 30;
     final jumuahEnabled = ref.watch(jumuahReminderEnabledProvider);
+    final reminderOn = ref.watch(reminderMasterProvider);
+    final reminderLead = ref.watch(reminderMinutesProvider);
     final themeStr = ref.watch(themeModeProvider).value ?? 'system';
     final language = ref.watch(languageProvider).value ?? 'en';
 
@@ -238,6 +242,20 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         },
                       ),
                     ),
+                    Opacity(
+                      opacity: reminderOn ? 1.0 : 0.45,
+                      child: SettingTile(
+                        icon: Icons.notifications_active_outlined,
+                        iconColor: const Color(0xFFD4A017),
+                        title: 'pre_prayer_reminder'.tr(),
+                        subtitle:
+                            reminderOptionLabel(reminderLead, isArabic: isArabic),
+                        onTap: reminderOn
+                            ? () => _showReminderLeadPicker(
+                                context, isDark, reminderLead, isArabic)
+                            : null,
+                      ),
+                    ),
                     SettingTileSwitch(
                       icon: Icons.track_changes_outlined,
                       iconColor: Colors.green,
@@ -367,6 +385,35 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               }
             },
           )).toList(),
+        ),
+      ),
+    );
+  }
+
+  void _showReminderLeadPicker(
+      BuildContext context, bool isDark, int current, bool isArabic) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('pre_prayer_reminder'.tr()),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: kReminderMinuteOptions
+              .map((mins) => RadioListTile<int>(
+                    value: mins,
+                    groupValue: current,
+                    title: Text(reminderOptionLabel(mins, isArabic: isArabic)),
+                    activeColor: AppConstants.getPrimary(isDark),
+                    onChanged: (v) async {
+                      if (v != null) {
+                        await ref
+                            .read(reminderMinutesProvider.notifier)
+                            .setMinutes(v);
+                        if (ctx.mounted) Navigator.pop(ctx);
+                      }
+                    },
+                  ))
+              .toList(),
         ),
       ),
     );

@@ -23,6 +23,8 @@ import '../../core/widgets/offline_banner.dart';
 import '../../core/widgets/info_tip_icon.dart';
 import '../../core/utils/hijri_date.dart';
 import '../../core/utils/number_formatter.dart';
+import '../../core/providers/preferences_provider.dart';
+import '../../core/utils/pre_prayer_reminder_labels.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../core/services/adhan_player_service.dart';
 import '../../core/services/background_service_manager.dart';
@@ -1081,15 +1083,14 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
 }
 
 /// Prayer Settings Page (Full Screen)
-class PrayerSettingsPage extends StatefulWidget {
+class PrayerSettingsPage extends ConsumerStatefulWidget {
   const PrayerSettingsPage({super.key});
 
   @override
-  State<PrayerSettingsPage> createState() => _PrayerSettingsPageState();
+  ConsumerState<PrayerSettingsPage> createState() => _PrayerSettingsPageState();
 }
 
-class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
-  bool _notificationsEnabled = true;
+class _PrayerSettingsPageState extends ConsumerState<PrayerSettingsPage> {
   bool _backgroundNotificationEnabled = true;
   bool _adhanEnabled = true;
   bool _silentModeEnabled = true;
@@ -1127,8 +1128,6 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
     final madhab = prefs.getString(AppConstants.keyAsrMadhab) ?? 'Shafi';
 
     // Load settings from shared prefs
-    final notificationsEnabled =
-        prefs.getBool(AppConstants.keyPrayerNotificationsEnabled) ?? true;
     final backgroundNotificationEnabled =
         prefs.getBool(AppConstants.keyBackgroundNotificationEnabled) ?? true;
     final silentModeEnabled =
@@ -1138,7 +1137,6 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
 
     if (mounted) {
       setState(() {
-        _notificationsEnabled = notificationsEnabled;
         _backgroundNotificationEnabled = backgroundNotificationEnabled;
         _adhanEnabled = enabled;
         _silentModeEnabled = silentModeEnabled;
@@ -1246,23 +1244,17 @@ class _PrayerSettingsPageState extends State<PrayerSettingsPage> {
               ),
             ),
           ),
-          // Reminder Prayer Toggle
+          // Reminder Prayer Toggle: the only on/off of the pre-prayer reminder
           SwitchListTile(
             secondary: Icon(Icons.notifications,
                 color: AppConstants.getPrimary(isDark)),
             title: Text(isArabic ? 'تذكير الصلاة' : 'Reminder Prayer'),
-            subtitle: Text(isArabic
-                ? 'تنبيه قبل موعد الصلاة بـ 10 دقائق'
-                : 'Remind 10 minutes before prayer time'),
-            value: _notificationsEnabled,
+            subtitle: Text(reminderSwitchSubtitle(
+                ref.watch(reminderMinutesProvider),
+                isArabic: isArabic)),
+            value: ref.watch(reminderMasterProvider),
             onChanged: (value) async {
-              setState(() {
-                _notificationsEnabled = value;
-              });
-              // Save to shared preferences
-              final prefs = await SharedPreferences.getInstance();
-              await prefs.setBool(
-                  AppConstants.keyPrayerNotificationsEnabled, value);
+              await ref.read(reminderMasterProvider.notifier).setEnabled(value);
             },
           ),
           // Background Notification Toggle

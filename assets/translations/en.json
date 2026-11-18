@@ -224,6 +224,11 @@
   "jumua_prayer_name": "Jumu'ah",
   "jumua_reminder_title": "Jumu'ah Reminder",
   "jumua_reminder_subtitle": "Get notified before Friday prayer",
+  "pre_prayer_reminder": "Pre-prayer reminder",
+  "pre_prayer_reminder_option": "{} min",
+  "pre_prayer_reminder_option_many": "{} min",
+  "pre_prayer_reminder_switch_subtitle": "{} minutes before each prayer",
+  "pre_prayer_reminder_switch_subtitle_many": "{} minutes before each prayer",
 
   "overlay_permission_title": "Display Over Apps",
   "overlay_permission_desc": "Required to show the Focus Mode screen over other apps",

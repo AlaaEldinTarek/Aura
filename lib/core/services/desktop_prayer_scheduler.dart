@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'dart:io' show Platform;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/prayer_time.dart';
+import '../utils/pre_prayer_reminder.dart';
 import 'desktop_adhan_service.dart';
 import 'desktop_notification_service.dart';
 import 'desktop_tray_service.dart';
@@ -23,6 +24,17 @@ class DesktopPrayerScheduler {
 
   final List<Timer> _timers = [];
 
+  /// Pre-prayer reminder timers, kept apart so a tile or switch change can
+  /// re-create only these and leave the adhan and post-check timers alone.
+  final List<Timer> _reminderTimers = [];
+  List<PrayerTime> _lastPrayerTimes = const [];
+
+  @visibleForTesting
+  int get reminderTimerCount => _reminderTimers.length;
+
+  @visibleForTesting
+  int get otherTimerCount => _timers.length;
+
   final StreamController<DesktopPrayerEvent> _prayerTimeController =
       StreamController<DesktopPrayerEvent>.broadcast();
 
@@ -41,40 +53,64 @@ class DesktopPrayerScheduler {
 
     cancelAll();
 
+    _lastPrayerTimes = prayerTimes;
     final prefs = await SharedPreferences.getInstance();
     final reminderMinutes =
-        prefs.getInt('notification_reminder_minutes') ?? 10;
+        normalizeReminderMinutes(prefs.getInt(kReminderMinutesKey));
+    final reminderOn = prefs.getBool('prayer_notifications_enabled') ?? true;
     final now = DateTime.now();
 
     for (final prayer in prayerTimes) {
       if (prayer.name == 'Sunrise') continue;
       if (!prayer.time.isAfter(now)) continue;
 
-      _schedulePrayerTimers(prayer, now, reminderMinutes);
+      _schedulePrayerTimers(prayer, now);
+      if (reminderOn) _scheduleReminderTimer(prayer, now, reminderMinutes);
     }
 
     debugPrint(
         'DesktopPrayerScheduler: ${_timers.length} timers set for today');
   }
 
-  void _schedulePrayerTimers(
+  /// Re-create only the pre-prayer reminder timers (tile or switch change).
+  /// The adhan and post-prayer check timers are not touched.
+  Future<void> rescheduleReminders() async {
+    if (!isDesktop) return;
+    for (final t in _reminderTimers) {
+      t.cancel();
+    }
+    _reminderTimers.clear();
+    final prefs = await SharedPreferences.getInstance();
+    final reminderOn = prefs.getBool('prayer_notifications_enabled') ?? true;
+    if (!reminderOn) return;
+    final minutes = normalizeReminderMinutes(prefs.getInt(kReminderMinutesKey));
+    final now = DateTime.now();
+    for (final prayer in _lastPrayerTimes) {
+      if (prayer.name == 'Sunrise') continue;
+      if (!prayer.time.isAfter(now)) continue;
+      _scheduleReminderTimer(prayer, now, minutes);
+    }
+    debugPrint(
+        'DesktopPrayerScheduler: ${_reminderTimers.length} reminder timers re-created');
+  }
+
+  void _scheduleReminderTimer(
       PrayerTime prayer, DateTime now, int reminderMinutes) {
-    // Pre-prayer reminder (N minutes before)
     final reminderTime =
         prayer.time.subtract(Duration(minutes: reminderMinutes));
-    if (reminderTime.isAfter(now)) {
-      final reminderDelay = reminderTime.difference(now);
-      _timers.add(Timer(reminderDelay, () async {
-        debugPrint(
-            '🔔 [DESKTOP] Pre-prayer reminder: ${prayer.name} in $reminderMinutes min');
-        await DesktopNotificationService.instance.showPrePrayerNotification(
-          prayer.name,
-          prayer.nameAr,
-          reminderMinutes,
-        );
-      }));
-    }
+    if (!reminderTime.isAfter(now)) return;
+    _reminderTimers.add(Timer(reminderTime.difference(now), () async {
+      debugPrint(
+          '🔔 [DESKTOP] Pre-prayer reminder: ${prayer.name} in $reminderMinutes min');
+      await DesktopNotificationService.instance.showPrePrayerNotification(
+        prayer.name,
+        prayer.nameAr,
+        reminderMinutes,
+      );
+    }));
+  }
 
+  void _schedulePrayerTimers(PrayerTime prayer, DateTime now) {
     // Prayer time — play adhan + emit event (in-app overlay) + Windows toast
     final prayerDelay = prayer.time.difference(now);
     _timers.add(Timer(prayerDelay, () async {
@@ -117,6 +153,10 @@ class DesktopPrayerScheduler {
       t.cancel();
     }
     _timers.clear();
+    for (final t in _reminderTimers) {
+      t.cancel();
+    }
+    _reminderTimers.clear();
     debugPrint('DesktopPrayerScheduler: All timers cancelled');
   }
 }

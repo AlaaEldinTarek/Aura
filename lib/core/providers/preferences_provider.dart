@@ -1,3 +1,5 @@
+import '../services/pre_prayer_reminder_service.dart';
+import '../utils/pre_prayer_reminder.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -492,6 +494,59 @@ class JumuahReminderNotifier extends StateNotifier<bool> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_jumuahReminderKey, value);
     state = value;
+  }
+}
+
+// ─── Pre-prayer reminder: switch (only on/off) + lead time ───────────────────
+// Spec: docs/designs/fix-prayer-reminder.md (D9).
+
+const _reminderMasterKey = 'prayer_notifications_enabled';
+
+final reminderMasterProvider =
+    StateNotifierProvider<ReminderMasterNotifier, bool>((ref) {
+  return ReminderMasterNotifier();
+});
+
+class ReminderMasterNotifier extends StateNotifier<bool> {
+  ReminderMasterNotifier() : super(true) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    final prefs = await SharedPreferences.getInstance();
+    state = prefs.getBool(_reminderMasterKey) ?? true;
+  }
+
+  Future<void> setEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_reminderMasterKey, value);
+    state = value;
+    await applyPreReminderChange(masterEnabled: value);
+  }
+}
+
+final reminderMinutesProvider =
+    StateNotifierProvider<ReminderMinutesNotifier, int>((ref) {
+  return ReminderMinutesNotifier();
+});
+
+class ReminderMinutesNotifier extends StateNotifier<int> {
+  ReminderMinutesNotifier() : super(kDefaultReminderMinutes) {
+    _init();
+  }
+
+  Future<void> _init() async {
+    final prefs = await SharedPreferences.getInstance();
+    state = normalizeReminderMinutes(prefs.getInt(kReminderMinutesKey));
+  }
+
+  Future<void> setMinutes(int value) async {
+    final minutes = normalizeReminderMinutes(value);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(kReminderMinutesKey, minutes);
+    state = minutes;
+    final masterOn = prefs.getBool(_reminderMasterKey) ?? true;
+    if (masterOn) await applyPreReminderChange(masterEnabled: true);
   }
 }
 

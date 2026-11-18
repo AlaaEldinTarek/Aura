@@ -29,6 +29,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         const val EXTRA_PRAYER_NAME_AR = "prayer_name_ar"
         const val EXTRA_PRAYER_TIME = "prayer_time"
         const val EXTRA_IS_REMINDER = "is_reminder"
+        const val EXTRA_REMINDER_MINUTES = "reminder_minutes"
         const val EXTRA_IS_TEST = "is_test"
         const val ACTION_STOP_ADHAN = "com.aura.hala.STOP_ADHAN"
         const val ACTION_TOGGLE_SILENT = "com.aura.hala.TOGGLE_SILENT"
@@ -106,8 +107,34 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             }
         }
 
+        private val REMINDER_PRAYERS = listOf(
+            Triple("Fajr", "الفجر", 1001),
+            Triple("Zuhr", "الظهر", 1003),
+            Triple("Asr", "العصر", 1004),
+            Triple("Maghrib", "المغرب", 1005),
+            Triple("Isha", "العشاء", 1006)
+        )
+
+        private fun reminderPendingIntent(context: Context, adhanRequestCode: Int, intent: Intent): PendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                ReminderLogic.requestCode(adhanRequestCode), // 2101..2106
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
+        /** Cancel one prayer's pre-prayer reminder alarm (request code 2101..2106). */
+        fun cancelReminderAlarm(context: Context, adhanRequestCode: Int) {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            alarmManager.cancel(reminderPendingIntent(context, adhanRequestCode, Intent(context, PrayerAlarmReceiver::class.java)))
+        }
+
         /**
-         * Schedule a 45-minute reminder alarm before prayer time
+         * Schedule the pre-prayer reminder alarm N minutes before prayer time.
+         * N = notification_reminder_minutes (default 10); armed only if the
+         * "Reminder Prayer" switch is on. The target time is always recorded so
+         * rearmReminderAlarms can re-arm without today's times. Request code
+         * 2101..2106. Spec: docs/designs/fix-prayer-reminder.md.
          */
         fun scheduleReminderAlarm(
             context: Context,
@@ -117,14 +144,22 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             requestCode: Int
         ) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
-            // Schedule 45 minutes before prayer time
-            val reminderTime = prayerTime - (45 * 60 * 1000) // 45 minutes in milliseconds
             val now = System.currentTimeMillis()
 
-            // Only schedule if reminder time is in the future
-            if (reminderTime <= now) {
-                Log.w(TAG, "⚠️ [REMINDER] $prayerName reminder time has passed, skipping")
+            context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE).edit()
+                .putLong("reminder_target_${if (prayerName == "Dhuhr") "Zuhr" else prayerName}", prayerTime).apply()
+
+            val masterOn = FlutterPrefs.getBoolean(context, ReminderLogic.KEY_MASTER, true)
+            val minutes = ReminderLogic.normalizeMinutes(
+                FlutterPrefs.getInt(context, ReminderLogic.KEY_MINUTES, ReminderLogic.DEFAULT_MINUTES)
+            )
+            val reminderTime = if (ReminderLogic.shouldArm(masterOn, prayerName))
+                ReminderLogic.triggerTime(prayerTime, minutes, now) else null
+
+            if (reminderTime == null) {
+                // Off, Sunrise or already past: make sure no stale reminder stays armed
+                cancelReminderAlarm(context, requestCode)
+                Log.d(TAG, "⏭️ [REMINDER] $prayerName not armed (master=$masterOn, ${minutes}min)")
                 return
             }
 
@@ -140,43 +175,64 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
                 putExtra(EXTRA_PRAYER_NAME_AR, prayerNameAr)
                 putExtra(EXTRA_PRAYER_TIME, prayerTime)
                 putExtra(EXTRA_IS_REMINDER, true)
+                putExtra(EXTRA_REMINDER_MINUTES, minutes)
             }
-
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                requestCode + 1000, // Offset to avoid conflict with prayer alarm
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
+            val pendingIntent = reminderPendingIntent(context, requestCode, intent)
 
             // Use setExactAndAllowWhileIdle for precise timing even in Doze mode
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP,
-                    reminderTime,
-                    pendingIntent
-                )
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, reminderTime, pendingIntent)
             } else {
-                alarmManager.setExact(
-                    AlarmManager.RTC_WAKEUP,
-                    reminderTime,
-                    pendingIntent
-                )
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, reminderTime, pendingIntent)
             }
 
-            val delay = reminderTime - now
-            val delayMinutes = delay / 1000 / 60
             val reminderTimeStr = DateFormat.format("HH:mm", Date(reminderTime))
             val prayerTimeStr = DateFormat.format("HH:mm", Date(prayerTime))
-            val nowStr = DateFormat.format("HH:mm", Date(now))
+            Log.d(TAG, "🔔 [REMINDER SCHEDULED] $prayerName at $reminderTimeStr ($minutes min before $prayerTimeStr), req=${ReminderLogic.requestCode(requestCode)}")
+        }
 
-            Log.d(TAG, "═══════════════════════════════════════")
-            Log.d(TAG, "🔔 [REMINDER SCHEDULED] $prayerName")
-            Log.d(TAG, "⏰ Current time: $nowStr")
-            Log.d(TAG, "⏰ Reminder time: $reminderTimeStr (45 min before $prayerTimeStr)")
-            Log.d(TAG, "⏳ Time until reminder: $delayMinutes minutes")
-            Log.d(TAG, "🎯 Request code: ${requestCode + 1000}")
-            Log.d(TAG, "═══════════════════════════════════════")
+        /** Cancel all five pre-prayer reminder alarms and clear reminder mode (switch off). */
+        fun cancelReminderAlarms(context: Context) {
+            for ((_, _, adhanCode) in REMINDER_PRAYERS) {
+                try { cancelReminderAlarm(context, adhanCode) } catch (e: Exception) {
+                    Log.e(TAG, "❌ [REMINDER] cancel failed for $adhanCode: ${e.message}")
+                }
+            }
+            clearReminderState(context)
+            Log.d(TAG, "🔕 [REMINDER] All reminder alarms cancelled")
+        }
+
+        /**
+         * Re-arm only the reminder alarms (tile or switch change) from the target
+         * times recorded by scheduleReminderAlarm. Touches no adhan, post-check
+         * or azkar alarm.
+         */
+        fun rearmReminderAlarms(context: Context) {
+            val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+            val now = System.currentTimeMillis()
+            for ((name, nameAr, adhanCode) in REMINDER_PRAYERS) {
+                try {
+                    val target = prefs.getLong("reminder_target_$name", 0L)
+                    if (target > now) {
+                        scheduleReminderAlarm(context, name, nameAr, target, adhanCode)
+                    } else {
+                        cancelReminderAlarm(context, adhanCode)
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "❌ [REMINDER] re-arm failed for $name: ${e.message}")
+                }
+            }
+        }
+
+        private fun clearReminderState(context: Context) {
+            context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE).edit()
+                .putBoolean("reminder_active", false)
+                .remove("reminder_prayer_name")
+                .remove("reminder_prayer_name_ar")
+                .remove("reminder_prayer_time")
+                .remove("reminder_kind")
+                .remove("reminder_minutes")
+                .apply()
         }
 
         /**
@@ -293,6 +349,14 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             Log.d(TAG, "⏳ Time until alarm: $delayMinutes minutes")
             Log.d(TAG, "🎯 Request code: $requestCode")
             Log.d(TAG, "═══════════════════════════════════════")
+
+            // Pre-prayer reminder: after the adhan alarm is set, in its own try/catch
+            // so a reminder failure can never block or delay the adhan.
+            try {
+                scheduleReminderAlarm(context, prayerName, prayerNameAr, prayerTime, requestCode)
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ [REMINDER] arming failed for $prayerName: ${e.message}")
+            }
         }
 
         /**
@@ -314,6 +378,9 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
                 alarmManager.cancel(pendingIntent)
             }
 
+            try { cancelReminderAlarms(context) } catch (e: Exception) {
+                Log.e(TAG, "❌ [REMINDER] cancel failed: ${e.message}")
+            }
             Log.d(TAG, "All prayer alarms cancelled")
         }
 
@@ -436,15 +503,28 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         }
 
         if (isReminder) {
-            // 45-min reminder: write to SharedPreferences for foreground service to pick up
-            Log.d(TAG, "⏰ [REMINDER] 45-minute reminder for $prayerName → activating reminder mode")
+            val minutes = intent.getIntExtra(EXTRA_REMINDER_MINUTES, 0)
+            val masterOn = FlutterPrefs.getBoolean(context, ReminderLogic.KEY_MASTER, true)
+            if (minutes > 0 && !masterOn) {
+                Log.d(TAG, "⏭️ [REMINDER] $prayerName dropped: Reminder Prayer switch is off")
+                return
+            }
+            // Reminder: write to SharedPreferences for the foreground service to pick up
+            Log.d(TAG, "⏰ [REMINDER] reminder for $prayerName → activating reminder mode")
             val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
-            prefs.edit()
+            val editor = prefs.edit()
                 .putString("reminder_prayer_name", prayerName)
                 .putString("reminder_prayer_name_ar", prayerNameAr)
                 .putLong("reminder_prayer_time", prayerTime)
                 .putBoolean("reminder_active", true)
-                .apply()
+            if (minutes > 0) {
+                // Pre-prayer reminder: information only (fixed N, no countdown)
+                editor.putString("reminder_kind", "pre").putInt("reminder_minutes", minutes)
+            } else {
+                editor.remove("reminder_kind").remove("reminder_minutes")
+            }
+            editor.apply()
+            PrayerForegroundService.nudge()
             return
         }
 
@@ -452,6 +532,19 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         val scheduledTimeStr = DateFormat.format("HH:mm:ss", Date(prayerTime))
         Log.d(TAG, "📿 [PRAYER] Name: $prayerName ($prayerNameAr)")
         Log.d(TAG, "⏰ [PRAYER] Scheduled for: $scheduledTimeStr")
+
+        // End of the pre-prayer reminder: at the prayer alarm, whether or not the
+        // adhan is on, so "in N minutes" never stays after the prayer time.
+        try {
+            val reminderPrefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+            if (ReminderLogic.shouldClear(reminderPrefs.getString("reminder_prayer_name", null), prayerName)) {
+                clearReminderState(context)
+                PrayerForegroundService.nudge()
+                Log.d(TAG, "✅ [REMINDER] cleared at the $prayerName alarm")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [REMINDER] clear failed: ${e.message}")
+        }
 
         // ── Safety guards ─────────────────────────────────────────────────────────
         // (1) Sunrise must NEVER trigger an alarm — no adhan, no notification, no
