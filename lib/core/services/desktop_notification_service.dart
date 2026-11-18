@@ -9,6 +9,7 @@ import '../models/prayer_record.dart';
 import '../providers/daily_prayer_status_provider.dart';
 import '../providers/prayer_times_provider.dart';
 import '../utils/prayer_time_rules.dart';
+import '../utils/pre_prayer_reminder.dart';
 import 'desktop_adhan_service.dart';
 import 'prayer_tracking_service.dart';
 import 'task_service.dart';
@@ -233,18 +234,20 @@ class DesktopNotificationService {
   Future<void> showPrePrayerNotification(
       String prayerName, String prayerNameAr, int minutesBefore) async {
     final prefs = await SharedPreferences.getInstance();
+    // The "Reminder Prayer" switch is the only on/off. The per-prayer
+    // notify_<prayer> keys are ignored (no UI writes them; spec D8).
     final masterEnabled =
         prefs.getBool('prayer_notifications_enabled') ?? true;
     if (!masterEnabled) return;
-    final perPrayerEnabled =
-        prefs.getBool('notify_${prayerName.toLowerCase()}') ?? true;
-    if (!perPrayerEnabled) return;
 
     final isArabic = (prefs.getString('language') ?? 'en') == 'ar';
-    final title = isArabic ? prayerNameAr : prayerName;
-    final body = isArabic
-        ? 'الصلاة بعد $minutesBefore دقائق'
-        : 'Prayer in $minutesBefore minutes';
+    final title = reminderTitle(isArabic: isArabic);
+    final body = reminderBody(
+      prayerName: getPrayerDisplayName(prayerName, isArabic: false),
+      prayerNameAr: getPrayerDisplayName(prayerName, isArabic: true),
+      minutes: minutesBefore,
+      isArabic: isArabic,
+    );
     final id = 'reminder_${prayerName.toLowerCase()}';
     if (!isDesktop) return;
     await _showSystemToast(title, body, identifier: id, isArabic: isArabic);

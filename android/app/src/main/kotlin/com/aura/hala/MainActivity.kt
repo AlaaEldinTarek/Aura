@@ -484,6 +484,24 @@ class MainActivity : FlutterFragmentActivity() {
                     Log.d("PrayerChannel", "🧪 Test alarm scheduled in 10 seconds for $prayerName")
                     result.success(true)
                 }
+                "rearmReminderAlarms" -> {
+                    try {
+                        PrayerAlarmReceiver.rearmReminderAlarms(this)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        Log.e("PrayerChannel", "❌ rearmReminderAlarms failed: ${e.message}")
+                        result.error("REMINDER_ERROR", e.message, null)
+                    }
+                }
+                "cancelReminderAlarms" -> {
+                    try {
+                        PrayerAlarmReceiver.cancelReminderAlarms(this)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        Log.e("PrayerChannel", "❌ cancelReminderAlarms failed: ${e.message}")
+                        result.error("REMINDER_ERROR", e.message, null)
+                    }
+                }
                 "cancelAllPrayerAlarms" -> {
                     Log.d("PrayerChannel", "Cancelling all prayer alarms")
                     PrayerAlarmReceiver.cancelAllAlarms(this)

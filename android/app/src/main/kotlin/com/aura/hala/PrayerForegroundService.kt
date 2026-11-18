@@ -607,8 +607,25 @@ class PrayerForegroundService : Service() {
         // Mosque icon for reminder mode
         loadMosqueIcon()?.let { contentView.setImageViewBitmap(R.id.notification_logo, it) }
 
-        // Title: "Did you pray Zuhr?"
         val displayName = getDisplayPrayerName(prayerName, prayerNameAr, isArabic)
+        val reminderPrefs = getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+        if (reminderPrefs.getString("reminder_kind", null) == "pre") {
+            // Pre-prayer reminder: information only, fixed N (no countdown, no question)
+            contentView.setTextViewText(R.id.notification_title, ReminderLogic.title(isArabic))
+            contentView.setTextViewText(
+                R.id.notification_time,
+                ReminderLogic.body(displayName, displayName, reminderPrefs.getInt("reminder_minutes", 10), isArabic)
+            )
+            contentView.setViewVisibility(R.id.notification_until, android.view.View.GONE)
+            builder
+                .setContentTitle(headerText)
+                .setCustomContentView(contentView)
+                .setCustomBigContentView(contentView)
+            Log.d(TAG, "⏰ [REMINDER_MODE] pre-prayer $prayerName (information only)")
+            return
+        }
+
+        // Title: "Did you pray Zuhr?" (legacy reminder mode)
         val titleText = if (isArabic) "هل صليت $displayName؟" else "Did you pray $displayName?"
         contentView.setTextViewText(R.id.notification_title, titleText)
 

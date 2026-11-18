@@ -224,6 +224,11 @@
   "jumua_prayer_name": "الجمعة",
   "jumua_reminder_title": "تذكير صلاة الجمعة",
   "jumua_reminder_subtitle": "إشعار قبل حلول وقت صلاة الجمعة",
+  "pre_prayer_reminder": "التذكير قبل الصلاة",
+  "pre_prayer_reminder_option": "{} دقائق",
+  "pre_prayer_reminder_option_many": "{} دقيقة",
+  "pre_prayer_reminder_switch_subtitle": "قبل كل صلاة بـ {} دقائق",
+  "pre_prayer_reminder_switch_subtitle_many": "قبل كل صلاة بـ {} دقيقة",
 
   "overlay_permission_title": "العرض فوق التطبيقات",
   "overlay_permission_desc": "مطلوب لعرض شاشة وضع التركيز فوق التطبيقات الأخرى",

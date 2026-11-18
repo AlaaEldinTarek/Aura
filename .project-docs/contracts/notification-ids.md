@@ -8,7 +8,7 @@ Verified 2026-11-06 at 4aa1022 by static grep (Step 2). Do NOT modify IDs. All I
 | 1–6 | Flutter prayer notifications (`_fajrNotificationId`…) | `notification_service.dart:74–79` | — | No | Partial (Dart only) |
 | 1001–1006 | Adhan notification (Fajr, Sunrise, Dhuhr/Zuhr, Asr, Maghrib, Isha) | — | `PrayerAlarmReceiver.kt:48–53, getNotificationId :73` | No | Partial (Kotlin only) |
 | 2001–2006 | Reminder IDs / request codes: after-adhan snooze (`scheduleDelayedReminder`); the notification-ID constants are unused (no separate reminder notification exists; the reminder is a mode of 9999). Dead path, finding F69 | — | `PrayerAlarmReceiver.kt:56–61, :85, :889–895` | No | Partial (Kotlin only) |
-| 2101–2106 | **PLANNED, not in code yet** (spec `docs/designs/fix-prayer-reminder.md`, owner-confirmed 2026-11-18): pre-prayer reminder **request codes only** (`requestCode + 1100`, `PrayerAlarmReceiver`); posts no notification of its own | — | not implemented | No | Spec only |
+| 2101–2106 | Pre-prayer reminder **request codes only** (`requestCode + 1100`, `PrayerAlarmReceiver`); posts no notification of its own (spec `docs/designs/fix-prayer-reminder.md`, owner-confirmed 2026-11-18) | — | `PrayerAlarmReceiver.kt` (`scheduleReminderAlarm`, `ReminderLogic.requestCode`) | No | Code on branch `fix/prayer-reminder`, not device-verified |
 | 2000 | PrayerRescheduleService foreground notification | — | `PrayerRescheduleService.kt:30` | No | Partial (Kotlin only) |
 | 3999 | Task daily summary | `notification_service.dart:805` | (`cancelNativeNotification` passthrough) | No | Verified |
 | 4001 | Daily task digest (08:00) | `notification_service.dart:1021` | — | No | Partial — inside 4000–4999 (F8) |
