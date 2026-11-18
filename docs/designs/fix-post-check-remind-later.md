@@ -2,7 +2,7 @@
 
 *   **Author:** Alaa Eldin Tarek
 *   **Status:** Draft, not approved. Docs only: no code is written until the owner says "approve phase".
-*   **Date:** 2026-11-18
+*   **Date:** 2026-11-18 (owner answers to Q1-Q3 added the same day)
 *   **Source:** owner report during device check S08 (nova 5T, EMUI, Android 10) + code read. Finding **F72** (HIGH).
 
 Labels: VERIFIED = read in code or seen in a log, UNVERIFIED = not run on a device, UNKNOWN = not checked.
@@ -40,6 +40,13 @@ top corner of the notification (top-right in English, top-left in Arabic), using
 *   **R4 — Must work on Android 10 (nova 5T, EMUI) and newer Android.** This spec says what happens on the lock screen
     and when collapsed (below).
 
+## Owner answers (2026-11-18)
+
+*   **Q1 — Option B** (`DecoratedCustomViewStyle`). Remind Later just under the system header is fine. Corner = right in
+    English, left in Arabic.
+*   **Q2 — Dev trigger:** checked, there is none (see "Debug-only test post-check"). A DEBUG-ONLY item is added.
+*   **Q3 — Windows:** traced read-only (see "Windows"). Remind Later is missing there, so a Windows part is added.
+
 ## How the existing card is built (VERIFIED, `PrayerForegroundService.kt:663-730`)
 
 *   `buildContentView` returns a `RemoteViews` from one of four layouts: `notification_actions[_dark][_rtl].xml` (buttons)
@@ -54,7 +61,7 @@ top corner of the notification (top-right in English, top-left in Arabic), using
 
 ## Design
 
-### Layout approach — two options (recommendation: B)
+### Layout approach — option B chosen by the owner (table kept for the record)
 
 | | A. Full custom view (like the vibration card) | B. `DecoratedCustomViewStyle` (recommended) |
 |---|---|---|
@@ -63,8 +70,8 @@ top corner of the notification (top-right in English, top-left in Arabic), using
 | Dark / light | Needs our own colours: 4 layouts (`_dark`, `_rtl`), a theme decision in the receiver (the receiver has no `isDarkTheme` today) | System background and text colours: 2 layouts (LTR, RTL) |
 | "Top corner" | True top corner of the notification | Top corner of the content area, directly under the system header row |
 
-Recommendation **B**: the same look on every version, fewer layouts, Done / Late / Missed keep the normal system styling.
-The cost: the corner button sits under the header row, not in it. **Owner decides (Q1).**
+**Option B** (owner, Q1): the same look on every version, fewer layouts, Done / Late / Missed keep the normal system
+styling. The corner button sits under the header row, not in it (accepted). Option A is not built.
 
 ### The layout (both options)
 
@@ -74,9 +81,9 @@ The cost: the corner button sits under the header row, not in it. **Owner decide
     so it never runs under the button.
 *   `btn_remind_later`: 12 sp, bold, accent colour (#F5B301 / light variant #B5821B per the app palette), touch area at
     least 48 dp high; `layout_alignParentEnd` in a `RelativeLayout` (or `layout_gravity=end` in a `FrameLayout`).
-*   Files: `notification_post_check.xml` and `notification_post_check_rtl.xml` (option B). The RTL file sets
+*   Files: `notification_post_check.xml` and `notification_post_check_rtl.xml`. The RTL file sets
     `layoutDirection="rtl"` on the root, like the existing `_rtl` layouts, so the button goes top-left in Arabic whatever
-    the phone language is. (Option A adds `_dark` and `_dark_rtl`.)
+    the phone language is.
 
 ### Request codes and intents (unchanged)
 
@@ -119,11 +126,45 @@ None needs changing: all four are short enough for a button, and "ذكّرني �
 12 sp corner. Like the current buttons these are native strings chosen by the `language` pref, not `.tr()` (existing
 native-notification pattern; no new keys, so `en.json` / `ar.json` are untouched). The owner reviews the Arabic.
 
+### Debug-only "Test post-check" (Q2)
+
+*   **Checked (VERIFIED):** no dev trigger for a post-check exists. The only one is the hidden dev tile in
+    `lib/features/profile/profile_version_tile.dart` (seven taps on the Version tile; `fireTestAdhan` → `testAdhanNow`,
+    native `MainActivity.kt:440`, request code 9999, `EXTRA_IS_TEST`), and it fires the adhan only. A real post-check
+    appears ~30 min after a real adhan, or 15 min after a Remind Later.
+*   **Added (owner):** a second item in that same hidden dev tile, "Test post-check", **debug builds only**, hidden in
+    release builds. It posts the post-check for the **next prayer** right away (no 30-minute wait).
+*   **How:** Dart: the item is shown only when a constructor parameter `showPostCheckTest` (default `kDebugMode`, the same
+    pattern as `DesktopTrayService` `includeTestItem`) is true, so a widget test can drive both values. It calls a new
+    `PrayerAlarmService.testPostCheckNow(prayerName, prayerNameAr, prayerTime)` → MethodChannel `testPostCheckNow` (new
+    method; `contracts/method-channels.md` updated in the same commit) → `PrayerAlarmReceiver` shows the same notification
+    through the same `showPostPrayerCheckNotification` (not a copy), so the test exercises the real path, including the
+    corner button and the real `ACTION_POST_LATER` re-arm. The native side also refuses the call when the app is not
+    debuggable (`ApplicationInfo.FLAG_DEBUGGABLE`), so a release build cannot post it even if Dart were changed.
+*   **Consequence for the device check:** a release APK has no such item. S08 on a release build needs a real prayer
+    (+30 min). The debug item needs a debug build installed (it would replace the release build on the phone; same package
+    `com.aura.hala`; same signing key: UNKNOWN, a signature mismatch would force an uninstall and lose data). The owner
+    decides which build to use for the check.
+*   Strings for the dev item go through `.tr()` in `en.json` and `ar.json` like the existing `dev_test_adhan_*` keys.
+
+### Windows (Q3)
+
+*   **Traced (VERIFIED, read-only):** `DesktopNotificationService.showPostPrayerCheck`
+    (`desktop_notification_service.dart:254`) shows a toast with **three** buttons: On Time ✓ / Late ⏰ / Missed ✗
+    (Arabic: في الوقت ✓ / متأخر ⏰ / فاتت ✗). **Remind Later is not there.** It is scheduled by
+    `DesktopPrayerScheduler` (`desktop_prayer_scheduler.dart:96-99`) as a one-shot `Timer` after the adhan. Windows allows
+    up to five toast buttons (owner), so there is room.
+*   **Change (because it is missing):** add a fourth button "Remind Later" / "ذكّرني لاحقاً" (index 3) that starts a
+    15-minute one-shot `Timer` and then calls `showPostPrayerCheck` again for the same prayer; no status is recorded.
+    Platform-guarded (`isDesktop`), no effect on Android. Open: where the timer lives (scheduler vs. service) so that
+    `rescheduleReminders()` or a tile change does not cancel it, and whether a repeated tap replaces the pending timer
+    (suggest: yes, one pending timer per prayer). A pure Dart test of the timer helper is written first.
+*   Not in this spec: the Windows adhan toast and the pre-prayer reminder toast (separate specs).
+
 ### What does not change
 
 The handlers (`handlePostPrayerCheckAction`), the 15-minute re-arm, the alarm request codes (3001–3006), notification IDs
-6001–6006, the post-check timing, Zuhr/Dhuhr handling, the Dart side, prefs keys, MethodChannels. Windows: the desktop
-post-check toast was not traced (UNKNOWN); this spec is Android only.
+6001–6006, the post-check timing, Zuhr/Dhuhr handling, the Dart side, prefs keys, MethodChannels. Windows: see "Windows" above.
 
 ## Goals
 
@@ -148,13 +189,17 @@ post-check toast was not traced (UNKNOWN); this spec is Android only.
     `+5`. Written first, run failing (helper missing), then the helper.
 *   **What the unit test does not prove:** that the `PendingIntent`s and the layout are right on a device. That is the
     device check.
+*   **Dart (dev item):** widget test for `ProfileVersionTile`: after seven taps, "Test post-check" is shown with
+    `showPostCheckTest: true`, hidden with `false`; the tap calls the injected function with the next prayer.
+*   **Dart (Windows):** test that the Remind Later action starts exactly one 15-minute timer per prayer, that a second tap
+    replaces it, and that the timer calls `showPostPrayerCheck` again (fake timer / injected clock).
 *   Regression: existing Kotlin tests (51) and Dart tests (830 on `fix/prayer-reminder`) unchanged; `flutter analyze` count
     unchanged.
 
 ## Device check (after the fix; Android 10, nova 5T)
 
-Needs a post-check, i.e. a real prayer (~30 min after the adhan) or the existing dev trigger for a post-check if one exists
-(UNKNOWN; to be confirmed before the run).
+Needs a post-check: a real prayer (~30 min after the adhan; release build) or the debug-only "Test post-check" item (debug
+build only, see above).
 
 1.  Post-check arrives: `dumpsys notification --noredact` shows `actions=3` for ID 600x, a custom content view, and the log
     line `📋 [POST_CHECK] Notification shown for <prayer>`.
@@ -169,20 +214,22 @@ Needs a post-check, i.e. a real prayer (~30 min after the adhan) or the existing
 7.  **Done / Late** still work (one each on later prayers): status written once, notification cancelled.
 8.  **Dark theme and light theme:** the corner text is readable in both (colours).
 9.  Long Arabic title and a large system font size: the title does not run under the corner button.
+10. Debug build: "Test post-check" appears in the dev tile and posts the card at once; the release build has no such item.
+11. Windows (observe only): the post-check toast shows four buttons; Remind Later → the toast comes back after 15 min.
 
 ## Phases (proposal)
 
 | Phase | Content | Level |
 |---|---|---|
 | R1 | Tests first (`PostCheckActions`); the helper; the layout files; builder change in `showPostPrayerCheckNotification`; build + tests | C |
+| R1b | Debug-only "Test post-check" (Dart item, channel method, contract) | C |
+| R1c | Windows Remind Later button + timer | C |
 | R2 | Device check S08 (both halves) + record | A |
 
 ## Open questions
 
-*   **Q1:** option A (full custom view, true top corner, 4 layouts) or **B** (decorated, under the system header, 2 layouts)?
-    Recommendation B.
-*   **Q2:** is there a dev trigger for a post-check notification, or do we wait for a real prayer (+30 min)? UNKNOWN until
-    checked; does not block the spec.
-*   **Q3:** Windows post-check toast has the same four-action question? UNKNOWN, not traced here.
-*   **Q4:** should the tap on a secure lock screen be allowed without unlock? Not changeable per version without a new
-    visibility decision; this spec leaves it as the system decides.
+*   Q1-Q3 are answered above.
+*   **Q4 (unchanged):** a tap on a secure lock screen is left as the system decides.
+*   **Q5:** which build for the Android device check: release (wait for a real post-check) or a debug build (has the test
+    item)? A debug install over the release one may need an uninstall if the signing keys differ (UNKNOWN).
+*   **Q6:** Windows timer ownership and "replace on second tap" (see Windows).
