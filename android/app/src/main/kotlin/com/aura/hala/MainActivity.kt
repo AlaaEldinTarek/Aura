@@ -346,6 +346,9 @@ class MainActivity : FlutterFragmentActivity() {
                     // Update widgets
                     updateWidgets()
 
+                    // Theme / language may have changed: refresh a post-check card that is on screen (P2c)
+                    PostCheckCard.refreshShowing(this)
+
                     result.success(true)
                 }
                 "updateTasksWidget" -> {

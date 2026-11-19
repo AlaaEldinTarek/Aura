@@ -1,16 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Post-prayer check card, dark LTR (English) (docs/designs/fix-post-check-custom-card.md, P2b).
-     Built like notification_actions*.xml (the foreground card that shows on the EMUI lock screen):
-     plain horizontal LinearLayout, icon + text on the left, the four buttons as a 2x2 grid at the end.
-     Used for the collapsed AND the expanded view. -->
+<!-- Post-prayer check card, dark LTR (English) (docs/designs/fix-post-check-custom-card.md, P2b/P2c).
+     Plain horizontal LinearLayout like notification_actions*.xml (shows on the EMUI lock screen).
+     Icon + text on the left, 2x2 button grid at the end.
+     Used for the collapsed and the expanded view. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:background="@drawable/bg_notification_dark"
-    android:paddingStart="16dp"
-    android:paddingEnd="16dp"
+    android:layoutDirection="ltr"
+    android:paddingLeft="16dp"
+    android:paddingRight="16dp"
     android:paddingTop="8dp"
     android:paddingBottom="8dp">
 
@@ -28,14 +29,15 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
-        android:layout_marginStart="10dp"
-        android:layout_marginEnd="8dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="8dp"
         android:orientation="vertical">
 
         <TextView
             android:id="@+id/post_check_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="left"
             android:maxLines="2"
             android:ellipsize="end"
             android:text="Did you pray Zuhr?"
@@ -47,6 +49,7 @@
             android:id="@+id/post_check_body"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:gravity="left"
             android:maxLines="1"
             android:ellipsize="end"
             android:text="Log your prayer now"
@@ -55,7 +58,7 @@
 
     </LinearLayout>
 
-    <!-- 2x2 grid: Done, Late / Missed, Remind Later (the Arabic file mirrors it through layoutDirection). -->
+    <!-- 2x2 grid. Row 1: Done, Late. Row 2: Missed, Remind Later. -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -65,41 +68,41 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal">
-        <TextView
-            android:id="@+id/btn_done"
-            android:layout_width="wrap_content"
-            android:layout_height="28dp"
-            android:minWidth="68dp"
-            android:gravity="center"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:background="@drawable/bg_post_check_done_dark"
-            android:clickable="true"
-            android:focusable="true"
-            android:text="Done"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textColor="#4CAF50" />
-        <TextView
-            android:id="@+id/btn_late"
-            android:layout_width="wrap_content"
-            android:layout_height="28dp"
-            android:minWidth="68dp"
-            android:layout_marginStart="4dp"
-            android:gravity="center"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:background="@drawable/bg_post_check_late_dark"
-            android:clickable="true"
-            android:focusable="true"
-            android:text="Late"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textColor="#FF9800" />
+            <TextView
+                android:id="@+id/btn_done"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:minWidth="68dp"
+                android:gravity="center"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:background="@drawable/bg_post_check_done_dark"
+                android:clickable="true"
+                android:focusable="true"
+                android:text="Done"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#4CAF50" />
+            <TextView
+                android:id="@+id/btn_late"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:minWidth="68dp"
+                android:layout_marginLeft="4dp"
+                android:gravity="center"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:background="@drawable/bg_post_check_late_dark"
+                android:clickable="true"
+                android:focusable="true"
+                android:text="Late"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#FF9800" />
         </LinearLayout>
 
         <LinearLayout
@@ -107,41 +110,41 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:orientation="horizontal">
-        <TextView
-            android:id="@+id/btn_missed"
-            android:layout_width="wrap_content"
-            android:layout_height="28dp"
-            android:minWidth="68dp"
-            android:gravity="center"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:background="@drawable/bg_post_check_missed_dark"
-            android:clickable="true"
-            android:focusable="true"
-            android:text="Missed"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textColor="#F44336" />
-        <TextView
-            android:id="@+id/btn_remind_later"
-            android:layout_width="wrap_content"
-            android:layout_height="28dp"
-            android:minWidth="68dp"
-            android:layout_marginStart="4dp"
-            android:gravity="center"
-            android:maxLines="1"
-            android:ellipsize="end"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:background="@drawable/bg_vibration_button_dark"
-            android:clickable="true"
-            android:focusable="true"
-            android:text="Remind Later"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:textColor="#F5B301" />
+            <TextView
+                android:id="@+id/btn_missed"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:minWidth="68dp"
+                android:gravity="center"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:background="@drawable/bg_post_check_missed_dark"
+                android:clickable="true"
+                android:focusable="true"
+                android:text="Missed"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#F44336" />
+            <TextView
+                android:id="@+id/btn_remind_later"
+                android:layout_width="wrap_content"
+                android:layout_height="28dp"
+                android:minWidth="68dp"
+                android:layout_marginLeft="4dp"
+                android:gravity="center"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:background="@drawable/bg_post_check_remind"
+                android:clickable="true"
+                android:focusable="true"
+                android:text="Remind Later"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#F5B301" />
         </LinearLayout>
 
     </LinearLayout>

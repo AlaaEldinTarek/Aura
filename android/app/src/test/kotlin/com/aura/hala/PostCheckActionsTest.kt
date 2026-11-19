@@ -140,4 +140,21 @@ class PostCheckActionsTest {
     fun `all four actions have a card button view in the 2x2 grid order`() {
         assertEquals(listOf("done", "late", "missed", "later"), PostCheckActions.ALL.map { it.key })
     }
+
+    @Test
+    fun `remaining timeout keeps the original 30 minutes and never goes negative`() {
+        val t0 = 1_000_000L
+        assertEquals(PostCheckActions.TIMEOUT_MS, PostCheckActions.remainingTimeoutMs(t0, t0))
+        assertEquals(PostCheckActions.TIMEOUT_MS - 10 * 60 * 1000L, PostCheckActions.remainingTimeoutMs(t0, t0 + 10 * 60 * 1000L))
+        assertEquals(0L, PostCheckActions.remainingTimeoutMs(t0, t0 + PostCheckActions.TIMEOUT_MS))
+        assertEquals(0L, PostCheckActions.remainingTimeoutMs(t0, t0 + PostCheckActions.TIMEOUT_MS + 5))
+    }
+
+    @Test
+    fun `post check ids 6001 to 6006 are recognised and others are not`() {
+        for (id in 6001..6006) assertTrue(PostCheckActions.isPostCheckId(id))
+        assertTrue(!PostCheckActions.isPostCheckId(6000))
+        assertTrue(!PostCheckActions.isPostCheckId(6007))
+        assertTrue(!PostCheckActions.isPostCheckId(9999))
+    }
 }

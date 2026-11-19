@@ -9,7 +9,11 @@ import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.os.Build
+import android.os.Bundle
 import android.util.Log
+import android.widget.RemoteViews
+import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.res.ResourcesCompat
 
 /**
@@ -62,6 +66,104 @@ object PostCheckCard {
         dark -> R.layout.notification_post_check_card_dark
         isArabic -> R.layout.notification_post_check_card_rtl
         else -> R.layout.notification_post_check_card
+    }
+
+    private const val EXTRA_NAME = "aura_post_check_name"
+    private const val EXTRA_NAME_AR = "aura_post_check_name_ar"
+    private const val EXTRA_TIME = "aura_post_check_time"
+
+    /**
+     * Builds and posts the post-check card (id 6001-6006, channel post_prayer_check). P2b/P2c: ongoing, PRIORITY_MAX,
+     * VISIBILITY_PUBLIC, plain LinearLayout (notification_actions style, shows on the EMUI lock screen), same view
+     * collapsed and expanded, four buttons, auto-removed after [PostCheckActions.TIMEOUT_MS]. Category stays REMINDER
+     * (ALARM would pass Do Not Disturb). Every button cancels the card (PrayerAlarmReceiver).
+     *
+     * [keepWhen] != null means a refresh of a card that is already showing: same id, no new sound or heads-up
+     * (setOnlyAlertOnce), the original `when`, and only the REMAINING timeout.
+     */
+    fun show(context: Context, prayerName: String, prayerNameAr: String, prayerTime: Long, keepWhen: Long?) {
+        val isArabic = isArabic(context)
+        val prayerLabel = if (isArabic) prayerNameAr else prayerName
+        val title = PostCheckActions.question(prayerLabel, isArabic)
+        val body = PostCheckActions.subtitle(isArabic)
+        val notificationId = PrayerAlarmReceiver.getPostCheckNotificationId(prayerName)
+        val nowMs = System.currentTimeMillis()
+        val whenMs = keepWhen ?: nowMs
+        val timeout = PostCheckActions.remainingTimeoutMs(whenMs, nowMs)
+        if (timeout <= 0L) {
+            NotificationManagerCompat.from(context).cancel(notificationId)
+            Log.d(TAG, "📋 [POST_CHECK] refresh skipped for $prayerName: timeout already over, card removed")
+            return
+        }
+
+        val view = RemoteViews(context.packageName, cardLayoutId(isDark(context), isArabic))
+        view.setTextViewText(R.id.post_check_title, title)
+        view.setTextViewText(R.id.post_check_body, body)
+        iconBitmap(context, prayerName)?.let { view.setImageViewBitmap(R.id.post_check_icon, it) }
+        for (spec in PostCheckActions.ALL) {
+            val viewId = when (spec.key) {
+                "done" -> R.id.btn_done
+                "late" -> R.id.btn_late
+                "missed" -> R.id.btn_missed
+                else -> R.id.btn_remind_later
+            }
+            view.setTextViewText(viewId, PostCheckActions.label(spec, isArabic))
+            view.setOnClickPendingIntent(viewId, actionPending(context, spec, prayerName, prayerNameAr, prayerTime))
+        }
+
+        val extras = Bundle().apply {
+            putString(EXTRA_NAME, prayerName)
+            putString(EXTRA_NAME_AR, prayerNameAr)
+            putLong(EXTRA_TIME, prayerTime)
+        }
+        val builder = NotificationCompat.Builder(context, PostCheckActions.CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(body)
+            .setCustomContentView(view)
+            .setCustomBigContentView(view)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_REMINDER)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .setOnlyAlertOnce(true)
+            .setWhen(whenMs)
+            .setTimeoutAfter(timeout)
+            .addExtras(extras)
+            .setContentIntent(popupPending(context, prayerName, prayerNameAr, prayerTime))
+
+        try {
+            NotificationManagerCompat.from(context).notify(notificationId, builder.build())
+            Log.d(TAG, "📋 [POST_CHECK] Notification ${if (keepWhen == null) "shown" else "refreshed"} for $prayerName")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [POST_CHECK] Error showing notification: ${e.message}")
+        }
+    }
+
+    /**
+     * Theme or language changed in the app (the Dart side calls updatePrayerWidgets, which ends here): re-post every
+     * post-check card that is on screen and has a different look from what the current theme/language would pick.
+     * No new prefs key, channel or method. Cards that already look right are left alone.
+     */
+    fun refreshShowing(context: Context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
+        try {
+            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            val wanted = cardLayoutId(isDark(context), isArabic(context))
+            for (sbn in nm.activeNotifications) {
+                if (sbn.packageName != context.packageName || !PostCheckActions.isPostCheckId(sbn.id)) continue
+                val n = sbn.notification
+                if (n.contentView?.layoutId == wanted) continue
+                val name = n.extras.getString(EXTRA_NAME) ?: continue
+                val nameAr = n.extras.getString(EXTRA_NAME_AR) ?: name
+                val time = n.extras.getLong(EXTRA_TIME)
+                Log.d(TAG, "📋 [POST_CHECK] look changed, refreshing card ${sbn.id}")
+                show(context, name, nameAr, time, n.`when`)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [POST_CHECK] refreshShowing failed: ${e.message}")
+        }
     }
 
     fun iconBitmap(context: Context, prayerName: String): Bitmap? {
