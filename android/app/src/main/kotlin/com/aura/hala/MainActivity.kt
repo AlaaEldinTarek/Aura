@@ -502,6 +502,22 @@ class MainActivity : FlutterFragmentActivity() {
                         result.error("REMINDER_ERROR", e.message, null)
                     }
                 }
+                "testPostCheckNow" -> {
+                    // Hidden dev tile (7 taps on Version): posts the real post-prayer check now for the
+                    // next prayer, through the same builder as the 30-minute alarm (F72 spec, R1b).
+                    val prayerName = call.argument<String>("prayerName")
+                        ?: return@setMethodCallHandler result.error("INVALID", "prayerName required", null)
+                    val prayerNameAr = call.argument<String>("prayerNameAr") ?: prayerName
+                    val prayerTime = call.argument<Number>("prayerTime")?.toLong() ?: System.currentTimeMillis()
+                    try {
+                        PrayerAlarmReceiver().showPostPrayerCheckNotification(this, prayerName, prayerNameAr, prayerTime)
+                        Log.d("PrayerChannel", "🧪 Test post-check posted for $prayerName")
+                        result.success(true)
+                    } catch (e: Exception) {
+                        Log.e("PrayerChannel", "❌ testPostCheckNow failed: ${e.message}")
+                        result.error("FAILED", e.message, null)
+                    }
+                }
                 "cancelAllPrayerAlarms" -> {
                     Log.d("PrayerChannel", "Cancelling all prayer alarms")
                     PrayerAlarmReceiver.cancelAllAlarms(this)

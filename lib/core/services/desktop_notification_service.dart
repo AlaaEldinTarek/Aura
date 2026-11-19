@@ -10,6 +10,7 @@ import '../providers/daily_prayer_status_provider.dart';
 import '../providers/prayer_times_provider.dart';
 import '../utils/prayer_time_rules.dart';
 import '../utils/pre_prayer_reminder.dart';
+import '../utils/post_check_remind_timers.dart';
 import 'desktop_adhan_service.dart';
 import 'prayer_tracking_service.dart';
 import 'task_service.dart';
@@ -59,6 +60,9 @@ class DesktopNotificationService {
       !kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
 
   int _notifSeq = 0;
+
+  /// Pending "Remind Later" timers of the post-prayer check toast (one per prayer).
+  final PostCheckRemindTimers _postCheckRemind = PostCheckRemindTimers();
 
   // Last toast shown per identifier, for toasts that ask to be released
   // (see `releasePrevious` in [_showSystemToast]).
@@ -253,7 +257,7 @@ class DesktopNotificationService {
     await _showSystemToast(title, body, identifier: id, isArabic: isArabic);
   }
 
-  /// Show post-prayer check banner ("Did you pray X?") with On Time / Late / Missed buttons.
+  /// Show post-prayer check banner ("Did you pray X?") with On Time / Late / Missed / Remind Later buttons.
   Future<void> showPostPrayerCheck(
       String prayerName, String prayerNameAr) async {
     final prefs = await SharedPreferences.getInstance();
@@ -269,6 +273,7 @@ class DesktopNotificationService {
     final onTimeLabel = isArabic ? 'في الوقت ✓' : 'On Time ✓';
     final lateLabel = isArabic ? 'متأخر ⏰' : 'Late ⏰';
     final missedLabel = isArabic ? 'فاتت ✗' : 'Missed ✗';
+    final laterLabel = isArabic ? 'ذكّرني لاحقاً' : 'Remind Later';
 
     await _showSystemToast(
       title, body,
@@ -278,11 +283,19 @@ class DesktopNotificationService {
         LocalNotificationAction(text: onTimeLabel),
         LocalNotificationAction(text: lateLabel),
         LocalNotificationAction(text: missedLabel),
+        LocalNotificationAction(text: laterLabel),
       ],
       onActionClick: (idx) {
         if (idx == 0) _recordPrayerStatus(prayerName, PrayerStatus.onTime);
         if (idx == 1) _recordPrayerStatus(prayerName, PrayerStatus.late);
         if (idx == 2) _recordPrayerStatus(prayerName, PrayerStatus.missed);
+        // Remind Later: no status is recorded; the same question comes back in 15 minutes.
+        if (idx == 3) {
+          _postCheckRemind.schedule(
+            prayerName,
+            () => showPostPrayerCheck(prayerName, prayerNameAr),
+          );
+        }
       },
     );
   }

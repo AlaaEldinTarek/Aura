@@ -89,21 +89,21 @@ styling. The corner button sits under the header row, not in it (accepted). Opti
 
 | Button | Action | Request code | Where it lives after the fix |
 |---|---|---|---|
-| Done | `ACTION_POST_DONE` | `notificationId+1` | `addAction` (as today) |
-| Late | `ACTION_POST_LATE` | `notificationId+2` | `addAction` (as today) |
-| Missed | `ACTION_POST_MISSED` | `notificationId+3` | `addAction` (as today) |
-| Remind Later | `ACTION_POST_LATER` | `notificationId+4` | corner button, `setOnClickPendingIntent`; **removed from `addAction`** |
+| Done | `ACTION_POST_DONE` | `notificationId+1` | green button in the expanded custom view (was `addAction`; see "Design change") |
+| Late | `ACTION_POST_LATE` | `notificationId+2` | orange button in the expanded custom view |
+| Missed | `ACTION_POST_MISSED` | `notificationId+3` | red button in the expanded custom view |
+| Remind Later | `ACTION_POST_LATER` | `notificationId+4` | corner button (collapsed and expanded), `setOnClickPendingIntent`; **no action uses `addAction` any more** |
 | Tap on the body | open the app | `notificationId+5` | unchanged |
 
-The fourth `addAction` is removed so the notification no longer depends on how an OEM treats a 4th action (`actions=3`
-expected in the log). No notification ID, channel, action string, extra or request code changes (contracts untouched; a
+No `addAction` is used after the design change (expected `actions=0` in the log), so the card no longer depends on how an
+OEM treats a 4th action. No notification ID, channel, action string, extra or request code changes (contracts untouched; a
 note about the corner button goes in `contracts/notification-ids.md` if the owner wants it).
 
 ### Collapsed, expanded and lock screen
 
-*   **Collapsed:** title + body + the corner button are all visible (this is the improvement over today, where no button is
-    visible collapsed). Done / Late / Missed still appear only after expanding (system behaviour, unchanged).
-*   **Expanded:** the same layout, with Done / Late / Missed below.
+*   **Collapsed:** title + body + the corner button are all visible. Done / Late / Missed appear only after expanding
+    (see "Design change": they are now coloured buttons in the expanded custom view, not system actions).
+*   **Expanded:** the same layout, with the coloured Done / Late / Missed row below.
 *   **Lock screen:** visibility stays PRIVATE (not changed). With the owner's lock-screen settings the card shows
     (owner screenshot, collapsed). Whether a tap on the corner button on a **secure** lock screen asks for unlock first:
     UNKNOWN (it is the same rule the three system buttons follow; to be observed in the device check). With "hide
@@ -162,6 +162,119 @@ native-notification pattern; no new keys, so `en.json` / `ar.json` are untouched
     `rescheduleReminders()` or a tile change does not cancel it, and whether a repeated tap replaces the pending timer
     (suggest: yes, one pending timer per prayer). A pure Dart test of the timer helper is written first.
 *   Not in this spec: the Windows adhan toast and the pre-prayer reminder toast (separate specs).
+
+### Design change after the first phone check (owner, 2026-11-18, "approve phase R1b")
+
+First phone check (PR #60 head, screenshots 15:54 Arabic / 15:55 English): Remind Later is visible in the corner in both
+languages (owner-observed PASS for F72's main goal). Changes requested, same branch:
+
+*   **Buttons move into the custom expanded layout.** Done / Late / Missed are no longer system `addAction` buttons
+    (standard action buttons cannot be coloured per button on EMUI). Same `PendingIntent`s, same request codes
+    `notificationId+1..+4`, same handlers.
+*   **Colours:** Done green `#4CAF50`, Late orange `#FF9800`, Missed red `#F44336` (the app's `AppConstants.success` /
+    `warning` / `error`), as filled pills with dark text `#212121`, readable on a light and on a dark notification
+    background (dark text on these fills, same fill in both themes). Remind Later keeps its gold (`#B5821B` light,
+    `#F5B301` dark).
+*   **Sizes:** question title 16 sp bold, subtitle 14 sp, Done / Late / Missed 15 sp bold in 40 dp high pills (three
+    equal-weight buttons, about 95 dp each at 360 dp, one line), Remind Later 13 sp bold.
+*   **Collapsed vs expanded:** collapsed = the question, the subtitle and Remind Later in the corner. The coloured
+    buttons do **not** fit the collapsed height (about 64 dp for two text lines plus a 40 dp button row), so they show
+    **only when expanded** (decision recorded; owner asked "tell me which").
+*   **Arabic (RTL):** question and subtitle pinned to the right edge, Remind Later at the top left, the row mirrored:
+    صلّيت (right) · متأخر · فاتتني (left). The direction follows the **app language** (`language` pref), not the system
+    locale: separate `_rtl` layouts set `layoutDirection="rtl"` on the root, as before. Child order is Done, Late,
+    Missed in both files; the RTL root mirrors the row.
+*   **Files:** `notification_post_check[_rtl].xml` (collapsed), `notification_post_check_expanded[_rtl].xml` (expanded),
+    `bg_post_check_{done,late,missed}.xml`, colours in `values/colors.xml`.
+*   **Test:** `PostCheckActionsTest` unchanged except a new check of the action keys (`done`, `late`, `missed`,
+    `later`). The layout is checked on the device.
+*   **Windows part unchanged.**
+
+#### Phase R1c (owner decision, 2026-11-18; replaces the R1b/R1c styling above)
+
+R1b phone check (screenshots 16:12 Arabic, 16:13 English): English positions OK; Arabic **wrong on the device** (my R1b report
+said it was right without a device check): "ذكّرني لاحقاً" at the right next to the question, the question in the middle, the
+row not mirrored. Owner then asked for the card to match Aura's existing notification design (the foreground "Next Prayer"
+card and the Stop / Keep Vibration buttons). What is built:
+
+*   **How the existing card is built (VERIFIED, `PrayerForegroundService.kt`, `notification_large*.xml`):** full custom
+    view (no `DecoratedCustomViewStyle`), the background is drawn by the layout (`bg_notification` `#FFF8EB`,
+    `bg_notification_dark` `#1A1B1E`), four layout files by theme and language (`_dark`, `_rtl`, `_dark_rtl`), theme from
+    the `theme_mode` pref (`dark`/`amoled` dark, `light` light, `system` the phone), language from the `language` pref.
+    The post-check card now does exactly that (no `DecoratedCustomViewStyle`).
+*   **Files:** `notification_post_check.xml`, `_dark`, `_rtl`, `_dark_rtl` (the owner wrote `post_check*.xml`; I kept the
+    existing `notification_` prefix). The receiver picks the file by `PostCheckActions.isDark(theme_mode, phone night)` and
+    the app language, never by the system locale. Collapsed and expanded use the same layout: the collapsed view hides the
+    button row with `setViewVisibility(GONE)`, so the collapsed card is the top row only. The three buttons need the
+    expanded view (they do not fit the collapsed height).
+*   **Top row:** the per-prayer icon (same mapping as the Next Prayer card: `ic_prayer_fajr` / `_dhuhr` / `_afternoon` /
+    `_maghrib` / `_isha`, `ic_mosque` otherwise; `PostCheckActions.iconKey`) in a 40 dp circle with a soft gold tint
+    (`bg_post_check_icon`); the question "Did you pray {prayer}?" 17 sp bold and "Log your prayer now" 12 sp; "Remind
+    Later" as a small pill in the `bg_vibration_button` / `bg_vibration_button_dark` style (14 dp radius, 12 sp bold).
+    English: icon at the left, Remind Later at the right end. Arabic: icon at the right, text right-aligned against it,
+    "ذكّرني لاحقاً" at the far left end.
+*   **Button row:** three equal tinted pills, no stroke, 14 dp radius, 32 dp high, 13 sp bold, 6 dp gaps. The Arabic file
+    lists Missed, Late, Done from the left, so it reads صلّيت · متأخر · فاتتني from the right.
+*   **Colours:**
+    *   Dark card: title `#FFFFFF`, subtitle `#99FFFFFF`, Remind Later text `#F5B301`; Done `#4CAF50`, Late `#FF9800`,
+        Missed `#F44336`, each on an 18% fill (`#2E` alpha) of the same colour.
+    *   Light card: title `#2A2418`, subtitle `#992A2418`, Remind Later text `#B5821B`; Done `#2E7D32`, Late `#E65100`,
+        Missed `#C62828`, each on a 15% fill (`#26` alpha).
+*   **Explicit positions:** left/right only (no `start`/`end`, no `gravity="start"`), and the root and the button row are
+    forced `layoutDirection="ltr"`, so the system locale cannot mirror the card a second time.
+*   **Unchanged:** `PendingIntent`s and request codes (`notificationId+1..+4`, body tap `+5`), the 15-minute Remind Later
+    re-arm, the handlers, the Windows part.
+*   **Tests:** `PostCheckActionsTest` gained checks for `iconKey` and `isDark`. The layouts are checked on the device.
+
+#### Phase R1d (REVERTED, owner decision 2026-11-18): compact collapsed layout
+
+Tried after the R1c phone check, to show the three buttons in the collapsed card: four compact layouts (question, small
+Remind Later pill, button row, ~63 dp). Owner decision: reverted. Reason (owner screenshot 17:35): the R1c collapsed card
+(icon, question, Remind Later) is visible on the lock screen in Arabic; R1d broke that. The commits are kept in history
+(`f4b87bf` and its revert `9bd52eb`). The collapsed card is the R1c one again; the buttons show when the card is expanded.
+
+Lock-screen note (VERIFIED on the device, 2026-11-18): this notification is `VISIBILITY_PRIVATE` (not changed). On a locked
+phone whose face unlock has not matched yet ("Touch twice for Face Recognition") Android hides it; after the face matches
+("Slide up to open") it shows, as in the owner's screenshots. A public version was considered and not built.
+
+#### Phase R1e (owner decision, 2026-11-18): swipe-down hint on the collapsed card
+
+The expanded card is reached by dragging the collapsed card down (no system arrow on a full custom card). To show that:
+
+*   **Shape:** two chevrons stacked and touching slightly (one double-chevron icon), centred at the bottom of the
+    collapsed card, 16 dp wide by 12 dp high (the owner asked for about 16 x 14). Gold `#F5B301` on the dark card,
+    `#B5821B` on the light card (`ic_post_check_hint_{a,b,c}[_dark].xml`, vector drawables).
+*   **Animation:** notifications cannot run normal animations, so a `ViewFlipper` (allowed in `RemoteViews`) with
+    `autoStart="true"`, `flipInterval="400"` and a fade in / fade out cycles three frames: upper chevron bright and lower
+    dim, upper dim and lower bright, both dim (about 1.2 s per cycle). If EMUI freezes the flipper (for example on the lock
+    screen) the arrows stay static, which is accepted.
+*   **Collapsed only:** the expanded view hides the flipper (`setViewVisibility(GONE)`); the collapsed view hides the
+    button row.
+*   **Room:** the 64 dp collapsed slot had no room for 16 x 12 under the icon row, so the shared layouts got a 36 dp icon
+    circle (was 40) and 6 dp top and bottom padding (was 12); the text is not cut. The expanded card is a little tighter.
+*   Same in left-to-right and right-to-left (centred), light and dark. Same `PendingIntent`s and request codes.
+
+*   **Tap on the card = a small Aura popup (R1e).** What the tap did before (VERIFIED, `PrayerAlarmReceiver.kt`): the content
+    intent opened `MainActivity` (flags `NEW_TASK | CLEAR_TOP`, no extras, request code `notificationId+5`) and
+    `setAutoCancel(true)` cancelled the card. Android does not let an app expand its own notification on a tap, so the tap
+    now opens `PostCheckPopupActivity` instead and **replaces "open the app"** (the app is still one tap away on the
+    launcher; the S09 "tap the body, the app opens" check no longer applies).
+    *   A translucent activity with a bottom card in the notification's style: it inflates the same four layouts (app theme
+        light / dark, app language LTR / RTL, explicit left/right) in a rounded container on a dimmed background, with the
+        prayer icon, "Did you pray {prayer}?", the subtitle and the four buttons Done / Late / Missed / Remind Later in the
+        same colours. The swipe-down hint is hidden in the popup.
+    *   A button sends the **same `PendingIntent`** as the notification button (`PostCheckCard.actionPending`, request code
+        `notificationId+1..+4`, broadcast to `PrayerAlarmReceiver`): the status is written once there and the notification
+        is cancelled by the same handler (Remind Later re-arms in 15 min), then the popup finishes. Back or a tap outside
+        closes only the popup: nothing is recorded and the notification stays (so `setAutoCancel(false)` now).
+    *   Over the lock screen: `showWhenLocked` and `turnScreenOn` (manifest and code), like `AdhanFullScreenActivity`;
+        `taskAffinity=""`, `excludeFromRecents`, `noHistory`, so it never pulls `MainActivity` up. On a secure lock screen
+        Android may still ask to unlock before it starts an activity from a notification tap (observed on the device,
+        see the R1e report); that is the system's rule.
+    *   No new text: the question, subtitle and button labels are the existing ones (`PostCheckActions.question` /
+        `subtitle` / `label`, shared by the notification and the popup).
+    *   Shared helpers: `PostCheckCard.kt` (theme, language, layout, icon, action and popup `PendingIntent`s), used by
+        `PrayerAlarmReceiver` and the popup. Test: `PostCheckActionsTest` gained the question / subtitle strings.
 
 ### What does not change
 

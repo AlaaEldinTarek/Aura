@@ -991,9 +991,9 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
     }
 
     /**
-     * Show post-prayer check notification with Done/Late/Missed/Remind Later buttons
+     * Show post-prayer check notification: Done/Late/Missed buttons + Remind Later in the corner (F72)
      */
-    private fun showPostPrayerCheckNotification(
+    fun showPostPrayerCheckNotification(
         context: Context,
         prayerName: String,
         prayerNameAr: String,
@@ -1016,81 +1016,65 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         val isArabic = language == "ar"
 
         val prayerLabel = if (isArabic) prayerNameAr else prayerName
-        val title = if (isArabic) "هل صليت $prayerLabel؟" else "Did you pray $prayerLabel?"
-        val body = if (isArabic) "سجّل صلاتك الآن" else "Log your prayer now"
+        val title = PostCheckActions.question(prayerLabel, isArabic)
+        val body = PostCheckActions.subtitle(isArabic)
 
         val notificationId = getPostCheckNotificationId(prayerName)
 
-        // Done button
-        val doneIntent = Intent(context, PrayerAlarmReceiver::class.java).apply {
-            action = ACTION_POST_DONE
-            putExtra(EXTRA_PRAYER_NAME, prayerName)
-            putExtra(EXTRA_PRAYER_NAME_AR, prayerNameAr)
-            putExtra(EXTRA_PRAYER_TIME, prayerTime)
-        }
-        val donePending = PendingIntent.getBroadcast(
-            context, notificationId + 1, doneIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        // One PendingIntent per action, request codes notificationId+1..+4 (PostCheckActions, F72); built by
+        // PostCheckCard so the tap popup sends exactly the same ones.
+        fun actionPending(spec: PostCheckActions.Spec): PendingIntent =
+            PostCheckCard.actionPending(context, spec, prayerName, prayerNameAr, prayerTime)
 
-        // Late button
-        val lateIntent = Intent(context, PrayerAlarmReceiver::class.java).apply {
-            action = ACTION_POST_LATE
-            putExtra(EXTRA_PRAYER_NAME, prayerName)
-            putExtra(EXTRA_PRAYER_NAME_AR, prayerNameAr)
-            putExtra(EXTRA_PRAYER_TIME, prayerTime)
-        }
-        val latePending = PendingIntent.getBroadcast(
-            context, notificationId + 2, lateIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
+        // Tap on the card body: opens the small Aura popup (PostCheckPopupActivity, R1e), not MainActivity.
+        // This replaces the old tap behaviour (open the app: MainActivity, no extras, request code id+5).
+        val contentPending = PostCheckCard.popupPending(context, prayerName, prayerNameAr, prayerTime)
 
-        // Missed button
-        val missedIntent = Intent(context, PrayerAlarmReceiver::class.java).apply {
-            action = ACTION_POST_MISSED
-            putExtra(EXTRA_PRAYER_NAME, prayerName)
-            putExtra(EXTRA_PRAYER_NAME_AR, prayerNameAr)
-            putExtra(EXTRA_PRAYER_TIME, prayerTime)
+        // Same card style as the foreground "Next Prayer" notification (F72, R1c): full custom view (no
+        // DecoratedCustomViewStyle), background from the layout. The APP theme and the APP language pick one
+        // of four layouts (light / dark x LTR / RTL), like notification_large*; direction never comes from
+        // the system locale. Collapsed = top row (icon, question, Remind Later); expanded adds the
+        // Done / Late / Missed row. No addAction: Android shows at most three and EMUI cannot colour them.
+        val dark = PostCheckCard.isDark(context)
+        val layoutId = PostCheckCard.layoutId(dark, isArabic)
+        fun iconBitmap(): android.graphics.Bitmap? = PostCheckCard.iconBitmap(context, prayerName)
+        fun contentView(expanded: Boolean): android.widget.RemoteViews {
+            val view = android.widget.RemoteViews(context.packageName, layoutId)
+            view.setTextViewText(R.id.post_check_title, title)
+            view.setTextViewText(R.id.post_check_body, body)
+            iconBitmap()?.let { view.setImageViewBitmap(R.id.post_check_icon, it) }
+            val corner = PostCheckActions.corner()
+            view.setTextViewText(R.id.btn_remind_later, PostCheckActions.label(corner, isArabic))
+            view.setOnClickPendingIntent(R.id.btn_remind_later, actionPending(corner))
+            if (expanded) {
+                for (spec in PostCheckActions.buttons()) {
+                    val viewId = when (spec.key) {
+                        "done" -> R.id.btn_done
+                        "late" -> R.id.btn_late
+                        else -> R.id.btn_missed
+                    }
+                    view.setTextViewText(viewId, PostCheckActions.label(spec, isArabic))
+                    view.setOnClickPendingIntent(viewId, actionPending(spec))
+                }
+                // The swipe-down hint belongs to the collapsed card only
+                view.setViewVisibility(R.id.post_check_hint, android.view.View.GONE)
+            } else {
+                view.setViewVisibility(R.id.post_check_buttons, android.view.View.GONE)
+            }
+            return view
         }
-        val missedPending = PendingIntent.getBroadcast(
-            context, notificationId + 3, missedIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // Remind Later button → opens app picker
-        val laterIntent = Intent(context, PrayerAlarmReceiver::class.java).apply {
-            action = ACTION_POST_LATER
-            putExtra(EXTRA_PRAYER_NAME, prayerName)
-            putExtra(EXTRA_PRAYER_NAME_AR, prayerNameAr)
-            putExtra(EXTRA_PRAYER_TIME, prayerTime)
-        }
-        val laterPending = PendingIntent.getBroadcast(
-            context, notificationId + 4, laterIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        // Tap notification → opens app
-        val contentIntent = Intent(context, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        }
-        val contentPending = PendingIntent.getActivity(
-            context, notificationId + 5, contentIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
 
         val builder = NotificationCompat.Builder(context, "prayer_tracking")
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setCustomContentView(contentView(false))
+            .setCustomBigContentView(contentView(true))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
-            .setAutoCancel(true)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC) // same as the Next Prayer card; not sensitive
+            .setAutoCancel(false) // tapping the card opens the popup; the notification stays until an answer
             .setContentIntent(contentPending)
-            .addAction(0, if (isArabic) "صلّيت" else "Done", donePending)
-            .addAction(0, if (isArabic) "متأخر" else "Late", latePending)
-            .addAction(0, if (isArabic) "فاتتني" else "Missed", missedPending)
-            .addAction(0, if (isArabic) "ذكّرني لاحقاً" else "Remind Later", laterPending)
 
         try {
             val notificationManager = NotificationManagerCompat.from(context)

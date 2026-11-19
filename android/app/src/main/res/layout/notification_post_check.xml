@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Post-prayer check card, light theme, English (left-to-right) (docs/designs/fix-post-check-remind-later.md, R1c).
+     Same card style as the foreground "Next Prayer" notification: full custom view (no
+     DecoratedCustomViewStyle), own background. The app theme and the app language pick the file
+     (PrayerAlarmReceiver). EXPLICIT left/right positions with the root forced LTR, so the system locale
+     can never mirror it a second time. Collapsed view = the same layout with the button row GONE. -->
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_notification"
+    android:layoutDirection="ltr"
+    android:paddingLeft="16dp"
+    android:paddingRight="16dp"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp">
+
+    <ImageView
+        android:id="@+id/post_check_icon"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_alignParentLeft="true"
+        android:padding="6dp"
+        android:background="@drawable/bg_post_check_icon"
+        android:scaleType="centerInside"
+        android:src="@mipmap/ic_launcher"
+        android:contentDescription="Prayer Icon" />
+
+    <TextView
+        android:id="@+id/btn_remind_later"
+        android:layout_width="wrap_content"
+        android:layout_height="28dp"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="4dp"
+        android:gravity="center"
+        android:maxLines="1"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp"
+        android:background="@drawable/bg_vibration_button"
+        android:clickable="true"
+        android:focusable="true"
+        android:text="Remind Later"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:textColor="#B5821B" />
+
+    <LinearLayout
+        android:id="@+id/post_check_texts"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@id/post_check_icon"
+        android:layout_alignBottom="@id/post_check_icon"
+        android:layout_toRightOf="@id/post_check_icon"
+            android:layout_toLeftOf="@id/btn_remind_later"
+            android:layout_marginLeft="10dp"
+        android:layout_marginRight="8dp"
+        android:gravity="center_vertical"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/post_check_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="Did you pray Zuhr?"
+            android:textSize="17sp"
+            android:textStyle="bold"
+            android:textColor="#2A2418" />
+
+        <TextView
+            android:id="@+id/post_check_body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="Log your prayer now"
+            android:textSize="12sp"
+            android:textColor="#992A2418" />
+    </LinearLayout>
+
+    <!-- Swipe-down hint, COLLAPSED view only (hidden in the expanded view by PrayerAlarmReceiver).
+         ViewFlipper is allowed in RemoteViews; 3 frames, ~1.2 s per cycle. -->
+    <ViewFlipper
+        android:id="@+id/post_check_hint"
+        android:layout_width="16dp"
+        android:layout_height="12dp"
+        android:layout_below="@id/post_check_icon"
+        android:layout_centerHorizontal="true"
+        android:autoStart="true"
+        android:flipInterval="400"
+        android:inAnimation="@android:anim/fade_in"
+        android:outAnimation="@android:anim/fade_out">
+        <ImageView android:layout_width="16dp" android:layout_height="12dp" android:src="@drawable/ic_post_check_hint_a" />
+        <ImageView android:layout_width="16dp" android:layout_height="12dp" android:src="@drawable/ic_post_check_hint_b" />
+        <ImageView android:layout_width="16dp" android:layout_height="12dp" android:src="@drawable/ic_post_check_hint_c" />
+    </ViewFlipper>
+
+    <!-- Done / Late / Missed. Written left to right; the Arabic file lists Missed, Late, Done so it reads
+         Done, Late, Missed from the right. Hidden in the collapsed view (setViewVisibility). -->
+    <LinearLayout
+        android:id="@+id/post_check_buttons"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/post_check_icon"
+        android:layout_marginTop="8dp"
+        android:layoutDirection="ltr"
+        android:orientation="horizontal"
+        android:weightSum="3">
+
+            <TextView
+                android:id="@+id/btn_done"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:layout_marginRight="6dp"
+                android:gravity="center"
+                android:maxLines="1"
+                android:background="@drawable/bg_post_check_done"
+                android:clickable="true"
+                android:focusable="true"
+                android:text="Done"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#2E7D32" />
+
+            <TextView
+                android:id="@+id/btn_late"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:layout_marginRight="6dp"
+                android:gravity="center"
+                android:maxLines="1"
+                android:background="@drawable/bg_post_check_late"
+                android:clickable="true"
+                android:focusable="true"
+                android:text="Late"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#E65100" />
+
+            <TextView
+                android:id="@+id/btn_missed"
+                android:layout_width="0dp"
+                android:layout_height="32dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:maxLines="1"
+                android:background="@drawable/bg_post_check_missed"
+                android:clickable="true"
+                android:focusable="true"
+                android:text="Missed"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#C62828" />
+    </LinearLayout>
+</RelativeLayout>
