@@ -62,11 +62,7 @@ object PostCheckActions {
     }
 
     /** App theme pick, same rule as PrayerForegroundService.isDarkTheme (amoled counts as dark, system follows the phone). */
-    fun isDark(themeMode: String, systemNight: Boolean): Boolean = when (themeMode) {
-        "dark", "amoled" -> true
-        "light" -> false
-        else -> systemNight
-    }
+    fun isDark(themeMode: String, systemNight: Boolean): Boolean = ThemedNotification.isDark(themeMode, systemNight)
 
     /** The question and subtitle of the card (notification and popup); [prayerLabel] is already in the card's language. */
     fun question(prayerLabel: String, isArabic: Boolean): String =

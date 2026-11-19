@@ -412,6 +412,18 @@ class PrayerForegroundService : Service() {
         handler?.post(updateRunnable!!)
     }
 
+    /**
+     * Theme or language changed in the app (ThemedNotification.refreshAll, from the updatePrayerWidgets bridge):
+     * rebuild the card now instead of waiting for the next 60 s tick. Same id, same builder, no new sound.
+     */
+    fun refreshNotification() {
+        try {
+            updateNotification()
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [FG_SERVICE] refreshNotification failed: ${e.message}")
+        }
+    }
+
     private fun updateNotification() {
         // Check if we need to move to next prayer before updating notification
         checkAndUpdateNextPrayer()
@@ -723,16 +735,7 @@ class PrayerForegroundService : Service() {
         )
     }
 
-    private fun isDarkTheme(): Boolean {
-        return when (FlutterPrefs.getString(this, "theme_mode", "system")) {
-            "dark", "amoled" -> true
-            "light" -> false
-            else -> {
-                val nightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
-                nightMode == Configuration.UI_MODE_NIGHT_YES
-            }
-        }
-    }
+    private fun isDarkTheme(): Boolean = ThemedNotification.isDark(this)
 
     // Mosque icon — shown during adhan mode
     private fun loadMosqueIcon(): Bitmap? = loadIcon(R.drawable.ic_mosque)
