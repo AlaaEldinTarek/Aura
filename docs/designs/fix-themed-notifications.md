@@ -52,7 +52,7 @@ Raw data for a rebuild (prayer name, count, title, body) is stored in the notifi
 
 Limits that apply to every phase:
 - **Theme** can always be re-applied live. **Language** can be re-applied live only when the text is built in Kotlin from structured data (post-check, daily summary, azkar, Jumu'ah, azan-stopped). Task, wird and digest text arrives from Dart already translated at schedule time; after a language change it only follows when Dart reschedules (whether it does: UNKNOWN, check before that phase).
-- **Lock screen**: the working pattern on this EMUI phone is ongoing + PRIORITY_MAX + VISIBILITY_PUBLIC + a plain LinearLayout. P1 of the post-check work showed a NON-ongoing HIGH/PUBLIC notification is hidden on the lock screen before face match. Dismissible reminders themed the same way will probably not show there unless they are also made ongoing with a timeout (UNKNOWN until each is checked on the phone). Each phase states which choice it makes; the owner decides.
+- **Lock screen**: the working pattern on this EMUI phone is ongoing + PRIORITY_MAX + VISIBILITY_PUBLIC + a plain LinearLayout. P1 of the post-check work showed a NON-ongoing HIGH/PUBLIC notification is hidden on the lock screen before face match. Whether dismissible themed reminders show there is UNKNOWN until each is checked with the phone ALREADY LOCKED when it fires (see section 8: the P1 test fired while unlocked, so it did not prove they are hidden). They stay dismissible; only if one is hidden does it become ongoing with a timeout.
 - **Buttons**: system `addAction` shows max 3 and EMUI does not color them; themed buttons need custom RemoteViews (as the post-check card).
 - Only 2 notification IDs/channels exist per family already; **no notification ID changes** anywhere. Channels: reuse the existing channel unless a phase says otherwise (importance cannot be raised later; a new channel is a contract change: Kotlin + Dart if Dart references it + `.project-docs/contracts/notification-ids.md` in one commit).
 
@@ -60,14 +60,15 @@ Limits that apply to every phase:
 | Phase | Notification(s) | Work | Contract impact | Notes |
 |---|---|---|---|---|
 | T0 | shared helper | Add `ThemedNotification` (theme, language, layout pick, icons, `refreshAll`), make `PostCheckCard` use it; no behavior change | none | Tests: layout pick for the 4 combos, `isDark` rule, remaining timeout (already unit-tested for post-check) |
-| T1 | #1/#2 foreground card | Instant refresh on theme/language change (today up to 60 s): call the same `refreshAll` hook; the service rebuilds on an intent. Everything else on the card unchanged | new intent action to the service = contract (`intent-extras.md`); no new channel, no prefs key | Optional: the card already themes itself. "Edit carefully" area; owner said earlier not to touch the vibration buttons and the iqama countdown, so only the trigger is added |
+| T1 (with T0) | #1/#2 foreground card | Instant refresh on theme/language change (today up to 60 s): `refreshAll` calls `PrayerForegroundService.getInstance()?.refreshNotification()`. Everything else on the card unchanged | none: the existing static instance is used, no new intent action (owner pre-approved one; not needed); no new channel, no prefs key | Optional: the card already themes itself. "Edit carefully" area; owner said earlier not to touch the vibration buttons and the iqama countdown, so only the trigger is added |
 | T2 | #9 task reminder | Custom 4-layout card, Remind Later as a custom button, snooze action and request codes (id+2) unchanged; tap id+1 unchanged | none if the channel stays `task_reminders`; ongoing + timeout decision for the lock screen | Live language: text from Dart (see limits) |
 | T3 | #7 daily summary | Custom card; fix the Arabic count with `withArabicNumerals`-equivalent in Kotlin (rule in CLAUDE.md); tap route unchanged | none | Language live: yes (count + language stored in extras) |
 | T4 | #10 wird reminders + task digest (+ legacy prayer reminder with 2 buttons if still reachable) | Custom card; buttons only if `prayerName` is present | none | Text from Dart |
 | T5 | #5 "Azan stopped" | Custom card (stays in the shade, not auto-dismissed), uses `getPrayerDisplayName` for Jumu'ah | none | |
 | T6 | #6 Azkar trigger | Custom card (shown up to 60 s, full-screen intent keeps working) | none | Lower value: the azkar screen is the real UI |
 | T7 | #8 Jumu'ah weekly | Custom card | none | Weekly |
-| T8 | #11 achievements | Needs a native path (Dart cannot send RemoteViews): new MethodChannel method = contract, or leave plain | **new method** (stop and ask before doing it) | Lowest priority |
+| T8 | #11 achievements | Needs a native path (Dart cannot send RemoteViews): new MethodChannel method = contract, or leave plain | **new method** (stop and ask before doing it) | **DEFERRED (owner 2026-11-20): later, not now** |
+| T9 | #12 Focus Mode service, #14 reschedule service | Language only (app language, Arabic text, Arabic numerals), no theming | none (text only) | One small separate phase, last. Fixes the English-only titles |
 
 ### Not worth theming (and why)
 - **#4 Adhan full-screen trigger**: shown 3 s and auto-dismissed; it only exists to launch the full-screen activity. Theming it adds risk to the azan path (CLAUDE.md: edit `PrayerAlarmReceiver.kt` carefully) for something nobody sees.
@@ -78,7 +79,7 @@ Limits that apply to every phase:
 - **Windows toasts**: out of scope for now (section 2).
 
 ## 5. Risks
-- Lock screen on EMUI: a themed dismissible notification may be hidden before face match (P1 evidence). Each phase's phone check includes the lock screen.
+- Lock screen on EMUI: a themed dismissible notification may be hidden before face match (UNKNOWN; the P1 evidence was a card fired while the phone was unlocked). Each phase's phone check fires it with the phone already locked.
 - Re-posting on theme change touches notifications that carry timeouts, alarms or full-screen intents: refresh must keep id, `when` and the remaining timeout, and must never re-fire sound or full-screen (`setOnlyAlertOnce`, no `setFullScreenIntent` on refresh).
 - `PrayerAlarmReceiver.kt`, `DailySummaryReceiver.kt` are "edit carefully" files (CLAUDE.md). Azan path: never launch MainActivity.
 - Language after a language change for Dart-built text (T2, T4) depends on Dart rescheduling: UNKNOWN.
@@ -90,8 +91,15 @@ Pure Kotlin unit tests (no Robolectric in the project): layout id per theme/lang
 ## 7. Owner's phone check per phase (owner-observed is enough)
 For each themed notification: it shows in light and dark (set the app theme, not the phone), English and Arabic (Arabic mirrored, Arabic digits), the buttons work and the notification goes away, it updates live when theme/language changes while showing, and whether it appears on the lock screen before face match. Plus the specific look of that card (icon, gold accents).
 
-## 8. Open questions for the owner
-1. Dismissible reminders (T2-T7): make them ongoing with a timeout so they show on the lock screen (like the post-check card), or keep them dismissible and accept that they may not show there?
-2. T1: is an instant refresh of the foreground card wanted, or is the 60 s tick fine?
-3. T8 (achievements) needs a new native method; do it later or never?
-4. The Focus Mode English-only title and the reschedule service English-only text: fix the language as a small side change in the phases that touch those files, or separately?
+## 8. Owner answers (2026-11-20) and workflow
+1. **Dismissible reminders stay dismissible (not ongoing) for now.** Correction to the P1 conclusion in section 3 and the risks: in the post-check P1 test the card fired while the phone was UNLOCKED (heads-up first), and the owner's 22:45 screenshot shows a normal non-ongoing card of another app (Instagram) on the EMUI lock screen. So non-ongoing notifications can show there; P1 did not prove otherwise. **In every phase the owner's phone check fires the notification while the phone is ALREADY LOCKED.** Only if a themed reminder is still hidden that way, that one is made ongoing with a timeout, as a follow-up of that phase.
+2. **T1 instant refresh of the foreground card: yes.** The owner approved a new intent action as a contract change (Kotlin + Dart + contracts in one commit). Finding while building T1: the service already exposes `PrayerForegroundService.getInstance()` (static instance), so T1 refreshes it with a direct call and needs NO new intent action; contract files unchanged by T1 (confirmed by diff in the T1 PR). No ID or channel change.
+3. **T8 (achievements): deferred**, later, not now.
+4. **Focus Mode service title (#12) and the reschedule notification (#14): fix only the language** (app language, Arabic text, Arabic numerals), no theming, as one small separate phase at the end: **T9**.
+
+### Workflow (one phase at a time)
+- This branch (`fix/themed-notifications`) keeps only this spec (docs).
+- Each phase gets its own branch from the latest main (`fix/themed-t1`, `fix/themed-t2`, ...) and its own PR with base = main. Never stack a phase on another phase's branch.
+- The owner tests each phase on the phone. Good: the owner merges its PR, then the next phase starts from the new main. Not good: drop that branch, main stays untouched.
+- T0 (helper) has nothing to see on its own, so T0 + T1 are built together on `fix/themed-t1` as the first phase.
+- Do not start the next phase until the previous PR is merged.
