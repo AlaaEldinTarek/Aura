@@ -103,3 +103,9 @@ For each themed notification: it shows in light and dark (set the app theme, not
 - The owner tests each phase on the phone. Good: the owner merges its PR, then the next phase starts from the new main. Not good: drop that branch, main stays untouched.
 - T0 (helper) has nothing to see on its own, so T0 + T1 are built together on `fix/themed-t1` as the first phase.
 - Do not start the next phase until the previous PR is merged.
+
+## 9. Phase results
+| Phase | Result | Branch / commit | Notes |
+| --- | --- | --- | --- |
+| T0 + T1 | **PASS** (owner-observed on the nova 5T, 2026-11-20): the foreground card changes instantly on theme and language change in normal mode and with the vibration buttons showing, and it still shows on the lock screen; looks right | `fix/themed-t1`, commit 5a9f6d4 (build installed 2026-11-20 01:34:40) | Real runs before the phone check: gradle unit tests pass, `flutter test` 840 passed, `flutter analyze` 408 issues (0 errors, = main), release APK built. No new intent action, channel, prefs key or ID (the service already had `getInstance()`); no contract file changed. PR and merge: owner |
+| T2 onward | not started | | Starts only after the owner says "merged" for the previous phase |
