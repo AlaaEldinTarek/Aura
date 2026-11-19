@@ -78,13 +78,13 @@
                 android:ellipsize="end"
                 android:paddingLeft="4dp"
                 android:paddingRight="4dp"
-                android:background="@drawable/bg_post_check_remind"
+                android:background="@drawable/bg_post_check_remind_light"
                 android:clickable="true"
                 android:focusable="true"
                 android:text="Remind Later"
                 android:textSize="12sp"
                 android:textStyle="bold"
-                android:textColor="#F5B301" />
+                android:textColor="#B5821B" />
             <TextView
                 android:id="@+id/btn_missed"
                 android:layout_width="84dp"
