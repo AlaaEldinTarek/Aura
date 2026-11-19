@@ -27,4 +27,10 @@ class TaskReminderCardTest {
         assertEquals(4, ids.toSet().size)
         assertNotEquals(TaskReminderCard.layoutId(false, false), TaskReminderCard.layoutId(true, false))
     }
+
+    @Test
+    fun `lock screen public version shows only the generic title, never the task`() {
+        assertEquals("Aura - Task reminder", TaskReminderCard.publicTitle(false))
+        assertEquals("هالة - تذكير بمهمة", TaskReminderCard.publicTitle(true))
+    }
 }

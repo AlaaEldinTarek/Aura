@@ -14,8 +14,10 @@ import androidx.core.app.NotificationManagerCompat
  * The task reminder as a card that follows the app theme and language (spec docs/designs/fix-themed-notifications.md, T2):
  * plain LinearLayout (notification_task_reminder*.xml, 4 layouts), app icon, title, body and a custom Remind Later
  * button. Same notification id, same channel `task_reminders`, same snooze action and request codes as before
- * (tap id+1, snooze id+2). Dismissible, not ongoing. Title and body arrive ready-made from Dart (language at
- * schedule time); only the layout and the button label follow a later theme/language change.
+ * (tap id+1, snooze id+2). Dismissible, not ongoing. VISIBILITY_PRIVATE with a public version (same themed layout,
+ * only "Aura - Task reminder", no task title, no button) so a locked phone never shows the task. Title and body
+ * arrive ready-made from Dart (language at schedule time); only the layout and the button label follow a later
+ * theme/language change.
  */
 object TaskReminderCard {
     private const val TAG = "TaskReminderCard"
@@ -31,6 +33,9 @@ object TaskReminderCard {
     fun snoozeRequestCode(notificationId: Int): Int = notificationId + 2
 
     fun snoozeLabel(isArabic: Boolean): String = if (isArabic) "ذكرني لاحقاً" else "Remind Later"
+
+    /** The only text the locked screen shows (public version): no task title. */
+    fun publicTitle(isArabic: Boolean): String = if (isArabic) "هالة - تذكير بمهمة" else "Aura - Task reminder"
 
     fun layoutId(dark: Boolean, isArabic: Boolean): Int = ThemedNotification.pickLayout(
         dark, isArabic,
@@ -74,6 +79,20 @@ object TaskReminderCard {
         view.setTextViewText(R.id.btn_task_remind_later, snoozeLabel(isArabic))
         view.setOnClickPendingIntent(R.id.btn_task_remind_later, snoozePending)
 
+        // What the locked screen shows: the same themed card with only the generic title (no task, no button)
+        val publicTitleText = publicTitle(isArabic)
+        val publicView = RemoteViews(context.packageName, layoutId(ThemedNotification.isDark(context), isArabic))
+        publicView.setTextViewText(R.id.task_reminder_title, publicTitleText)
+        publicView.setViewVisibility(R.id.task_reminder_body, android.view.View.GONE)
+        publicView.setViewVisibility(R.id.btn_task_remind_later, android.view.View.GONE)
+        val publicNotification = NotificationCompat.Builder(context, TaskReminderReceiver.CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(publicTitleText)
+            .setCustomContentView(publicView)
+            .setCustomBigContentView(publicView)
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .build()
+
         val extras = Bundle().apply {
             putBoolean(EXTRA_MARK, true)
             putString(EXTRA_TASK_ID, taskId)
@@ -88,7 +107,8 @@ object TaskReminderCard {
             .setCustomBigContentView(view)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setPublicVersion(publicNotification)
             .setAutoCancel(true)
             .setOnlyAlertOnce(keepWhen != null)
             .addExtras(extras)
