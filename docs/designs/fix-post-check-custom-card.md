@@ -14,10 +14,18 @@ Prayer card did (REPORTED, 2026-11-18). Cause UNKNOWN. Two things differ from th
 | Phase | Content | Status |
 | --- | --- | --- |
 | P1 | New channel `post_prayer_check` (IMPORTANCE_HIGH, created in `PrayerAlarmReceiver` and `MainActivity`) + `notification-ids.md`. CURRENT card layout kept (collapsed corner Remind Later, expanded Done/Late/Missed). Nothing else. | Approved ("approve phase P1") |
+| P1 result | Owner phone test 2026-11-19 22:41 (logcat `logcat/P1-postcheck-test.txt`): card posted on `post_prayer_check` (importance 4, vis PUBLIC, not ongoing), heads-up shown and sound played (VERIFIED in log), but NOT on the lock screen before unlock (owner screenshot, only Next Prayer shown). SystemUI log has no add of 6001 on wake. Lock-screen cause UNKNOWN; the remaining difference from the working foreground card is ongoing + PRIORITY_MAX + CATEGORY_ALARM + plain LinearLayout. | Done (not enough) |
+| P2b | Copy the foreground card that DOES show on the EMUI lock screen (owner screenshot 22:45: Zuhr / Stop Vibration / Keep Vibration, buttons work): `setOngoing(true)`, `PRIORITY_MAX`, VISIBILITY_PUBLIC, channel `post_prayer_check`; plain LinearLayout in the `notification_actions*.xml` style (4 files light/dark x LTR/RTL, `notification_post_check_card*.xml`); icon + question on the left, the 4 buttons as a 2x2 grid on the right (about 64 dp, same height as the foreground card); same view collapsed and expanded; buttons via `setOnClickPendingIntent` to the existing actions, request codes id+1..+4; `setTimeoutAfter(30 min)`. Own notification 6001-6006; foreground card untouched. | Approved ("approve phase P2b") |
 | P2 | The 4-button layout (four layouts, all buttons visible; design points 2-3 below). Only after the owner checks P1 on the phone and decides P2 is still needed. | Not approved |
 
 Owner answers: heads-up popup OK (Q1). Keep the four old layouts and the swipe-hint code until the phone check passes; delete later in a separate step (Q2).
 The sections below describe the full design; P1 implements only points 1, 4, 5, 6 with the existing layout.
+
+## P2b decisions
+- **Timeout 30 min** (`PostCheckActions.TIMEOUT_MS`): an ongoing card cannot be swiped away, so it must not get stuck. 30 min = two Remind Later cycles (15 min), and it will not sit there until the next prayer. After the timeout nothing is recorded (same as swiping the old card away).
+- **Cancel paths (VERIFIED in code, `PrayerAlarmReceiver.handlePostPrayerCheckAction`):** Done, Late, Missed and Remind Later each call `cancel(notificationId)`. The body tap opens the popup, whose buttons send the same actions (same cancel). Closing the popup by tapping outside leaves the card until the timeout (known).
+- **Category: keep `CATEGORY_REMINDER`**, not ALARM. ALARM is what the foreground card uses, but Do Not Disturb lets alarms through by default, so a "did you pray?" card would sound at night/DND. The lock-screen cause is not known to be the category. If P2b still fails on the lock screen, ALARM is the next single change to try (one-line).
+- The foreground card uses `setOnlyAlertOnce(true)`; not copied (the card is posted once per event and the heads-up is wanted).
 
 ## Scope (owner decision 2026-11-18)
 - Own notification, same notification ID as today (6001-6006, `getPostCheckNotificationId`). No ID change.
