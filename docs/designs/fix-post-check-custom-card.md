@@ -22,10 +22,29 @@ Prayer card did (REPORTED, 2026-11-18). Cause UNKNOWN. Two things differ from th
 | P2d | (1) All four buttons the same fixed width (84 dp, 4 dp padding) in the four layouts, so the 2x2 columns line up. (2) Prayer icon looks like the Next Prayer card logo: no gold circle, no padding, `centerCrop` (36 dp, same 128 px bitmap). The name -> icon mapping already exists once, in `PostCheckActions.iconKey` (Fajr/Sunrise, Zuhr/Dhuhr, Asr, Maghrib, Isha, else mosque; tested), used by `PostCheckCard.iconBitmap` for both the first post and the live refresh. `PrayerForegroundService.loadPrayerIconForPrayer` is a second copy of the same mapping with NO caller (VERIFIED by grep); the live Next Prayer card picks its icon from the phone clock (`loadPrayerIcon`). The foreground file is not touched. | Approved ("approve phase P2d") |
 | P2d result | Owner phone check 2026-11-19: PASS (equal button sizes, per-prayer icons). | Done (PASS) |
 | P2e | Remind Later in LIGHT mode only (light LTR + light RTL): transparent fill, border AND text `#B5821B` (the border color it had in P2b, the app's light gold; the P2b text was `#7A5A0A`, now `#B5821B` too by owner request). New drawable `bg_post_check_remind_light.xml`. Dark layouts unchanged (`#F5B301`). | Approved ("approve phase P2e") |
+| P2e result | Owner phone check 2026-11-19: PASS. `#B5821B` kept for border and text of Remind Later in light mode. | Done (PASS) |
 | P2 | The 4-button layout (four layouts, all buttons visible; design points 2-3 below). Only after the owner checks P1 on the phone and decides P2 is still needed. | Not approved |
 
 Owner answers: heads-up popup OK (Q1). Keep the four old layouts and the swipe-hint code until the phone check passes; delete later in a separate step (Q2).
 The sections below describe the full design; P1 implements only points 1, 4, 5, 6 with the existing layout.
+
+## Final state (2026-11-19, after P2e PASS; spec still Draft)
+- Own notification, ids 6001-6006 unchanged, channel `post_prayer_check` (IMPORTANCE_HIGH, Kotlin only, created by `PostCheckCard.ensureChannel` from `PrayerAlarmReceiver` and `MainActivity`).
+- Ongoing, `PRIORITY_MAX`, VISIBILITY_PUBLIC, `CATEGORY_REMINDER`, `setOnlyAlertOnce`, `setTimeoutAfter` 30 min; heads-up and sound on the first post.
+- Custom plain-LinearLayout card (4 files `notification_post_check_card*.xml`, light/dark x LTR/RTL), same view collapsed and expanded: prayer icon (36 dp, `centerCrop`, mapping `PostCheckActions.iconKey`), question + subtitle, and a 2x2 grid of four equal 84 dp buttons: Done, Late / Missed, Remind Later (outlined: `#F5B301` dark, `#B5821B` light; Arabic mirrored with the root forced LTR and children in mirrored order).
+- Buttons use the existing actions and request codes (id+1..+4); each cancels the card; body tap opens the small popup (id+5).
+- Live refresh: `PostCheckCard.refreshShowing`, called from the existing `updatePrayerWidgets` handler (`MainActivity.kt`), re-posts a showing card whose layout differs from the current theme/language pick (same id, original `when`, remaining timeout). No new prefs key, MethodChannel method or intent extra. Contract changed: `notification-ids.md` (new channel, 6001-6006 row).
+- Windows toast path: unchanged.
+
+### Open items
+1. **Real Fajr post-check on the locked phone**: not yet seen; owner check tomorrow. The lock-screen PASS used the "Test post-check" item (a real Zuhr post-check at 23:15 also posted on the new card; its lock-screen look was not recorded).
+2. **Checked on one phone only** (nova 5T, EMUI, Android 10): lock screen, heads-up and layouts are UNKNOWN elsewhere.
+3. Done / Late / Missed were not pressed on the phone (cancel is VERIFIED in code only); Remind Later was (4 presses, log-confirmed).
+4. **Closing the popup by tapping outside leaves the card** (ongoing: it stays until the 30 min timeout or an answer).
+5. **Old code still in the branch** (delete later, separate step, owner's go-ahead): the four old `notification_post_check*.xml` layouts, the swipe-hint drawables, `PostCheckCard.layoutId` and anything only they use.
+6. Plain notifications (Focus Mode, summary, reminders, Jumu'ah, azkar, tasks, wird) are not refreshed on language change (not requested).
+7. "Test post-check" always uses the next prayer (no prayer picker).
+8. `PrayerForegroundService.loadPrayerIconForPrayer` is dead code (no caller).
 
 ## P2b decisions
 - **Timeout 30 min** (`PostCheckActions.TIMEOUT_MS`): an ongoing card cannot be swiped away, so it must not get stuck. 30 min = two Remind Later cycles (15 min), and it will not sit there until the next prayer. After the timeout nothing is recorded (same as swiping the old card away).
