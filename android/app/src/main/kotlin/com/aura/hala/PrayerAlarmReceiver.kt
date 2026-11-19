@@ -1026,45 +1026,40 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         // of four layouts (light / dark x LTR / RTL), like notification_large*; direction never comes from
         // the system locale. Collapsed = top row (icon, question, Remind Later); expanded adds the
         // Done / Late / Missed row. No addAction: Android shows at most three and EMUI cannot colour them.
+        // P2b: the card is built like the foreground Next Prayer / vibration card, which does show on the EMUI
+        // lock screen: ongoing, PRIORITY_MAX, VISIBILITY_PUBLIC, plain LinearLayout (notification_actions style),
+        // the same view collapsed and expanded, all four buttons. It is its own notification (6001-6006) on
+        // channel post_prayer_check. Every button cancels it (handlePostPrayerCheckAction); the timeout makes sure
+        // an ongoing card cannot get stuck. Category stays REMINDER (ALARM would pass Do Not Disturb).
         val dark = PostCheckCard.isDark(context)
-        val layoutId = PostCheckCard.layoutId(dark, isArabic)
-        fun iconBitmap(): android.graphics.Bitmap? = PostCheckCard.iconBitmap(context, prayerName)
-        fun contentView(expanded: Boolean): android.widget.RemoteViews {
-            val view = android.widget.RemoteViews(context.packageName, layoutId)
-            view.setTextViewText(R.id.post_check_title, title)
-            view.setTextViewText(R.id.post_check_body, body)
-            iconBitmap()?.let { view.setImageViewBitmap(R.id.post_check_icon, it) }
-            val corner = PostCheckActions.corner()
-            view.setTextViewText(R.id.btn_remind_later, PostCheckActions.label(corner, isArabic))
-            view.setOnClickPendingIntent(R.id.btn_remind_later, actionPending(corner))
-            if (expanded) {
-                for (spec in PostCheckActions.buttons()) {
-                    val viewId = when (spec.key) {
-                        "done" -> R.id.btn_done
-                        "late" -> R.id.btn_late
-                        else -> R.id.btn_missed
-                    }
-                    view.setTextViewText(viewId, PostCheckActions.label(spec, isArabic))
-                    view.setOnClickPendingIntent(viewId, actionPending(spec))
-                }
-                // The swipe-down hint belongs to the collapsed card only
-                view.setViewVisibility(R.id.post_check_hint, android.view.View.GONE)
-            } else {
-                view.setViewVisibility(R.id.post_check_buttons, android.view.View.GONE)
+        val layoutId = PostCheckCard.cardLayoutId(dark, isArabic)
+        val view = android.widget.RemoteViews(context.packageName, layoutId)
+        view.setTextViewText(R.id.post_check_title, title)
+        view.setTextViewText(R.id.post_check_body, body)
+        PostCheckCard.iconBitmap(context, prayerName)?.let { view.setImageViewBitmap(R.id.post_check_icon, it) }
+        for (spec in PostCheckActions.ALL) {
+            val viewId = when (spec.key) {
+                "done" -> R.id.btn_done
+                "late" -> R.id.btn_late
+                "missed" -> R.id.btn_missed
+                else -> R.id.btn_remind_later
             }
-            return view
+            view.setTextViewText(viewId, PostCheckActions.label(spec, isArabic))
+            view.setOnClickPendingIntent(viewId, actionPending(spec))
         }
 
         val builder = NotificationCompat.Builder(context, PostCheckActions.CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(body)
-            .setCustomContentView(contentView(false))
-            .setCustomBigContentView(contentView(true))
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCustomContentView(view)
+            .setCustomBigContentView(view)
+            .setPriority(NotificationCompat.PRIORITY_MAX)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC) // same as the Next Prayer card; not sensitive
-            .setAutoCancel(false) // tapping the card opens the popup; the notification stays until an answer
+            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setOngoing(true)
+            .setAutoCancel(false)
+            .setTimeoutAfter(PostCheckActions.TIMEOUT_MS)
             .setContentIntent(contentPending)
 
         try {

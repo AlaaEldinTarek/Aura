@@ -129,4 +129,15 @@ class PostCheckActionsTest {
         assertNotEquals("prayer_tracking", PostCheckActions.CHANNEL_ID)
         assertNotEquals("prayer_check", PostCheckActions.CHANNEL_ID) // the unused Dart channel
     }
+
+    @Test
+    fun `ongoing card has a 30 minute timeout so it cannot get stuck`() {
+        assertEquals(30 * 60 * 1000L, PostCheckActions.TIMEOUT_MS)
+        assertTrue(PostCheckActions.TIMEOUT_MS > 15 * 60 * 1000L) // longer than one Remind Later cycle
+    }
+
+    @Test
+    fun `all four actions have a card button view in the 2x2 grid order`() {
+        assertEquals(listOf("done", "late", "missed", "later"), PostCheckActions.ALL.map { it.key })
+    }
 }

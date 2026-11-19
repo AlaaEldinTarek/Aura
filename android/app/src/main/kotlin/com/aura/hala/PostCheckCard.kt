@@ -56,6 +56,14 @@ object PostCheckCard {
         else -> R.layout.notification_post_check
     }
 
+    /** P2b card: plain LinearLayout like notification_actions*.xml, all four buttons, same view collapsed and expanded. */
+    fun cardLayoutId(dark: Boolean, isArabic: Boolean): Int = when {
+        dark && isArabic -> R.layout.notification_post_check_card_dark_rtl
+        dark -> R.layout.notification_post_check_card_dark
+        isArabic -> R.layout.notification_post_check_card_rtl
+        else -> R.layout.notification_post_check_card
+    }
+
     fun iconBitmap(context: Context, prayerName: String): Bitmap? {
         val iconRes = when (PostCheckActions.iconKey(prayerName)) {
             "fajr" -> R.drawable.ic_prayer_fajr

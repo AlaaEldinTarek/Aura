@@ -22,6 +22,9 @@ object PostCheckActions {
     /** Own channel for the post-prayer check (IMPORTANCE_HIGH). prayer_tracking stays for the daily summary. */
     const val CHANNEL_ID = "post_prayer_check"
 
+    /** The card is ongoing (cannot be swiped away), so it removes itself after this long (P2b). */
+    const val TIMEOUT_MS = 30 * 60 * 1000L
+
     /** Offset of the "tap the body" activity PendingIntent (not an action). */
     const val CONTENT_OFFSET = 5
 
