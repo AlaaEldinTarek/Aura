@@ -110,45 +110,9 @@ class TaskReminderReceiver : BroadcastReceiver() {
         Log.d(TAG, "🔔 Task reminder fired id=$notificationId task=$taskId")
         ensureChannel(context)
 
-        // Tap → open the app on the Tasks tab (handleWidgetTabIntent reads this extra)
-        val tapIntent = Intent(context, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra("widget_target_tab", 3)
-        }
-        val tapPending = PendingIntent.getActivity(
-            context, notificationId + 1, tapIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val snoozeIntent = Intent(context, TaskReminderReceiver::class.java).apply {
-            action = ACTION_SNOOZE
-            putExtra(EXTRA_NOTIFICATION_ID, notificationId)
-            putExtra(EXTRA_TASK_ID, taskId)
-            putExtra(EXTRA_TITLE, title)
-            putExtra(EXTRA_IS_ARABIC, isArabic)
-        }
-        val snoozePending = PendingIntent.getBroadcast(
-            context, notificationId + 2, snoozeIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(title)
-            .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(NotificationCompat.CATEGORY_REMINDER)
-            .setAutoCancel(true)
-            .setContentIntent(tapPending)
-            .addAction(0, if (isArabic) "ذكرني لاحقاً" else "Remind Later", snoozePending)
-
-        try {
-            NotificationManagerCompat.from(context).notify(notificationId, builder.build())
-            Log.d(TAG, "✅ Task reminder posted id=$notificationId")
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Error posting task reminder: ${e.message}")
-        }
+        // The card (layout by app theme and language, Remind Later button, tap and snooze request codes id+1 / id+2)
+        // is built in TaskReminderCard so a theme or language change can re-post it (themed notifications, T2).
+        TaskReminderCard.show(context, notificationId, taskId, title, body, null)
     }
 
     private fun ensureChannel(context: Context) {

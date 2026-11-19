@@ -70,6 +70,7 @@ object ThemedNotification {
      */
     fun refreshAll(context: Context) {
         PostCheckCard.refreshShowing(context)
+        TaskReminderCard.refreshShowing(context)
         PrayerForegroundService.getInstance()?.refreshNotification()
     }
 }
