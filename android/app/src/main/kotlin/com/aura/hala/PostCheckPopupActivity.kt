@@ -68,7 +68,7 @@ class PostCheckPopupActivity : AppCompatActivity() {
         val label = if (isArabic) prayerNameAr else prayerName
         card.findViewById<TextView>(R.id.post_check_title).text = PostCheckActions.question(label, isArabic)
         card.findViewById<TextView>(R.id.post_check_body).text = PostCheckActions.subtitle(isArabic)
-        PostCheckCard.iconBitmap(this, prayerName)?.let { card.findViewById<ImageView>(R.id.post_check_icon).setImageBitmap(it) }
+        ThemedNotification.iconBitmap(this, prayerName)?.let { card.findViewById<ImageView>(R.id.post_check_icon).setImageBitmap(it) }
         card.findViewById<View>(R.id.post_check_hint).visibility = View.GONE // the hint is for the collapsed card only
 
         fun wire(viewId: Int, spec: PostCheckActions.Spec) {
