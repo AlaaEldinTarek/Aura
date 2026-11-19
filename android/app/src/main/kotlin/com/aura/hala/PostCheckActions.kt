@@ -19,6 +19,18 @@ object PostCheckActions {
         val placement: Placement
     )
 
+    /** Own channel for the post-prayer check (IMPORTANCE_HIGH). prayer_tracking stays for the daily summary. */
+    const val CHANNEL_ID = "post_prayer_check"
+
+    /** The card is ongoing (cannot be swiped away), so it removes itself after this long (P2b). */
+    const val TIMEOUT_MS = 30 * 60 * 1000L
+
+    /** Time left for a card first posted at [whenMs]; a refresh keeps this instead of restarting the 30 minutes. */
+    fun remainingTimeoutMs(whenMs: Long, nowMs: Long): Long = maxOf(0L, whenMs + TIMEOUT_MS - nowMs)
+
+    /** The six post-check notification ids (6001-6006). */
+    fun isPostCheckId(id: Int): Boolean = id in 6001..6006
+
     /** Offset of the "tap the body" activity PendingIntent (not an action). */
     const val CONTENT_OFFSET = 5
 

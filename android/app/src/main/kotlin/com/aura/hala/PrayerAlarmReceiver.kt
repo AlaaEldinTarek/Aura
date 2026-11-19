@@ -999,90 +999,12 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         prayerNameAr: String,
         prayerTime: Long
     ) {
-        // Ensure prayer_tracking channel exists — receiver can fire without the app ever being opened
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
-            if (nm.getNotificationChannel("prayer_tracking") == null) {
-                val ch = android.app.NotificationChannel(
-                    "prayer_tracking", "Prayer Tracking",
-                    android.app.NotificationManager.IMPORTANCE_DEFAULT
-                ).apply { description = "Post-prayer check and daily summary" }
-                nm.createNotificationChannel(ch)
-            }
-        }
+        // Receiver can fire without the app ever being opened: make sure the post-check channel exists
+        PostCheckCard.ensureChannel(context)
 
-        val timesPrefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
-        val language = timesPrefs.getString("language", "en") ?: "en"
-        val isArabic = language == "ar"
-
-        val prayerLabel = if (isArabic) prayerNameAr else prayerName
-        val title = PostCheckActions.question(prayerLabel, isArabic)
-        val body = PostCheckActions.subtitle(isArabic)
-
-        val notificationId = getPostCheckNotificationId(prayerName)
-
-        // One PendingIntent per action, request codes notificationId+1..+4 (PostCheckActions, F72); built by
-        // PostCheckCard so the tap popup sends exactly the same ones.
-        fun actionPending(spec: PostCheckActions.Spec): PendingIntent =
-            PostCheckCard.actionPending(context, spec, prayerName, prayerNameAr, prayerTime)
-
-        // Tap on the card body: opens the small Aura popup (PostCheckPopupActivity, R1e), not MainActivity.
-        // This replaces the old tap behaviour (open the app: MainActivity, no extras, request code id+5).
-        val contentPending = PostCheckCard.popupPending(context, prayerName, prayerNameAr, prayerTime)
-
-        // Same card style as the foreground "Next Prayer" notification (F72, R1c): full custom view (no
-        // DecoratedCustomViewStyle), background from the layout. The APP theme and the APP language pick one
-        // of four layouts (light / dark x LTR / RTL), like notification_large*; direction never comes from
-        // the system locale. Collapsed = top row (icon, question, Remind Later); expanded adds the
-        // Done / Late / Missed row. No addAction: Android shows at most three and EMUI cannot colour them.
-        val dark = PostCheckCard.isDark(context)
-        val layoutId = PostCheckCard.layoutId(dark, isArabic)
-        fun iconBitmap(): android.graphics.Bitmap? = PostCheckCard.iconBitmap(context, prayerName)
-        fun contentView(expanded: Boolean): android.widget.RemoteViews {
-            val view = android.widget.RemoteViews(context.packageName, layoutId)
-            view.setTextViewText(R.id.post_check_title, title)
-            view.setTextViewText(R.id.post_check_body, body)
-            iconBitmap()?.let { view.setImageViewBitmap(R.id.post_check_icon, it) }
-            val corner = PostCheckActions.corner()
-            view.setTextViewText(R.id.btn_remind_later, PostCheckActions.label(corner, isArabic))
-            view.setOnClickPendingIntent(R.id.btn_remind_later, actionPending(corner))
-            if (expanded) {
-                for (spec in PostCheckActions.buttons()) {
-                    val viewId = when (spec.key) {
-                        "done" -> R.id.btn_done
-                        "late" -> R.id.btn_late
-                        else -> R.id.btn_missed
-                    }
-                    view.setTextViewText(viewId, PostCheckActions.label(spec, isArabic))
-                    view.setOnClickPendingIntent(viewId, actionPending(spec))
-                }
-                // The swipe-down hint belongs to the collapsed card only
-                view.setViewVisibility(R.id.post_check_hint, android.view.View.GONE)
-            } else {
-                view.setViewVisibility(R.id.post_check_buttons, android.view.View.GONE)
-            }
-            return view
-        }
-
-        val builder = NotificationCompat.Builder(context, "prayer_tracking")
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(title)
-            .setContentText(body)
-            .setCustomContentView(contentView(false))
-            .setCustomBigContentView(contentView(true))
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(NotificationCompat.CATEGORY_REMINDER)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC) // same as the Next Prayer card; not sensitive
-            .setAutoCancel(false) // tapping the card opens the popup; the notification stays until an answer
-            .setContentIntent(contentPending)
-
-        try {
-            val notificationManager = NotificationManagerCompat.from(context)
-            notificationManager.notify(notificationId, builder.build())
-            Log.d(TAG, "📋 [POST_CHECK] Notification shown for $prayerName")
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ [POST_CHECK] Error showing notification: ${e.message}")
-        }
+        // The card itself (layout, buttons, ongoing flags, timeout) is built in PostCheckCard so that a theme or
+        // language change can re-post it with the same code (P2c).
+        PostCheckCard.show(context, prayerName, prayerNameAr, prayerTime, null)
     }
 
     /**

@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Post-prayer check card, dark RTL (Arabic, mirrored) (docs/designs/fix-post-check-custom-card.md, P2b/P2c).
+     Plain horizontal LinearLayout like notification_actions*.xml (shows on the EMUI lock screen).
+     Root forced LTR with the children written in mirrored order: from the right icon, text, buttons on the left.
+     Used for the collapsed and the expanded view. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/bg_notification_dark"
+    android:layoutDirection="ltr"
+    android:paddingLeft="16dp"
+    android:paddingRight="16dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <!-- 2x2 grid. Row 1: Done, Late. Row 2: Missed, Remind Later. Mirrored here: Done and Missed on the right. -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/btn_late"
+                android:layout_width="84dp"
+                android:layout_height="28dp"
+                
+                android:layout_marginRight="4dp"
+                android:gravity="center"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:paddingLeft="4dp"
+                android:paddingRight="4dp"
+                android:background="@drawable/bg_post_check_late_dark"
+                android:clickable="true"
+                android:focusable="true"
+                android:text="Late"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#FF9800" />
+            <TextView
+                android:id="@+id/btn_done"
+                android:layout_width="84dp"
+                android:layout_height="28dp"
+                
+                android:gravity="center"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:paddingLeft="4dp"
+                android:paddingRight="4dp"
+                android:background="@drawable/bg_post_check_done_dark"
+                android:clickable="true"
+                android:focusable="true"
+                android:text="Done"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#4CAF50" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+            <TextView
+                android:id="@+id/btn_remind_later"
+                android:layout_width="84dp"
+                android:layout_height="28dp"
+                
+                android:layout_marginRight="4dp"
+                android:gravity="center"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:paddingLeft="4dp"
+                android:paddingRight="4dp"
+                android:background="@drawable/bg_post_check_remind"
+                android:clickable="true"
+                android:focusable="true"
+                android:text="Remind Later"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#F5B301" />
+            <TextView
+                android:id="@+id/btn_missed"
+                android:layout_width="84dp"
+                android:layout_height="28dp"
+                
+                android:gravity="center"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:paddingLeft="4dp"
+                android:paddingRight="4dp"
+                android:background="@drawable/bg_post_check_missed_dark"
+                android:clickable="true"
+                android:focusable="true"
+                android:text="Missed"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#F44336" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="10dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/post_check_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="right"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:text="Did you pray Zuhr?"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:textDirection="rtl" />
+
+        <TextView
+            android:id="@+id/post_check_body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="right"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="Log your prayer now"
+            android:textSize="11sp"
+            android:textColor="#99FFFFFF"
+            android:textDirection="rtl" />
+
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/post_check_icon"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:scaleType="centerCrop"
+        android:src="@mipmap/ic_launcher"
+        android:contentDescription="Prayer Icon" />
+
+</LinearLayout>
