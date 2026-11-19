@@ -179,6 +179,9 @@ class MainActivity : FlutterFragmentActivity() {
             notificationManager.createNotificationChannel(trackingChannel)
             Log.d("MainActivity", "✅ [CHANNEL] prayer_tracking channel created")
 
+            // Post-prayer check channel (IMPORTANCE_HIGH, own channel; docs/designs/fix-post-check-custom-card.md P1)
+            PostCheckCard.ensureChannel(this)
+
             // The separate silent-mode notification (8100) was replaced by buttons inside the
             // foreground-service notification. Remove its orphan channel (no-op if absent).
             try {

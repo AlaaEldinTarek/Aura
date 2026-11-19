@@ -19,7 +19,7 @@ Verified 2026-11-06 at 4aa1022 by static grep (Step 2). Do NOT modify IDs. All I
 | 5996 | Focus Mode relaunch full-screen notification (cancelled on stop) | — | `FocusModeService` `relaunchActivity` | No | Partial (added 2026-11-07, F51f) |
 | 5998 | Focus Mode foreground service | — | `FocusModeService.kt:32` | No | Partial |
 | 5999 | Focus Mode end notification — never posted (dead path, F51q) | — | `FocusModeReceiver.kt:38` | No | Partial |
-| 6001–6006 | Post-prayer "Did you pray?" checks | `notification_service.dart:1285,1341,1371` (`6000 + id`; scheduler at :1265 has no caller found — F12) | `PrayerAlarmReceiver.kt:65–70, :97`; card = full custom view like the Next Prayer card (4 layouts by app theme and language; collapsed: icon + question + Remind Later; expanded: + tinted Done / Late / Missed row), no system action buttons; PendingIntent request codes Done/Late/Missed/Remind Later = id+1..+4, body tap id+5; table in `PostCheckActions.kt` (F72) | No | Verified (both sides) |
+| 6001–6006 | Post-prayer "Did you pray?" checks | `notification_service.dart:1285,1341,1371` (`6000 + id`; scheduler at :1265 has no caller found — F12) | `PrayerAlarmReceiver.kt:65–70, :97`; channel `post_prayer_check` (was `prayer_tracking`); card = full custom view like the Next Prayer card (4 layouts by app theme and language; collapsed: icon + question + Remind Later; expanded: + tinted Done / Late / Missed row), no system action buttons; PendingIntent request codes Done/Late/Missed/Remind Later = id+1..+4, body tap id+5; table in `PostCheckActions.kt` (F72) | No | Verified (both sides) |
 | 7001 | Daily prayer summary | `_jumuahNotificationId = 7001` cancelled at `notification_service.dart:1390,1401` | `DailySummaryReceiver.kt:20` | No | Verified — collision F7 |
 | 7100–8099 | Achievement unlocked, `7100 + hash % 1000` | `notification_service.dart:1171` | — | Yes (hash) | Verified — overlaps 8001 (F4) |
 | 8001 | Jumu'ah reminder | — | `JumuahReminderReceiver.kt:19` | No | Partial (Kotlin only) |
@@ -42,6 +42,7 @@ channel at launch. Spec: `docs/designs/fix-silent-mode-buttons-in-fgs.md`. Full 
 | `prayer_foreground_channel_v4` | — | `PrayerForegroundService.kt:30` (old docs said `prayer_foreground_channel`) | Partial |
 | `prayer_times` | `notification_service.dart:45` | `MainActivity.kt:116`, `PrayerAlarmReceiver.kt:798` | Verified |
 | `prayer_tracking` | — | `MainActivity.kt:157`, `DailySummaryReceiver.kt:81`, `PrayerAlarmReceiver.kt:913` | Partial |
+| `post_prayer_check` | — (Dart does not reference it) | `PostCheckActions.CHANNEL_ID`, created by `PostCheckCard.ensureChannel` (called from `PrayerAlarmReceiver.showPostPrayerCheckNotification` and `MainActivity`); IMPORTANCE_HIGH; used by the 6001–6006 post-check card only (`docs/designs/fix-post-check-custom-card.md` P1) | Verified (code) |
 | `prayer_check` | `notification_service.dart:70` | — | Partial |
 | `task_reminders` | `notification_service.dart:50` | `TaskReminderReceiver.kt:37` | Verified |
 | `jumuah_reminder` | `notification_service.dart:55` | `JumuahReminderReceiver.kt:20` | Verified |

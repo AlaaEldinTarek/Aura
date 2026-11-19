@@ -19,6 +19,9 @@ object PostCheckActions {
         val placement: Placement
     )
 
+    /** Own channel for the post-prayer check (IMPORTANCE_HIGH). prayer_tracking stays for the daily summary. */
+    const val CHANNEL_ID = "post_prayer_check"
+
     /** Offset of the "tap the body" activity PendingIntent (not an action). */
     const val CONTENT_OFFSET = 5
 

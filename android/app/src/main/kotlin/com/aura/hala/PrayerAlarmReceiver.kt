@@ -999,17 +999,8 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         prayerNameAr: String,
         prayerTime: Long
     ) {
-        // Ensure prayer_tracking channel exists — receiver can fire without the app ever being opened
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
-            if (nm.getNotificationChannel("prayer_tracking") == null) {
-                val ch = android.app.NotificationChannel(
-                    "prayer_tracking", "Prayer Tracking",
-                    android.app.NotificationManager.IMPORTANCE_DEFAULT
-                ).apply { description = "Post-prayer check and daily summary" }
-                nm.createNotificationChannel(ch)
-            }
-        }
+        // Receiver can fire without the app ever being opened: make sure the post-check channel exists
+        PostCheckCard.ensureChannel(context)
 
         val timesPrefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
         val language = timesPrefs.getString("language", "en") ?: "en"
@@ -1064,7 +1055,7 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             return view
         }
 
-        val builder = NotificationCompat.Builder(context, "prayer_tracking")
+        val builder = NotificationCompat.Builder(context, PostCheckActions.CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(body)

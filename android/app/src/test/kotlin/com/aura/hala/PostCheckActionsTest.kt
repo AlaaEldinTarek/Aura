@@ -122,4 +122,11 @@ class PostCheckActionsTest {
         assertEquals("Log your prayer now", PostCheckActions.subtitle(false))
         assertEquals("سجّل صلاتك الآن", PostCheckActions.subtitle(true))
     }
+
+    @Test
+    fun `post check has its own channel, not the shared prayer_tracking one`() {
+        assertEquals("post_prayer_check", PostCheckActions.CHANNEL_ID)
+        assertNotEquals("prayer_tracking", PostCheckActions.CHANNEL_ID)
+        assertNotEquals("prayer_check", PostCheckActions.CHANNEL_ID) // the unused Dart channel
+    }
 }

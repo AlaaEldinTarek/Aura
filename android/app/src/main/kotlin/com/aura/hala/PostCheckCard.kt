@@ -1,11 +1,14 @@
 package com.aura.hala
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.os.Build
 import android.util.Log
 import androidx.core.content.res.ResourcesCompat
 
@@ -17,6 +20,25 @@ import androidx.core.content.res.ResourcesCompat
  */
 object PostCheckCard {
     private const val TAG = "PostCheckCard"
+
+    /** Creates the post-check channel (IMPORTANCE_HIGH) if missing; safe to call every time. Importance cannot be raised later. */
+    fun ensureChannel(context: Context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        try {
+            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (nm.getNotificationChannel(PostCheckActions.CHANNEL_ID) != null) return
+            val ch = NotificationChannel(
+                PostCheckActions.CHANNEL_ID, "Prayer Check", NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "Asks if you prayed after prayer time passes"
+                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
+            }
+            nm.createNotificationChannel(ch)
+            Log.d(TAG, "✅ [CHANNEL] ${PostCheckActions.CHANNEL_ID} created (importance high)")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [CHANNEL] ${PostCheckActions.CHANNEL_ID} create failed: ${e.message}")
+        }
+    }
 
     fun isArabic(context: Context): Boolean =
         (context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE).getString("language", "en") ?: "en") == "ar"
