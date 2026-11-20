@@ -1,3 +1,4 @@
+import '../utils/task_reminder_args.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -731,6 +732,7 @@ class NotificationService {
 
     final notifId = _taskNotificationId(taskId);
     await _notifications.cancel(notifId);
+    final countdownDueAt = countdownDueAtMs(bodyKind: bodyKind, dueDate: dueDate);
 
     if (!kIsWeb && Platform.isAndroid) {
       // Native delivery path — survives EMUI/MIUI broadcast filtering that
@@ -745,6 +747,8 @@ class NotificationService {
           'isArabic': isArabic,
           'bodyKind': bodyKind,
           'bodyMinutes': bodyMinutes,
+          // Epoch ms of the due time, only for a "before" reminder: the native card counts down to it (TC1)
+          if (countdownDueAt != null) 'dueAt': countdownDueAt,
         });
         debugPrint('TaskNotification: Native reminder scheduled "$title" at $reminderTime (id=$notifId)');
       } catch (e) {

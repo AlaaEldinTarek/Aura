@@ -90,6 +90,18 @@
             android:textColor="#99FFFFFF"
             android:textDirection="rtl" />
 
+        <Chronometer
+            android:id="@+id/task_reminder_countdown"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="right"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:visibility="gone"
+            android:textSize="12sp"
+            android:textColor="#99FFFFFF"
+            android:textDirection="rtl" />
+
     </LinearLayout>
 
     <ImageView

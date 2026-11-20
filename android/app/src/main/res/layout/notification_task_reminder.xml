@@ -53,6 +53,17 @@
             android:textSize="12sp"
             android:textColor="#99000000" />
 
+        <Chronometer
+            android:id="@+id/task_reminder_countdown"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:visibility="gone"
+            android:textSize="12sp"
+            android:textColor="#99000000" />
+
     </LinearLayout>
 
     <!-- Done above Remind Later, same width, one column at the end (like the foreground vibration buttons). -->

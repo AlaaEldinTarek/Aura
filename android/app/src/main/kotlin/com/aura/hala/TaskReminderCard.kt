@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
@@ -38,6 +39,7 @@ object TaskReminderCard {
     private const val EXTRA_BODY = "aura_task_card_body"
     private const val EXTRA_BODY_KIND = "aura_task_card_body_kind"
     private const val EXTRA_BODY_MINUTES = "aura_task_card_body_minutes"
+    private const val EXTRA_DUE_AT = "aura_task_card_due_at"
 
     /** Default of the user's "remind X minutes before" setting (`task_reminder_minutes`), also used when it is invalid. */
     const val DEFAULT_REMINDER_MINUTES = 30
@@ -52,6 +54,26 @@ object TaskReminderCard {
     fun doneRequestCode(notificationId: Int): Int = notificationId + 3
 
     // Same wording as the post-check card (with shadda)
+    /** The silent "due now" re-post at the due time (TC1): action TASK_DUE_NOW, same family as tap/snooze/done. */
+    fun dueNowRequestCode(notificationId: Int): Int = notificationId + 4
+
+    /** Live countdown (Chronometer) only for the "before" reminder and only while the due time is still ahead. */
+    fun showsCountdown(kind: String?, dueAtMs: Long, nowMs: Long): Boolean =
+        kind == BODY_BEFORE && dueAtMs > nowMs
+
+    /** A "before" card whose due time has passed reads as "due now" (e.g. a theme refresh after the due time). */
+    fun effectiveKind(kind: String?, dueAtMs: Long, nowMs: Long): String? =
+        if (kind == BODY_BEFORE && dueAtMs in 1..nowMs) BODY_DUE_NOW else kind
+
+    /**
+     * Chronometer base (SystemClock.elapsedRealtime timebase) for the due moment. Recomputed from the absolute due
+     * time on every (re)post, so a live theme/language refresh keeps the timer correct.
+     */
+    fun countdownBase(dueAtMs: Long, nowMs: Long, elapsedNowMs: Long): Long = elapsedNowMs + (dueAtMs - nowMs)
+
+    /** One timer slot (%s): "Due in 04:32". The digits are the phone's own (Chronometer limit, see spec TC.3). */
+    fun countdownFormat(isArabic: Boolean): String = if (isArabic) "موعد المهمة بعد %s" else "Due in %s"
+
     fun snoozeLabel(isArabic: Boolean): String = if (isArabic) "ذكّرني لاحقاً" else "Remind Later"
 
     /** Arabic grammar: "دقائق" for 3-10, "دقيقة" for 1, 2 and 11+ (5 دقائق، 10 دقائق، 15 دقيقة، 60 دقيقة). */
@@ -101,11 +123,15 @@ object TaskReminderCard {
         body: String,
         bodyKind: String?,
         bodyMinutes: Int,
+        dueAtMs: Long,
         keepWhen: Long?
     ) {
         val isArabic = ThemedNotification.isArabic(context)
         val dark = ThemedNotification.isDark(context)
-        val bodyShown = bodyText(bodyKind, bodyMinutes, isArabic, body)
+        val nowMs = System.currentTimeMillis()
+        val kind = effectiveKind(bodyKind, dueAtMs, nowMs)
+        val countdown = showsCountdown(kind, dueAtMs, nowMs)
+        val bodyShown = bodyText(kind, bodyMinutes, isArabic, body)
 
         // Tap -> open the app on the Tasks tab (handleWidgetTabIntent reads this extra); unchanged
         val tapIntent = Intent(context, MainActivity::class.java).apply {
@@ -144,6 +170,17 @@ object TaskReminderCard {
         val view = RemoteViews(context.packageName, layoutId(dark, isArabic))
         view.setTextViewText(R.id.task_reminder_title, title)
         view.setTextViewText(R.id.task_reminder_body, bodyShown)
+        if (countdown) {
+            // Ticks every second in the system UI process, no app wakeups (API 24+, minSdk 24)
+            view.setViewVisibility(R.id.task_reminder_body, View.GONE)
+            view.setViewVisibility(R.id.task_reminder_countdown, View.VISIBLE)
+            view.setChronometerCountDown(R.id.task_reminder_countdown, true)
+            view.setChronometer(
+                R.id.task_reminder_countdown,
+                countdownBase(dueAtMs, nowMs, SystemClock.elapsedRealtime()),
+                countdownFormat(isArabic), true
+            )
+        }
         view.setTextViewText(R.id.btn_task_remind_later, snoozeLabel(isArabic))
         view.setOnClickPendingIntent(R.id.btn_task_remind_later, snoozePending)
         view.setTextViewText(R.id.btn_task_done, doneLabel(isArabic))
@@ -171,6 +208,7 @@ object TaskReminderCard {
             putString(EXTRA_BODY, body)
             putString(EXTRA_BODY_KIND, bodyKind ?: "")
             putInt(EXTRA_BODY_MINUTES, bodyMinutes)
+            putLong(EXTRA_DUE_AT, dueAtMs)
         }
         val builder = NotificationCompat.Builder(context, TaskReminderReceiver.CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
@@ -196,6 +234,23 @@ object TaskReminderCard {
         }
     }
 
+    /** `when` of this task card if it is still showing, else null (a dismissed card is not brought back). */
+    fun shownWhen(context: Context, notificationId: Int): Long? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return null
+        return try {
+            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+            nm.activeNotifications
+                .firstOrNull {
+                    it.packageName == context.packageName && it.id == notificationId &&
+                        it.notification.extras.getBoolean(EXTRA_MARK, false)
+                }
+                ?.notification?.`when`
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ shownWhen failed: ${e.message}")
+            null
+        }
+    }
+
     /**
      * Theme or language changed in the app (ThemedNotification.refreshAll): re-post every task reminder card that is
      * showing with a different look than the current theme/language would pick (layout, button labels and the body
@@ -218,6 +273,7 @@ object TaskReminderCard {
                     n.extras.getString(EXTRA_BODY) ?: "",
                     n.extras.getString(EXTRA_BODY_KIND)?.takeIf { it.isNotEmpty() },
                     n.extras.getInt(EXTRA_BODY_MINUTES, 0),
+                    n.extras.getLong(EXTRA_DUE_AT, 0L),
                     n.`when`
                 )
             }

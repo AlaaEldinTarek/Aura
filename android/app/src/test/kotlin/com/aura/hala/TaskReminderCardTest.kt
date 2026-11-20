@@ -1,6 +1,8 @@
 package com.aura.hala
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNotEquals
 import org.junit.Test
 
@@ -93,5 +95,53 @@ class TaskReminderCardTest {
         assertEquals("a,b", TaskReminderCard.addPendingDoneId("a", "b"))
         assertEquals("a,b", TaskReminderCard.addPendingDoneId("a,b", "a"))
         assertEquals("a", TaskReminderCard.addPendingDoneId("  ", "a"))
+    }
+
+    // ---- TC1: live countdown to the due time ----
+
+    @Test
+    fun `due-now alarm request code is id+4, apart from tap, snooze and done`() {
+        assertEquals(1238, TaskReminderCard.dueNowRequestCode(1234))
+        assertEquals(setOf(1235, 1236, 1237, 1238), setOf(
+            TaskReminderCard.tapRequestCode(1234), TaskReminderCard.snoozeRequestCode(1234),
+            TaskReminderCard.doneRequestCode(1234), TaskReminderCard.dueNowRequestCode(1234)
+        ))
+    }
+
+    @Test
+    fun `countdown only for the before kind and only while the due time is ahead`() {
+        val now = 1_000_000L
+        assertTrue(TaskReminderCard.showsCountdown(TaskReminderCard.BODY_BEFORE, now + 60_000, now))
+        assertFalse(TaskReminderCard.showsCountdown(TaskReminderCard.BODY_BEFORE, now, now))
+        assertFalse(TaskReminderCard.showsCountdown(TaskReminderCard.BODY_BEFORE, now - 1, now))
+        assertFalse(TaskReminderCard.showsCountdown(TaskReminderCard.BODY_BEFORE, 0L, now)) // no due time sent
+        assertFalse(TaskReminderCard.showsCountdown(TaskReminderCard.BODY_DUE_NOW, now + 60_000, now))
+        assertFalse(TaskReminderCard.showsCountdown(TaskReminderCard.BODY_TODAY, now + 60_000, now))
+        assertFalse(TaskReminderCard.showsCountdown(TaskReminderCard.BODY_PENDING, now + 60_000, now))
+        assertFalse(TaskReminderCard.showsCountdown(null, now + 60_000, now))
+    }
+
+    @Test
+    fun `a before card whose due time has passed reads as due now (refresh after the due time)`() {
+        val now = 1_000_000L
+        assertEquals(TaskReminderCard.BODY_BEFORE, TaskReminderCard.effectiveKind(TaskReminderCard.BODY_BEFORE, now + 1, now))
+        assertEquals(TaskReminderCard.BODY_DUE_NOW, TaskReminderCard.effectiveKind(TaskReminderCard.BODY_BEFORE, now, now))
+        assertEquals(TaskReminderCard.BODY_DUE_NOW, TaskReminderCard.effectiveKind(TaskReminderCard.BODY_BEFORE, now - 5_000, now))
+        assertEquals(TaskReminderCard.BODY_BEFORE, TaskReminderCard.effectiveKind(TaskReminderCard.BODY_BEFORE, 0L, now)) // unknown due time: unchanged
+        assertEquals(TaskReminderCard.BODY_TODAY, TaskReminderCard.effectiveKind(TaskReminderCard.BODY_TODAY, now - 5_000, now))
+    }
+
+    @Test
+    fun `chronometer base is the elapsed-realtime moment of the due time, so a re-post keeps the timer correct`() {
+        // due in 5 minutes
+        assertEquals(50_000L + 300_000L, TaskReminderCard.countdownBase(dueAtMs = 2_000_300_000L, nowMs = 2_000_000_000L, elapsedNowMs = 50_000L))
+        // a refresh 2 minutes later: same absolute due time, base moves with the clock, remaining stays consistent
+        assertEquals(170_000L + 180_000L, TaskReminderCard.countdownBase(dueAtMs = 2_000_300_000L, nowMs = 2_000_120_000L, elapsedNowMs = 170_000L))
+    }
+
+    @Test
+    fun `countdown text format has one timer slot, in both languages`() {
+        assertEquals("Due in %s", TaskReminderCard.countdownFormat(false))
+        assertEquals("موعد المهمة بعد %s", TaskReminderCard.countdownFormat(true))
     }
 }
