@@ -10,6 +10,7 @@ channel or FlutterSharedPreferences.
 | `open_reminder_picker`, `reminder_prayer_name`, `reminder_prayer_name_ar`, `reminder_prayer_time` | Bool/String/Long | none found (no `putExtra`, no constant; F13) | `MainActivity.kt:71–76` → `openReminderPicker` | Partial |
 | `update_prayer_status`, `prayer_name`, `prayer_status` | Bool/String | none found (F13) | `MainActivity.kt:85–89` → `updatePrayerStatus` | Partial |
 | `open_post_prayer_picker`, `prayer_name`, `prayer_name_ar`, `prayer_time` | Bool/String/Long | none found (F13) | `MainActivity.kt:97–102` → `openPostPrayerPicker` | Partial |
+| `body_kind`, `body_minutes`, action `com.aura.hala.TASK_DONE` (request code id+3) | String/Int | `TaskReminderCard.kt`, `TaskReminderReceiver.kt` (T2b; `body_kind` is also written by Remind Later as `pending`) | `TaskReminderReceiver.onReceive` | Verified (code) |
 | `complete_task_id`, `open_task_form` | String/Bool | `TasksWidget.kt:50–66,288–293` | `TasksWidget` itself → FlutterPrefs `pending_complete_task_id` / `widget_open_task_form` | Verified |
 | `tab_index` + action `com.aura.hala.ACTION_SWITCH_TAB` | Int | `PrayerWidgets.kt:164,173` | `PrayerWidgets.kt:57` (widget-internal tab switch) | Verified |
 | `refresh_prayer_times` | — | none | none (Dart + Kotlin grep: 0 hits) | Verified absent — stale doc claim (findings D5) |

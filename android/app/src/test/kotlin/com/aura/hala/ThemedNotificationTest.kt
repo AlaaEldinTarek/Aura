@@ -37,4 +37,10 @@ class ThemedNotificationTest {
             }
         }
     }
+
+    @Test
+    fun `digits become Eastern Arabic numerals and other characters stay`() {
+        assertEquals("\u0661\u0662:\u0660\u0665", ThemedNotification.withArabicNumerals("12:05"))
+        assertEquals("abc", ThemedNotification.withArabicNumerals("abc"))
+    }
 }

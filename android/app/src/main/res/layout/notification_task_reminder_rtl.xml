@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Task reminder card, light RTL (Arabic, mirrored) (docs/designs/fix-themed-notifications.md, T2).
-     Plain horizontal LinearLayout like notification_actions*.xml. Root forced LTR with the children written in mirrored order: from the right icon, text, button on the left.
-     Used for the collapsed and the expanded view. -->
+<!-- Task reminder card, light RTL (Arabic, mirrored) (docs/designs/fix-themed-notifications.md, T2/T2b).
+     Plain horizontal LinearLayout like notification_actions*.xml. Root forced LTR with the children written in mirrored order: from the right logo, text, buttons on the left.
+     Transparent Aura logo (ic_launcher_foreground). Used for the collapsed and the expanded view. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -14,29 +14,55 @@
     android:paddingTop="8dp"
     android:paddingBottom="8dp">
 
-    <TextView
-        android:id="@+id/btn_task_remind_later"
-        android:layout_width="84dp"
-        android:layout_height="28dp"
-        android:gravity="center"
-        android:maxLines="1"
-        android:ellipsize="end"
-        android:paddingLeft="4dp"
-        android:paddingRight="4dp"
-        android:background="@drawable/bg_post_check_remind_light"
-        android:clickable="true"
-        android:focusable="true"
-        android:text="Remind Later"
-        android:textSize="12sp"
-        android:textStyle="bold"
-        android:textColor="#B5821B" />
+    <!-- Done above Remind Later, same width, one column at the end (like the foreground vibration buttons). -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/btn_task_done"
+            android:layout_width="84dp"
+            android:layout_height="28dp"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp"
+            android:background="@drawable/bg_post_check_done"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="Done"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#4CAF50" />
+
+        <TextView
+            android:id="@+id/btn_task_remind_later"
+            android:layout_width="84dp"
+            android:layout_height="28dp"
+            android:layout_marginTop="4dp"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp"
+            android:background="@drawable/bg_post_check_remind_light"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="Remind Later"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#B5821B" />
+
+    </LinearLayout>
 
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:layout_marginLeft="8dp"
-        android:layout_marginRight="10dp"
+        android:layout_marginRight="6dp"
         android:orientation="vertical">
 
         <TextView
@@ -68,10 +94,10 @@
 
     <ImageView
         android:id="@+id/task_reminder_icon"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:src="@mipmap/ic_launcher"
-        android:scaleType="centerCrop"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/ic_launcher_foreground"
+        android:scaleType="centerInside"
         android:contentDescription="Aura" />
 
 </LinearLayout>

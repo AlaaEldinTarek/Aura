@@ -15,6 +15,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/providers/prayer_times_provider.dart';
 import '../../core/providers/task_provider.dart';
+import '../../core/utils/pending_task_done.dart';
 import '../../core/services/task_service.dart';
 import '../../core/services/achievement_service.dart';
 import '../../core/services/notification_service.dart';
@@ -432,13 +433,20 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       await prefs.reload();
 
       // Handle tap-to-complete from widget
-      final taskId = prefs.getString('pending_complete_task_id');
-      if (taskId != null && taskId.isNotEmpty) {
+      // The Tasks widget writes one id; the task reminder notification's Done button may write several (comma
+      // separated). Both only COMPLETE: a task that is already done is never un-completed.
+      final pendingIds = parsePendingTaskIds(prefs.getString('pending_complete_task_id'));
+      if (pendingIds.isNotEmpty) {
         prefs.remove('pending_complete_task_id');
         final userId = ref.read(currentUserIdProvider);
-        await TaskService.instance
-            .toggleTaskCompletion(userId: userId, taskId: taskId);
-        debugPrint('✅ Widget tap-to-complete: toggled task $taskId');
+        for (final taskId in pendingIds) {
+          await TaskService.instance
+              .toggleTaskCompletion(userId: userId, taskId: taskId, onlyComplete: true);
+          debugPrint('✅ Widget/notification Done: completed task $taskId');
+        }
+        // Task list, statistics and the widget count follow the completion
+        ref.invalidate(tasksProvider(const TaskFilterParams()));
+        ref.invalidate(allTasksProvider);
       }
 
       // Handle quick-add from widget "+" button
