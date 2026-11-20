@@ -160,3 +160,15 @@ Branch `fix/themed-timer` from main (own PR). No code until "approve phase TC". 
 - TC1: task card countdown + due-now switch alarm + contracts + device check of lock screen/digits (tests first: base math, due-now kind choice, alarm request code).
 - TC2: decide the post-check option after the owner's choice (skip by default).
 - TC3: Jumu'ah countdown inside T7.
+
+### TC1 results (2026-11-20, branch `fix/themed-timer`, nothing pushed)
+Owner-observed unless marked log.
+- **Countdown** (collapsed, expanded, lock screen): PASS. Alarm armed 15:20:00 for 15:25:00 and fired 15:25:00.046 (log VERIFIED).
+- **Due-now switch**: first build FAIL (card showed `-00:14`). Cause VERIFIED from the log: the alarm fired on time; the due-now repost only set the body text and SystemUI re-applies a new RemoteViews on the view already showing, so the old state (countdown visible, body hidden) stayed. Fix: every view's visibility/state is set explicitly in both modes, plus a `setTimeoutAfter` safety net on every task-card post. Re-check 16:46-16:51: PASS.
+- **Task card ongoing**: EMUI hid a dismissible card from the lock screen after an unlock. The card is now ongoing (like the post-check card), removed by Done, Remind Later, a tap, or its timeout (countdown: due time + 2 s; due now: 30 min; other kinds: end of day). It can no longer be swiped away.
+- **Arabic digits**: still Latin. Font fallback (b) (Cairo with Arabic-Indic digit glyphs) did not work in a notification (03:38 stayed Latin); the font and the two layout lines were removed. Latin digits accepted. Fallback (c) not done.
+- **Lock-screen public version**: same themed card (4 layouts, mirrored in Arabic) with the generic title "Aura - Task reminder" / "هالة - تذكير بمهمة", the countdown / due-now text, and Done + Remind Later; the task title stays hidden. 18:02 PASS (screenshot: generic title, countdown 02:53, both buttons, phone locked).
+- **Buttons from the locked screen**: Done: log VERIFIED, `Task reminder Done id=4161` at 18:05:19.484 (after the due-now switch at 18:05:00.067), card cancelled, completion left for the app's next open; the owner's result of the in-app completion is pending. Remind Later: no snooze line in the 18:00-18:06 log, so it was not pressed in that run (owner's yes/no left blank in the report).
+- **Bonus, real Maghrib post-check** (posted 17:34:00, log VERIFIED): showed on the locked phone with 4 buttons (dark, Arabic): PASS. The title "هل صليت المغرب؟" wraps to two lines (accepted for now). Which button was pressed: UNKNOWN (the log has `Marked Maghrib as late (Flutter)` at 17:54:56, which comes from the app, not a card button).
+- Checks: gradle unit tests pass; `flutter test` 853 passed; `flutter analyze` 408 issues, 0 errors (= main); release APK built, installed 17:05:55.
+- Commits: 701b5a4, 77e656c, 1b80c46, 831c47f.
