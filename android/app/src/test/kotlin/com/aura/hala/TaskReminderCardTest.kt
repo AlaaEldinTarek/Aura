@@ -18,7 +18,7 @@ class TaskReminderCardTest {
     @Test
     fun `button label is Remind Later in English and the Arabic wording as before`() {
         assertEquals("Remind Later", TaskReminderCard.snoozeLabel(false))
-        assertEquals("ذكرني لاحقاً", TaskReminderCard.snoozeLabel(true))
+        assertEquals("ذكّرني لاحقاً", TaskReminderCard.snoozeLabel(true))
     }
 
     @Test
@@ -53,6 +53,19 @@ class TaskReminderCardTest {
         assertEquals("لديك مهمة مستحقة اليوم", TaskReminderCard.bodyText(TaskReminderCard.BODY_TODAY, 0, true, "x"))
         assertEquals("Your task is still pending", TaskReminderCard.bodyText(TaskReminderCard.BODY_PENDING, 0, false, "x"))
         assertEquals("لا تزال المهمة معلقة", TaskReminderCard.bodyText(TaskReminderCard.BODY_PENDING, 0, true, "x"))
+    }
+
+    @Test
+    fun `arabic minutes unit - plural for 3 to 10, singular for 1, 2 and 11 plus`() {
+        fun body(m: Int) = TaskReminderCard.bodyText(TaskReminderCard.BODY_BEFORE, m, true, "x")
+        assertEquals("موعد المهمة بعد ١ دقيقة", body(1))
+        assertEquals("موعد المهمة بعد ٢ دقيقة", body(2))
+        assertEquals("موعد المهمة بعد ٣ دقائق", body(3))
+        assertEquals("موعد المهمة بعد ٥ دقائق", body(5))
+        assertEquals("موعد المهمة بعد ١٠ دقائق", body(10))
+        assertEquals("موعد المهمة بعد ١١ دقيقة", body(11))
+        assertEquals("موعد المهمة بعد ١٥ دقيقة", body(15))
+        assertEquals("موعد المهمة بعد ٦٠ دقيقة", body(60))
     }
 
     @Test

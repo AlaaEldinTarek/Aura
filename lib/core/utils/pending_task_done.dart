@@ -20,3 +20,26 @@ List<String> parsePendingTaskIds(String? raw) {
 
 /// "Done" only completes: a task that is already completed must be left alone, never un-completed.
 bool shouldApplyDone({required bool alreadyCompleted}) => !alreadyCompleted;
+
+/// Which of the pending Done ids count for the task streak. Same rule as the Home and Tasks screens: completing the
+/// LAST incomplete active task (due today or no due date) counts. A task that is already completed (or unknown) never
+/// counts, and an id listed twice counts once. [openIds] = every incomplete task, [activeOpenIds] = the incomplete
+/// ones that are due today or undated. The caller completes the ids in order, so each completion shrinks the active
+/// list for the next one.
+List<String> streakCountingIds({
+  required List<String> pendingIds,
+  required Set<String> openIds,
+  required Set<String> activeOpenIds,
+}) {
+  final open = {...openIds};
+  final active = {...activeOpenIds};
+  final counting = <String>[];
+  for (final id in pendingIds.toSet()) {
+    if (!open.contains(id)) continue; // already completed or unknown: Done does nothing
+    final wasLast = active.length == 1 && active.contains(id);
+    open.remove(id);
+    active.remove(id);
+    if (wasLast) counting.add(id);
+  }
+  return counting;
+}

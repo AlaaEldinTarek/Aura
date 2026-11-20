@@ -29,4 +29,32 @@ void main() {
       expect(parsePendingTaskIds('a, b ,a,c'), ['a', 'b', 'c']);
     });
   });
+
+  // Same rule as the Home and Tasks screens: completing the LAST incomplete active task (due today or no due date)
+  // counts for the streak. Done never counts an already-done task, and never twice for the same task.
+  group('streakCountingIds', () {
+    test('last active task completed counts', () {
+      expect(streakCountingIds(pendingIds: ['a'], openIds: {'a', 'x'}, activeOpenIds: {'a'}), ['a']);
+    });
+
+    test('not the last active task: no streak', () {
+      expect(streakCountingIds(pendingIds: ['a'], openIds: {'a', 'b'}, activeOpenIds: {'a', 'b'}), isEmpty);
+    });
+
+    test('an already completed (or unknown) task never counts', () {
+      expect(streakCountingIds(pendingIds: ['a'], openIds: {'b'}, activeOpenIds: {'b'}), isEmpty);
+    });
+
+    test('the same id twice counts once', () {
+      expect(streakCountingIds(pendingIds: ['a', 'a'], openIds: {'a'}, activeOpenIds: {'a'}), ['a']);
+    });
+
+    test('several ids: only the completion that empties the active list counts', () {
+      expect(streakCountingIds(pendingIds: ['a', 'b'], openIds: {'a', 'b'}, activeOpenIds: {'a', 'b'}), ['b']);
+    });
+
+    test('a task that is open but not active today (future date) does not count', () {
+      expect(streakCountingIds(pendingIds: ['f'], openIds: {'f'}, activeOpenIds: <String>{}), isEmpty);
+    });
+  });
 }

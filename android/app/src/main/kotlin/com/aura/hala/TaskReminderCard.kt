@@ -51,7 +51,11 @@ object TaskReminderCard {
 
     fun doneRequestCode(notificationId: Int): Int = notificationId + 3
 
-    fun snoozeLabel(isArabic: Boolean): String = if (isArabic) "ذكرني لاحقاً" else "Remind Later"
+    // Same wording as the post-check card (with shadda)
+    fun snoozeLabel(isArabic: Boolean): String = if (isArabic) "ذكّرني لاحقاً" else "Remind Later"
+
+    /** Arabic grammar: "دقائق" for 3-10, "دقيقة" for 1, 2 and 11+ (5 دقائق، 10 دقائق، 15 دقيقة، 60 دقيقة). */
+    fun arabicMinutesUnit(minutes: Int): String = if (minutes in 3..10) "دقائق" else "دقيقة"
 
     fun doneLabel(isArabic: Boolean): String = if (isArabic) "إتمام" else "Done"
 
@@ -65,7 +69,7 @@ object TaskReminderCard {
     fun bodyText(kind: String?, minutes: Int, isArabic: Boolean, fallback: String): String = when (kind) {
         BODY_DUE_NOW -> if (isArabic) "حان موعد المهمة الآن" else "Task is due now"
         BODY_BEFORE ->
-            if (isArabic) "موعد المهمة بعد ${ThemedNotification.withArabicNumerals(minutes.toString())} دقيقة"
+            if (isArabic) "موعد المهمة بعد ${ThemedNotification.withArabicNumerals(minutes.toString())} ${arabicMinutesUnit(minutes)}"
             else "Task due in $minutes minutes"
         BODY_TODAY -> if (isArabic) "لديك مهمة مستحقة اليوم" else "You have a task due today"
         BODY_PENDING -> if (isArabic) "لا تزال المهمة معلقة" else "Your task is still pending"
