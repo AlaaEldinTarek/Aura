@@ -1049,6 +1049,15 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
 - Searched: `PrayerAlarmReceiver.kt`, `PrayerForegroundService.kt`, `res/layout/notification_*.xml`; Windows toast path not
   checked.
 
+## F73 — Ringer-mode save/restore edge cases around the vibrate window (owner report + code read, 2026-11-20) — LOW / later — code VERIFIED, device impact UNVERIFIED
+Owner saw the phone stay on vibrate after an adhan window. The 18:39 restore of the next window worked by itself (normal use is fine); the earlier failure was most likely a dev-tile test adhan during a real window. **Owner decision: no fix now, record only.** Log read: `SilentOffReceiver` and the 3999 alarm behave normally for a single window.
+- **(a) Overlapping windows restore VIBRATE.** `saved_ringer_mode` is written without checking `is_silent_active` (`PrayerAlarmReceiver.kt:798-799`, `ToggleSilentModeReceiver.kt:84-85`). A second start during an active window saves VIBRATE over the real mode, and the end restores VIBRATE. Real prayers cannot overlap a 20-minute window; the dev-tile test adhan can.
+- **(b) The restore overwrites a ringer change the user made during the window.** `restoreRingerMode` sets `saved_ringer_mode` unconditionally (`ToggleSilentModeReceiver.kt:384-392`, same in `SilentModeAutomation.kt:76-87`).
+- **(c) `PrayerBootReceiver` ends Keep Vibration on reboot.** It restores `saved_ringer_mode` whenever `is_silent_active` is true (`:40-56`), including the permanent state (`silent_end_time == 0`).
+- **(d) Focus Mode.** `FocusModeService` keeps its own in-memory `savedRingerMode` (`:92`, saved at `:409`): started during Aura's window it saves VIBRATE, and the value is lost if the process dies. `FocusModeActivity` always restores NORMAL (`:329`), ignoring what it saved (`:295`).
+- Sketch of a later fix (not approved): save only when `is_silent_active` is false; at the end restore only if the ringer is still the VIBRATE Aura set; skip the boot restore when `silent_end_time == 0`; give Focus Mode the same guard. No key renames, tests in `SilentModeStateTest`.
+- **Tag: fix track, LOW, later.**
+
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
 - `ringer_mode` handler is in `MainActivity`, not `SilentModeAutomation.kt`.
