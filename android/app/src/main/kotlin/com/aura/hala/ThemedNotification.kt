@@ -33,6 +33,10 @@ object ThemedNotification {
     fun isArabic(context: Context): Boolean =
         (context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE).getString("language", "en") ?: "en") == "ar"
 
+    /** Western digits to Eastern Arabic numerals; every other character stays (CLAUDE.md: numbers in Arabic UI). */
+    fun withArabicNumerals(input: String): String =
+        input.map { c -> if (c in '0'..'9') ('\u0660' + (c - '0')) else c }.joinToString("")
+
     /** One of four layout ids for the current theme and language. */
     fun pickLayout(dark: Boolean, isArabic: Boolean, light: Int, darkLayout: Int, lightRtl: Int, darkRtl: Int): Int = when {
         dark && isArabic -> darkRtl
@@ -70,6 +74,7 @@ object ThemedNotification {
      */
     fun refreshAll(context: Context) {
         PostCheckCard.refreshShowing(context)
+        TaskReminderCard.refreshShowing(context)
         PrayerForegroundService.getInstance()?.refreshNotification()
     }
 }

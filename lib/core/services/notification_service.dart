@@ -683,6 +683,9 @@ class NotificationService {
 
     DateTime reminderTime;
     String body;
+    // Kind of body text, so Android builds it in the app language (also after a live language change)
+    String bodyKind;
+    int bodyMinutes = 0;
 
     if (hasDueTime) {
       // Specific time set — remind X minutes before (user setting)
@@ -690,12 +693,15 @@ class NotificationService {
       final reminderMinutes = prefs2.getInt('task_reminder_minutes') ?? 30;
       final reminderBefore = dueDate.subtract(Duration(minutes: reminderMinutes));
       reminderTime = reminderBefore.isAfter(now) ? reminderBefore : dueDate;
+      bodyKind = reminderBefore.isAfter(now) ? 'before' : 'due_now';
+      bodyMinutes = reminderMinutes;
       body = isArabic
           ? (reminderBefore.isAfter(now) ? 'موعد المهمة بعد ${NumberFormatter.withArabicNumerals('$reminderMinutes')} دقيقة' : 'حان موعد المهمة الآن')
           : (reminderBefore.isAfter(now) ? 'Task due in $reminderMinutes minutes' : 'Task is due now');
     } else {
       // No specific time — remind at 9:00 AM on the due date
       reminderTime = DateTime(dueDate.year, dueDate.month, dueDate.day, 9, 0);
+      bodyKind = 'today';
       body = isArabic ? 'لديك مهمة مستحقة اليوم' : 'You have a task due today';
     }
 
@@ -712,7 +718,9 @@ class NotificationService {
       return;
     }
 
-    // An active "Remind Later" snooze owns this notification id — leave it.
+    // An active "Remind Later" snooze owns this notification id — leave it. The native Remind Later writes
+    // `task_snoozed_until_<id>` itself, so reload before reading (Dart caches the prefs file).
+    await prefs.reload();
     final snoozedUntil = prefs.getInt('task_snoozed_until_$taskId') ?? 0;
     if (snoozedUntil > now.millisecondsSinceEpoch) {
       debugPrint('TaskNotification: "$title" snoozed until '
@@ -735,6 +743,8 @@ class NotificationService {
           'body': body,
           'triggerAt': reminderTime.millisecondsSinceEpoch,
           'isArabic': isArabic,
+          'bodyKind': bodyKind,
+          'bodyMinutes': bodyMinutes,
         });
         debugPrint('TaskNotification: Native reminder scheduled "$title" at $reminderTime (id=$notifId)');
       } catch (e) {

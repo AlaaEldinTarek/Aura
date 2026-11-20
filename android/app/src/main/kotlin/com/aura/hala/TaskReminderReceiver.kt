@@ -37,13 +37,14 @@ class TaskReminderReceiver : BroadcastReceiver() {
         const val CHANNEL_ID = "task_reminders"
 
         const val ACTION_SNOOZE = "com.aura.hala.TASK_REMIND_LATER"
+        const val ACTION_DONE = "com.aura.hala.TASK_DONE"
+        const val EXTRA_BODY_KIND = "body_kind"
+        const val EXTRA_BODY_MINUTES = "body_minutes"
         const val EXTRA_NOTIFICATION_ID = "notification_id"
         const val EXTRA_TASK_ID = "task_id"
         const val EXTRA_TITLE = "title"
         const val EXTRA_BODY = "body"
         const val EXTRA_IS_ARABIC = "is_arabic"
-
-        private const val SNOOZE_MINUTES = 30
 
         fun schedule(
             context: Context,
@@ -52,7 +53,9 @@ class TaskReminderReceiver : BroadcastReceiver() {
             title: String,
             body: String,
             triggerAtMs: Long,
-            isArabic: Boolean
+            isArabic: Boolean,
+            bodyKind: String? = null,
+            bodyMinutes: Int = 0
         ) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             val intent = Intent(context, TaskReminderReceiver::class.java).apply {
@@ -61,6 +64,8 @@ class TaskReminderReceiver : BroadcastReceiver() {
                 putExtra(EXTRA_TITLE, title)
                 putExtra(EXTRA_BODY, body)
                 putExtra(EXTRA_IS_ARABIC, isArabic)
+                if (bodyKind != null) putExtra(EXTRA_BODY_KIND, bodyKind)
+                putExtra(EXTRA_BODY_MINUTES, bodyMinutes)
             }
             val pendingIntent = PendingIntent.getBroadcast(
                 context, notificationId, intent,
@@ -90,65 +95,58 @@ class TaskReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val notificationId = intent.getIntExtra(EXTRA_NOTIFICATION_ID, 0)
         val taskId = intent.getStringExtra(EXTRA_TASK_ID) ?: ""
+
+        if (intent.action == ACTION_DONE) {
+            // "Done" -> remove the card, cancel any pending Remind Later alarm (same request code) so no more
+            // reminders come, and hand the task id to the app, which COMPLETES it (never un-completes) on its next
+            // open or resume: same path as the Tasks widget (`pending_complete_task_id`, main_wrapper_screen.dart).
+            cancel(context, notificationId)
+            if (taskId.isNotBlank()) {
+                FlutterPrefs.putString(
+                    context, "pending_complete_task_id",
+                    TaskReminderCard.addPendingDoneId(FlutterPrefs.getString(context, "pending_complete_task_id", ""), taskId)
+                )
+                FlutterPrefs.remove(context, "task_snoozed_until_$taskId")
+            }
+            Log.d(TAG, "✅ Task reminder Done id=$notificationId task=$taskId (completed by the app on its next open)")
+            return
+        }
+
         val title = intent.getStringExtra(EXTRA_TITLE) ?: return
         val body = intent.getStringExtra(EXTRA_BODY) ?: ""
         val isArabic = intent.getBooleanExtra(EXTRA_IS_ARABIC, false)
 
         if (intent.action == ACTION_SNOOZE) {
-            // "Remind Later" → dismiss and re-arm in 30 minutes, no app launch
+            // "Remind Later" -> dismiss and re-arm after the user's task reminder setting (read now, so a changed
+            // setting applies), no app launch. Each press re-arms again.
             NotificationManagerCompat.from(context).cancel(notificationId)
+            val snoozeMinutes = TaskReminderCard.snoozeDelayMinutes(
+                FlutterPrefs.getInt(context, "task_reminder_minutes", TaskReminderCard.DEFAULT_REMINDER_MINUTES)
+            )
+            val triggerAt = System.currentTimeMillis() + snoozeMinutes * 60 * 1000L
             schedule(
                 context, notificationId, taskId, title,
                 if (isArabic) "لا تزال المهمة معلقة" else "Your task is still pending",
-                System.currentTimeMillis() + SNOOZE_MINUTES * 60 * 1000L,
-                isArabic
+                triggerAt, isArabic, TaskReminderCard.BODY_PENDING, 0
             )
-            Log.d(TAG, "🔕 Task reminder snoozed $SNOOZE_MINUTES min id=$notificationId")
+            // Tell Dart's bulk re-arm (rescheduleAllTaskReminders, edits) that a snooze owns this id, like the old
+            // Dart snooze did (`task_snoozed_until_<id>`, read in NotificationService.scheduleTaskReminder).
+            if (taskId.isNotBlank()) FlutterPrefs.putLong(context, "task_snoozed_until_$taskId", triggerAt)
+            Log.d(TAG, "🔕 Task reminder snoozed $snoozeMinutes min id=$notificationId")
             return
         }
 
         Log.d(TAG, "🔔 Task reminder fired id=$notificationId task=$taskId")
         ensureChannel(context)
 
-        // Tap → open the app on the Tasks tab (handleWidgetTabIntent reads this extra)
-        val tapIntent = Intent(context, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra("widget_target_tab", 3)
-        }
-        val tapPending = PendingIntent.getActivity(
-            context, notificationId + 1, tapIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        // The card (layout by app theme and language, body in the app language, Done and Remind Later buttons) is
+        // built in TaskReminderCard so a theme or language change can re-post it (themed notifications, T2/T2b).
+        TaskReminderCard.show(
+            context, notificationId, taskId, title, body,
+            intent.getStringExtra(EXTRA_BODY_KIND)?.takeIf { it.isNotEmpty() },
+            intent.getIntExtra(EXTRA_BODY_MINUTES, 0),
+            null
         )
-
-        val snoozeIntent = Intent(context, TaskReminderReceiver::class.java).apply {
-            action = ACTION_SNOOZE
-            putExtra(EXTRA_NOTIFICATION_ID, notificationId)
-            putExtra(EXTRA_TASK_ID, taskId)
-            putExtra(EXTRA_TITLE, title)
-            putExtra(EXTRA_IS_ARABIC, isArabic)
-        }
-        val snoozePending = PendingIntent.getBroadcast(
-            context, notificationId + 2, snoozeIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(title)
-            .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(NotificationCompat.CATEGORY_REMINDER)
-            .setAutoCancel(true)
-            .setContentIntent(tapPending)
-            .addAction(0, if (isArabic) "ذكرني لاحقاً" else "Remind Later", snoozePending)
-
-        try {
-            NotificationManagerCompat.from(context).notify(notificationId, builder.build())
-            Log.d(TAG, "✅ Task reminder posted id=$notificationId")
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Error posting task reminder: ${e.message}")
-        }
     }
 
     private fun ensureChannel(context: Context) {

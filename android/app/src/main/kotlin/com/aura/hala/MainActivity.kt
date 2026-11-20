@@ -561,7 +561,9 @@ class MainActivity : FlutterFragmentActivity() {
                     val triggerAt = call.argument<Long>("triggerAt")
                         ?: return@setMethodCallHandler result.error("INVALID", "triggerAt required", null)
                     val isArabic = call.argument<Boolean>("isArabic") ?: false
-                    TaskReminderReceiver.schedule(this, notificationId, taskId, title, body, triggerAt, isArabic)
+                    val bodyKind = call.argument<String>("bodyKind")
+                    val bodyMinutes = call.argument<Int>("bodyMinutes") ?: 0
+                    TaskReminderReceiver.schedule(this, notificationId, taskId, title, body, triggerAt, isArabic, bodyKind, bodyMinutes)
                     result.success(true)
                 }
                 "cancelNativeTaskReminder" -> {

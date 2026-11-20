@@ -1,3 +1,4 @@
+import '../utils/pending_task_done.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform;
@@ -491,7 +492,9 @@ class TaskService {
 
   // ── Toggle completion ──────────────────────────────────────────────────────
 
-  Future<bool> toggleTaskCompletion({required String userId, required String taskId}) async {
+  /// [onlyComplete]: never un-complete (used by the notification Done button and the widget hand-off): a task
+  /// that is already completed is left as it is and the call reports success.
+  Future<bool> toggleTaskCompletion({required String userId, required String taskId, bool onlyComplete = false}) async {
     try {
       Task? currentTask;
 
@@ -511,6 +514,8 @@ class TaskService {
           currentTask = Task.fromFirestore(doc);
         }
       }
+
+      if (onlyComplete && !shouldApplyDone(alreadyCompleted: currentTask.isCompleted)) return true;
 
       final newStatus = !currentTask.isCompleted;
 
