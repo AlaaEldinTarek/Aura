@@ -105,6 +105,10 @@ object TaskReminderCard {
 
     fun modeFor(countdown: Boolean): Mode = if (countdown) Mode.COUNTDOWN else Mode.TEXT
 
+    /** Title of the full card is the task; the lock-screen public version only says "Aura - Task reminder". */
+    fun titleFor(publicVersion: Boolean, title: String, isArabic: Boolean): String =
+        if (publicVersion) publicTitle(isArabic) else title
+
     fun snoozeLabel(isArabic: Boolean): String = if (isArabic) "ذكّرني لاحقاً" else "Remind Later"
 
     /** Arabic grammar: "دقائق" for 3-10, "دقيقة" for 1, 2 and 11+ (5 دقائق، 10 دقائق، 15 دقيقة، 60 دقيقة). */
@@ -198,43 +202,44 @@ object TaskReminderCard {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val view = RemoteViews(context.packageName, layoutId(dark, isArabic))
-        view.setTextViewText(R.id.task_reminder_title, title)
-        view.setTextViewText(R.id.task_reminder_body, bodyShown)
-        // Both views are set explicitly in both modes: when the card is updated, SystemUI re-applies the new
-        // RemoteViews on the view that is already showing and only touches what it sets, so a due-now repost that
-        // only set the body text left the old state (countdown visible, body hidden) and the timer went negative.
-        when (modeFor(countdown)) {
-            Mode.COUNTDOWN -> {
-                // Ticks every second in the system UI process, no app wakeups (API 24+, minSdk 24)
-                view.setViewVisibility(R.id.task_reminder_body, View.GONE)
-                view.setViewVisibility(R.id.task_reminder_countdown, View.VISIBLE)
-                view.setChronometerCountDown(R.id.task_reminder_countdown, true)
-                view.setChronometer(
-                    R.id.task_reminder_countdown,
-                    countdownBase(dueAtMs, nowMs, SystemClock.elapsedRealtime()),
-                    countdownFormat(isArabic), true
-                )
+        fun buildCard(publicVersion: Boolean): RemoteViews {
+            val view = RemoteViews(context.packageName, layoutId(dark, isArabic))
+            view.setTextViewText(R.id.task_reminder_title, titleFor(publicVersion, title, isArabic))
+            view.setTextViewText(R.id.task_reminder_body, bodyShown)
+            // Both views are set explicitly in both modes: when the card is updated, SystemUI re-applies the new
+            // RemoteViews on the view that is already showing and only touches what it sets, so a due-now repost that
+            // only set the body text left the old state (countdown visible, body hidden) and the timer went negative.
+            when (modeFor(countdown)) {
+                Mode.COUNTDOWN -> {
+                    // Ticks every second in the system UI process, no app wakeups (API 24+, minSdk 24)
+                    view.setViewVisibility(R.id.task_reminder_body, View.GONE)
+                    view.setViewVisibility(R.id.task_reminder_countdown, View.VISIBLE)
+                    view.setChronometerCountDown(R.id.task_reminder_countdown, true)
+                    view.setChronometer(
+                        R.id.task_reminder_countdown,
+                        countdownBase(dueAtMs, nowMs, SystemClock.elapsedRealtime()),
+                        countdownFormat(isArabic), true
+                    )
+                }
+                Mode.TEXT -> {
+                    view.setViewVisibility(R.id.task_reminder_countdown, View.GONE)
+                    view.setChronometer(R.id.task_reminder_countdown, SystemClock.elapsedRealtime(), null, false)
+                    view.setViewVisibility(R.id.task_reminder_body, View.VISIBLE)
+                }
             }
-            Mode.TEXT -> {
-                view.setViewVisibility(R.id.task_reminder_countdown, View.GONE)
-                view.setChronometer(R.id.task_reminder_countdown, SystemClock.elapsedRealtime(), null, false)
-                view.setViewVisibility(R.id.task_reminder_body, View.VISIBLE)
-            }
+            view.setTextViewText(R.id.btn_task_remind_later, snoozeLabel(isArabic))
+            view.setOnClickPendingIntent(R.id.btn_task_remind_later, snoozePending)
+            view.setTextViewText(R.id.btn_task_done, doneLabel(isArabic))
+            view.setOnClickPendingIntent(R.id.btn_task_done, donePending)
+            return view
         }
-        view.setTextViewText(R.id.btn_task_remind_later, snoozeLabel(isArabic))
-        view.setOnClickPendingIntent(R.id.btn_task_remind_later, snoozePending)
-        view.setTextViewText(R.id.btn_task_done, doneLabel(isArabic))
-        view.setOnClickPendingIntent(R.id.btn_task_done, donePending)
 
-        // What the locked screen shows: the same themed card with only the generic title (no task, no buttons)
+        val view = buildCard(false)
+
+        // What the locked screen shows: the same themed card (buttons, countdown / due-now text) with only the generic
+        // title, never the task. The buttons are broadcast PendingIntents, so they work without unlocking.
         val publicTitleText = publicTitle(isArabic)
-        val publicView = RemoteViews(context.packageName, layoutId(dark, isArabic))
-        publicView.setTextViewText(R.id.task_reminder_title, publicTitleText)
-        publicView.setViewVisibility(R.id.task_reminder_body, View.GONE)
-        publicView.setViewVisibility(R.id.task_reminder_countdown, View.GONE)
-        publicView.setViewVisibility(R.id.btn_task_remind_later, View.GONE)
-        publicView.setViewVisibility(R.id.btn_task_done, View.GONE)
+        val publicView = buildCard(true)
         val publicNotification = NotificationCompat.Builder(context, TaskReminderReceiver.CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(publicTitleText)

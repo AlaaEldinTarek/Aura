@@ -182,4 +182,14 @@ class TaskReminderCardTest {
         // existing view and only touches what the new RemoteViews sets
         assertEquals(TaskReminderCard.Mode.TEXT, TaskReminderCard.modeFor(false))
     }
+
+    // ---- TC1: the lock-screen public version keeps the buttons and the timer, only the title is generic ----
+
+    @Test
+    fun `public version differs from the full card only by the title, which never names the task`() {
+        assertEquals("Buy milk", TaskReminderCard.titleFor(false, "Buy milk", false))
+        assertEquals("Aura - Task reminder", TaskReminderCard.titleFor(true, "Buy milk", false))
+        assertEquals("هالة - تذكير بمهمة", TaskReminderCard.titleFor(true, "اشتري حليب", true))
+        assertEquals("اشتري حليب", TaskReminderCard.titleFor(false, "اشتري حليب", true))
+    }
 }
