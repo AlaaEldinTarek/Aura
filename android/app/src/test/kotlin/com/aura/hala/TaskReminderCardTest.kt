@@ -144,4 +144,32 @@ class TaskReminderCardTest {
         assertEquals("Due in %s", TaskReminderCard.countdownFormat(false))
         assertEquals("موعد المهمة بعد %s", TaskReminderCard.countdownFormat(true))
     }
+
+    // ---- TC1 fix: never a negative time ----
+
+    @Test
+    fun `countdown card expires just after the due time, so a late repost can never leave a long negative time`() {
+        val now = 1_000_000L
+        // due in 5 minutes: removed 2 s after the due moment if the due-now repost never came
+        assertEquals(300_000L + TaskReminderCard.COUNTDOWN_GRACE_MS, TaskReminderCard.timeoutAfterMs(true, now + 300_000L, now))
+        assertEquals(2_000L, TaskReminderCard.COUNTDOWN_GRACE_MS)
+        // never zero or negative (a timeout of 0 means "no timeout")
+        assertTrue(TaskReminderCard.timeoutAfterMs(true, now - 10_000L, now) >= 1_000L)
+    }
+
+    @Test
+    fun `every other task card post replaces that timeout with a long one, so it can never delete a later card`() {
+        val now = 1_000_000L
+        assertEquals(TaskReminderCard.LONG_TIMEOUT_MS, TaskReminderCard.timeoutAfterMs(false, 0L, now))
+        assertEquals(24L * 60 * 60 * 1000, TaskReminderCard.LONG_TIMEOUT_MS)
+    }
+
+    @Test
+    fun `due-now repost shows the body and hides the countdown (a re-applied RemoteViews keeps old view states)`() {
+        // countdown card
+        assertEquals(TaskReminderCard.Mode.COUNTDOWN, TaskReminderCard.modeFor(true))
+        // every other card must explicitly reset the two views, because SystemUI re-applies the update on the
+        // existing view and only touches what the new RemoteViews sets
+        assertEquals(TaskReminderCard.Mode.TEXT, TaskReminderCard.modeFor(false))
+    }
 }

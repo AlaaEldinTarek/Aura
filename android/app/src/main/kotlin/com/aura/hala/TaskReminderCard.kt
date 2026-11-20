@@ -74,6 +74,25 @@ object TaskReminderCard {
     /** One timer slot (%s): "Due in 04:32". The digits are the phone's own (Chronometer limit, see spec TC.3). */
     fun countdownFormat(isArabic: Boolean): String = if (isArabic) "موعد المهمة بعد %s" else "Due in %s"
 
+    /**
+     * The countdown card is removed by the system this long after the due time if the due-now repost never came, so
+     * the card can never keep a negative time. The repost (normally within ~50 ms of the due time) replaces it.
+     */
+    const val COUNTDOWN_GRACE_MS = 2_000L
+
+    /**
+     * Every other post sets a long timeout: a post without a timeout may not clear an earlier
+     * one (UNKNOWN), so a leftover short timeout could delete a later card (due-now, Remind Later).
+     */
+    const val LONG_TIMEOUT_MS = 24L * 60 * 60 * 1000
+
+    fun timeoutAfterMs(countdown: Boolean, dueAtMs: Long, nowMs: Long): Long =
+        if (countdown) maxOf(1_000L, dueAtMs - nowMs + COUNTDOWN_GRACE_MS) else LONG_TIMEOUT_MS
+
+    enum class Mode { COUNTDOWN, TEXT }
+
+    fun modeFor(countdown: Boolean): Mode = if (countdown) Mode.COUNTDOWN else Mode.TEXT
+
     fun snoozeLabel(isArabic: Boolean): String = if (isArabic) "ذكّرني لاحقاً" else "Remind Later"
 
     /** Arabic grammar: "دقائق" for 3-10, "دقيقة" for 1, 2 and 11+ (5 دقائق، 10 دقائق، 15 دقيقة، 60 دقيقة). */
@@ -170,16 +189,26 @@ object TaskReminderCard {
         val view = RemoteViews(context.packageName, layoutId(dark, isArabic))
         view.setTextViewText(R.id.task_reminder_title, title)
         view.setTextViewText(R.id.task_reminder_body, bodyShown)
-        if (countdown) {
-            // Ticks every second in the system UI process, no app wakeups (API 24+, minSdk 24)
-            view.setViewVisibility(R.id.task_reminder_body, View.GONE)
-            view.setViewVisibility(R.id.task_reminder_countdown, View.VISIBLE)
-            view.setChronometerCountDown(R.id.task_reminder_countdown, true)
-            view.setChronometer(
-                R.id.task_reminder_countdown,
-                countdownBase(dueAtMs, nowMs, SystemClock.elapsedRealtime()),
-                countdownFormat(isArabic), true
-            )
+        // Both views are set explicitly in both modes: when the card is updated, SystemUI re-applies the new
+        // RemoteViews on the view that is already showing and only touches what it sets, so a due-now repost that
+        // only set the body text left the old state (countdown visible, body hidden) and the timer went negative.
+        when (modeFor(countdown)) {
+            Mode.COUNTDOWN -> {
+                // Ticks every second in the system UI process, no app wakeups (API 24+, minSdk 24)
+                view.setViewVisibility(R.id.task_reminder_body, View.GONE)
+                view.setViewVisibility(R.id.task_reminder_countdown, View.VISIBLE)
+                view.setChronometerCountDown(R.id.task_reminder_countdown, true)
+                view.setChronometer(
+                    R.id.task_reminder_countdown,
+                    countdownBase(dueAtMs, nowMs, SystemClock.elapsedRealtime()),
+                    countdownFormat(isArabic), true
+                )
+            }
+            Mode.TEXT -> {
+                view.setViewVisibility(R.id.task_reminder_countdown, View.GONE)
+                view.setChronometer(R.id.task_reminder_countdown, SystemClock.elapsedRealtime(), null, false)
+                view.setViewVisibility(R.id.task_reminder_body, View.VISIBLE)
+            }
         }
         view.setTextViewText(R.id.btn_task_remind_later, snoozeLabel(isArabic))
         view.setOnClickPendingIntent(R.id.btn_task_remind_later, snoozePending)
@@ -191,6 +220,7 @@ object TaskReminderCard {
         val publicView = RemoteViews(context.packageName, layoutId(dark, isArabic))
         publicView.setTextViewText(R.id.task_reminder_title, publicTitleText)
         publicView.setViewVisibility(R.id.task_reminder_body, View.GONE)
+        publicView.setViewVisibility(R.id.task_reminder_countdown, View.GONE)
         publicView.setViewVisibility(R.id.btn_task_remind_later, View.GONE)
         publicView.setViewVisibility(R.id.btn_task_done, View.GONE)
         val publicNotification = NotificationCompat.Builder(context, TaskReminderReceiver.CHANNEL_ID)
@@ -221,6 +251,7 @@ object TaskReminderCard {
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setPublicVersion(publicNotification)
             .setAutoCancel(true)
+            .setTimeoutAfter(timeoutAfterMs(countdown, dueAtMs, nowMs))
             .setOnlyAlertOnce(keepWhen != null)
             .addExtras(extras)
             .setContentIntent(tapPending)
