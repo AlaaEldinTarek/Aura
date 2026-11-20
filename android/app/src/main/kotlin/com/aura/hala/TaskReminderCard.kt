@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.util.Log
 import android.view.View
 import android.widget.RemoteViews
@@ -38,6 +39,7 @@ object TaskReminderCard {
     private const val EXTRA_BODY = "aura_task_card_body"
     private const val EXTRA_BODY_KIND = "aura_task_card_body_kind"
     private const val EXTRA_BODY_MINUTES = "aura_task_card_body_minutes"
+    private const val EXTRA_DUE_AT = "aura_task_card_due_at"
 
     /** Default of the user's "remind X minutes before" setting (`task_reminder_minutes`), also used when it is invalid. */
     const val DEFAULT_REMINDER_MINUTES = 30
@@ -52,6 +54,61 @@ object TaskReminderCard {
     fun doneRequestCode(notificationId: Int): Int = notificationId + 3
 
     // Same wording as the post-check card (with shadda)
+    /** The silent "due now" re-post at the due time (TC1): action TASK_DUE_NOW, same family as tap/snooze/done. */
+    fun dueNowRequestCode(notificationId: Int): Int = notificationId + 4
+
+    /** Live countdown (Chronometer) only for the "before" reminder and only while the due time is still ahead. */
+    fun showsCountdown(kind: String?, dueAtMs: Long, nowMs: Long): Boolean =
+        kind == BODY_BEFORE && dueAtMs > nowMs
+
+    /** A "before" card whose due time has passed reads as "due now" (e.g. a theme refresh after the due time). */
+    fun effectiveKind(kind: String?, dueAtMs: Long, nowMs: Long): String? =
+        if (kind == BODY_BEFORE && dueAtMs in 1..nowMs) BODY_DUE_NOW else kind
+
+    /**
+     * Chronometer base (SystemClock.elapsedRealtime timebase) for the due moment. Recomputed from the absolute due
+     * time on every (re)post, so a live theme/language refresh keeps the timer correct.
+     */
+    fun countdownBase(dueAtMs: Long, nowMs: Long, elapsedNowMs: Long): Long = elapsedNowMs + (dueAtMs - nowMs)
+
+    /** One timer slot (%s): "Due in 04:32". The digits are the phone's own (Chronometer limit, see spec TC.3). */
+    fun countdownFormat(isArabic: Boolean): String = if (isArabic) "موعد المهمة بعد %s" else "Due in %s"
+
+    /**
+     * The countdown card is removed by the system this long after the due time if the due-now repost never came, so
+     * the card can never keep a negative time. The repost (normally within ~50 ms of the due time) replaces it.
+     */
+    const val COUNTDOWN_GRACE_MS = 2_000L
+
+    /** An ongoing card that is already "due now" goes away this long after the due time (the in-app list keeps the task). */
+    const val DUE_NOW_TIMEOUT_MS = 30L * 60 * 1000
+
+    /**
+     * Every post sets a timeout, because the card is ongoing (stays on the EMUI lock screen, cannot be swiped) and
+     * must still go away: countdown = just after the due time (safety net), due now = [DUE_NOW_TIMEOUT_MS] after the
+     * repost (so 30 min after the due time), today / pending / an alarm armed before TC1 = until the end of the day
+     * ([endOfDayMs], at least one minute). A post without a timeout may not clear an earlier one (UNKNOWN), so each
+     * post replaces it.
+     */
+    fun timeoutAfterMs(kind: String?, dueAtMs: Long, nowMs: Long, endOfDayMs: Long): Long = when (kind) {
+        BODY_BEFORE -> maxOf(1_000L, dueAtMs - nowMs + COUNTDOWN_GRACE_MS)
+        BODY_DUE_NOW -> DUE_NOW_TIMEOUT_MS
+        else -> maxOf(60_000L, endOfDayMs - nowMs)
+    }
+
+    private fun endOfToday(): Long = java.util.Calendar.getInstance().apply {
+        set(java.util.Calendar.HOUR_OF_DAY, 23); set(java.util.Calendar.MINUTE, 59)
+        set(java.util.Calendar.SECOND, 59); set(java.util.Calendar.MILLISECOND, 999)
+    }.timeInMillis
+
+    enum class Mode { COUNTDOWN, TEXT }
+
+    fun modeFor(countdown: Boolean): Mode = if (countdown) Mode.COUNTDOWN else Mode.TEXT
+
+    /** Title of the full card is the task; the lock-screen public version only says "Aura - Task reminder". */
+    fun titleFor(publicVersion: Boolean, title: String, isArabic: Boolean): String =
+        if (publicVersion) publicTitle(isArabic) else title
+
     fun snoozeLabel(isArabic: Boolean): String = if (isArabic) "ذكّرني لاحقاً" else "Remind Later"
 
     /** Arabic grammar: "دقائق" for 3-10, "دقيقة" for 1, 2 and 11+ (5 دقائق، 10 دقائق، 15 دقيقة، 60 دقيقة). */
@@ -101,11 +158,15 @@ object TaskReminderCard {
         body: String,
         bodyKind: String?,
         bodyMinutes: Int,
+        dueAtMs: Long,
         keepWhen: Long?
     ) {
         val isArabic = ThemedNotification.isArabic(context)
         val dark = ThemedNotification.isDark(context)
-        val bodyShown = bodyText(bodyKind, bodyMinutes, isArabic, body)
+        val nowMs = System.currentTimeMillis()
+        val kind = effectiveKind(bodyKind, dueAtMs, nowMs)
+        val countdown = showsCountdown(kind, dueAtMs, nowMs)
+        val bodyShown = bodyText(kind, bodyMinutes, isArabic, body)
 
         // Tap -> open the app on the Tasks tab (handleWidgetTabIntent reads this extra); unchanged
         val tapIntent = Intent(context, MainActivity::class.java).apply {
@@ -141,21 +202,44 @@ object TaskReminderCard {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val view = RemoteViews(context.packageName, layoutId(dark, isArabic))
-        view.setTextViewText(R.id.task_reminder_title, title)
-        view.setTextViewText(R.id.task_reminder_body, bodyShown)
-        view.setTextViewText(R.id.btn_task_remind_later, snoozeLabel(isArabic))
-        view.setOnClickPendingIntent(R.id.btn_task_remind_later, snoozePending)
-        view.setTextViewText(R.id.btn_task_done, doneLabel(isArabic))
-        view.setOnClickPendingIntent(R.id.btn_task_done, donePending)
+        fun buildCard(publicVersion: Boolean): RemoteViews {
+            val view = RemoteViews(context.packageName, layoutId(dark, isArabic))
+            view.setTextViewText(R.id.task_reminder_title, titleFor(publicVersion, title, isArabic))
+            view.setTextViewText(R.id.task_reminder_body, bodyShown)
+            // Both views are set explicitly in both modes: when the card is updated, SystemUI re-applies the new
+            // RemoteViews on the view that is already showing and only touches what it sets, so a due-now repost that
+            // only set the body text left the old state (countdown visible, body hidden) and the timer went negative.
+            when (modeFor(countdown)) {
+                Mode.COUNTDOWN -> {
+                    // Ticks every second in the system UI process, no app wakeups (API 24+, minSdk 24)
+                    view.setViewVisibility(R.id.task_reminder_body, View.GONE)
+                    view.setViewVisibility(R.id.task_reminder_countdown, View.VISIBLE)
+                    view.setChronometerCountDown(R.id.task_reminder_countdown, true)
+                    view.setChronometer(
+                        R.id.task_reminder_countdown,
+                        countdownBase(dueAtMs, nowMs, SystemClock.elapsedRealtime()),
+                        countdownFormat(isArabic), true
+                    )
+                }
+                Mode.TEXT -> {
+                    view.setViewVisibility(R.id.task_reminder_countdown, View.GONE)
+                    view.setChronometer(R.id.task_reminder_countdown, SystemClock.elapsedRealtime(), null, false)
+                    view.setViewVisibility(R.id.task_reminder_body, View.VISIBLE)
+                }
+            }
+            view.setTextViewText(R.id.btn_task_remind_later, snoozeLabel(isArabic))
+            view.setOnClickPendingIntent(R.id.btn_task_remind_later, snoozePending)
+            view.setTextViewText(R.id.btn_task_done, doneLabel(isArabic))
+            view.setOnClickPendingIntent(R.id.btn_task_done, donePending)
+            return view
+        }
 
-        // What the locked screen shows: the same themed card with only the generic title (no task, no buttons)
+        val view = buildCard(false)
+
+        // What the locked screen shows: the same themed card (buttons, countdown / due-now text) with only the generic
+        // title, never the task. The buttons are broadcast PendingIntents, so they work without unlocking.
         val publicTitleText = publicTitle(isArabic)
-        val publicView = RemoteViews(context.packageName, layoutId(dark, isArabic))
-        publicView.setTextViewText(R.id.task_reminder_title, publicTitleText)
-        publicView.setViewVisibility(R.id.task_reminder_body, View.GONE)
-        publicView.setViewVisibility(R.id.btn_task_remind_later, View.GONE)
-        publicView.setViewVisibility(R.id.btn_task_done, View.GONE)
+        val publicView = buildCard(true)
         val publicNotification = NotificationCompat.Builder(context, TaskReminderReceiver.CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(publicTitleText)
@@ -171,6 +255,7 @@ object TaskReminderCard {
             putString(EXTRA_BODY, body)
             putString(EXTRA_BODY_KIND, bodyKind ?: "")
             putInt(EXTRA_BODY_MINUTES, bodyMinutes)
+            putLong(EXTRA_DUE_AT, dueAtMs)
         }
         val builder = NotificationCompat.Builder(context, TaskReminderReceiver.CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
@@ -182,7 +267,11 @@ object TaskReminderCard {
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setPublicVersion(publicNotification)
+            // Ongoing, like the post-check card: EMUI hid a dismissible card from the lock screen once the phone had
+            // been unlocked. Removed by Done, Remind Later, a tap (opens Tasks) or the timeout below.
+            .setOngoing(true)
             .setAutoCancel(true)
+            .setTimeoutAfter(timeoutAfterMs(if (countdown) BODY_BEFORE else kind, dueAtMs, nowMs, endOfToday()))
             .setOnlyAlertOnce(keepWhen != null)
             .addExtras(extras)
             .setContentIntent(tapPending)
@@ -193,6 +282,23 @@ object TaskReminderCard {
             Log.d(TAG, "✅ Task reminder ${if (keepWhen == null) "posted" else "refreshed"} id=$notificationId")
         } catch (e: Exception) {
             Log.e(TAG, "❌ Error posting task reminder: ${e.message}")
+        }
+    }
+
+    /** `when` of this task card if it is still showing, else null (a dismissed card is not brought back). */
+    fun shownWhen(context: Context, notificationId: Int): Long? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return null
+        return try {
+            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+            nm.activeNotifications
+                .firstOrNull {
+                    it.packageName == context.packageName && it.id == notificationId &&
+                        it.notification.extras.getBoolean(EXTRA_MARK, false)
+                }
+                ?.notification?.`when`
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ shownWhen failed: ${e.message}")
+            null
         }
     }
 
@@ -218,6 +324,7 @@ object TaskReminderCard {
                     n.extras.getString(EXTRA_BODY) ?: "",
                     n.extras.getString(EXTRA_BODY_KIND)?.takeIf { it.isNotEmpty() },
                     n.extras.getInt(EXTRA_BODY_MINUTES, 0),
+                    n.extras.getLong(EXTRA_DUE_AT, 0L),
                     n.`when`
                 )
             }

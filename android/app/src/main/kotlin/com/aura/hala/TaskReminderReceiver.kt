@@ -38,6 +38,8 @@ class TaskReminderReceiver : BroadcastReceiver() {
 
         const val ACTION_SNOOZE = "com.aura.hala.TASK_REMIND_LATER"
         const val ACTION_DONE = "com.aura.hala.TASK_DONE"
+        const val ACTION_DUE_NOW = "com.aura.hala.TASK_DUE_NOW"
+        const val EXTRA_DUE_AT = "due_at"
         const val EXTRA_BODY_KIND = "body_kind"
         const val EXTRA_BODY_MINUTES = "body_minutes"
         const val EXTRA_NOTIFICATION_ID = "notification_id"
@@ -55,8 +57,11 @@ class TaskReminderReceiver : BroadcastReceiver() {
             triggerAtMs: Long,
             isArabic: Boolean,
             bodyKind: String? = null,
-            bodyMinutes: Int = 0
+            bodyMinutes: Int = 0,
+            dueAtMs: Long = 0L
         ) {
+            // A new reminder (first arm, edit, Remind Later) replaces any due-now repost armed for the old card
+            cancelDueNow(context, notificationId)
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             val intent = Intent(context, TaskReminderReceiver::class.java).apply {
                 putExtra(EXTRA_NOTIFICATION_ID, notificationId)
@@ -66,6 +71,7 @@ class TaskReminderReceiver : BroadcastReceiver() {
                 putExtra(EXTRA_IS_ARABIC, isArabic)
                 if (bodyKind != null) putExtra(EXTRA_BODY_KIND, bodyKind)
                 putExtra(EXTRA_BODY_MINUTES, bodyMinutes)
+                putExtra(EXTRA_DUE_AT, dueAtMs)
             }
             val pendingIntent = PendingIntent.getBroadcast(
                 context, notificationId, intent,
@@ -79,7 +85,44 @@ class TaskReminderReceiver : BroadcastReceiver() {
             Log.d(TAG, "⏰ Task reminder scheduled id=$notificationId at ${DateFormat.format("MM-dd HH:mm", Date(triggerAtMs))}")
         }
 
+        /** TC1: silent "due now" re-post of the card at the task's due time (request code id+4, action TASK_DUE_NOW). */
+        fun scheduleDueNow(context: Context, notificationId: Int, taskId: String, title: String, body: String, dueAtMs: Long) {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val intent = Intent(context, TaskReminderReceiver::class.java).apply {
+                action = ACTION_DUE_NOW
+                putExtra(EXTRA_NOTIFICATION_ID, notificationId)
+                putExtra(EXTRA_TASK_ID, taskId)
+                putExtra(EXTRA_TITLE, title)
+                putExtra(EXTRA_BODY, body)
+            }
+            val pendingIntent = PendingIntent.getBroadcast(
+                context, TaskReminderCard.dueNowRequestCode(notificationId), intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, dueAtMs, pendingIntent)
+                } else {
+                    alarmManager.setExact(AlarmManager.RTC_WAKEUP, dueAtMs, pendingIntent)
+                }
+                Log.d(TAG, "⏰ Task due-now repost scheduled id=$notificationId at ${DateFormat.format("MM-dd HH:mm:ss", Date(dueAtMs))}")
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ Could not schedule due-now repost: ${e.message}")
+            }
+        }
+
+        fun cancelDueNow(context: Context, notificationId: Int) {
+            val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            val intent = Intent(context, TaskReminderReceiver::class.java).apply { action = ACTION_DUE_NOW }
+            val pendingIntent = PendingIntent.getBroadcast(
+                context, TaskReminderCard.dueNowRequestCode(notificationId), intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            alarmManager.cancel(pendingIntent)
+        }
+
         fun cancel(context: Context, notificationId: Int) {
+            cancelDueNow(context, notificationId)
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             val intent = Intent(context, TaskReminderReceiver::class.java)
             val pendingIntent = PendingIntent.getBroadcast(
@@ -112,6 +155,23 @@ class TaskReminderReceiver : BroadcastReceiver() {
             return
         }
 
+        if (intent.action == ACTION_DUE_NOW) {
+            // The due time has come: change the card that is still showing to "Task is due now" (same id, original
+            // time, no new sound). A card the user already dismissed stays dismissed.
+            val dueTitle = intent.getStringExtra(EXTRA_TITLE) ?: return
+            val shownWhen = TaskReminderCard.shownWhen(context, notificationId)
+            if (shownWhen == null) {
+                Log.d(TAG, "⏭️ Task due now id=$notificationId: card no longer showing, nothing to update")
+                return
+            }
+            TaskReminderCard.show(
+                context, notificationId, taskId, dueTitle, intent.getStringExtra(EXTRA_BODY) ?: "",
+                TaskReminderCard.BODY_DUE_NOW, 0, 0L, shownWhen
+            )
+            Log.d(TAG, "⏰ Task due now id=$notificationId: card switched to the due-now text")
+            return
+        }
+
         val title = intent.getStringExtra(EXTRA_TITLE) ?: return
         val body = intent.getStringExtra(EXTRA_BODY) ?: ""
         val isArabic = intent.getBooleanExtra(EXTRA_IS_ARABIC, false)
@@ -141,12 +201,16 @@ class TaskReminderReceiver : BroadcastReceiver() {
 
         // The card (layout by app theme and language, body in the app language, Done and Remind Later buttons) is
         // built in TaskReminderCard so a theme or language change can re-post it (themed notifications, T2/T2b).
+        val kind = intent.getStringExtra(EXTRA_BODY_KIND)?.takeIf { it.isNotEmpty() }
+        val dueAt = intent.getLongExtra(EXTRA_DUE_AT, 0L)
         TaskReminderCard.show(
-            context, notificationId, taskId, title, body,
-            intent.getStringExtra(EXTRA_BODY_KIND)?.takeIf { it.isNotEmpty() },
-            intent.getIntExtra(EXTRA_BODY_MINUTES, 0),
-            null
+            context, notificationId, taskId, title, body, kind,
+            intent.getIntExtra(EXTRA_BODY_MINUTES, 0), dueAt, null
         )
+        // Countdown card: switch it to "due now" at the due time (TC1)
+        if (TaskReminderCard.showsCountdown(kind, dueAt, System.currentTimeMillis())) {
+            scheduleDueNow(context, notificationId, taskId, title, body, dueAt)
+        }
     }
 
     private fun ensureChannel(context: Context) {
