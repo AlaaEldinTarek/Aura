@@ -150,18 +150,28 @@ class TaskReminderCardTest {
     @Test
     fun `countdown card expires just after the due time, so a late repost can never leave a long negative time`() {
         val now = 1_000_000L
+        val eod = now + 5 * 3_600_000L
         // due in 5 minutes: removed 2 s after the due moment if the due-now repost never came
-        assertEquals(300_000L + TaskReminderCard.COUNTDOWN_GRACE_MS, TaskReminderCard.timeoutAfterMs(true, now + 300_000L, now))
+        assertEquals(
+            300_000L + TaskReminderCard.COUNTDOWN_GRACE_MS,
+            TaskReminderCard.timeoutAfterMs(TaskReminderCard.BODY_BEFORE, now + 300_000L, now, eod)
+        )
         assertEquals(2_000L, TaskReminderCard.COUNTDOWN_GRACE_MS)
         // never zero or negative (a timeout of 0 means "no timeout")
-        assertTrue(TaskReminderCard.timeoutAfterMs(true, now - 10_000L, now) >= 1_000L)
+        assertTrue(TaskReminderCard.timeoutAfterMs(TaskReminderCard.BODY_BEFORE, now + 1, now, eod) >= 1_000L)
     }
 
     @Test
-    fun `every other task card post replaces that timeout with a long one, so it can never delete a later card`() {
+    fun `ongoing card still expires - due now 30 minutes after the due time, today and pending at the end of the day`() {
         val now = 1_000_000L
-        assertEquals(TaskReminderCard.LONG_TIMEOUT_MS, TaskReminderCard.timeoutAfterMs(false, 0L, now))
-        assertEquals(24L * 60 * 60 * 1000, TaskReminderCard.LONG_TIMEOUT_MS)
+        val eod = now + 5 * 3_600_000L
+        assertEquals(30 * 60_000L, TaskReminderCard.timeoutAfterMs(TaskReminderCard.BODY_DUE_NOW, 0L, now, eod))
+        assertEquals(30 * 60_000L, TaskReminderCard.DUE_NOW_TIMEOUT_MS)
+        assertEquals(5 * 3_600_000L, TaskReminderCard.timeoutAfterMs(TaskReminderCard.BODY_TODAY, 0L, now, eod))
+        assertEquals(5 * 3_600_000L, TaskReminderCard.timeoutAfterMs(TaskReminderCard.BODY_PENDING, 0L, now, eod))
+        assertEquals(5 * 3_600_000L, TaskReminderCard.timeoutAfterMs(null, 0L, now, eod)) // alarm armed before TC1
+        // posted a moment before midnight: at least one minute, never zero
+        assertEquals(60_000L, TaskReminderCard.timeoutAfterMs(TaskReminderCard.BODY_TODAY, 0L, now, now + 5_000L))
     }
 
     @Test

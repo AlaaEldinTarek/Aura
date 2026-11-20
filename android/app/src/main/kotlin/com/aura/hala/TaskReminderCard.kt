@@ -80,14 +80,26 @@ object TaskReminderCard {
      */
     const val COUNTDOWN_GRACE_MS = 2_000L
 
-    /**
-     * Every other post sets a long timeout: a post without a timeout may not clear an earlier
-     * one (UNKNOWN), so a leftover short timeout could delete a later card (due-now, Remind Later).
-     */
-    const val LONG_TIMEOUT_MS = 24L * 60 * 60 * 1000
+    /** An ongoing card that is already "due now" goes away this long after the due time (the in-app list keeps the task). */
+    const val DUE_NOW_TIMEOUT_MS = 30L * 60 * 1000
 
-    fun timeoutAfterMs(countdown: Boolean, dueAtMs: Long, nowMs: Long): Long =
-        if (countdown) maxOf(1_000L, dueAtMs - nowMs + COUNTDOWN_GRACE_MS) else LONG_TIMEOUT_MS
+    /**
+     * Every post sets a timeout, because the card is ongoing (stays on the EMUI lock screen, cannot be swiped) and
+     * must still go away: countdown = just after the due time (safety net), due now = [DUE_NOW_TIMEOUT_MS] after the
+     * repost (so 30 min after the due time), today / pending / an alarm armed before TC1 = until the end of the day
+     * ([endOfDayMs], at least one minute). A post without a timeout may not clear an earlier one (UNKNOWN), so each
+     * post replaces it.
+     */
+    fun timeoutAfterMs(kind: String?, dueAtMs: Long, nowMs: Long, endOfDayMs: Long): Long = when (kind) {
+        BODY_BEFORE -> maxOf(1_000L, dueAtMs - nowMs + COUNTDOWN_GRACE_MS)
+        BODY_DUE_NOW -> DUE_NOW_TIMEOUT_MS
+        else -> maxOf(60_000L, endOfDayMs - nowMs)
+    }
+
+    private fun endOfToday(): Long = java.util.Calendar.getInstance().apply {
+        set(java.util.Calendar.HOUR_OF_DAY, 23); set(java.util.Calendar.MINUTE, 59)
+        set(java.util.Calendar.SECOND, 59); set(java.util.Calendar.MILLISECOND, 999)
+    }.timeInMillis
 
     enum class Mode { COUNTDOWN, TEXT }
 
@@ -250,8 +262,11 @@ object TaskReminderCard {
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setPublicVersion(publicNotification)
+            // Ongoing, like the post-check card: EMUI hid a dismissible card from the lock screen once the phone had
+            // been unlocked. Removed by Done, Remind Later, a tap (opens Tasks) or the timeout below.
+            .setOngoing(true)
             .setAutoCancel(true)
-            .setTimeoutAfter(timeoutAfterMs(countdown, dueAtMs, nowMs))
+            .setTimeoutAfter(timeoutAfterMs(if (countdown) BODY_BEFORE else kind, dueAtMs, nowMs, endOfToday()))
             .setOnlyAlertOnce(keepWhen != null)
             .addExtras(extras)
             .setContentIntent(tapPending)
