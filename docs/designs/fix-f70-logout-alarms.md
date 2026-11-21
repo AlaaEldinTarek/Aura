@@ -23,7 +23,7 @@ F47f (logout goes to Login), F60 (guest migration), F69 (dead after-adhan remind
 - D0. Logout cancels all alarm kinds: adhan 1001-1006, pre-prayer reminder 2101-2106, post-checks 3001-3006, azkar,
   snooze, in **one place**. Adhan-off does NOT cancel (the reminder stays armed, D4 of the reminder spec).
 - D0b. "No sign-out flag" was recorded in the same decision. **This conflicts with the re-arm paths found below** (see
-  open decision D1): without any state that native code can read, the next app start, the 6-hourly worker or a reboot
+  open decision D1; D1-C needs no new flag, it reads existing state): without any state that native code can read, the next app start, the 6-hourly worker or a reboot
   re-arms everything. D1 asks the owner to confirm or revise.
 
 ## What logout does today (VERIFIED)
@@ -150,14 +150,44 @@ consistent, and a signed-out user cannot be left half-armed), run one function `
 
 ### Signed-out state (open decision D1)
 
-To keep the re-armers from undoing the cancel, native code needs something to read. Proposal: one new pref
-`alarms_suspended` (Boolean, in `aura_prayer_times`, written by the cancel step, cleared when the user enters the app
-shell again as a signed-in user or as a guest). It gates: `NativePrayerCalculator.calculateAndSave` scheduling,
-`PrayerBootReceiver`'s re-arm block, `PrayerRecalcWorker`, `DailyRecalcReceiver`, `startServiceIfAllowed`. This reverses the
-"No sign-out flag" line of the 2026-11-18 decision, so it needs the owner's explicit answer. Without a flag
-(D1 = no), the only way to keep the cancel is to also stop A6/A7/B1 and the boot block from re-arming, and none of them can
-tell "signed out" from "signed in" (UNVERIFIED that nothing else can), so the cancel would last only until the next app
-start or reboot. A new prefs key is a contract: `contracts/prefs-keys.md`, Dart and Kotlin in one commit.
+Native code needs something to read, or the re-armers undo the cancel (see "The re-arm problem"). Three options. The
+re-armers that would read it: `NativePrayerCalculator.calculateAndSave` scheduling (used by the 00:05 recalc A6, the worker A7
+and the post-Fajr/Isha refresh), `PrayerBootReceiver`'s re-arm block, `PrayerForegroundService.startServiceIfAllowed`
+(`:104`) and its restart alarm (`:882`).
+
+**What already exists (read-only check, 2026-11-21):**
+
+| What | Key / API | Writers | Readers | Set on login / guest start | Cleared on logout | Label |
+| --- | --- | --- | --- | --- | --- | --- |
+| Guest flag | FlutterSharedPreferences `flutter.is_guest` (Bool; Dart `AppConstants.keyIsGuest = 'is_guest'`, `app_constants.dart:62`) | `login_screen.dart:223` `setGuest(true)` ("Continue as guest"); `login_screen.dart:236` `setGuest(false)` (user backs out of onboarding); `auth_provider.dart:135` `setGuest(false)` after a sign-in, **only `if (wasGuest)`** | Dart only: `shared_preferences_service.dart:171` `isGuest`, `guestModeProvider` (`preferences_provider.dart:224-244`), `start_route.dart`. **No Kotlin reader** (grep of `android/app/src/main/kotlin` found no `is_guest`) | set to true at guest start: VERIFIED. At sign-in: cleared (so false), VERIFIED | **No**: logout writes nothing. For a signed-in user it is already false; logout leaves it false. For a guest who presses Logout it stays **true** | VERIFIED |
+| Saved user id | none in prefs | `pending_guest_migration_uid` (`auth_provider.dart:142`) is only a transient "sync your guest tasks" marker, written once on a guest-to-account sign-in and removed by the migration dialog (`guest_migration_provider.dart:92`); it is not a session marker | Dart only | no | no | VERIFIED: not usable |
+| First launch | `first_launch` | onboarding | Dart | n/a | n/a | not a session marker |
+| Firebase session | `FirebaseAuth.getInstance().currentUser` on the Android side: `com.google.firebase:firebase-auth` is an `implementation` dependency of the app module (`android/app/build.gradle.kts:86`, google-services plugin `:8`) but **no Kotlin file uses it today** (grep) | Firebase SDK (sign-in); cleared by `signOut()` (`auth_service.dart:247`) | would be new Kotlin code | yes (SDK) | yes, when `signOut()` completes | the API being on the classpath: VERIFIED. Its availability in a cold `BroadcastReceiver` / `Worker` (boot at +30 s, 00:05, WorkManager) before any Flutter engine start: UNKNOWN (GUESS: available, the SDK restores the stored user on init; not tested) |
+
+Finding: **`is_guest` alone cannot be the gate.** It answers "is there a guest session" (reliably set and cleared, except
+the guest-presses-Logout case), but a signed-in user and a signed-out user both read `is_guest = false`, and no existing
+pref records "signed in". So `is_guest` cannot tell "signed out, no guest" from "signed in".
+
+- **D1-A: new pref `alarms_suspended`** (Bool in `aura_prayer_times`). Written by the logout cancel step (`true`), cleared when
+  a login or a guest start enters the shell. Gates the re-armers listed above. One new prefs key = contract
+  (`contracts/prefs-keys.md`, Dart and Kotlin in the same commit). Works with a flag-only read, no Firebase in Kotlin.
+  Weakness: a second source of truth; if the Dart side forgets to clear it at an entry point, alarms stay off
+  (mitigation: a Dart test per entry point, and the arming path clears it first). Failure mode when the write is missing
+  (process killed between sign-out and the write): the user is signed out but alarms stay armed (the pre-fix behavior).
+- **D1-B: existing prefs only** (`flutter.is_guest`). **Not sufficient** (see the finding). It becomes usable only together
+  with something that marks "signed in", which does not exist. In practice D1-B means "stop A6, A7, B1 and the boot block
+  from re-arming" with no gate: alarms re-arm at boot, update or app start, so F70 would be only partly solved.
+- **D1-C: existing state only, read natively:** arm only if `flutter.is_guest == true` **or**
+  `FirebaseAuth.getInstance().currentUser != null`. No new pref and no second source of truth: the gate flips by itself when
+  `signOut()` completes and when a guest or login starts. Needs: (1) one small Kotlin helper
+  `SessionState.isSessionActive(context)` used by the four re-armers; (2) a device test that `currentUser` is non-null in a
+  cold receiver/worker for a signed-in user (boot, 00:05, worker; UNKNOWN today); (3) the guest-presses-Logout case:
+  `is_guest` stays true (whether a guest sees the Logout button is UNVERIFIED), which is correct here: a returning guest
+  still starts at Home (`start_route.dart:14`), so the guest session really is still active. Failure mode: if the cold
+  `currentUser` read is wrong (null for a signed-in user), that user's alarms stay off: unsafe, so the device test is a
+  hard gate and the fallback for "cannot tell" is armed (fail-open).
+- **Recommendation:** D1-C if its device test passes (nothing new to keep in sync), otherwise D1-A. Not D1-B alone. The
+  owner decides. D1-A replaces "No sign-out flag" (2026-11-18); D1-C needs no new key.
 
 ## Guest mode
 
@@ -168,7 +198,7 @@ start or reboot. A new prefs key is a contract: `contracts/prefs-keys.md`, Dart 
   the digest, the service) exactly as a first guest start does today. Logout then means "suspend until the next session
   begins", not "never again". Proposal: yes.
 - A returning guest at cold start goes straight to Home (`login_screen.dart:227`, F46a): that entry clears
-  `alarms_suspended` and arms, same as above.
+  the gate (D1-A: clears `alarms_suspended`; D1-C: `is_guest` is already true) and arms, same as above.
 - Logging out while in guest mode: there is no Logout button for a guest (UNVERIFIED: only the signed-in Profile view was
   read). If a guest "exits guest mode", the same function applies.
 
@@ -211,7 +241,7 @@ Entering the shell (login, guest, or app start with a session) already re-arms m
 2. **Logout, then guest.** A logs out and taps Continue as guest: prayer alarms and the service come back for the guest,
    A's task reminders do not (the guest sees only guest tasks).
 3. **Logout, then nothing.** A logs out and does not open the app for a day, then reboots: no alarm fires, no service runs
-   (needs D1 = flag); first app open arms again only after a login or guest choice.
+   (needs D1-A or D1-C); first app open arms again only after a login or guest choice.
 4. **During the vibrate window.** A logs out while the adhan vibrate window is running: the ringer returns to normal at
    the right time (or at once), never stuck on vibrate.
 5. **Failed sign-out.** The network or Google sign-out throws (`profile_screen.dart` catches and keeps the user on
@@ -220,33 +250,33 @@ Entering the shell (login, guest, or app start with a session) already re-arms m
 
 ## Decisions and questions for the owner
 
-- **D1.** A sign-out flag (`alarms_suspended`) so the re-armers stay quiet. Recommended: yes. Confirm that this replaces
-  "no sign-out flag" of 2026-11-18, or choose the weaker "stop A6/A7/B1 only, accept re-arm at boot/update".
-- **D2.** Guest after logout re-arms (proposal: yes).
-- **D3.** Order: cancel before `signOut()` (cleaner privacy, needs a re-arm if sign-out fails) or after a successful
-  sign-out only (simpler). Proposal: after a successful sign-out; cancel failure is logged, never blocks the sign-out.
-- **Q1.** Native method `cancelAllAppAlarms` (Option 1, recommended) or compose existing methods (Option 2).
-- **Q2.** The task reminders of other users on the same phone: also cancel at **account switch** without logout (login
-  as B while A's alarms exist)? Proposal: the same function runs at sign-in when the uid changes (UNVERIFIED how the app
-  detects "different user than last time").
-- **Q3.** The Tasks widget keeps showing A's task titles after logout (F59). Include a widget refresh in this phase?
-- **Q4.** Windows desktop logout: same behavior, or out of scope.
-- **Q5.** Should `startServiceIfAllowed` honor `fg_user_stopped` (`:106` passes false)? A small separate fix; needed here
-  only if D1 = no.
+- **D1.** What the re-armers read: D1-A new `alarms_suspended`, D1-B existing `is_guest` alone (not sufficient), or D1-C
+  existing `is_guest` + Firebase `currentUser` read natively (section above). Owner leaning: existing state if reliable,
+  otherwise D1-A. This spec recommends D1-C if its device test passes, else D1-A.
+- **D2.** Guest after logout re-arms. Owner leaning: yes.
+- **D3.** Cancel only after a successful sign-out (owner leaning, simpler); a cancel failure is logged and never blocks
+  the sign-out.
+- **Q1.** One native method `cancelAllAppAlarms` (owner leaning; Option 1).
+- **Q2.** Account switch without logout: owner leaning, covered by logout + login (a sign-in always follows a logout).
+- **Q3, Q4, Q5** (Tasks widget data after logout, Windows desktop logout, `startServiceIfAllowed` honoring `fg_user_stopped`):
+  owner leaning: separate follow-ups, out of F70. Q5 becomes relevant only if D1 = D1-B.
+- **Hard rule (owner):** never cancel the silent-mode restore alarms (section D above).
 
 ## Tests to write first
 
 - Kotlin JVM: the cancel list is complete: every request code range in the inventory is covered (a table test over the
   ranges, no device); the cancel never touches the silent-restore request code 3999 (`SilentOffReceiver`); the ids and channels
   are unchanged (guard test like `AzkarCardTest`).
-- Kotlin JVM: with `alarms_suspended = true`, `calculateAndSave` returns before any `schedule*` call, the boot block
-  skips the re-arm, the worker and recalc do nothing (needs the gate to be a pure function: `shouldArm(prefs)`).
+- Kotlin JVM: with the gate closed (D1-A `alarms_suspended = true`; D1-C no guest and no Firebase user), `calculateAndSave` returns before any `schedule*` call, the boot block
+  skips the re-arm, the worker and recalc do nothing (the gate is a pure function: `shouldArm(isGuest, hasUser)` for D1-C or `shouldArm(suspended)` for D1-A).
 - Dart: the logout flow calls the cleanup once, after a successful sign-out, and navigates to Login; a failed sign-out
   does not clear (D3); the function clears `task_reminders_rearmed_at`.
-- Dart: entering the shell as a guest or as a signed-in user clears the flag and calls the arming path.
+- Dart (D1-A only): entering the shell as a guest or as a signed-in user clears the flag and calls the arming path.
 
 ## Device check (after the fix; phone via adb, owner approval as before)
 
+0. (D1-C only, before any code is trusted) on the phone, signed in: reboot, wait 2 minutes, and confirm from the log that
+   the cold receiver/worker read a non-null `currentUser`. This test decides D1-C versus D1-A.
 1. `adb shell dumpsys alarm | grep com.aura.hala` before and after Logout: the Aura alarm entries are gone (expected:
    none of 1001-1006, 2101-2106, 3001-3006, 7001, 8001, 9100, task ids), and `dumpsys activity services` shows no
    `PrayerForegroundService`. Capture to a file, short report.
@@ -258,7 +288,7 @@ Entering the shell (login, guest, or app start with a session) already re-arms m
 ## Phases (proposal, each needs its own approval)
 
 - P1 (A, docs): this spec approved, decisions D1-D3 and Q1-Q5 answered.
-- P2 (C, native): `AlarmCleanup.kt` + the channel method + the gate (`alarms_suspended`) + Kotlin tests; contracts updated.
+- P2 (C, native): `AlarmCleanup.kt` + the channel method + the gate (D1-A `alarms_suspended` or D1-C `SessionState`) + Kotlin tests; contracts updated (D1-A only: the new key).
 - P3 (C, Dart): the logout function, the guest/login entry points that clear the gate and re-arm, Jumu'ah/digest/wird re-arm
   gaps, Dart tests.
 - P4 (owner): the device check above.
