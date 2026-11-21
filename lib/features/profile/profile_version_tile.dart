@@ -30,6 +30,9 @@ class ProfileVersionTile extends StatefulWidget {
   /// Fires the real post-prayer azkar trigger now (T6). When null the "Test azkar" item is not shown.
   final Future<void> Function()? fireAzkar;
 
+  /// Posts the real Jumu'ah card now with a fake Zuhr 30 min ahead, any day (T7). When null the "Test Jumu'ah" item is not shown.
+  final Future<void> Function()? fireJumuah;
+
   const ProfileVersionTile({
     super.key,
     required this.title,
@@ -39,6 +42,7 @@ class ProfileVersionTile extends StatefulWidget {
     this.firePostCheck,
     this.fireDigest,
     this.fireAzkar,
+    this.fireJumuah,
   });
 
   @override
@@ -121,6 +125,14 @@ class _ProfileVersionTileState extends State<ProfileVersionTile> {
     );
   }
 
+  Future<void> _fireJumuah() async {
+    final messenger = ScaffoldMessenger.of(context);
+    await widget.fireJumuah!();
+    messenger.showSnackBar(
+      SnackBar(content: Text('dev_test_jumuah_sent'.tr())),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -163,6 +175,14 @@ class _ProfileVersionTileState extends State<ProfileVersionTile> {
             title: 'dev_test_azkar_title'.tr(),
             subtitle: 'dev_test_azkar_subtitle'.tr(),
             onTap: _fireAzkar,
+            showChevron: false,
+          ),
+        if (_unlocked && widget.fireJumuah != null)
+          SettingTile(
+            icon: Icons.mosque_outlined,
+            title: 'dev_test_jumuah_title'.tr(),
+            subtitle: 'dev_test_jumuah_subtitle'.tr(),
+            onTap: _fireJumuah,
             showChevron: false,
           ),
       ],

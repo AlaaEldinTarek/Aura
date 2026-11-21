@@ -54,3 +54,5 @@ Hotspot: 13 `MethodChannel(` constructions + 3 `_channelName` constants in Dart 
 `testDigestNow {todayCount, overdueCount}` (prayer_alarms channel, T4, dev tile only: 7 taps on Version, "Test digest"): posts the real task digest card (id 4001, channel `task_digest`) now with the counts Dart computed from the real tasks. Handler `MainActivity.kt`, caller `PrayerAlarmService.testDigestNow`.
 
 `testAzkarNow {prayerName, prayerNameAr}` (prayer_alarms channel, T6, dev tile only: 7 taps on Version, "Test azkar"): fires the real post-prayer azkar trigger (`AzkarAlarmReceiver.onReceive`: the themed card and the full-screen screen, exactly as the alarm does) for the given prayer. Handler `MainActivity.kt`, caller `PrayerAlarmService.testAzkarNow`.
+
+T7 addition: `prayer_alarms` channel `testJumuahNow` (no args, dev tile only; Dart `prayer_alarm_service.dart` `testJumuahNow`, Kotlin `MainActivity.kt`): posts the Jumu'ah card (id 8001) with a fake Zuhr 30 min ahead. The Jumu'ah card tap sends `widget_target_tab` = 1 (Prayer tab) through the existing `navigateToTab` path.
