@@ -121,8 +121,12 @@ re-arm must either be cancelled in the same step or be gated by state native cod
 
 ### Behavior
 
-On Logout, after the confirm dialog and **before** `signOut()` (so a failed sign-out still leaves the previous state
-consistent, and a signed-out user cannot be left half-armed), run one function `cancelEverythingOnLogout`:
+On Logout, after the confirm dialog and **after a successful sign-out** (owner decision D3), run one function
+`cancelEverythingOnLogout`. A failed sign-out never reaches it, so the still-signed-in user keeps every alarm. A cancel
+failure is logged and **never blocks** the sign-out or the navigation to Login (the sign-out has already happened; each
+step of the cleanup is wrapped in its own try-catch so one failure does not stop the others). With D1-C the gate reads
+closed as soon as `signOut()` completes (`currentUser` is null, `is_guest` is false), so nothing can re-arm between the
+sign-out and the end of the cleanup; the cleanup then removes what was armed before.
 
 1. Cancel the prayer alarms A1-A5 (adhan, reminder, post-checks, azkar, snooze) and their posted notifications.
 2. Stop the re-armers: A6 recalc alarm, A7 worker; stop B1 (the service) and its restart alarm.
@@ -135,6 +139,37 @@ consistent, and a signed-out user cannot be left half-armed), run one function `
    restore path) instead of cancelling its alarm.
 6. Remove any Aura notification still showing (reminder, task, summary, Jumu'ah, post-check, azkar cards, foreground card).
 7. Clear the throttle pref `task_reminders_rearmed_at`, so a login within 6 h still re-arms the new user's task reminders.
+
+### Cancel rules (hard rules for P2; each gets a test)
+
+- **R1. Silent-mode restore is never touched.** Not by id, not by range, not by a generic cancel. A test fails if the
+  cleanup builds any PendingIntent for `SilentOffReceiver` or `ToggleSilentModeReceiver`'s silent-off alarm.
+- **R2. 3999 means two different things; each is cancelled only by its owner.** Request code 3999 is both the silent-restore
+  alarm (`SilentOffReceiver`, `contracts/notification-ids.md`: "silent restore 3999") and the daily task summary
+  (C4: notification id 3999, armed through `NativeNotificationReceiver`). C4 is cancelled **only** through
+  `cancelDailyTaskSummary` (`notification_service.dart:911`, which calls `cancelNativeNotification` with the summary id).
+  The cleanup must never run a generic "cancel PendingIntent 3999". Test: the 3999 cancel call names the summary's
+  receiver class and action and none of the silent-mode classes.
+- **R3. Every cancel rebuilds the PendingIntent exactly like the arming code: same receiver class, same action (and
+  data), same request code, with `FLAG_NO_CREATE`.** Android matches a PendingIntent by request code plus
+  `Intent.filterEquals` (component, action, data, type, categories; extras are ignored), and request-code ranges overlap
+  across receivers: 3001-3006 are both the post-check alarms (`PrayerAlarmReceiver`, adhan code + 2000) and the azkar alarms
+  (`AzkarAlarmReceiver`, `ACTION_AZKAR_ALARM`); 3999 (R2); 4000-4999 task reminders (`TaskReminderReceiver`) contain the
+  4001 daily digest id; 8001 is the Jumu'ah alarm; 9000-9999 holds the azkar notifications
+  9001-9006, the daily recalc 9100, the foreground-service buttons 9101/9102 and the test ids 9999. A cancel built with
+  another class or action matches nothing (or, with `FLAG_UPDATE_CURRENT`, creates a stray PendingIntent). So:
+  - the 4000-4999 task loop uses `TaskReminderReceiver` and the **same action the arming code uses**, plus the due-now
+    variant (request code id + 4, `ACTION_DUE_NOW`, `TaskReminderReceiver.scheduleDueNow` `:89`, `cancelDueNow` `:114`) and
+    the snooze variant (same id), plus the native variant at the **+5000 offset** (`NativeNotificationReceiver`, "remind
+    me again", C7) with that receiver's class and action;
+  - each of A1-A9, C1-C9 is cancelled with the helper that already owns its arming PendingIntent (`PrayerAlarmReceiver`,
+    `AzkarAlarmReceiver`, `DailySummaryReceiver`, `JumuahReminderReceiver`, `DailyRecalcReceiver`, `TaskReminderReceiver`,
+    `NativeNotificationReceiver`, `FocusModeReceiver`): P2 adds a `FLAG_NO_CREATE` variant next to each existing `cancel`
+    rather than building intents in `AlarmCleanup.kt`, so the class/action pairing lives in one place per receiver;
+  - a table test lists every (receiver class, action, request-code range) pair of the inventory and asserts the cleanup's
+    cancel for that range uses exactly that pair, and that no range is cancelled with a different receiver.
+  UNVERIFIED on a device: the `FLAG_NO_CREATE` cancel actually removes each alarm; the device check reads
+  `dumpsys alarm` before and after.
 
 ### Where the code lives (one place)
 
@@ -265,10 +300,25 @@ Entering the shell (login, guest, or app start with a session) already re-arms m
 4. **During the vibrate window.** A logs out while the adhan vibrate window is running: the ringer returns to normal at
    the right time (or at once), never stuck on vibrate.
 5. **Failed sign-out.** The network or Google sign-out throws (`profile_screen.dart` catches and keeps the user on
-   Profile if `currentUser != null`): the cancel step must not leave the signed-in user without alarms. Proposal: cancel
-   only after a successful sign-out, or re-arm if `currentUser != null` (decision D3).
+   Profile if `currentUser != null`): the cleanup does not run, so the signed-in user keeps every alarm (decision D3:
+   cancel only after a successful sign-out). A failure inside the cleanup after a good sign-out is logged and the user
+   still lands on Login.
 
-## Decisions and questions for the owner
+## Decisions for P1 (owner, 2026-11-21; the discussion below is kept as the record)
+
+- **D1 = D1-C** (`is_guest == true` OR native `FirebaseAuth.currentUser != null`; fail-open: arm when unknown).
+  **D1-A only if** the 00:05 recalc or the worker read turns out null for a signed-in user (the overnight capture, or P2's
+  gate log).
+- **D2 = yes**: a guest session after logout re-arms.
+- **D3 = after a successful sign-out**; a cancel failure is logged and never blocks the sign-out (Design above).
+- **Q1 = one native method `cancelAllAppAlarms`** (Option 1; contract change in `contracts/method-channels.md`, same commit).
+- **Q2 = covered by logout + login** (no separate account-switch hook).
+- **Q3, Q4, Q5 = separate follow-ups, out of F70.**
+- **Hard rule: never cancel the silent-mode restore alarms** (R1).
+- The **`setGuest(false)` after a successful logout** fix stays in P3 (Guest mode section).
+- P2 waits for the 00:05 / worker capture result and for the owner's "approve phase P2".
+
+## Decisions and questions for the owner (discussion record)
 
 - **D1.** What the re-armers read: D1-A new `alarms_suspended`, D1-B existing `is_guest` alone (not sufficient), or D1-C
   existing `is_guest` + Firebase `currentUser` read natively (section above). Owner leaning: existing state if reliable,
@@ -308,8 +358,8 @@ Entering the shell (login, guest, or app start with a session) already re-arms m
 
 ## Phases (proposal, each needs its own approval)
 
-- P1 (A, docs): this spec approved, decisions D1-D3 and Q1-Q5 answered.
-- P2 (C, native): `AlarmCleanup.kt` + the channel method + the gate (D1-A `alarms_suspended` or D1-C `SessionState`) + Kotlin tests; contracts updated (D1-A only: the new key).
+- P1 (A, docs): this spec approved, decisions D1-D3 and Q1-Q5 answered (see "Decisions for P1"; the decisions are in, the approval of the spec itself is the owner's).
+- P2 (C, native; waits for the 00:05 capture and the owner's "approve phase P2"): `AlarmCleanup.kt` + the channel method `cancelAllAppAlarms` + the gate (D1-C `SessionState`, fail-open; D1-A `alarms_suspended` only if the capture shows a null read) + the `FLAG_NO_CREATE` cancel variants (R3) + Kotlin tests incl. R1-R3; contracts updated (D1-A only: the new key).
 - P3 (C, Dart): the logout function, the guest/login entry points that clear the gate and re-arm, Jumu'ah/digest/wird re-arm
   gaps, Dart tests.
 - P4 (owner): the device check above.
