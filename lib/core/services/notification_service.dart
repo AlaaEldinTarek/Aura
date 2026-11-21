@@ -1050,33 +1050,32 @@ class NotificationService {
         body = isArabic ? 'يوم نظيف! لا مهام اليوم 🎉' : 'Clean day! No tasks due today 🎉';
       }
 
+      // Drop the old flutter_local_notifications alarm (same id) so the native one below is the only one
       await _notifications.cancel(notificationId);
 
       final now = DateTime.now();
-      var scheduledTime = tz.TZDateTime(tz.local, now.year, now.month, now.day, 8, 0);
-      if (scheduledTime.isBefore(tz.TZDateTime.now(tz.local))) {
-        scheduledTime = scheduledTime.add(const Duration(days: 1));
+      var scheduled = DateTime(now.year, now.month, now.day, 8, 0);
+      if (scheduled.isBefore(now)) {
+        scheduled = scheduled.add(const Duration(days: 1));
       }
 
-      final androidDetails = AndroidNotificationDetails(
-        'task_digest',
-        'Daily Task Digest',
-        channelDescription: 'Morning summary of your tasks',
-        importance: Importance.defaultImportance,
-        priority: Priority.defaultPriority,
-        icon: '@mipmap/ic_launcher',
-      );
-
-      await _notifications.zonedSchedule(
-        notificationId,
-        title,
-        body,
-        scheduledTime,
-        NotificationDetails(android: androidDetails),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-      );
+      // Native delivery like the Wird reminders (EMUI drops flutter_local_notifications' broadcasts, see the
+      // task reminders above); the owner's T4 check saw no digest. One shot, re-armed with fresh counts on each
+      // app open as before; the card builds the text from the counts in the app language.
+      await _nativeAlarmChannel.invokeMethod('scheduleNativeNotification', {
+        'notificationId': notificationId,
+        'title': title,
+        'body': body,
+        'channelId': 'task_digest',
+        'channelName': 'Daily Task Digest',
+        'triggerAt': scheduled.millisecondsSinceEpoch,
+        'tapTab': 3,
+        'repeatDaily': false,
+        'isArabic': isArabic,
+        'kind': 'digest',
+        'countA': todayCount,
+        'countB': overdueCount,
+      });
       debugPrint('✅ [DIGEST] Scheduled daily task digest at 8 AM — $todayCount today, $overdueCount overdue');
     } catch (e) {
       debugPrint('❌ [DIGEST] Error scheduling digest: $e');
@@ -1125,6 +1124,9 @@ class NotificationService {
             'tapTab': 2,
             'repeatDaily': true,
             'isArabic': isArabic,
+            // The card builds the text itself in the app language (live); title/body above stay as the fallback
+            'kind': 'wird',
+            'countA': dailyPageGoal,
           });
           debugPrint('📖 [WIRD] Native reminder #$i scheduled at $scheduled');
         } catch (e) {

@@ -28,6 +28,13 @@ object NativeReminderCard {
     private const val EXTRA_TAP_TAB = "aura_native_card_tab"
     private const val EXTRA_PRAYER_NAME = "aura_native_card_prayer"
     private const val EXTRA_PRAYER_TIME = "aura_native_card_prayer_time"
+    private const val EXTRA_KIND = "aura_native_card_kind"
+    private const val EXTRA_COUNT_A = "aura_native_card_count_a"
+    private const val EXTRA_COUNT_B = "aura_native_card_count_b"
+
+    /** Text kinds Dart can send instead of finished text (Kotlin then builds both languages, live). */
+    const val KIND_WIRD = "wird"
+    const val KIND_DIGEST = "digest"
 
     /** Full text on the lock screen (same decision as the daily summary card). */
     const val VISIBILITY = NotificationCompat.VISIBILITY_PUBLIC
@@ -42,6 +49,31 @@ object NativeReminderCard {
 
     fun markPrayedLabel(isArabic: Boolean): String = if (isArabic) "أديت الصلاة" else "Mark as Prayed"
     fun remindAgainLabel(isArabic: Boolean): String = if (isArabic) "ذكرني مرة أخرى" else "Remind Me Again"
+
+    private fun num(count: Int, isArabic: Boolean): String =
+        if (isArabic) ThemedNotification.withArabicNumerals(count.toString()) else count.toString()
+
+    /** Title for a kind; any other kind (or none: alarms armed before T4) keeps the text Dart sent. */
+    fun titleFor(kind: String?, fallback: String, isArabic: Boolean): String = when (kind) {
+        KIND_WIRD -> if (isArabic) "تذكير الورد" else "Wird Reminder"
+        KIND_DIGEST -> if (isArabic) "ملخص مهامك اليوم" else "Today's Tasks"
+        else -> fallback
+    }
+
+    /** Body for a kind: wird = [a] pages; digest = [a] tasks today and [b] overdue. Same wording as the Dart text. */
+    fun bodyFor(kind: String?, a: Int, b: Int, fallback: String, isArabic: Boolean): String = when (kind) {
+        KIND_WIRD ->
+            if (isArabic) "اقرأ وردك اليومي — ${num(a, true)} صفحة اليوم" else "Read your daily Wird — $a pages today"
+        KIND_DIGEST -> when {
+            a > 0 && b > 0 ->
+                if (isArabic) "${num(a, true)} مهمة اليوم · ${num(b, true)} متأخرة" else "$a tasks today · $b overdue"
+            a > 0 ->
+                if (isArabic) "لديك ${num(a, true)} مهمة اليوم — ابدأ يومك!" else "You have $a tasks today — let's go!"
+            else ->
+                if (isArabic) "يوم نظيف! لا مهام اليوم 🎉" else "Clean day! No tasks due today 🎉"
+        }
+        else -> fallback
+    }
 
     /** Body of the "Remind Me Again" re-post; the Arabic digit goes through the Arabic numerals rule. */
     fun remindAgainBody(isArabic: Boolean): String =
@@ -76,6 +108,9 @@ object NativeReminderCard {
         isArabic: Boolean,
         prayerName: String?,
         prayerTimeMs: Long,
+        kind: String?,
+        countA: Int,
+        countB: Int,
         keepWhen: Long?
     ) {
         val appArabic = ThemedNotification.isArabic(context)
@@ -91,8 +126,11 @@ object NativeReminderCard {
         )
 
         val view = RemoteViews(context.packageName, layoutId(dark, appArabic))
-        view.setTextViewText(R.id.native_reminder_title, title)
-        view.setTextViewText(R.id.native_reminder_body, body)
+        // A kind means the text is built here in the app language (live); no kind = the text Dart sent
+        val titleShown = titleFor(kind, title, appArabic)
+        val bodyShown = bodyFor(kind, countA, countB, body, appArabic)
+        view.setTextViewText(R.id.native_reminder_title, titleShown)
+        view.setTextViewText(R.id.native_reminder_body, bodyShown)
         // Explicit in both cases: a refresh re-applies on the view that is showing (see TaskReminderCard)
         if (hasButtons(prayerName)) {
             val prayedIntent = Intent(context, NativeNotificationReceiver::class.java).apply {
@@ -137,11 +175,14 @@ object NativeReminderCard {
             putInt(EXTRA_TAP_TAB, tapTab)
             putString(EXTRA_PRAYER_NAME, prayerName ?: "")
             putLong(EXTRA_PRAYER_TIME, prayerTimeMs)
+            putString(EXTRA_KIND, kind ?: "")
+            putInt(EXTRA_COUNT_A, countA)
+            putInt(EXTRA_COUNT_B, countB)
         }
         val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(title)
-            .setContentText(body)
+            .setContentTitle(titleShown)
+            .setContentText(bodyShown)
             .setCustomContentView(view)
             .setCustomBigContentView(view)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -173,6 +214,7 @@ object NativeReminderCard {
                 if (sbn.packageName != context.packageName) continue
                 val n = sbn.notification
                 if (!n.extras.getBoolean(EXTRA_MARK, false)) continue
+                Log.d(TAG, "📋 native card ${sbn.id}: layout=${n.contentView?.layoutId} wanted=$wanted")
                 if (n.contentView?.layoutId == wanted) continue
                 val title = n.extras.getString(EXTRA_TITLE) ?: continue
                 Log.d(TAG, "📋 look changed, refreshing native card ${sbn.id}")
@@ -184,6 +226,8 @@ object NativeReminderCard {
                     ThemedNotification.isArabic(context),
                     n.extras.getString(EXTRA_PRAYER_NAME)?.takeIf { it.isNotEmpty() },
                     n.extras.getLong(EXTRA_PRAYER_TIME, 0L),
+                    n.extras.getString(EXTRA_KIND)?.takeIf { it.isNotEmpty() },
+                    n.extras.getInt(EXTRA_COUNT_A, 0), n.extras.getInt(EXTRA_COUNT_B, 0),
                     n.`when`
                 )
             }

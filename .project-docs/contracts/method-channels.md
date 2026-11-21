@@ -43,7 +43,10 @@ channel name (`silent_mode`). Silent-mode automation actually runs natively from
 ## Methods — Kotlin → Dart
 | Channel | Method | Kotlin sender | Dart handler | Confidence |
 | --- | --- | --- | --- | --- |
-| navigation | `navigateToRoute`, `openReminderPicker`, `updatePrayerStatus`, `openPostPrayerPicker` | `MainActivity.kt:66,76,89,102` (from intent extras, see intent-extras) | `main_wrapper_screen.dart:256,261,279,270` | Verified |
+| navigation | `navigateToRoute`, `navigateToTab {tab}` (T4: sent by `MainActivity.handleWidgetTabIntent` when a notification/widget tap carries `widget_target_tab` and the app is running; the pref `widget_navigate_to_tab` is still queued for a cold start), `openReminderPicker`, `updatePrayerStatus`, `openPostPrayerPicker` | `MainActivity.kt:66,76,89,102` (from intent extras, see intent-extras) | `main_wrapper_screen.dart:256,261,279,270` | Verified |
 | prayer_alarms | `onPrayerAlarmTriggered` | none found | `prayer_alarm_service.dart:42` | Partial (F11) |
 
 Hotspot: 13 `MethodChannel(` constructions + 3 `_channelName` constants in Dart for 9 app channels.
+
+### T4 addition: `scheduleNativeNotification` optional args (prayer_alarms channel)
+`kind` (String: `wird` or `digest`), `countA` (Int: Wird pages, or digest tasks today), `countB` (Int: digest overdue count). With a `kind`, `NativeReminderCard` builds title and body itself in the APP language (Arabic digits), live; without it (alarms armed before T4, or other callers) the `title`/`body` from Dart are shown unchanged. The daily task digest (id 4001, channel `task_digest`, tab 3) now goes through this method instead of `flutter_local_notifications` `zonedSchedule`.

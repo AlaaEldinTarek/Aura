@@ -26,3 +26,6 @@ channel or FlutterSharedPreferences.
 `REBOOT`, `MY_PACKAGE_REPLACED`, `APPWIDGET_UPDATE`.
 
 Other widget handoff flags (`pending_complete_task_id`, `widget_open_task_form`, `widget_navigate_to_tab`): prefs-keys.md.
+
+### T4 addition: `NativeNotificationReceiver` intent extras
+`kind` (String), `count_a` (Int), `count_b` (Int): optional text kind and numbers set by `scheduleNativeNotification` (`kind`, `countA`, `countB`), re-passed on the daily re-arm. Absent on alarms armed before T4 (the receiver then shows the title/body extras as before).

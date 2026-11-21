@@ -79,6 +79,9 @@ class MainActivity : FlutterFragmentActivity() {
         if (tabIndex >= 0) {
             FlutterPrefs.putInt(this, "widget_navigate_to_tab", tabIndex)
             Log.d("MainActivity", "🗂️ [WIDGET] Queued tab navigation → $tabIndex")
+            // App already running (onNewIntent): also tell Dart directly, like the route taps do (the daily summary
+            // tap works this way). The pref stays for a cold start, where Dart is not listening yet.
+            navigationChannel?.invokeMethod("navigateToTab", mapOf("tab" to tabIndex))
         }
     }
 
@@ -585,9 +588,14 @@ class MainActivity : FlutterFragmentActivity() {
                     val isArabic = call.argument<Boolean>("isArabic") ?: false
                     val prayerName = call.argument<String>("prayerName")
                     val prayerTimeMs = call.argument<Long>("prayerTimeMs") ?: 0L
+                    // Optional (T4): a text kind plus numbers, so the card builds the text in the app language
+                    val kind = call.argument<String>("kind")
+                    val countA = call.argument<Int>("countA") ?: 0
+                    val countB = call.argument<Int>("countB") ?: 0
                     NativeNotificationReceiver.schedule(
                         this, notificationId, title, body, channelId, channelName,
-                        triggerAt, tapTab, repeatDaily, isArabic, prayerName, prayerTimeMs
+                        triggerAt, tapTab, repeatDaily, isArabic, prayerName, prayerTimeMs,
+                        kind, countA, countB
                     )
                     result.success(true)
                 }

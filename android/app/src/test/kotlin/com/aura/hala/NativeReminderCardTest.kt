@@ -48,4 +48,42 @@ class NativeReminderCardTest {
     fun lockScreen_showsTheFullText() {
         assertEquals(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC, NativeReminderCard.VISIBILITY)
     }
+
+    // --- Text built here from a kind and numbers (follows the app language live) ---
+
+    @Test
+    fun wird_titleAndBody_bothLanguages() {
+        assertEquals("Wird Reminder", NativeReminderCard.titleFor("wird", "x", false))
+        assertEquals("تذكير الورد", NativeReminderCard.titleFor("wird", "x", true))
+        assertEquals("Read your daily Wird — 5 pages today", NativeReminderCard.bodyFor("wird", 5, 0, "x", false))
+        assertEquals("اقرأ وردك اليومي — ٥ صفحة اليوم", NativeReminderCard.bodyFor("wird", 5, 0, "x", true))
+    }
+
+    @Test
+    fun digest_bodyCases_bothLanguages() {
+        assertEquals("Today's Tasks", NativeReminderCard.titleFor("digest", "x", false))
+        assertEquals("ملخص مهامك اليوم", NativeReminderCard.titleFor("digest", "x", true))
+        assertEquals("3 tasks today · 2 overdue", NativeReminderCard.bodyFor("digest", 3, 2, "x", false))
+        assertEquals("٣ مهمة اليوم · ٢ متأخرة", NativeReminderCard.bodyFor("digest", 3, 2, "x", true))
+        assertEquals("You have 4 tasks today — let's go!", NativeReminderCard.bodyFor("digest", 4, 0, "x", false))
+        assertEquals("لديك ٤ مهمة اليوم — ابدأ يومك!", NativeReminderCard.bodyFor("digest", 4, 0, "x", true))
+        assertEquals("Clean day! No tasks due today 🎉", NativeReminderCard.bodyFor("digest", 0, 0, "x", false))
+        assertEquals("يوم نظيف! لا مهام اليوم 🎉", NativeReminderCard.bodyFor("digest", 0, 0, "x", true))
+    }
+
+    @Test
+    fun arabicBodies_haveNoLatinDigits() {
+        for (n in listOf(0, 1, 7, 12)) {
+            assertFalse(NativeReminderCard.bodyFor("wird", n, 0, "x", true).any { it in '0'..'9' })
+            assertFalse(NativeReminderCard.bodyFor("digest", n, n, "x", true).any { it in '0'..'9' })
+        }
+    }
+
+    @Test
+    fun unknownOrMissingKind_keepsTheTextDartSent_oldAlarmsStillWork() {
+        assertEquals("Old title", NativeReminderCard.titleFor(null, "Old title", true))
+        assertEquals("Old body", NativeReminderCard.bodyFor(null, 0, 0, "Old body", true))
+        assertEquals("Old body", NativeReminderCard.bodyFor("", 0, 0, "Old body", false))
+        assertEquals("Old body", NativeReminderCard.bodyFor("other", 1, 1, "Old body", false))
+    }
 }

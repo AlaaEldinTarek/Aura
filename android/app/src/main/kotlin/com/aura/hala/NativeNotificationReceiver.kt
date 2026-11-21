@@ -47,6 +47,9 @@ class NativeNotificationReceiver : BroadcastReceiver() {
         const val EXTRA_IS_ARABIC = "is_arabic"
         const val EXTRA_PRAYER_NAME = "prayer_name"
         const val EXTRA_PRAYER_TIME_MS = "prayer_time_ms"
+        const val EXTRA_KIND = "kind"
+        const val EXTRA_COUNT_A = "count_a"
+        const val EXTRA_COUNT_B = "count_b"
 
         fun schedule(
             context: Context,
@@ -60,7 +63,10 @@ class NativeNotificationReceiver : BroadcastReceiver() {
             repeatDaily: Boolean,
             isArabic: Boolean,
             prayerName: String?,
-            prayerTimeMs: Long
+            prayerTimeMs: Long,
+            kind: String? = null,
+            countA: Int = 0,
+            countB: Int = 0
         ) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             val intent = Intent(context, NativeNotificationReceiver::class.java).apply {
@@ -74,6 +80,9 @@ class NativeNotificationReceiver : BroadcastReceiver() {
                 putExtra(EXTRA_IS_ARABIC, isArabic)
                 if (prayerName != null) putExtra(EXTRA_PRAYER_NAME, prayerName)
                 putExtra(EXTRA_PRAYER_TIME_MS, prayerTimeMs)
+                if (kind != null) putExtra(EXTRA_KIND, kind)
+                putExtra(EXTRA_COUNT_A, countA)
+                putExtra(EXTRA_COUNT_B, countB)
             }
             val pendingIntent = PendingIntent.getBroadcast(
                 context, notificationId, intent,
@@ -110,6 +119,10 @@ class NativeNotificationReceiver : BroadcastReceiver() {
         val isArabic = intent.getBooleanExtra(EXTRA_IS_ARABIC, false)
         val prayerName = intent.getStringExtra(EXTRA_PRAYER_NAME)
         val prayerTimeMs = intent.getLongExtra(EXTRA_PRAYER_TIME_MS, 0L)
+        // Absent on alarms armed before T4: the card then keeps the text Dart sent
+        val kind = intent.getStringExtra(EXTRA_KIND)
+        val countA = intent.getIntExtra(EXTRA_COUNT_A, 0)
+        val countB = intent.getIntExtra(EXTRA_COUNT_B, 0)
 
         when (intent.action) {
             ACTION_MARK_PRAYED -> {
@@ -149,7 +162,7 @@ class NativeNotificationReceiver : BroadcastReceiver() {
         // Request codes, ids, channel and the tap route are unchanged.
         NativeReminderCard.show(
             context, notificationId, title, body, channelId, channelName, tapTab,
-            isArabic, prayerName, prayerTimeMs, null
+            isArabic, prayerName, prayerTimeMs, kind, countA, countB, null
         )
 
         // Native equivalent of matchDateTimeComponents.time — re-arm for tomorrow
@@ -159,7 +172,8 @@ class NativeNotificationReceiver : BroadcastReceiver() {
                 context, notificationId, title, body, channelId, channelName,
                 System.currentTimeMillis() + 24 * 60 * 60 * 1000L,
                 tapTab, repeatDaily = true, isArabic = isArabic,
-                prayerName = prayerName, prayerTimeMs = prayerTimeMs + 24 * 60 * 60 * 1000L
+                prayerName = prayerName, prayerTimeMs = prayerTimeMs + 24 * 60 * 60 * 1000L,
+                kind = kind, countA = countA, countB = countB
             )
         }
     }
