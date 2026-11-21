@@ -93,9 +93,10 @@ class PrayerRescheduleService : Service() {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val isArabic = ThemedNotification.isArabic(this)
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Rescheduling Prayers")
-            .setContentText("Setting up prayer time alarms...")
+            .setContentTitle(ServiceNotificationText.rescheduleTitle(isArabic))
+            .setContentText(ServiceNotificationText.rescheduleBody(isArabic))
             .setSmallIcon(R.drawable.ic_notification)
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
