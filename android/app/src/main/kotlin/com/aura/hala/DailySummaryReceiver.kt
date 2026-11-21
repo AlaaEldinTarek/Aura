@@ -17,7 +17,7 @@ class DailySummaryReceiver : BroadcastReceiver() {
         private const val TAG = "DailySummaryReceiver"
         private const val ACTION = "com.aura.hala.DAILY_PRAYER_SUMMARY"
         private const val REQUEST_CODE = 7001
-        private val PRAYER_NAMES = listOf("Fajr", "Zuhr", "Asr", "Maghrib", "Isha")
+        internal val PRAYER_NAMES = listOf("Fajr", "Zuhr", "Asr", "Maghrib", "Isha")
 
         fun schedule(context: Context, timeStr: String) {
             val parts = timeStr.split(":")
@@ -100,9 +100,8 @@ class DailySummaryReceiver : BroadcastReceiver() {
 
         val today = todayDateKey()
         val prayerPrefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
-        val untracked = PRAYER_NAMES.filter { name ->
-            val key = "prayer_status_${name}_$today"
-            !prayerPrefs.contains(key)
+        val untracked = DailySummaryCard.untrackedNames(PRAYER_NAMES) { name ->
+            prayerPrefs.contains("prayer_status_${name}_$today")
         }
 
         if (untracked.isEmpty()) {

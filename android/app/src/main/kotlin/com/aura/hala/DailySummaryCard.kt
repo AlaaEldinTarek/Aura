@@ -25,6 +25,21 @@ object DailySummaryCard {
 
     fun tapRequestCode(): Int = NOTIFICATION_ID
 
+    /** Prayers (of [names]) that have no status yet; [isTracked] is "the prayer_status_{name}_{date} key exists". */
+    fun untrackedNames(names: List<String>, isTracked: (String) -> Boolean): List<String> =
+        names.filter { !isTracked(it) }
+
+    /**
+     * Ongoing (EMUI hid the dismissible card from the lock screen after an unlock, like the task card), so it must
+     * go away by itself: at the end of the day, at least one minute from now. A tap or tracking all prayers removes it.
+     */
+    fun timeoutAfterMs(nowMs: Long, endOfDayMs: Long): Long = maxOf(60_000L, endOfDayMs - nowMs)
+
+    private fun endOfToday(): Long = java.util.Calendar.getInstance().apply {
+        set(java.util.Calendar.HOUR_OF_DAY, 23); set(java.util.Calendar.MINUTE, 59)
+        set(java.util.Calendar.SECOND, 59); set(java.util.Calendar.MILLISECOND, 999)
+    }.timeInMillis
+
     /** Full text on the lock screen too (owner decision, T3): the count is shown, no generic public version. */
     const val VISIBILITY = NotificationCompat.VISIBILITY_PUBLIC
 
@@ -77,7 +92,9 @@ object DailySummaryCard {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
             .setVisibility(VISIBILITY)
+            .setOngoing(true)
             .setAutoCancel(true)
+            .setTimeoutAfter(timeoutAfterMs(System.currentTimeMillis(), endOfToday()))
             .setOnlyAlertOnce(keepWhen != null)
             .addExtras(extras)
             .setContentIntent(tapPending)
@@ -107,6 +124,32 @@ object DailySummaryCard {
             }
         } catch (e: Exception) {
             Log.e(TAG, "❌ refreshShowing failed: ${e.message}")
+        }
+    }
+
+    /**
+     * A prayer was tracked in the app (PrayerAlarmReceiver.markPrayerTracked, the native write of the status key):
+     * if the card is showing, update its count from the stored statuses, or remove it when all five are tracked, so
+     * it never keeps a wrong count.
+     */
+    fun onTrackingChanged(context: Context, prayerNames: List<String>, dateKey: String) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return
+        try {
+            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+            val showing = nm.activeNotifications.firstOrNull {
+                it.packageName == context.packageName && it.id == NOTIFICATION_ID &&
+                    it.notification.extras.getBoolean(EXTRA_MARK, false)
+            } ?: return
+            val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+            val left = untrackedNames(prayerNames) { prefs.contains("prayer_status_${it}_$dateKey") }.size
+            if (left == 0) {
+                nm.cancel(NOTIFICATION_ID)
+                Log.d(TAG, "📅 All prayers tracked, daily summary removed")
+            } else if (left != showing.notification.extras.getInt(EXTRA_COUNT, -1)) {
+                show(context, left, showing.notification.`when`)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ onTrackingChanged failed: ${e.message}")
         }
     }
 }

@@ -50,4 +50,20 @@ class DailySummaryCardTest {
         assertEquals(7001, DailySummaryCard.NOTIFICATION_ID)
         assertEquals(7001, DailySummaryCard.tapRequestCode())
     }
+
+    private val all = listOf("Fajr", "Zuhr", "Asr", "Maghrib", "Isha")
+
+    @Test
+    fun untrackedNames_dropsTheTrackedOnes() {
+        assertEquals(all, DailySummaryCard.untrackedNames(all) { false })
+        assertEquals(listOf("Fajr", "Isha"), DailySummaryCard.untrackedNames(all) { it in setOf("Zuhr", "Asr", "Maghrib") })
+        assertEquals(emptyList<String>(), DailySummaryCard.untrackedNames(all) { true })
+    }
+
+    @Test
+    fun timeout_isUntilEndOfDay_atLeastOneMinute() {
+        assertEquals(3_600_000L, DailySummaryCard.timeoutAfterMs(nowMs = 1_000_000L, endOfDayMs = 4_600_000L))
+        assertEquals(60_000L, DailySummaryCard.timeoutAfterMs(nowMs = 5_000_000L, endOfDayMs = 5_010_000L))
+        assertEquals(60_000L, DailySummaryCard.timeoutAfterMs(nowMs = 5_000_000L, endOfDayMs = 1_000L))
+    }
 }
