@@ -8,8 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import java.util.Calendar
 import java.util.Locale
 
@@ -18,9 +16,8 @@ class DailySummaryReceiver : BroadcastReceiver() {
     companion object {
         private const val TAG = "DailySummaryReceiver"
         private const val ACTION = "com.aura.hala.DAILY_PRAYER_SUMMARY"
-        private const val NOTIFICATION_ID = 7001
         private const val REQUEST_CODE = 7001
-        private val PRAYER_NAMES = listOf("Fajr", "Zuhr", "Asr", "Maghrib", "Isha")
+        internal val PRAYER_NAMES = listOf("Fajr", "Zuhr", "Asr", "Maghrib", "Isha")
 
         fun schedule(context: Context, timeStr: String) {
             val parts = timeStr.split(":")
@@ -103,9 +100,8 @@ class DailySummaryReceiver : BroadcastReceiver() {
 
         val today = todayDateKey()
         val prayerPrefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
-        val untracked = PRAYER_NAMES.filter { name ->
-            val key = "prayer_status_${name}_$today"
-            !prayerPrefs.contains(key)
+        val untracked = DailySummaryCard.untrackedNames(PRAYER_NAMES) { name ->
+            prayerPrefs.contains("prayer_status_${name}_$today")
         }
 
         if (untracked.isEmpty()) {
@@ -114,42 +110,8 @@ class DailySummaryReceiver : BroadcastReceiver() {
             return
         }
 
-        val language = prayerPrefs.getString("language", "en") ?: "en"
-        val isArabic = language == "ar"
-        val count = untracked.size
-
-        val title = if (isArabic) "تذكير الصلاة اليومي" else "Daily Prayer Reminder"
-        val body = if (isArabic) {
-            "لديك $count ${if (count == 1) "صلاة" else "صلوات"} لم تُسجَّل اليوم"
-        } else {
-            "You have $count untracked ${if (count == 1) "prayer" else "prayers"} today"
-        }
-
-        val tapIntent = Intent(context, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra("route", "/prayer_tracking")
-        }
-        val tapPending = PendingIntent.getActivity(
-            context, NOTIFICATION_ID, tapIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val builder = NotificationCompat.Builder(context, "prayer_tracking")
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(title)
-            .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setCategory(NotificationCompat.CATEGORY_REMINDER)
-            .setAutoCancel(true)
-            .setContentIntent(tapPending)
-
-        try {
-            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, builder.build())
-            Log.d(TAG, "📅 Daily summary shown: $count untracked prayers")
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Failed to show daily summary: ${e.message}")
-        }
+        // Themed card (T3): app theme + language, Arabic numerals, tap opens Prayer Tracking (unchanged)
+        DailySummaryCard.show(context, untracked.size, null)
 
         rescheduleForTomorrow(context)
     }

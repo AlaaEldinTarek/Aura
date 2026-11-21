@@ -455,6 +455,8 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
             prefs.edit().putString("prayer_status_${prayerName}_${today}", status).apply()
             Log.d(TAG, "📋 [POST_CHECK] Marked $prayerName as $status (Flutter)")
+            // Keep the daily summary card (if showing) in step with the tracked prayers (T3)
+            DailySummaryCard.onTrackingChanged(context, DailySummaryReceiver.PRAYER_NAMES, today)
         }
     }
 
