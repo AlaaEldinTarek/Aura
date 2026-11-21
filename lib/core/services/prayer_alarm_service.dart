@@ -184,6 +184,22 @@ class PrayerAlarmService {
     }
   }
 
+  /// Dev tile only (7 taps on Version): shows the real task digest card now with the given real counts (T4).
+  Future<void> testDigestNow(int todayCount, int overdueCount) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      await _channel.invokeMethod('testDigestNow', {
+        'todayCount': todayCount,
+        'overdueCount': overdueCount,
+      });
+    } catch (e) {
+      debugPrint('❌ [PRAYER ALARMS] Error showing test digest - $e');
+    }
+  }
+
   /// Dev tile only (7 taps on Version): shows the real post-prayer check for [prayerName] now
   /// (docs/designs/fix-post-check-remind-later.md).
   Future<void> testPostCheckNow(

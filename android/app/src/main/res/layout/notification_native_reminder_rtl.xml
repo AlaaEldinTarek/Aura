@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Native reminder card (Wird, task digest, prayer reminder), light RTL (Arabic, mirrored) (docs/designs/fix-themed-notifications.md, T4). Logo, title, body; the two buttons only when a prayer name is attached. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/bg_notification"
+    android:layoutDirection="ltr"
+    android:paddingLeft="16dp"
+    android:paddingRight="16dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <!-- Done above Remind Later, same width, one column at the end (like the foreground vibration buttons). -->
+    <LinearLayout
+        android:id="@+id/native_reminder_buttons"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/btn_native_primary"
+            android:layout_width="84dp"
+            android:layout_height="28dp"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp"
+            android:background="@drawable/bg_post_check_done"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="Mark as Prayed"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#4CAF50" />
+
+        <TextView
+            android:id="@+id/btn_native_secondary"
+            android:layout_width="84dp"
+            android:layout_height="28dp"
+            android:layout_marginTop="4dp"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp"
+            android:background="@drawable/bg_post_check_remind_light"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="Remind Me Again"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#B5821B" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="6dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/native_reminder_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="right"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="Reminder"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="#DE000000"
+            android:textDirection="rtl" />
+
+        <TextView
+            android:id="@+id/native_reminder_body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="right"
+            android:maxLines="3"
+            android:ellipsize="end"
+            android:text="Reminder text"
+            android:textSize="12sp"
+            android:textColor="#99000000"
+            android:textDirection="rtl" />
+
+
+    </LinearLayout>
+
+    <ImageView
+        android:id="@+id/native_reminder_icon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/ic_launcher_foreground"
+        android:scaleType="centerInside"
+        android:contentDescription="Aura" />
+
+</LinearLayout>

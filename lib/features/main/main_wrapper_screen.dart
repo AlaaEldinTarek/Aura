@@ -238,7 +238,17 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     // Listen for app shortcut navigation from native side (Android only)
     if (!kIsWeb && Platform.isAndroid)
       _navigationChannel.setMethodCallHandler((call) async {
-        if (call.method == 'navigateToRoute') {
+        if (call.method == 'navigateToTab') {
+          // Notification / widget tap while the app is running (native also queues the pref for a cold start)
+          final tab = (call.arguments['tab'] as num?)?.toInt() ?? -1;
+          debugPrint('🗂️ [TAB] navigateToTab from native: $tab');
+          if (tab >= 0 && tab < 5 && mounted) {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.reload();
+            await prefs.remove('widget_navigate_to_tab');
+            _handleTabTap(tab);
+          }
+        } else if (call.method == 'navigateToRoute') {
           final route = call.arguments['route'] as String?;
           if (route != null && mounted) {
             Navigator.of(context).pushNamed(route);

@@ -9,6 +9,7 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/providers/prayer_times_provider.dart';
 import '../../core/services/prayer_alarm_service.dart';
+import '../../core/services/task_service.dart';
 import '../../core/utils/haptic_feedback.dart';
 import '../../core/utils/number_formatter.dart';
 import '../../core/theme/app_typography.dart';
@@ -317,6 +318,21 @@ class ProfileScreen extends ConsumerWidget {
                           if (next == null) return;
                           await PrayerAlarmService.instance.testPostCheckNow(
                               next.name, next.nameAr, next.time);
+                        },
+                        // Dev tile item (7 taps): the task digest card now, with the real counts (T4).
+                        fireDigest: () async {
+                          final userId = getCurrentUserId();
+                          if (userId.isEmpty) return;
+                          final tasks = await TaskService.instance
+                              .getTasksOnce(userId: userId, limit: 500);
+                          final today = tasks
+                              .where((t) => t.isDueToday && !t.isCompleted)
+                              .length;
+                          final overdue = tasks
+                              .where((t) => t.isOverdue && !t.isCompleted)
+                              .length;
+                          await PrayerAlarmService.instance
+                              .testDigestNow(today, overdue);
                         },
                       );
                     },

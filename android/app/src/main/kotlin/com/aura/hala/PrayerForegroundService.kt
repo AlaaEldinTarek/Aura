@@ -148,9 +148,34 @@ class PrayerForegroundService : Service() {
         }
     }
 
+    /** Phone dark mode as last seen, to tell a real flip from other configuration changes. */
+    private var lastNight = false
+
+    /**
+     * The phone's dark mode flipped while the app theme is "system": re-theme every themed notification at once.
+     * Without this they only changed when the app was next opened and reloaded prayer times (a few seconds).
+     */
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        try {
+            val night = (newConfig.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+            val themeMode = FlutterPrefs.getString(this, "theme_mode", "system")
+            if (ThemedNotification.shouldRefreshOnNightChange(themeMode, lastNight, night)) {
+                Log.d(TAG, "🌙 [THEME] phone night mode changed to $night, refreshing themed notifications")
+                ThemedNotification.refreshAll(this)
+            }
+            lastNight = night
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [FG_SERVICE] onConfigurationChanged failed: ${e.message}")
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         instance = this
+        lastNight = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+            android.content.res.Configuration.UI_MODE_NIGHT_YES
         createNotificationChannel()
         loadPrayerTimes()
         startForeground(NOTIFICATION_ID, createNotification())
@@ -418,6 +443,7 @@ class PrayerForegroundService : Service() {
      */
     fun refreshNotification() {
         try {
+            Log.d(TAG, "🔄 [FG_SERVICE] refreshNotification (theme/language)")
             updateNotification()
         } catch (e: Exception) {
             Log.e(TAG, "❌ [FG_SERVICE] refreshNotification failed: ${e.message}")

@@ -79,6 +79,9 @@ class MainActivity : FlutterFragmentActivity() {
         if (tabIndex >= 0) {
             FlutterPrefs.putInt(this, "widget_navigate_to_tab", tabIndex)
             Log.d("MainActivity", "🗂️ [WIDGET] Queued tab navigation → $tabIndex")
+            // App already running (onNewIntent): also tell Dart directly, like the route taps do (the daily summary
+            // tap works this way). The pref stays for a cold start, where Dart is not listening yet.
+            navigationChannel?.invokeMethod("navigateToTab", mapOf("tab" to tabIndex))
         }
     }
 
@@ -524,6 +527,25 @@ class MainActivity : FlutterFragmentActivity() {
                         result.error("FAILED", e.message, null)
                     }
                 }
+                "testDigestNow" -> {
+                    // Hidden dev tile (7 taps on Version): posts the real task digest card now, with the counts Dart
+                    // computed from the real tasks, through the same card as the 8:00 alarm (T4).
+                    val todayCount = call.argument<Int>("todayCount") ?: 0
+                    val overdueCount = call.argument<Int>("overdueCount") ?: 0
+                    try {
+                        NativeReminderCard.ensureChannel(this, "task_digest", "Daily Task Digest")
+                        NativeReminderCard.show(
+                            this, 4001, "", "", "task_digest", "Daily Task Digest", 3,
+                            ThemedNotification.isArabic(this), null, 0L,
+                            NativeReminderCard.KIND_DIGEST, todayCount, overdueCount, null
+                        )
+                        Log.d("PrayerChannel", "🧪 Test digest posted: $todayCount today, $overdueCount overdue")
+                        result.success(true)
+                    } catch (e: Exception) {
+                        Log.e("PrayerChannel", "❌ testDigestNow failed: ${e.message}")
+                        result.error("FAILED", e.message, null)
+                    }
+                }
                 "cancelAllPrayerAlarms" -> {
                     Log.d("PrayerChannel", "Cancelling all prayer alarms")
                     PrayerAlarmReceiver.cancelAllAlarms(this)
@@ -585,9 +607,14 @@ class MainActivity : FlutterFragmentActivity() {
                     val isArabic = call.argument<Boolean>("isArabic") ?: false
                     val prayerName = call.argument<String>("prayerName")
                     val prayerTimeMs = call.argument<Long>("prayerTimeMs") ?: 0L
+                    // Optional (T4): a text kind plus numbers, so the card builds the text in the app language
+                    val kind = call.argument<String>("kind")
+                    val countA = call.argument<Int>("countA") ?: 0
+                    val countB = call.argument<Int>("countB") ?: 0
                     NativeNotificationReceiver.schedule(
                         this, notificationId, title, body, channelId, channelName,
-                        triggerAt, tapTab, repeatDaily, isArabic, prayerName, prayerTimeMs
+                        triggerAt, tapTab, repeatDaily, isArabic, prayerName, prayerTimeMs,
+                        kind, countA, countB
                     )
                     result.success(true)
                 }

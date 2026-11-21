@@ -43,4 +43,17 @@ class ThemedNotificationTest {
         assertEquals("\u0661\u0662:\u0660\u0665", ThemedNotification.withArabicNumerals("12:05"))
         assertEquals("abc", ThemedNotification.withArabicNumerals("abc"))
     }
+
+    @Test
+    fun refreshOnConfigChange_onlyWhenTheAppFollowsThePhoneAndNightFlipped() {
+        // theme "system" + the phone's dark mode flipped: re-theme now
+        assertEquals(true, ThemedNotification.shouldRefreshOnNightChange("system", false, true))
+        assertEquals(true, ThemedNotification.shouldRefreshOnNightChange("system", true, false))
+        // night did not change (rotation, font size...): nothing to do
+        assertEquals(false, ThemedNotification.shouldRefreshOnNightChange("system", true, true))
+        // the app theme is fixed: the phone's mode does not matter
+        assertEquals(false, ThemedNotification.shouldRefreshOnNightChange("light", false, true))
+        assertEquals(false, ThemedNotification.shouldRefreshOnNightChange("dark", true, false))
+        assertEquals(false, ThemedNotification.shouldRefreshOnNightChange("amoled", false, true))
+    }
 }
