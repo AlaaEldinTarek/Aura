@@ -1,4 +1,5 @@
 import '../utils/task_reminder_args.dart';
+import '../utils/legacy_digest.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -1050,8 +1051,14 @@ class NotificationService {
         body = isArabic ? 'يوم نظيف! لا مهام اليوم 🎉' : 'Clean day! No tasks due today 🎉';
       }
 
-      // Drop the old flutter_local_notifications alarm (same id) so the native one below is the only one
-      await _notifications.cancel(notificationId);
+      // An alarm that an older build armed through flutter_local_notifications (same id) is cancelled once, only if
+      // it really is still pending. An unconditional cancel(id) would also remove a digest card that is showing, so the
+      // card used to vanish whenever the app was opened and rescheduled.
+      final pending = await _notifications.pendingNotificationRequests();
+      if (hasLegacyDigestAlarm(pending.map((p) => p.id), notificationId)) {
+        await _notifications.cancel(notificationId);
+        debugPrint('🧹 [DIGEST] Cancelled a leftover flutter_local_notifications digest alarm');
+      }
 
       final now = DateTime.now();
       var scheduled = DateTime(now.year, now.month, now.day, 8, 0);
