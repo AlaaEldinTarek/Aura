@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Start azkar" button of the post-prayer azkar card (T6): solid app gold, same in light and dark. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#F5B301" />
+    <corners android:radius="14dp" />
+</shape>

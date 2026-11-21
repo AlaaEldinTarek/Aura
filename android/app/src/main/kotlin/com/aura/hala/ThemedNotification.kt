@@ -85,6 +85,7 @@ object ThemedNotification {
         TaskReminderCard.refreshShowing(context)
         DailySummaryCard.refreshShowing(context)
         NativeReminderCard.refreshShowing(context)
+        AzkarCard.refreshShowing(context)
         PrayerForegroundService.getInstance()?.refreshNotification()
     }
 }

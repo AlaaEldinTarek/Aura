@@ -134,6 +134,9 @@ class AzkarAlarmReceiver : BroadcastReceiver() {
         val title = if (isArabic) "أذكار بعد الصلاة 🤲" else "Post-Prayer Azkar 🤲"
         val body  = if (isArabic) "حان وقت أذكار بعد صلاة $prayerNameAr" else "Time for post-prayer azkar after $prayerName"
 
+        // T6: themed card (look only). The button shares fullScreenPi, the same PendingIntent as the content intent.
+        val cardView = AzkarCard.contentView(context, prayerName, prayerNameAr, fullScreenPi)
+
         val notif = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
@@ -144,6 +147,10 @@ class AzkarAlarmReceiver : BroadcastReceiver() {
             .setFullScreenIntent(fullScreenPi, true)
             .setContentIntent(fullScreenPi)
             .setTimeoutAfter(60_000)
+            .setCustomContentView(cardView)
+            .setCustomBigContentView(cardView)
+            .setVisibility(AzkarCard.VISIBILITY)
+            .addExtras(AzkarCard.extras(prayerName, prayerNameAr, System.currentTimeMillis()))
             .build()
 
         try {
