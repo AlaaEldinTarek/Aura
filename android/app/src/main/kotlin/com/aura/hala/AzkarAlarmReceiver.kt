@@ -94,6 +94,12 @@ class AzkarAlarmReceiver : BroadcastReceiver() {
             Log.d(TAG, "✅ [AZKAR] Scheduled for $prayerName at $triggerStr ($delayMin min from now)")
         }
 
+        /** F70 cancel table: request codes 3001-3006 with ACTION_AZKAR_ALARM (same codes as the post-checks, other class). */
+        internal fun cancelSpecs(): List<CancelSpec> =
+            listOf("Fajr", "Sunrise", "Zuhr", "Asr", "Maghrib", "Isha").map {
+                CancelSpec(AzkarAlarmReceiver::class.java, ACTION_AZKAR_ALARM, getAzkarRequestCode(it))
+            }
+
         fun cancel(context: Context, prayerName: String) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             val intent = Intent(context, AzkarAlarmReceiver::class.java).apply {

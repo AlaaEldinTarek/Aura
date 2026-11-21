@@ -94,6 +94,17 @@ class NativeNotificationReceiver : BroadcastReceiver() {
             Log.d(TAG, "⏰ Scheduled id=$notificationId ch=$channelId at ${DateFormat.format("MM-dd HH:mm", Date(triggerAtMs))} repeatDaily=$repeatDaily")
         }
 
+        /**
+         * F70 cancel table (request code = notification id, no action): prayer notifications 1-6 and 5001-5006, the
+         * daily task summary 3999 (its owner is this receiver, never the silent-restore alarm that shares the number),
+         * the daily digest 4001, Wird reminders 5100-5119, and each one's "remind again" re-arm at id + 5000.
+         */
+        internal fun cancelSpecs(): List<CancelSpec> {
+            val ids = (1..6).toList() + listOf(3999, 4001) + (5001..5006).toList() + (5100..5119).toList()
+            val again = ids.map { NativeReminderCard.remindAgainNotificationId(it) }
+            return (ids + again).distinct().map { CancelSpec(NativeNotificationReceiver::class.java, null, it) }
+        }
+
         fun cancel(context: Context, notificationId: Int) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             val intent = Intent(context, NativeNotificationReceiver::class.java)

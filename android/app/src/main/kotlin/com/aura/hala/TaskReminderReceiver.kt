@@ -111,6 +111,17 @@ class TaskReminderReceiver : BroadcastReceiver() {
             }
         }
 
+        /**
+         * F70 cancel table. Task reminder ids are 4000 + hash % 1000 (contracts/notification-ids.md), so the whole range
+         * is covered: the reminder and its snooze re-arm (request code = id, no action) and the due-now repost
+         * (request code id + 4, ACTION_DUE_NOW).
+         */
+        internal fun cancelSpecs(): List<CancelSpec> =
+            (4000..4999).map { CancelSpec(TaskReminderReceiver::class.java, null, it) } +
+                (4000..4999).map {
+                    CancelSpec(TaskReminderReceiver::class.java, ACTION_DUE_NOW, TaskReminderCard.dueNowRequestCode(it))
+                }
+
         fun cancelDueNow(context: Context, notificationId: Int) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             val intent = Intent(context, TaskReminderReceiver::class.java).apply { action = ACTION_DUE_NOW }

@@ -57,6 +57,10 @@ class DailySummaryReceiver : BroadcastReceiver() {
             cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH)
         )
 
+        /** F70 cancel table: request code 7001 with the summary action. */
+        internal fun cancelSpecs(): List<CancelSpec> =
+            listOf(CancelSpec(DailySummaryReceiver::class.java, ACTION, REQUEST_CODE))
+
         fun cancel(context: Context) {
             val intent = Intent(context, DailySummaryReceiver::class.java).apply { action = ACTION }
             val pending = PendingIntent.getBroadcast(

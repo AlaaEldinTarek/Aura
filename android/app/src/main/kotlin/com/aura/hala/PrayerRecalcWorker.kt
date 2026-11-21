@@ -25,6 +25,11 @@ class PrayerRecalcWorker(context: Context, params: WorkerParameters) :
     Worker(context, params) {
 
     override fun doWork(): Result {
+        // F70: no session (signed out, no guest) means no recalculation, which would re-arm the alarms
+        if (!SessionState.isSessionActive(applicationContext, "recalc_worker")) {
+            Log.d(TAG, "🔐 [SESSION] gate closed, periodic recalc skipped")
+            return Result.success()
+        }
         return try {
             val ok = NativePrayerCalculator.calculateAndSave(applicationContext)
             Log.d(TAG, if (ok) "✅ Periodic recalc done" else "⚠️ Skipped (no stored coordinates)")
@@ -38,6 +43,12 @@ class PrayerRecalcWorker(context: Context, params: WorkerParameters) :
     companion object {
         private const val TAG = "PrayerRecalcWorker"
         private const val WORK_NAME = "aura_periodic_prayer_recalc"
+
+        /** F70: logout removes the periodic work (the next app start enqueues it again; doWork is gated while signed out). */
+        fun cancel(context: Context) {
+            WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
+            Log.d(TAG, "🧹 Cancelled periodic prayer recalc")
+        }
 
         /** Enqueue the 6-hourly recalc. Idempotent (KEEP) — safe to call on every app start/boot. */
         fun schedule(context: Context) {

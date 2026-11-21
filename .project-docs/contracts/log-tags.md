@@ -20,10 +20,10 @@ adb logcat | grep "🕌"
 | `🕌` | in log lines of `PrayerForegroundService`, `AdhanFullScreenActivity`, `JumuahReminderReceiver` | some of 18 Dart hits are UI strings, not logs | Partial |
 
 ## Kotlin TAGs (`private const val TAG`)
-AdhanFullScreen, AdhanPlayer, AzkarAlarmReceiver, AzkarFullScreen, BackgroundServiceHandler, CombinedPrayerWidget,
+AdhanFullScreen, AdhanPlayer, AlarmCleanup (F70: `🧹 [F70]` cleanup lines), AzkarAlarmReceiver, AzkarFullScreen, BackgroundServiceHandler, CombinedPrayerWidget,
 DailyContentWidget, DailyRecalcReceiver, DailySummaryReceiver, FocusMode, FocusModeReceiver, FocusModeService,
 JumuahReminder, NativeNotifReceiver, NativePrayerCalc, NextTaskWidget, PrayerAlarmReceiver, PrayerBootReceiver,
-PrayerForegroundService, PrayerRecalcWorker, PrayerRescheduleService, SilentMode, SilentOffReceiver, StopAdhanReceiver,
+PrayerForegroundService, PrayerRecalcWorker, PrayerRescheduleService, SessionState (F70: `🔐 [SESSION] gate caller=… active=… isGuest=… currentUserNull=…` at every re-armer), SilentMode, SilentOffReceiver, StopAdhanReceiver,
 TaskReminderReceiver, TasksWidget, ToggleSilentMode, WidgetUpdateService.
 Inline literal tags in MainActivity: `MainActivity`, `PrayerChannel`, `FocusModeChannel`, `BackgroundService`, `AdhanChannel`.
 

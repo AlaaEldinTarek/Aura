@@ -34,6 +34,11 @@ object NativePrayerCalculator {
      * Returns true on success.
      */
     fun calculateAndSave(context: Context): Boolean {
+        // F70: no session (signed out, no guest) means no recalculation and no alarm scheduling
+        if (!SessionState.isSessionActive(context, "calc_and_save")) {
+            Log.d(TAG, "🔐 [SESSION] gate closed, native recalculation skipped")
+            return false
+        }
         val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
 
         val latF = prefs.getFloat("prayer_latitude", Float.MIN_VALUE)
