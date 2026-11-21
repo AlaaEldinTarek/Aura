@@ -62,9 +62,6 @@ object NativeReminderCard {
     fun markPrayedLabel(isArabic: Boolean): String = if (isArabic) "أديت الصلاة" else "Mark as Prayed"
     fun remindAgainLabel(isArabic: Boolean): String = if (isArabic) "ذكرني مرة أخرى" else "Remind Me Again"
 
-    private fun num(count: Int, isArabic: Boolean): String =
-        if (isArabic) ThemedNotification.withArabicNumerals(count.toString()) else count.toString()
-
     /** Title for a kind; any other kind (or none: alarms armed before T4) keeps the text Dart sent. */
     fun titleFor(kind: String?, fallback: String, isArabic: Boolean): String = when (kind) {
         KIND_WIRD -> if (isArabic) "تذكير الورد" else "Wird Reminder"
@@ -72,25 +69,21 @@ object NativeReminderCard {
         else -> fallback
     }
 
-    /** Arabic count rule (same as the minutes): plural for 3-10, singular for 1, 2 and 11+. */
-    fun arabicCountWord(count: Int, plural: String, singular: String): String =
-        if (count in 3..10) plural else singular
-
     private fun pages(a: Int, isArabic: Boolean): String =
-        if (isArabic) "${num(a, true)} ${arabicCountWord(a, "صفحات", "صفحة")}" else "$a ${if (a == 1) "page" else "pages"}"
+        if (isArabic) ArabicCount.pages(a) else "$a ${if (a == 1) "page" else "pages"}"
 
     private fun tasks(a: Int, isArabic: Boolean): String =
-        if (isArabic) "${num(a, true)} ${arabicCountWord(a, "مهام", "مهمة")}" else "$a ${if (a == 1) "task" else "tasks"}"
+        if (isArabic) ArabicCount.tasks(a) else "$a ${if (a == 1) "task" else "tasks"}"
 
     /** Body for a kind: wird = [a] pages; digest = [a] tasks today and [b] overdue. */
     fun bodyFor(kind: String?, a: Int, b: Int, fallback: String, isArabic: Boolean): String = when (kind) {
         KIND_WIRD ->
-            if (isArabic) "اقرأ وردك اليومي — ${pages(a, true)} اليوم" else "Read your daily Wird — ${pages(a, false)} today"
+            if (isArabic) "اقرأ وردك اليومي — ${ArabicCount.pages(a)} اليوم" else "Read your daily Wird — ${pages(a, false)} today"
         KIND_DIGEST -> when {
             a > 0 && b > 0 ->
-                if (isArabic) "${tasks(a, true)} اليوم · ${num(b, true)} متأخرة" else "${tasks(a, false)} today · $b overdue"
+                if (isArabic) "${ArabicCount.tasks(a)} اليوم · ${ArabicCount.overdueTasks(b)}" else "${tasks(a, false)} today · $b overdue"
             a > 0 ->
-                if (isArabic) "لديك ${tasks(a, true)} اليوم — ابدأ يومك!" else "You have ${tasks(a, false)} today — let's go!"
+                if (isArabic) "لديك ${ArabicCount.tasks(a)} اليوم — ابدأ يومك!" else "You have ${tasks(a, false)} today — let's go!"
             else ->
                 if (isArabic) "يوم نظيف! لا مهام اليوم 🎉" else "Clean day! No tasks due today 🎉"
         }

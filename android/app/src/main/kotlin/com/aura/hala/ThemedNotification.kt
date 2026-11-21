@@ -37,6 +37,13 @@ object ThemedNotification {
     fun withArabicNumerals(input: String): String =
         input.map { c -> if (c in '0'..'9') ('\u0660' + (c - '0')) else c }.joinToString("")
 
+    /**
+     * The phone's dark mode flipped. Only matters when the app theme follows the phone ("system"): a fixed app theme
+     * (light / dark / amoled) does not change. Used by the foreground service, which gets the configuration change.
+     */
+    fun shouldRefreshOnNightChange(themeMode: String, oldNight: Boolean, newNight: Boolean): Boolean =
+        oldNight != newNight && themeMode != "light" && themeMode != "dark" && themeMode != "amoled"
+
     /** One of four layout ids for the current theme and language. */
     fun pickLayout(dark: Boolean, isArabic: Boolean, light: Int, darkLayout: Int, lightRtl: Int, darkRtl: Int): Int = when {
         dark && isArabic -> darkRtl
@@ -73,6 +80,7 @@ object ThemedNotification {
      * line here. Called from the `updatePrayerWidgets` handler in MainActivity (Dart already calls it on change).
      */
     fun refreshAll(context: Context) {
+        Log.d(TAG, "🎨 refreshAll start (theme or language changed)")
         PostCheckCard.refreshShowing(context)
         TaskReminderCard.refreshShowing(context)
         DailySummaryCard.refreshShowing(context)

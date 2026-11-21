@@ -57,20 +57,13 @@ class NativeReminderCardTest {
         assertEquals("تذكير الورد", NativeReminderCard.titleFor("wird", "x", true))
         assertEquals("Read your daily Wird — 5 pages today", NativeReminderCard.bodyFor("wird", 5, 0, "x", false))
         assertEquals("Read your daily Wird — 1 page today", NativeReminderCard.bodyFor("wird", 1, 0, "x", false))
-        assertEquals("اقرأ وردك اليومي — ٥ صفحات اليوم", NativeReminderCard.bodyFor("wird", 5, 0, "x", true))
-    }
-
-    @Test
-    fun arabicPlural_pluralFor3to10_singularFor1_2_and_11plus() {
-        for (n in 3..10) assertEquals("صفحات", NativeReminderCard.arabicCountWord(n, "صفحات", "صفحة"))
-        for (n in listOf(0, 1, 2, 11, 15, 30, 100)) assertEquals("صفحة", NativeReminderCard.arabicCountWord(n, "صفحات", "صفحة"))
     }
 
     @Test
     fun wird_arabicPages_grammar() {
         val f = { n: Int -> NativeReminderCard.bodyFor("wird", n, 0, "x", true) }
-        assertEquals("اقرأ وردك اليومي — ١ صفحة اليوم", f(1))
-        assertEquals("اقرأ وردك اليومي — ٢ صفحة اليوم", f(2))
+        assertEquals("اقرأ وردك اليومي — صفحة واحدة اليوم", f(1))
+        assertEquals("اقرأ وردك اليومي — صفحتان اليوم", f(2))
         assertEquals("اقرأ وردك اليومي — ٣ صفحات اليوم", f(3))
         assertEquals("اقرأ وردك اليومي — ٥ صفحات اليوم", f(5))
         assertEquals("اقرأ وردك اليومي — ١٠ صفحات اليوم", f(10))
@@ -79,7 +72,7 @@ class NativeReminderCardTest {
     }
 
     @Test
-    fun digest_bodyCases_bothLanguages() {
+    fun digest_bodyCases_english() {
         assertEquals("Today's Tasks", NativeReminderCard.titleFor("digest", "x", false))
         assertEquals("ملخص مهامك اليوم", NativeReminderCard.titleFor("digest", "x", true))
         assertEquals("3 tasks today · 2 overdue", NativeReminderCard.bodyFor("digest", 3, 2, "x", false))
@@ -92,16 +85,16 @@ class NativeReminderCardTest {
 
     @Test
     fun digest_arabicTasks_grammar() {
-        val both = { a: Int, b: Int -> NativeReminderCard.bodyFor("digest", a, b, "x", true) }
-        assertEquals("١ مهمة اليوم · ٢ متأخرة", both(1, 2))
-        assertEquals("٣ مهام اليوم · ٢ متأخرة", both(3, 2))
-        assertEquals("١٠ مهام اليوم · ١١ متأخرة", both(10, 11))
-        assertEquals("١١ مهمة اليوم · ١ متأخرة", both(11, 1))
         val only = { a: Int -> NativeReminderCard.bodyFor("digest", a, 0, "x", true) }
-        assertEquals("لديك ١ مهمة اليوم — ابدأ يومك!", only(1))
-        assertEquals("لديك ٢ مهمة اليوم — ابدأ يومك!", only(2))
+        assertEquals("لديك مهمة واحدة اليوم — ابدأ يومك!", only(1))
+        assertEquals("لديك مهمتان اليوم — ابدأ يومك!", only(2))
         assertEquals("لديك ٥ مهام اليوم — ابدأ يومك!", only(5))
         assertEquals("لديك ١٥ مهمة اليوم — ابدأ يومك!", only(15))
+        val both = { a: Int, b: Int -> NativeReminderCard.bodyFor("digest", a, b, "x", true) }
+        assertEquals("مهمة واحدة اليوم · مهمة متأخرة واحدة", both(1, 1))
+        assertEquals("مهمتان اليوم · مهمتان متأخرتان", both(2, 2))
+        assertEquals("٣ مهام اليوم · ٥ مهام متأخرة", both(3, 5))
+        assertEquals("١١ مهمة اليوم · ١٥ مهمة متأخرة", both(11, 15))
     }
 
     @Test

@@ -60,8 +60,8 @@ class TaskReminderCardTest {
     @Test
     fun `arabic minutes unit - plural for 3 to 10, singular for 1, 2 and 11 plus`() {
         fun body(m: Int) = TaskReminderCard.bodyText(TaskReminderCard.BODY_BEFORE, m, true, "x")
-        assertEquals("موعد المهمة بعد ١ دقيقة", body(1))
-        assertEquals("موعد المهمة بعد ٢ دقيقة", body(2))
+        assertEquals("موعد المهمة بعد دقيقة واحدة", body(1))
+        assertEquals("موعد المهمة بعد دقيقتان", body(2))
         assertEquals("موعد المهمة بعد ٣ دقائق", body(3))
         assertEquals("موعد المهمة بعد ٥ دقائق", body(5))
         assertEquals("موعد المهمة بعد ١٠ دقائق", body(10))
