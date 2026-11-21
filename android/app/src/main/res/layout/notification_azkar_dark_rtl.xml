@@ -55,7 +55,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="right"
-            android:maxLines="1"
+            android:maxLines="2"
             android:ellipsize="end"
             android:text="Two minutes of dhikr after prayer"
             android:textSize="12sp"
