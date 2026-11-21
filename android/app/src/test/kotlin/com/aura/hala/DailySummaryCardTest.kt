@@ -15,9 +15,8 @@ class DailySummaryCardTest {
     }
 
     @Test
-    fun publicTitle_isGenericAndFollowsLanguage() {
-        assertEquals("Aura - Daily Prayer Reminder", DailySummaryCard.publicTitle(false))
-        assertEquals("هالة - تذكير الصلاة اليومي", DailySummaryCard.publicTitle(true))
+    fun lockScreen_showsTheFullTextNotAGenericVersion() {
+        assertEquals(androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC, DailySummaryCard.VISIBILITY)
     }
 
     @Test

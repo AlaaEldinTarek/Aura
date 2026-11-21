@@ -6,7 +6,6 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.view.View
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -26,11 +25,10 @@ object DailySummaryCard {
 
     fun tapRequestCode(): Int = NOTIFICATION_ID
 
-    fun title(isArabic: Boolean): String = if (isArabic) "تذكير الصلاة اليومي" else "Daily Prayer Reminder"
+    /** Full text on the lock screen too (owner decision, T3): the count is shown, no generic public version. */
+    const val VISIBILITY = NotificationCompat.VISIBILITY_PUBLIC
 
-    /** Lock-screen version: no count, only that a reminder exists. */
-    fun publicTitle(isArabic: Boolean): String =
-        if (isArabic) "هالة - تذكير الصلاة اليومي" else "Aura - Daily Prayer Reminder"
+    fun title(isArabic: Boolean): String = if (isArabic) "تذكير الصلاة اليومي" else "Daily Prayer Reminder"
 
     /** Arabic count goes through the Arabic numerals rule (CLAUDE.md); wording is unchanged from before T3. */
     fun body(count: Int, isArabic: Boolean): String =
@@ -62,23 +60,9 @@ object DailySummaryCard {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        fun buildCard(publicVersion: Boolean): RemoteViews {
-            val view = RemoteViews(context.packageName, layoutId(dark, isArabic))
-            view.setTextViewText(R.id.daily_summary_title, if (publicVersion) publicTitle(isArabic) else titleText)
-            view.setTextViewText(R.id.daily_summary_body, bodyText)
-            view.setViewVisibility(R.id.daily_summary_body, if (publicVersion) View.GONE else View.VISIBLE)
-            return view
-        }
-
-        val view = buildCard(false)
-        val publicView = buildCard(true)
-        val publicNotification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(publicTitle(isArabic))
-            .setCustomContentView(publicView)
-            .setCustomBigContentView(publicView)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .build()
+        val view = RemoteViews(context.packageName, layoutId(dark, isArabic))
+        view.setTextViewText(R.id.daily_summary_title, titleText)
+        view.setTextViewText(R.id.daily_summary_body, bodyText)
 
         val extras = Bundle().apply {
             putBoolean(EXTRA_MARK, true)
@@ -92,8 +76,7 @@ object DailySummaryCard {
             .setCustomBigContentView(view)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setCategory(NotificationCompat.CATEGORY_REMINDER)
-            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
-            .setPublicVersion(publicNotification)
+            .setVisibility(VISIBILITY)
             .setAutoCancel(true)
             .setOnlyAlertOnce(keepWhen != null)
             .addExtras(extras)
