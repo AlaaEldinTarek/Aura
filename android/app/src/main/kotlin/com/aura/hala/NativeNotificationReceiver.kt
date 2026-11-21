@@ -1,8 +1,6 @@
 package com.aura.hala
 
 import android.app.AlarmManager
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -156,7 +154,7 @@ class NativeNotificationReceiver : BroadcastReceiver() {
         }
 
         Log.d(TAG, "🔔 Fired id=$notificationId ch=$channelId")
-        ensureChannel(context, channelId, channelName)
+        NativeReminderCard.ensureChannel(context, channelId, channelName)
 
         // Themed card (T4): app theme, button labels in the app language, ongoing with an end-of-day timeout.
         // Request codes, ids, channel and the tap route are unchanged.
@@ -175,17 +173,6 @@ class NativeNotificationReceiver : BroadcastReceiver() {
                 prayerName = prayerName, prayerTimeMs = prayerTimeMs + 24 * 60 * 60 * 1000L,
                 kind = kind, countA = countA, countB = countB
             )
-        }
-    }
-
-    private fun ensureChannel(context: Context, channelId: String, channelName: String) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            if (nm.getNotificationChannel(channelId) == null) {
-                nm.createNotificationChannel(
-                    NotificationChannel(channelId, channelName, NotificationManager.IMPORTANCE_HIGH)
-                )
-            }
         }
     }
 }

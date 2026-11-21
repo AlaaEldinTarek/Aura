@@ -24,6 +24,9 @@ class ProfileVersionTile extends StatefulWidget {
   /// When null the "Test post-check" item is not shown.
   final Future<void> Function()? firePostCheck;
 
+  /// Fires the real task digest card now with real counts (T4). When null the "Test digest" item is not shown.
+  final Future<void> Function()? fireDigest;
+
   const ProfileVersionTile({
     super.key,
     required this.title,
@@ -31,6 +34,7 @@ class ProfileVersionTile extends StatefulWidget {
     this.fireTestAdhan,
     this.canScheduleExactAlarms,
     this.firePostCheck,
+    this.fireDigest,
   });
 
   @override
@@ -97,6 +101,14 @@ class _ProfileVersionTileState extends State<ProfileVersionTile> {
     );
   }
 
+  Future<void> _fireDigest() async {
+    final messenger = ScaffoldMessenger.of(context);
+    await widget.fireDigest!();
+    messenger.showSnackBar(
+      SnackBar(content: Text('dev_test_digest_sent'.tr())),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -123,6 +135,14 @@ class _ProfileVersionTileState extends State<ProfileVersionTile> {
             title: 'dev_test_post_check_title'.tr(),
             subtitle: 'dev_test_post_check_subtitle'.tr(),
             onTap: _firePostCheck,
+            showChevron: false,
+          ),
+        if (_unlocked && widget.fireDigest != null)
+          SettingTile(
+            icon: Icons.checklist_rtl_outlined,
+            title: 'dev_test_digest_title'.tr(),
+            subtitle: 'dev_test_digest_subtitle'.tr(),
+            onTap: _fireDigest,
             showChevron: false,
           ),
       ],

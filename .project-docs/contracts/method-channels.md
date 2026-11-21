@@ -50,3 +50,5 @@ Hotspot: 13 `MethodChannel(` constructions + 3 `_channelName` constants in Dart 
 
 ### T4 addition: `scheduleNativeNotification` optional args (prayer_alarms channel)
 `kind` (String: `wird` or `digest`), `countA` (Int: Wird pages, or digest tasks today), `countB` (Int: digest overdue count). With a `kind`, `NativeReminderCard` builds title and body itself in the APP language (Arabic digits), live; without it (alarms armed before T4, or other callers) the `title`/`body` from Dart are shown unchanged. The daily task digest (id 4001, channel `task_digest`, tab 3) now goes through this method instead of `flutter_local_notifications` `zonedSchedule`.
+
+`testDigestNow {todayCount, overdueCount}` (prayer_alarms channel, T4, dev tile only: 7 taps on Version, "Test digest"): posts the real task digest card (id 4001, channel `task_digest`) now with the counts Dart computed from the real tasks. Handler `MainActivity.kt`, caller `PrayerAlarmService.testDigestNow`.

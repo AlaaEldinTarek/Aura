@@ -527,6 +527,25 @@ class MainActivity : FlutterFragmentActivity() {
                         result.error("FAILED", e.message, null)
                     }
                 }
+                "testDigestNow" -> {
+                    // Hidden dev tile (7 taps on Version): posts the real task digest card now, with the counts Dart
+                    // computed from the real tasks, through the same card as the 8:00 alarm (T4).
+                    val todayCount = call.argument<Int>("todayCount") ?: 0
+                    val overdueCount = call.argument<Int>("overdueCount") ?: 0
+                    try {
+                        NativeReminderCard.ensureChannel(this, "task_digest", "Daily Task Digest")
+                        NativeReminderCard.show(
+                            this, 4001, "", "", "task_digest", "Daily Task Digest", 3,
+                            ThemedNotification.isArabic(this), null, 0L,
+                            NativeReminderCard.KIND_DIGEST, todayCount, overdueCount, null
+                        )
+                        Log.d("PrayerChannel", "🧪 Test digest posted: $todayCount today, $overdueCount overdue")
+                        result.success(true)
+                    } catch (e: Exception) {
+                        Log.e("PrayerChannel", "❌ testDigestNow failed: ${e.message}")
+                        result.error("FAILED", e.message, null)
+                    }
+                }
                 "cancelAllPrayerAlarms" -> {
                     Log.d("PrayerChannel", "Cancelling all prayer alarms")
                     PrayerAlarmReceiver.cancelAllAlarms(this)
