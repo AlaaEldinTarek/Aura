@@ -199,8 +199,28 @@ pref records "signed in". So `is_guest` cannot tell "signed out, no guest" from 
   begins", not "never again". Proposal: yes.
 - A returning guest at cold start goes straight to Home (`login_screen.dart:227`, F46a): that entry clears
   the gate (D1-A: clears `alarms_suspended`; D1-C: `is_guest` is already true) and arms, same as above.
-- Logging out while in guest mode: there is no Logout button for a guest (UNVERIFIED: only the signed-in Profile view was
-  read). If a guest "exits guest mode", the same function applies.
+- **Does a guest see a Logout button? No (VERIFIED in code, checked 2026-11-21; UNVERIFIED on a device, never run as a
+  guest).** `ProfileScreen.build` renders by auth state (`profile_screen.dart:47`): `user == null` (every guest) shows
+  `_buildLoginPrompt` ("login required" + a Login button), not the profile with the Logout button. The Logout button
+  (`profile_screen.dart:438`, `_showLogoutDialog` `:1058`) exists only in `_buildProfileContent`, i.e. for a signed-in
+  user. Nothing else in `lib/` calls `signOut` (grep of `.signOut()`: `profile_screen.dart:1083` and
+  `auth_provider.dart:215`, the latter with no caller).
+- **Where does it take a guest?** The guest's Login button runs
+  `Navigator.of(ctx, rootNavigator: true).pushReplacementNamed('/login')` (`profile_screen.dart:146`). It writes nothing:
+  `is_guest` stays **true** while the Login screen is showing. So yes, Login can be reached with `is_guest == true`. This
+  does **not** break D1-C: nobody has "logged out"; the guest session is still the active session (closing the app and
+  reopening goes straight to Home, `start_route.dart:14`), so keeping the alarms armed is correct. Signing in from there
+  clears the flag (`auth_provider.dart:134-135`, all three sign-in paths go through `_syncUserData`: `:165`, `:188`,
+  `:203`), after which `currentUser != null` keeps the gate open.
+- **Residual hole, and the fix to put in the spec (Dart owns `is_guest`).** `is_guest` is cleared at sign-in only
+  `if (wasGuest)` and only if `_syncUserData` reaches `:134-135` (the whole method is inside a `try`, `:61`; an exception
+  before that line would leave `is_guest == true` for a signed-in user: UNVERIFIED, no such throw found). A stale `true`
+  would make D1-C read "guest session" after the user logs out, and leave the alarms armed with nobody signed in.
+  **Fix (F70 P3, Dart): after a successful sign-out the logout step also calls `setGuest(false)`**
+  (`guestModeProvider.notifier.setGuest(false)`, or `SharedPreferencesService.setGuest(false)`, `shared_preferences_service.dart:174`),
+  in the same place that runs the alarm cancel. A logout is by definition a signed-in user leaving; no guest session can
+  be active at that moment, so clearing the flag is always correct. A Dart test pins it (stale `is_guest = true` +
+  successful logout leaves `is_guest == false`). VERIFIED that Dart already owns the key and that no Kotlin writes it.
 
 ## Re-login and re-arming (VERIFIED where marked)
 
@@ -275,8 +295,9 @@ Entering the shell (login, guest, or app start with a session) already re-arms m
 
 ## Device check (after the fix; phone via adb, owner approval as before)
 
-0. (D1-C only, before any code is trusted) on the phone, signed in: reboot, wait 2 minutes, and confirm from the log that
-   the cold receiver/worker read a non-null `currentUser`. This test decides D1-C versus D1-A.
+0. (D1-C only, before any code is trusted) on the phone, signed in: confirm from the log that the cold receiver/worker read
+   a non-null `currentUser`, and null after logout. This test decides D1-C versus D1-A. **Result below
+   ("Step 0 result").**
 1. `adb shell dumpsys alarm | grep com.aura.hala` before and after Logout: the Aura alarm entries are gone (expected:
    none of 1001-1006, 2101-2106, 3001-3006, 7001, 8001, 9100, task ids), and `dumpsys activity services` shows no
    `PrayerForegroundService`. Capture to a file, short report.
@@ -292,3 +313,36 @@ Entering the shell (login, guest, or app start with a session) already re-arms m
 - P3 (C, Dart): the logout function, the guest/login entry points that clear the gate and re-arm, Jumu'ah/digest/wird re-arm
   gaps, Dart tests.
 - P4 (owner): the device check above.
+
+## Step 0 result: native `FirebaseAuth.currentUser` in a cold process (device check 2026-11-21, owner-approved phase F70-diag)
+
+Method: a throwaway branch `diag/f70-currentuser` (from `origin/main`, never pushed, never merged; commit `d414884`) added
+**one** `Log.d("F70Diag", ...)` line (process id, process age, `FirebaseAuth.getInstance().currentUser == null`, exceptions
+caught) at the top of `DailyRecalcReceiver.onReceive`, `PrayerRecalcWorker.doWork` and `PrayerBootReceiver.onReceive`.
+A **release** APK (release key, so `adb install -r` kept the data; a debug APK is signed with the debug key and could not
+replace the installed release build without an uninstall) was installed on the nova 5T (Android 10). Logs read from
+`adb logcat -s F70Diag:D`.
+
+| Path | Trigger | Signed in | Signed out | Label |
+| --- | --- | --- | --- | --- |
+| `PrayerBootReceiver` (cold process, no Flutter engine) | `adb install -r` = `MY_PACKAGE_REPLACED`, which the receiver handles like a boot | `pid=10484 ageMs=170 currentUserNull=false` (21:38:49) | `pid=12165 ageMs=228 currentUserNull=true` (21:41:58) | **VERIFIED from logcat** (both states, process age 170-228 ms = a cold start) |
+| `PrayerRecalcWorker` | `adb shell cmd jobscheduler run -f com.aura.hala <jobId>` after `am kill` (three tries, job ids 1, 2, 3) | no `F70Diag` line | not run | **UNKNOWN**: a forced run of the WorkManager periodic job does not reach `doWork` (the job completes at once and WorkManager cancels it and creates a new job id; no `WorkerWrapper` line in logcat; GUESS: WorkManager refuses to run a periodic work before its schedule). WorkManager cannot be triggered early from adb on a release build |
+| `DailyRecalcReceiver` (00:05) | `adb shell am broadcast -a com.aura.hala.DAILY_RECALC -n com.aura.hala/.DailyRecalcReceiver` | `BroadcastQueue: Permission Denial: broadcasting Intent { act=com.aura.hala.DAILY_RECALC ... } from null (pid=10839, uid=2000) is not exported` | not run | **VERIFIED not triggerable from adb** (receiver is not exported, shell is not root; `run-as` needs a debuggable build, which cannot be installed over the release one without losing data). The alarm will fire by itself at 00:05 |
+| `PrayerBootReceiver` on a real reboot (`BOOT_COMPLETED`) | not run (no reboot of the owner's phone) | n/a | n/a | UNVERIFIED; same receiver and same cold-process model as the update path; differs only in the system event |
+
+What it proves, and what it does not:
+
+- **PASS for the cold-process read.** In a freshly started app process with no Flutter engine and no activity,
+  `FirebaseAuth.getInstance().currentUser` is already populated for a signed-in user (not null, no exception) and null
+  after logout. The SDK restores the stored user on init and `signOut()` clears it, with no new pref. This is the part of
+  D1-C that was UNKNOWN, and it holds on this phone for the boot/update receiver.
+- **Not proven:** the same read inside the worker and the 00:05 receiver. They run in the same app process model (system
+  starts the process, `Application.onCreate` and the Firebase init provider run first), so GUESS: same result. They can be
+  proven for free the next time they fire naturally: the diag build logs both (the 00:05 alarm tonight, the worker at its
+  next 6-hour run) if a `logcat` capture runs on the PC, or in the production code by logging the gate decision, once the
+  helper exists.
+- **Fail-open stays.** `SessionState.isSessionActive` returns true when the read throws or the SDK is not ready (the diag
+  line catches `Throwable` and none occurred).
+- **Decision input for D1:** D1-C is supported (boot path VERIFIED, worker and recalc UNKNOWN but same mechanism). D1-A is
+  not needed unless the worker or the recalc read turns out null for a signed-in user; P2 therefore starts with a debug
+  log of the gate decision at all four re-armers, and the owner's device check repeats the signed-in/out comparison there.
