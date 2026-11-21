@@ -548,6 +548,19 @@ class MainActivity : FlutterFragmentActivity() {
                         result.error("FAILED", e.message, null)
                     }
                 }
+                "testJumuahNow" -> {
+                    // Hidden dev tile (7 taps on Version): posts the real Jumu'ah card now with a fake Zuhr 30 min ahead,
+                    // so it works on any day of the week (T7).
+                    try {
+                        JumuahCard.ensureChannel(this)
+                        JumuahCard.show(this, JumuahCard.testZuhrMs(System.currentTimeMillis()), null)
+                        Log.d("PrayerChannel", "🧪 Test Jumu'ah card posted")
+                        result.success(true)
+                    } catch (e: Exception) {
+                        Log.e("PrayerChannel", "❌ testJumuahNow failed: ${e.message}")
+                        result.error("FAILED", e.message, null)
+                    }
+                }
                 "testDigestNow" -> {
                     // Hidden dev tile (7 taps on Version): posts the real task digest card now, with the counts Dart
                     // computed from the real tasks, through the same card as the 8:00 alarm (T4).

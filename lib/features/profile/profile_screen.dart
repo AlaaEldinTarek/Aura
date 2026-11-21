@@ -346,6 +346,10 @@ class ProfileScreen extends ConsumerWidget {
                           await PrayerAlarmService.instance
                               .testAzkarNow(prayer.name, prayer.nameAr);
                         },
+                        // Dev tile item (7 taps): the Jumu'ah card now with a fake Zuhr 30 min ahead, any day (T7).
+                        fireJumuah: () async {
+                          await PrayerAlarmService.instance.testJumuahNow();
+                        },
                       );
                     },
                   );
