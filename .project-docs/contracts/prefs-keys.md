@@ -100,3 +100,5 @@ daily-summary notifications always English, daily summary time reverting to 21:0
   `tutorial_wird_seen`, `tutorial_reader_seen`.
 
 Added 2026-11-18 (S05 reminder, `docs/designs/fix-prayer-reminder.md`): Flutter prefs `notification_reminder_minutes` (5/10/15/30, default 10; any other value reads as 10) is now read natively through `FlutterPrefs` in `PrayerAlarmReceiver.scheduleReminderAlarm`, and `prayer_notifications_enabled` (the Prayer-screen "Reminder Prayer" switch, the only on/off) is read natively too.
+
+T6 (post-prayer azkar card): no new prefs read natively. `AzkarCard` reads only what the other themed cards already read: `language` in `aura_prayer_times` (`ThemedNotification.isArabic`) and the Flutter pref `theme_mode` through `FlutterPrefs` (`ThemedNotification.isDark`). The azkar streak (`azkar_state`, `azkar_streak_date`) is not read: it counts the Morning/Evening azkar sessions, not this post-prayer screen.

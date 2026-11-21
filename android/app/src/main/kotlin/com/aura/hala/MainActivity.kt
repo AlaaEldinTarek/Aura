@@ -527,6 +527,27 @@ class MainActivity : FlutterFragmentActivity() {
                         result.error("FAILED", e.message, null)
                     }
                 }
+                "testAzkarNow" -> {
+                    // Hidden dev tile (7 taps on Version): fires the real post-prayer azkar trigger now (notification and the
+                    // full-screen screen, exactly as the alarm does) for the given prayer (T6).
+                    val prayerName = call.argument<String>("prayerName")
+                        ?: return@setMethodCallHandler result.error("INVALID", "prayerName required", null)
+                    val prayerNameAr = call.argument<String>("prayerNameAr") ?: prayerName
+                    try {
+                        AzkarAlarmReceiver().onReceive(
+                            this,
+                            Intent(AzkarAlarmReceiver.ACTION_AZKAR_ALARM).apply {
+                                putExtra(AzkarAlarmReceiver.EXTRA_PRAYER_NAME, prayerName)
+                                putExtra(AzkarAlarmReceiver.EXTRA_PRAYER_NAME_AR, prayerNameAr)
+                            }
+                        )
+                        Log.d("PrayerChannel", "🧪 Test azkar fired for $prayerName")
+                        result.success(true)
+                    } catch (e: Exception) {
+                        Log.e("PrayerChannel", "❌ testAzkarNow failed: ${e.message}")
+                        result.error("FAILED", e.message, null)
+                    }
+                }
                 "testDigestNow" -> {
                     // Hidden dev tile (7 taps on Version): posts the real task digest card now, with the counts Dart
                     // computed from the real tasks, through the same card as the 8:00 alarm (T4).

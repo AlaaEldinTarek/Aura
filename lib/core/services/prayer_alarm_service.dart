@@ -184,6 +184,22 @@ class PrayerAlarmService {
     }
   }
 
+  /// Dev tile only (7 taps on Version): fires the real post-prayer azkar trigger now (card and screen) for [prayerName] (T6).
+  Future<void> testAzkarNow(String prayerName, String prayerNameAr) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      await _channel.invokeMethod('testAzkarNow', {
+        'prayerName': prayerName,
+        'prayerNameAr': prayerNameAr,
+      });
+    } catch (e) {
+      debugPrint('❌ [PRAYER ALARMS] Error firing test azkar - $e');
+    }
+  }
+
   /// Dev tile only (7 taps on Version): shows the real task digest card now with the given real counts (T4).
   Future<void> testDigestNow(int todayCount, int overdueCount) async {
     if (!_isInitialized) {

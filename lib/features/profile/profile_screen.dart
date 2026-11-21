@@ -334,6 +334,18 @@ class ProfileScreen extends ConsumerWidget {
                           await PrayerAlarmService.instance
                               .testDigestNow(today, overdue);
                         },
+                        // Dev tile item (7 taps): the real post-prayer azkar trigger now, for the current prayer (T6).
+                        fireAzkar: () async {
+                          final state = ref.read(prayerTimesProvider);
+                          final prayer = state.currentPrayer ??
+                              state.nextPrayer ??
+                              (state.prayerTimes.isNotEmpty
+                                  ? state.prayerTimes.first
+                                  : null);
+                          if (prayer == null) return;
+                          await PrayerAlarmService.instance
+                              .testAzkarNow(prayer.name, prayer.nameAr);
+                        },
                       );
                     },
                   );

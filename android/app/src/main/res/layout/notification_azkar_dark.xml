@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Post-prayer azkar card, dark LTR (English) (docs/designs/fix-themed-notifications.md, T6). Prayer icon, title, calm body, the first dhikr, and one gold Start azkar button that shares the content intent. Root forced LTR, children in mirrored order for Arabic. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/bg_notification_dark"
+    android:layoutDirection="ltr"
+    android:paddingLeft="16dp"
+    android:paddingRight="16dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <ImageView
+        android:id="@+id/azkar_icon"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:src="@drawable/ic_mosque"
+        android:scaleType="centerInside"
+        android:contentDescription="Aura" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginLeft="6dp"
+        android:layout_marginRight="8dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/azkar_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="Azkar after prayer"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF" />
+
+        <TextView
+            android:id="@+id/azkar_body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="Two minutes of dhikr after prayer"
+            android:textSize="12sp"
+            android:textColor="#99FFFFFF" />
+
+        <TextView
+            android:id="@+id/azkar_dhikr"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:gravity="left"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="Astaghfirullah"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:textColor="#F5B301" />
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/btn_azkar_start"
+        android:layout_width="96dp"
+        android:layout_height="32dp"
+        android:gravity="center"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:paddingLeft="4dp"
+        android:paddingRight="4dp"
+        android:background="@drawable/bg_azkar_start"
+        android:clickable="true"
+        android:focusable="true"
+        android:text="Start azkar"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:textColor="#1C1C1E" />
+
+</LinearLayout>
