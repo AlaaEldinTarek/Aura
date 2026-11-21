@@ -172,3 +172,13 @@ Owner-observed unless marked log.
 - **Bonus, real Maghrib post-check** (posted 17:34:00, log VERIFIED): showed on the locked phone with 4 buttons (dark, Arabic): PASS. The title "هل صليت المغرب؟" wraps to two lines (accepted for now). Which button was pressed: UNKNOWN (the log has `Marked Maghrib as late (Flutter)` at 17:54:56, which comes from the app, not a card button).
 - Checks: gradle unit tests pass; `flutter test` 853 passed; `flutter analyze` 408 issues, 0 errors (= main); release APK built, installed 17:05:55.
 - Commits: 701b5a4, 77e656c, 1b80c46, 831c47f.
+
+### T3 results (2026-11-21, branch `fix/themed-t3`, nothing pushed at the time of writing)
+Owner-observed unless marked log. Daily prayer summary (id 7001, channel `prayer_tracking`) as a themed card (`DailySummaryCard`, 4 layouts), same id, channel and tap route (`/prayer_tracking`); Arabic count now uses Arabic digits; no buttons.
+- **Locked, before face match** (08:20/08:35): first build (PRIVATE + generic public version) showed the generic title: PASS. Owner then asked for the full text: `VISIBILITY_PUBLIC`, count shown on the lock screen: PASS (08:35).
+- **After unlock + lock again** (09:36/09:37): the dismissible card DISAPPEARED from the lock screen (same EMUI behavior as the task card). Fix: ongoing with a timeout at the end of the day (23:59:59, at least one minute). Re-check 09:58-09:59: still on the lock screen after unlock + lock: PASS.
+- **Follows in-app tracking:** the native `markPrayerTracked` write now calls `DailySummaryCard.onTrackingChanged`: count drops (no sound), card removed when all five are tracked, tap opens Prayer Tracking and removes the card: all PASS. No Dart, contract or prefs key change.
+- Known gaps, owner: OK for now, recorded as F74 (LOW): guest-mode tracking and un-marking do not update the card.
+- Light/dark and EN/AR look, Arabic mirrored with Arabic digits, and live theme/language update: the owner's yes/no for these was left blank in the report; only English dark was photographed. Not recorded as checked.
+- Checks: gradle `:app:testDebugUnitTest` pass (`DailySummaryCardTest` 9 tests); `flutter test` 853 passed; `flutter analyze` 408 issues, 0 errors (= main); release APK built, last install 2026-11-21 09:45:28. The full `testDebugUnitTest` run fails in the plugin `url_launcher_android`'s own tests, not in the app module.
+- Commits: fcc45fc, 4c2cb39, 1739191.

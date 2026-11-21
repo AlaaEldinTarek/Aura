@@ -1058,6 +1058,13 @@ Owner saw the phone stay on vibrate after an adhan window. The 18:39 restore of 
 - Sketch of a later fix (not approved): save only when `is_silent_active` is false; at the end restore only if the ringer is still the VIBRATE Aura set; skip the boot restore when `silent_end_time == 0`; give Focus Mode the same guard. No key renames, tests in `SilentModeStateTest`.
 - **Tag: fix track, LOW, later.**
 
+## F74 — Daily summary card does not follow guest-mode tracking or un-marking (found during T3, 2026-11-21) — LOW / later — code VERIFIED, device impact UNVERIFIED
+The T3 daily summary card follows prayers tracked in the app through the native `markPrayerTracked` write (`PrayerAlarmReceiver.kt`, called from `PrayerTrackingService.recordPrayer`). Owner decision: the two gaps below are OK for now.
+- **(a) Guest mode.** The guest branch of `recordPrayer` (`prayer_tracking_service.dart`, local records) never calls `markPrayerTracked`, so no native status key is written. The count at fire time and the live count update both ignore guest tracking. This was already true before T3 (the receiver only reads the native keys).
+- **(b) Un-marking.** `deletePrayerRecord` does not clear the native `prayer_status_{name}_{date}` key (and `clearNativePrayerStatus` writes `synced` instead of deleting), so un-marking a prayer in the app does not raise the count again.
+- Sketch of a later fix (not approved): call `markPrayerTracked` in the guest branch (check first that `syncNativePrayerStatuses` ignores guests); add a real delete of the key on un-mark and call `DailySummaryCard.onTrackingChanged`.
+- **Tag: fix track, LOW, later.**
+
 ## F14 — Contract doc errors corrected in Step 2 — VERIFIED
 - Foreground channel is `prayer_foreground_channel_v4` (not `prayer_foreground_channel`).
 - `ringer_mode` handler is in `MainActivity`, not `SilentModeAutomation.kt`.
