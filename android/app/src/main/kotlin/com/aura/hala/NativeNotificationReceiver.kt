@@ -10,7 +10,6 @@ import android.content.Intent
 import android.os.Build
 import android.text.format.DateFormat
 import android.util.Log
-import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.aura.hala.R
 import java.util.Date
@@ -119,6 +118,7 @@ class NativeNotificationReceiver : BroadcastReceiver() {
                     val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(Date())
                     prefs.edit().putString("prayer_status_${prayerName}_${today}", "on_time").apply()
                     Log.d(TAG, "✅ Marked $prayerName as prayed (syncs on next app open)")
+                    DailySummaryCard.onTrackingChanged(context, DailySummaryReceiver.PRAYER_NAMES, today)
                 }
                 NotificationManagerCompat.from(context).cancel(notificationId)
                 return
@@ -128,8 +128,8 @@ class NativeNotificationReceiver : BroadcastReceiver() {
                 val fiveMinBefore = prayerTimeMs - 5 * 60 * 1000L
                 if (fiveMinBefore > System.currentTimeMillis()) {
                     schedule(
-                        context, notificationId + 5000, title,
-                        if (isArabic) "الصلاة بعد ٥ دقائق" else "Prayer in 5 minutes",
+                        context, NativeReminderCard.remindAgainNotificationId(notificationId), title,
+                        NativeReminderCard.remindAgainBody(isArabic),
                         channelId, channelName, fiveMinBefore, tapTab,
                         repeatDaily = false, isArabic = isArabic,
                         prayerName = null, prayerTimeMs = 0L
@@ -145,60 +145,12 @@ class NativeNotificationReceiver : BroadcastReceiver() {
         Log.d(TAG, "🔔 Fired id=$notificationId ch=$channelId")
         ensureChannel(context, channelId, channelName)
 
-        val tapIntent = Intent(context, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra("widget_target_tab", tapTab)
-        }
-        val tapPending = PendingIntent.getActivity(
-            context, notificationId + 1, tapIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        // Themed card (T4): app theme, button labels in the app language, ongoing with an end-of-day timeout.
+        // Request codes, ids, channel and the tap route are unchanged.
+        NativeReminderCard.show(
+            context, notificationId, title, body, channelId, channelName, tapTab,
+            isArabic, prayerName, prayerTimeMs, null
         )
-
-        val builder = NotificationCompat.Builder(context, channelId)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(title)
-            .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setCategory(NotificationCompat.CATEGORY_REMINDER)
-            .setAutoCancel(true)
-            .setContentIntent(tapPending)
-
-        if (prayerName != null) {
-            val prayedIntent = Intent(context, NativeNotificationReceiver::class.java).apply {
-                action = ACTION_MARK_PRAYED
-                putExtra(EXTRA_NOTIFICATION_ID, notificationId)
-                putExtra(EXTRA_PRAYER_NAME, prayerName)
-            }
-            val prayedPending = PendingIntent.getBroadcast(
-                context, notificationId + 2, prayedIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            val againIntent = Intent(context, NativeNotificationReceiver::class.java).apply {
-                action = ACTION_REMIND_AGAIN
-                putExtra(EXTRA_NOTIFICATION_ID, notificationId)
-                putExtra(EXTRA_TITLE, title)
-                putExtra(EXTRA_CHANNEL_ID, channelId)
-                putExtra(EXTRA_CHANNEL_NAME, channelName)
-                putExtra(EXTRA_TAP_TAB, tapTab)
-                putExtra(EXTRA_IS_ARABIC, isArabic)
-                putExtra(EXTRA_PRAYER_TIME_MS, prayerTimeMs)
-                putExtra(EXTRA_PRAYER_NAME, prayerName)
-            }
-            val againPending = PendingIntent.getBroadcast(
-                context, notificationId + 3, againIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            builder.addAction(0, if (isArabic) "أديت الصلاة" else "Mark as Prayed", prayedPending)
-            builder.addAction(0, if (isArabic) "ذكرني مرة أخرى" else "Remind Me Again", againPending)
-        }
-
-        try {
-            NotificationManagerCompat.from(context).notify(notificationId, builder.build())
-            Log.d(TAG, "✅ Posted id=$notificationId")
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Error posting notification: ${e.message}")
-        }
 
         // Native equivalent of matchDateTimeComponents.time — re-arm for tomorrow
         // with the same payload. Flutter refreshes text/times on each app open.

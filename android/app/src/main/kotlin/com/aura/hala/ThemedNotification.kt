@@ -76,6 +76,7 @@ object ThemedNotification {
         PostCheckCard.refreshShowing(context)
         TaskReminderCard.refreshShowing(context)
         DailySummaryCard.refreshShowing(context)
+        NativeReminderCard.refreshShowing(context)
         PrayerForegroundService.getInstance()?.refreshNotification()
     }
 }
