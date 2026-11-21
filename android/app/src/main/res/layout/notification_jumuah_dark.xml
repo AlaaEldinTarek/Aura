@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Jumu\'ah reminder card, dark LTR (English) (docs/designs/fix-themed-notifications.md, T7). Logo, title, and the body or the live countdown to Zuhr (Chronometer); tap opens the Prayer tab. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/bg_notification_dark"
+    android:layoutDirection="ltr"
+    android:paddingLeft="16dp"
+    android:paddingRight="16dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <ImageView
+        android:id="@+id/jumuah_icon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/ic_launcher_foreground"
+        android:scaleType="centerInside"
+        android:contentDescription="Aura" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginLeft="6dp"
+        android:layout_marginRight="8dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/jumuah_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="Jumu'ah Mubarak"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF" />
+
+        <TextView
+            android:id="@+id/jumuah_body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:text="Friday prayer time is approaching"
+            android:textSize="12sp"
+            android:textColor="#99FFFFFF" />
+
+        <Chronometer
+            android:id="@+id/jumuah_countdown"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:visibility="gone"
+            android:textSize="12sp"
+            android:textColor="#99FFFFFF" />
+
+    </LinearLayout>
+
+
+</LinearLayout>
