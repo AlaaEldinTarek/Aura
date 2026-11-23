@@ -33,8 +33,9 @@ void main() {
       for (var i = 0; i < lines.length; i++) {
         final l = lines[i];
         if (l.trimLeft().startsWith('//')) continue;
-        if (cancelCall.hasMatch(l))
+        if (cancelCall.hasMatch(l)) {
           offenders.add('$normalized:${i + 1}: ${l.trim()}');
+        }
       }
     }
 
