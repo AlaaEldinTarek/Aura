@@ -5,7 +5,7 @@
 *   **Level:** C (production code in `lib/`, contract doc in `.project-docs/contracts/`).
 *   **Branch:** `fix/f4-achievement-ids`, from `origin/main` (5e4fc77).
 *   **Date:** 2026-11-23
-*   **Source:** finding F4 (`.project-docs/reference/findings.md`), rated HIGH by the owner on 2026-11-23.
+*   **Source:** finding F4 (`.project-docs/reference/findings.md`), rated HIGH on 2026-11-23, **downgraded to MEDIUM** on 2026-11-23 (latent: no achievement maps to 8001 today). Still fixed now.
 
 Labels: VERIFIED = read in code or computed, UNVERIFIED = not run on a device, UNKNOWN = not checked.
 
@@ -22,6 +22,15 @@ Labels: VERIFIED = read in code or computed, UNVERIFIED = not run on a device, U
 *   Single caller: `lib/features/main/main_wrapper_screen.dart:199` (Android/mobile path; desktop uses
     `DesktopNotificationService.showAchievementNotification`, which has no notification ID).
 *   Channel `achievement_unlocked`; payload `achievement:<id>`; not ongoing, no timeout set.
+
+### 1.1b Windows desktop toast (VERIFIED, independent)
+
+`DesktopNotificationService.showAchievementNotification` is an empty no-op (`desktop_notification_service.dart:336`,
+"Achievement toast is already shown by MainWrapperScreen"). The desktop path shows the in-app toast
+(`_showAchievementToast`) and passes only names and emoji; it never uses a notification ID. The Android system
+notification (and so these IDs) is used only when the app is **not** in the foreground
+(`main_wrapper_screen.dart:194`, `inForeground` → in-app toast, else system notification). The F4 change touches
+only the Android `NotificationService` path.
 
 ### 1.2 Does any achievement hash to exactly 8001 today? (VERIFIED, computed — no)
 
@@ -76,19 +85,33 @@ payload, shown the moment an achievement unlocks.
 *   It keeps the existing `% 1000` shape, so the change is one base constant, and `hashCode` behavior (same slot per
     achievement within the block) is preserved.
 
-**One pure helper**, new file `lib/core/utils/achievement_notification_id.dart`:
+**One pure helper**, new file `lib/core/utils/achievement_notification_id.dart`. `String.hashCode` is replaced by a
+deterministic FNV-1a 32-bit hash over `codeUnits`, so an ID depends only on the achievement id (not on the Dart SDK):
 
 ```dart
 const int kAchievementNotificationIdBase = 20000;
 const int kAchievementNotificationIdSlots = 1000; // 20000–20999
 
+/// FNV-1a 32-bit over the UTF-16 code units. Stable across Dart SDK versions and platforms (VM).
+int _fnv1a32(String s) {
+  var h = 0x811c9dc5;
+  for (final c in s.codeUnits) {
+    h ^= c;
+    h = (h * 0x01000193) & 0xFFFFFFFF;
+  }
+  return h;
+}
+
 int achievementNotificationId(String achievementId) =>
-    kAchievementNotificationIdBase +
-    (achievementId.hashCode.abs() % kAchievementNotificationIdSlots);
+    kAchievementNotificationIdBase + _fnv1a32(achievementId) % kAchievementNotificationIdSlots;
 ```
 
-`NotificationService.showAchievementNotification` calls it instead of the inline formula. `hashCode.abs() % 1000` keeps
-the same slot order inside the block, so nothing else about the notification changes.
+`NotificationService.showAchievementNotification` calls it instead of the inline formula. Title, body, channel and
+payload are unchanged. (The multiply stays below 2^56, so it is exact on the Dart VM; the app has no web target.)
+
+Computed with Dart 3.10.7 over the 41 ids: all values fall in 20000–20999 and none hits a reserved ID. The slots are
+not unique: `early_bird` and `wird_pages_300` share slot 20678. Two cards with
+the same ID replace each other, which is harmless and is the same property the old hash had; this is not part of F4.
 
 **No cleanup code.** Shown, never scheduled (§1.3), and nothing cancels the old range. The only residue is an
 achievement card already in the tray from an older build; it is dismissible and no longer shares an ID with anything
@@ -103,14 +126,16 @@ commit as the code.
 ## 4. Tests first (P1)
 
 1. `test/core/utils/achievement_notification_id_test.dart`
-    *   Every id in `Achievement.all` (or the model's list) → value in 20000–20999.
+    *   Every one of the 41 achievement ids → value in 20000–20999.
     *   Fuzz: 10 000 generated strings (fixed seed) → always in range.
+    *   Pinned values, so any hash change is caught: `first_prayer` → 20333, `streak_7` → 20249,
+        `first_task` → 20063, `wird_khatma` → 20772 (computed with the helper above on Dart 3.10.7).
     *   Reserved set guard: build the reserved list from the contract (`1–6`, `1001–1006`, `2000–2006`, `2101–2106`,
         `3000–3006`, `3999`, `4000–4999`, `5001–5006`, `5100–5119`, `5996–5999`, `6001–6006`, `7001`, `8001`,
         `9000–9006`, `9100–9102`, `9999`, plus every `+5000` image of 1–6 / 4000–4999 / 5100–5119 → up to 10119): the
         achievement block does not intersect any of it, checked as a range-versus-range test, not by sampling.
 2. `test/core/utils/no_inline_achievement_id_test.dart` (T5-style text guard over `lib/`): no `7100 +` and no inline
-   `hashCode.abs() % 1000` achievement formula outside `achievement_notification_id.dart`; `showAchievementNotification`
+   achievement `hashCode` formula, and no `String.hashCode` use in `achievement_notification_id.dart` outside `achievement_notification_id.dart`; `showAchievementNotification`
    must reference `achievementNotificationId(`.
 3. Existing tests unchanged; run full `flutter test` and `flutter analyze` (baseline 407 issues, 0 errors).
 
@@ -123,8 +148,15 @@ Red first: both test files fail on `main` (helper missing / old formula), then p
 
 ## 6. Device checks for P2 (nova 5T)
 
-1. Trigger an unlock. The dev tools may not have an achievement tile (UNKNOWN — check `lib/features/settings`); if not,
-   unlock a cheap one (first task completed or `first_prayer`). Run
+1. **Trigger.** VERIFIED: there is no developer tile or other way to fake an unlock (`profile_version_tile.dart` has
+   only the digest test; unlocks come from `checkAndAward`, run after a prayer is tracked (`prayer_tracking_service.dart:134`)
+   or a task is completed (`task_service.dart:536`), and `checkJuzAchievements` for Wird). The system card appears only
+   when the app is **not** in the foreground, so the unlock must land while the app is backgrounded: complete the
+   action (e.g. track a prayer or complete a task that earns `first_prayer` / `first_task`), then press Home at once;
+   the check runs asynchronously right after. An already-earned achievement cannot be re-earned, so this depends on
+   which are still locked on the owner's account (UNKNOWN until the Achievements screen is checked). No dev tile is
+   added (that would be a new feature, not in this spec). If no unlock can be triggered, P2 reports that the device
+   card check is BLOCKED and the unit tests stand alone. Then run
    `adb shell dumpsys notification --noredact | grep -E "id=20[0-9]{3}"` — expect the card's `id=` inside 20000–20999,
    and none in 7100–8099.
 2. Jumu'ah coexistence: on a Friday with the 8001 card showing, unlock an achievement; both cards stay
@@ -133,13 +165,12 @@ Red first: both test files fail on `main` (helper missing / old formula), then p
 
 ## 7. Risks
 
-*   `String.hashCode` stability across SDK versions is not controlled by this change. It no longer matters for
-    safety: any value lands in 20000–20999, which nothing else uses.
+*   The ID no longer depends on the SDK (FNV-1a over code units); the pinned-value test fails if the function changes.
 *   A future feature taking 20000–20999 is the new overlap risk; the contract row and the range-versus-range test cover it.
 *   Old-range cards already in the tray are cosmetic only (§3).
 
 ## Related (to log in the day's docs commit; not part of this PR)
 
 *   The `+5000` remind-again branch and Dart `scheduleDailyPrayers` / `scheduleRemindMeAgain` are dead code (no caller);
-    candidate for a separate cleanup finding. Not changed here.
+    logged as a **P6 cleanup finding** in the day's docs commit (owner decision 2026-11-23). Not removed in F4.
 *   `show(0, …)` at `notification_service.dart:958` uses ID 0 (a test notification); not in the table, not touched.
