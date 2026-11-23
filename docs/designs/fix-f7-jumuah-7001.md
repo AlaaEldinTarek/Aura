@@ -126,8 +126,11 @@ the app's alarms on EMUI).
 5.  Record before, after and the events line in the day log. For P2, the same steps must show the `id=7001` line
     still present after the trigger.
 
-**P2, after the fix (P1 build):** repeat 1-3. **PASS:** the card is still there after the app opens, and again after
-switching the Jumu'ah toggle off and on in Settings.
+**P2, after the fix (P1 build):** repeat 1-3, once for each trigger. **PASS:** the `id=7001` record is still active
+after (a) the Jumu'ah toggle off then on, AND (b) the **app-start trigger**: with the card showing, swipe Aura away from
+recents (no force-stop), open it from the launcher, and confirm the Dart log shows `[JUMUA] ... scheduled via native`
+(proof that `initialize` ran the schedule path) while the record is still there. P0 only proved the toggle trigger; (b)
+was never run on the old build, so it also checks the claim that an app start dismissed the card.
 
 **8001 still works (both before and after):**
 *   Toggle Jumu'ah off: `adb shell dumpsys alarm | grep -i JumuahReminder` shows no alarm; log line
