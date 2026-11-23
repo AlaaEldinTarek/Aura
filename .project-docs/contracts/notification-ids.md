@@ -14,15 +14,16 @@ Verified 2026-11-06 at 4aa1022 by static grep (Step 2). Do NOT modify IDs. All I
 | 4001 | Daily task digest (08:00) | `notification_service.dart:1021` | — | No | Partial — inside 4000–4999 (F8) |
 | 4000–4999 | Task reminders, `4000 + hash % 1000` | `notification_service.dart:669` | via `scheduleNativeTaskReminder` | Yes (hash) | Verified |
 | 5001–5006 | Flutter-side prayer notifications (`_getNotificationId + 5000`) | `notification_service.dart:431` | — | No | Partial |
-| +5000 offset | "Remind again" re-schedule of a native notification | — | `NativeNotificationReceiver.kt:131` | Yes | Partial |
+| +5000 offset | "Remind again" re-schedule of a native notification. No live producer today (F4 spec 1.4: only the dead `scheduleDailyPrayers` path passes a prayer name) | — | `NativeNotificationReceiver.kt:131` | Yes | Partial |
 | 5100–5119 | Wird reminders (max 10 used) | `notification_service.dart:1105–1159` | via `scheduleNativeNotification` | Yes | Verified |
 | 5996 | Focus Mode relaunch full-screen notification (cancelled on stop) | — | `FocusModeService` `relaunchActivity` | No | Partial (added 2026-11-07, F51f) |
 | 5998 | Focus Mode foreground service | — | `FocusModeService.kt:32` | No | Partial |
 | 5999 | Focus Mode end notification — never posted (dead path, F51q) | — | `FocusModeReceiver.kt:38` | No | Partial |
 | 6001–6006 | Post-prayer "Did you pray?" checks | `notification_service.dart:1285,1341,1371` (`6000 + id`; scheduler at :1265 has no caller found — F12) | `PrayerAlarmReceiver.kt:65–70, :97`; channel `post_prayer_check` (was `prayer_tracking`); card = ONGOING custom view in the style of the foreground vibration card (P2b: PRIORITY_MAX, PUBLIC, 4 layouts `notification_post_check_card*.xml` by app theme and language, 4 buttons Done / Late / Missed / Remind Later, same view collapsed and expanded, `setTimeoutAfter` 30 min), no system action buttons; PendingIntent request codes Done/Late/Missed/Remind Later = id+1..+4, body tap id+5; table in `PostCheckActions.kt` (F72) | No | Verified (both sides) |
 | 7001 | Daily prayer summary (native card, owner `DailySummaryCard`, channel `prayer_tracking`) | `_jumuahNotificationId = 7001` (legacy Jumu'ah alarm id). Dart no longer cancels it directly (F7): `scheduleJumuahReminder` / `cancelJumuahReminder` call `_cancelLegacyJumuahAlarm`, which cancels only if `pendingNotificationRequests()` lists 7001 (`lib/core/utils/legacy_jumuah.dart`); guard test `test/core/utils/no_direct_cancel_7001_test.dart` | `DailySummaryReceiver.kt:20`, `DailySummaryCard.kt` (`NOTIFICATION_ID`) | No | Verified (code, P1 tests); device check P2 pending — spec `docs/designs/fix-f7-jumuah-7001.md` |
-| 7100–8099 | Achievement unlocked, `7100 + hash % 1000` | `notification_service.dart:1171` | — | Yes (hash) | Verified — overlaps 8001 (F4) |
-| 8001 | Jumu'ah reminder | — | `JumuahReminderReceiver.kt:19` | No | Partial (Kotlin only) |
+| 20000–20999 | Achievement unlocked, `20000 + FNV-1a(achievement id) % 1000` (F4; was `7100 + hash % 1000`). Shown, never scheduled; Android system card only while the app is not in the foreground | `notification_service.dart` `showAchievementNotification`, `lib/core/utils/achievement_notification_id.dart` | — | Yes (hash) | Verified (code, tests); device check P2 pending — spec `docs/designs/fix-f4-achievement-ids.md` |
+| 7100–8099 | Unused since F4 (reserved, do not reuse; the old achievement block that overlapped 8001) | — | — | — | — |
+| 8001 | Jumu'ah reminder (no longer overlapped by achievements, F4) | — | `JumuahReminderReceiver.kt:19` / `JumuahCard.NOTIFICATION_ID` | No | Partial (Kotlin only) |
 | 9000–9006 | Post-prayer azkar (Fajr 9001 … Isha 9006; Dhuhr/Zuhr 9003) | — | `AzkarAlarmReceiver.getAzkarNotificationId` | No | Partial (added 2026-11-07) |
 | 9999 | Prayer foreground service | — | `PrayerForegroundService.kt:32` | No | Partial |
 
