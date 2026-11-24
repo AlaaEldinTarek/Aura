@@ -1,5 +1,7 @@
+import '../utils/achievement_notification_id.dart';
 import '../utils/task_reminder_args.dart';
 import '../utils/legacy_digest.dart';
+import '../utils/legacy_jumuah.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -1188,10 +1190,10 @@ class NotificationService {
   // ─── Achievement Notifications ────────────────────────────────────────────
 
   /// Show a system notification when an achievement is unlocked.
-  /// Notification IDs: 7100–8099 (hash-based per achievement, no collisions between types).
+  /// Notification IDs: 20000–20999 (FNV-1a per achievement id; see achievement_notification_id.dart).
   Future<void> showAchievementNotification(Achievement achievement, bool isArabic) async {
     try {
-      final id = 7100 + (achievement.id.hashCode.abs() % 1000);
+      final id = achievementNotificationId(achievement.id);
       final title = isArabic ? '🏆 إنجاز جديد!' : '🏆 Achievement Unlocked!';
       final body = '${achievement.iconEmoji} ${isArabic ? achievement.nameAr : achievement.nameEn}';
 
@@ -1409,8 +1411,7 @@ class NotificationService {
   Future<void> scheduleJumuahReminder() async {
     if (defaultTargetPlatform != TargetPlatform.android) return;
     try {
-      // Cancel any old Flutter-scheduled Jumu'ah notification (legacy cleanup)
-      await _notifications.cancel(_jumuahNotificationId);
+      await _cancelLegacyJumuahAlarm();
       await _prayerAlarmsChannel.invokeMethod('scheduleJumuahReminder');
       debugPrint("✅ [JUMUA] Jumu'ah reminder scheduled via native");
     } catch (e) {
@@ -1418,10 +1419,21 @@ class NotificationService {
     }
   }
 
+  /// F7: id 7001 is the native Daily Prayer Reminder card, so it is never cancelled by id. A leftover alarm that an old
+  /// build armed through flutter_local_notifications is cancelled only when it is really pending (never throws).
+  Future<void> _cancelLegacyJumuahAlarm() async {
+    final cancelled = await cancelLegacyJumuahAlarmIfPending(
+      pendingIds: () async => (await _notifications.pendingNotificationRequests()).map((p) => p.id),
+      cancel: (id) => _notifications.cancel(id),
+      id: _jumuahNotificationId,
+    );
+    if (cancelled) debugPrint('🧹 [JUMUA] Cancelled a leftover flutter_local_notifications alarm with id 7001');
+  }
+
   Future<void> cancelJumuahReminder() async {
     if (defaultTargetPlatform != TargetPlatform.android) return;
     try {
-      await _notifications.cancel(_jumuahNotificationId);
+      await _cancelLegacyJumuahAlarm();
       await _prayerAlarmsChannel.invokeMethod('cancelJumuahReminder');
       debugPrint("✅ [JUMUA] Jumu'ah reminder cancelled");
     } catch (e) {
