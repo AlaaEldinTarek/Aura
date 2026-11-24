@@ -412,7 +412,9 @@ class TaskService {
         dueDate: dueDate,
         tags: tags,
         hasDueTime: hasDueTime,
-        completedAt: isCompleted == true && !current.isCompleted ? DateTime.now() : null,
+        completedAt: isCompleted == true
+            ? (current.isCompleted ? current.completedAt : DateTime.now())
+            : null,
         recurrenceType: recurrenceType,
         recurrenceInterval: recurrenceInterval,
         recurrenceEndDate: recurrenceEndDate,
@@ -456,7 +458,9 @@ class TaskService {
         dueDate: dueDate,
         tags: tags,
         hasDueTime: hasDueTime,
-        completedAt: isCompleted == true && !currentTask.isCompleted ? DateTime.now() : null,
+        completedAt: isCompleted == true
+            ? (currentTask.isCompleted ? currentTask.completedAt : DateTime.now())
+            : null,
         recurrenceType: recurrenceType,
         recurrenceInterval: recurrenceInterval,
         recurrenceEndDate: recurrenceEndDate,

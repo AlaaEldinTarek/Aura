@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -539,11 +540,16 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
   // F70 P3: re-arm the Jumu'ah reminder at every shell entry (login, guest, or
   // app restart). NotificationService.initialize already does this on cold start;
   // this covers the case where the user logs out and back in without restarting.
+  // F75: guard with D1-C session check — skip when no session exists (not guest,
+  // not signed in), so a cold start on the Login screen does not re-arm alarm 8001.
   Future<void> _scheduleJumuahOnStartup() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final enabled = prefs.getBool('jumua_reminder_enabled') ?? true;
       if (!enabled) return;
+      final isGuest = prefs.getBool(AppConstants.keyIsGuest) ?? false;
+      final hasUser = FirebaseAuth.instance.currentUser != null;
+      if (!isGuest && !hasUser) return;
       await NotificationService.instance.scheduleJumuahReminder();
     } catch (e) {
       debugPrint("Error scheduling Jumu'ah on startup: $e");
