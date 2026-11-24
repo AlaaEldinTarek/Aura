@@ -28,5 +28,10 @@ void main() {
     test('T4: guest AND signed-in (migration flow) → schedule', () {
       expect(_shouldSchedule(isGuest: true, hasUser: true), isTrue);
     });
+
+    // T5 covers the NotificationService.initialize path (same gate, second call site)
+    test('T5: same gate in NotificationService.initialize — no session → false', () {
+      expect(_shouldSchedule(isGuest: false, hasUser: false), isFalse);
+    });
   });
 }
