@@ -66,7 +66,7 @@ class _TaskFormScreenState extends ConsumerState<TaskFormScreen> {
     if (task.hasDueTime && task.dueDate != null) {
       _selectedDueTime = TimeOfDay.fromDateTime(task.dueDate!);
     }
-    _tags = task.tags ?? [];
+    _tags = List<String>.from(task.tags ?? []);
     _recurrenceEnabled = task.isRecurring;
     _recurrenceType = task.recurrenceType == RecurrenceType.none
         ? RecurrenceType.daily
