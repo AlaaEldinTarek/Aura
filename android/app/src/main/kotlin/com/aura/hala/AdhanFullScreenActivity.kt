@@ -57,6 +57,9 @@ class AdhanFullScreenActivity : AppCompatActivity() {
     private var isArabic = false
     private var iqamaPhaseStarted = false
 
+    // Named Runnable so onDestroy can cancel it and prevent a post-destroy azkar launch.
+    val azkarRunnable = Runnable { launchAzkarAndFinish() }
+
     private val tickRunnable = object : Runnable {
         override fun run() {
             if (isFinishing || isDestroyed) return
@@ -93,12 +96,12 @@ class AdhanFullScreenActivity : AppCompatActivity() {
                 // Iqama time reached — show briefly then launch azkar
                 label.text = if (isArabic) "حان وقت الإقامة" else "Stand for prayer"
                 countdown.text = if (isArabic) "🕌" else "🕌"
-                tickHandler.postDelayed({ launchAzkarAndFinish() }, 3000)
+                tickHandler.postDelayed(azkarRunnable, 3000)
             } else {
                 // No iqama configured — show done state then launch azkar
                 label.visibility = View.GONE
                 countdown.text = if (isArabic) "حان وقت الصلاة" else "Time to pray"
-                tickHandler.postDelayed({ launchAzkarAndFinish() }, 3000)
+                tickHandler.postDelayed(azkarRunnable, 3000)
             }
         }
     }
@@ -184,6 +187,8 @@ class AdhanFullScreenActivity : AppCompatActivity() {
             AdhanPlayer.stop()
             Log.d(TAG, "⏹️ [ADHAN] Stopped adhan audio before azkar")
         }
+        AzkarAlarmReceiver.cancel(applicationContext, prayerName)
+        Log.d(TAG, "❌ [ADHAN] Cancelled azkar backup alarm (screen handled launch)")
         Log.d(TAG, "🤲 [ADHAN] Launching post-prayer azkar for $prayerName")
         startActivity(AzkarFullScreenActivity.getIntent(this, prayerName, prayerNameAr))
         finish()
@@ -328,6 +333,7 @@ class AdhanFullScreenActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         tickHandler.removeCallbacks(tickRunnable)
+        tickHandler.removeCallbacks(azkarRunnable)
         stopPulseAnimation()
         // Stop adhan when activity is destroyed (swipe away, back button, etc.)
         if (AdhanPlayer.isPlaying()) {
