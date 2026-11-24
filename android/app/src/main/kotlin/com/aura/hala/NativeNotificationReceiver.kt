@@ -137,10 +137,11 @@ class NativeNotificationReceiver : BroadcastReceiver() {
             ACTION_MARK_PRAYED -> {
                 if (prayerName != null) {
                     val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
-                    val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(Date())
-                    prefs.edit().putString("prayer_status_${prayerName}_${today}", "on_time").apply()
+                    val dateMs = if (prayerTimeMs > 0L) prayerTimeMs else System.currentTimeMillis()
+                    val prayerDate = DailySummaryReceiver.dateKey(java.util.Calendar.getInstance().apply { timeInMillis = dateMs })
+                    prefs.edit().putString("prayer_status_${prayerName}_${prayerDate}", "on_time").apply()
                     Log.d(TAG, "✅ Marked $prayerName as prayed (syncs on next app open)")
-                    DailySummaryCard.onTrackingChanged(context, DailySummaryReceiver.PRAYER_NAMES, today)
+                    DailySummaryCard.onTrackingChanged(context, DailySummaryReceiver.PRAYER_NAMES, prayerDate)
                 }
                 NotificationManagerCompat.from(context).cancel(notificationId)
                 return

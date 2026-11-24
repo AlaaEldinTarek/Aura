@@ -464,13 +464,14 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         /**
          * Write prayer status to SharedPreferences (called from Flutter side)
          */
-        fun markPrayerTracked(context: Context, prayerName: String, status: String) {
+        fun markPrayerTracked(context: Context, prayerName: String, status: String, prayerDate: String? = null) {
             val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
-            val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
-            prefs.edit().putString("prayer_status_${prayerName}_${today}", status).apply()
+            val date = prayerDate
+                ?: java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+            prefs.edit().putString("prayer_status_${prayerName}_${date}", status).apply()
             Log.d(TAG, "📋 [POST_CHECK] Marked $prayerName as $status (Flutter)")
             // Keep the daily summary card (if showing) in step with the tracked prayers (T3)
-            DailySummaryCard.onTrackingChanged(context, DailySummaryReceiver.PRAYER_NAMES, today)
+            DailySummaryCard.onTrackingChanged(context, DailySummaryReceiver.PRAYER_NAMES, date)
         }
     }
 
@@ -498,7 +499,8 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         // Handle post-prayer check alarm (30 min after adhan)
         if (isPostCheck) {
             val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
-            val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
+            val dateMs = if (prayerTime > 0L) prayerTime else System.currentTimeMillis()
+            val today = DailySummaryReceiver.dateKey(java.util.Calendar.getInstance().apply { timeInMillis = dateMs })
             val statusKey = "prayer_status_${prayerName}_${today}"
             val alreadyTracked = prefs.contains(statusKey)
 
@@ -957,12 +959,13 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         prayerTime: Long
     ) {
         val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+        val dateMs = if (prayerTime > 0L) prayerTime else System.currentTimeMillis()
+        val prayerDate = DailySummaryReceiver.dateKey(java.util.Calendar.getInstance().apply { timeInMillis = dateMs })
 
         when (action) {
             ACTION_REMINDER_PRAYED -> {
-                val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
                 prefs.edit()
-                    .putString("prayer_status_${prayerName}_${today}", "on_time")
+                    .putString("prayer_status_${prayerName}_${prayerDate}", "on_time")
                     .putBoolean("reminder_active", false)
                     .remove("reminder_prayer_name")
                     .remove("reminder_prayer_name_ar")
@@ -972,9 +975,8 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
                 notifyFlutterPrayerStatus(context, prayerName, "on_time")
             }
             ACTION_REMINDER_LATE -> {
-                val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
                 prefs.edit()
-                    .putString("prayer_status_${prayerName}_${today}", "late")
+                    .putString("prayer_status_${prayerName}_${prayerDate}", "late")
                     .putBoolean("reminder_active", false)
                     .remove("reminder_prayer_name")
                     .remove("reminder_prayer_name_ar")
@@ -984,9 +986,8 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
                 notifyFlutterPrayerStatus(context, prayerName, "late")
             }
             ACTION_REMINDER_MISSED -> {
-                val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
                 prefs.edit()
-                    .putString("prayer_status_${prayerName}_${today}", "missed")
+                    .putString("prayer_status_${prayerName}_${prayerDate}", "missed")
                     .putBoolean("reminder_active", false)
                     .remove("reminder_prayer_name")
                     .remove("reminder_prayer_name_ar")
@@ -1035,25 +1036,24 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
     ) {
         val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
         val notificationId = getPostCheckNotificationId(prayerName)
+        val dateMs = if (prayerTime > 0L) prayerTime else System.currentTimeMillis()
+        val prayerDate = DailySummaryReceiver.dateKey(java.util.Calendar.getInstance().apply { timeInMillis = dateMs })
 
         when (action) {
             ACTION_POST_DONE -> {
-                val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
-                prefs.edit().putString("prayer_status_${prayerName}_${today}", "on_time").apply()
+                prefs.edit().putString("prayer_status_${prayerName}_${prayerDate}", "on_time").apply()
                 NotificationManagerCompat.from(context).cancel(notificationId)
                 Log.d(TAG, "✅ [POST_CHECK] Marked $prayerName as on_time")
                 notifyFlutterPrayerStatus(context, prayerName, "on_time")
             }
             ACTION_POST_LATE -> {
-                val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
-                prefs.edit().putString("prayer_status_${prayerName}_${today}", "late").apply()
+                prefs.edit().putString("prayer_status_${prayerName}_${prayerDate}", "late").apply()
                 NotificationManagerCompat.from(context).cancel(notificationId)
                 Log.d(TAG, "⏰ [POST_CHECK] Marked $prayerName as late")
                 notifyFlutterPrayerStatus(context, prayerName, "late")
             }
             ACTION_POST_MISSED -> {
-                val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(java.util.Date())
-                prefs.edit().putString("prayer_status_${prayerName}_${today}", "missed").apply()
+                prefs.edit().putString("prayer_status_${prayerName}_${prayerDate}", "missed").apply()
                 NotificationManagerCompat.from(context).cancel(notificationId)
                 Log.d(TAG, "❌ [POST_CHECK] Marked $prayerName as missed")
                 notifyFlutterPrayerStatus(context, prayerName, "missed")

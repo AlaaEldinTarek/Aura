@@ -104,8 +104,13 @@ class DailySummaryReceiver : BroadcastReceiver() {
 
         val today = todayDateKey()
         val prayerPrefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+        val now = System.currentTimeMillis()
         val untracked = DailySummaryCard.untrackedNames(PRAYER_NAMES) { name ->
-            prayerPrefs.contains("prayer_status_${name}_$today")
+            val timeKey = if (name == "Zuhr") "dhuhr_time" else "${name.lowercase()}_time"
+            val prayerMs = prayerPrefs.getString(timeKey, null)?.toLongOrNull() ?: 0L
+            val notYetDue = prayerMs > 0L && prayerMs > now &&
+                dateKey(Calendar.getInstance().apply { timeInMillis = prayerMs }) == today
+            notYetDue || prayerPrefs.contains("prayer_status_${name}_$today")
         }
 
         if (untracked.isEmpty()) {
@@ -130,7 +135,7 @@ class DailySummaryReceiver : BroadcastReceiver() {
     /** Remove prayer_status_{name}_{YYYY-MM-DD} keys older than 7 days. */
     private fun pruneOldPrayerStatuses(context: Context) {
         val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
-        val cutoffCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -7) }
+        val cutoffCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -30) }
         val cutoff = dateKey(cutoffCal)
         val editor = prefs.edit()
         var removed = 0

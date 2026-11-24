@@ -60,6 +60,57 @@ class DailySummaryCardTest {
         assertEquals(emptyList<String>(), DailySummaryCard.untrackedNames(all) { true })
     }
 
+    // F51c: not-yet-due predicate (simulates the new lambda in DailySummaryReceiver.onReceive)
+    private fun isTrackedF51c(name: String, prayerMs: Long, hasStatusKey: Boolean, now: Long, today: String): Boolean {
+        val notYetDue = prayerMs > 0L && prayerMs > now &&
+            DailySummaryReceiver.dateKey(java.util.Calendar.getInstance().apply { timeInMillis = prayerMs }) == today
+        return notYetDue || hasStatusKey
+    }
+
+    @Test
+    fun f51c_futureToday_excludedFromUntracked() {
+        val now = 1_732_452_000_000L  // arbitrary "now"
+        val today = DailySummaryReceiver.dateKey(java.util.Calendar.getInstance().apply { timeInMillis = now })
+        val prayerMs = now + 2 * 60 * 60 * 1000L  // 2 hours in the future, same day
+        val result = DailySummaryCard.untrackedNames(listOf("Isha")) {
+            isTrackedF51c(it, prayerMs, hasStatusKey = false, now = now, today = today)
+        }
+        assertEquals(emptyList<String>(), result)
+    }
+
+    @Test
+    fun f51c_pastToday_untracked_included() {
+        val now = 1_732_452_000_000L
+        val today = DailySummaryReceiver.dateKey(java.util.Calendar.getInstance().apply { timeInMillis = now })
+        val prayerMs = now - 60 * 60 * 1000L  // 1 hour in the past, same day
+        val result = DailySummaryCard.untrackedNames(listOf("Fajr")) {
+            isTrackedF51c(it, prayerMs, hasStatusKey = false, now = now, today = today)
+        }
+        assertEquals(listOf("Fajr"), result)
+    }
+
+    @Test
+    fun f51c_stalePrayerMs_treatedAsPast_untracked_included() {
+        val now = 1_732_452_000_000L
+        val today = DailySummaryReceiver.dateKey(java.util.Calendar.getInstance().apply { timeInMillis = now })
+        // yesterday's epoch — prayerMs > now is false (yesterday's time is in the past), so notYetDue = false
+        val yesterdayMs = now - 25 * 60 * 60 * 1000L
+        val result = DailySummaryCard.untrackedNames(listOf("Isha")) {
+            isTrackedF51c(it, yesterdayMs, hasStatusKey = false, now = now, today = today)
+        }
+        assertEquals(listOf("Isha"), result)
+    }
+
+    @Test
+    fun f51c_zeroOrMissingTime_treatedAsPast_untracked_included() {
+        val now = 1_732_452_000_000L
+        val today = DailySummaryReceiver.dateKey(java.util.Calendar.getInstance().apply { timeInMillis = now })
+        val result = DailySummaryCard.untrackedNames(listOf("Maghrib")) {
+            isTrackedF51c(it, prayerMs = 0L, hasStatusKey = false, now = now, today = today)
+        }
+        assertEquals(listOf("Maghrib"), result)
+    }
+
     @Test
     fun timeout_isUntilEndOfDay_atLeastOneMinute() {
         assertEquals(3_600_000L, DailySummaryCard.timeoutAfterMs(nowMs = 1_000_000L, endOfDayMs = 4_600_000L))

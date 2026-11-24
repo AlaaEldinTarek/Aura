@@ -81,4 +81,37 @@ class DailySummaryDateKeyTest {
         assertNotEquals("precondition: ar-EG must format Arabic-Indic digits", "05", String.format("%02d", 5))
         assertCutoffOrdering()
     }
+
+    // F51b: prune window is 30 days, not 7
+    @Test
+    fun pruneWindow_is30Days() {
+        val today = date(2026, 11, 24)
+        val cutoff30 = DailySummaryReceiver.dateKey(
+            (today.clone() as Calendar).apply { add(Calendar.DAY_OF_YEAR, -30) }
+        )
+        assertEquals("2026-10-25", cutoff30)
+        // 29-day-old record must survive
+        assertFalse(writerKey(date(2026, 10, 26)) < cutoff30)
+        // 31-day-old record must be pruned
+        assertTrue(writerKey(date(2026, 10, 24)) < cutoff30)
+    }
+
+    // F51d: date key derived from prayer epoch stays on the prayer's day, not the action day
+    @Test
+    fun prayerEpoch_returnsPrayerDay_notActionDay() {
+        // Isha at 11:30 PM on day D — calendar instance built from that epoch
+        val prayerCal = Calendar.getInstance().apply {
+            clear(); set(2026, 10, 24, 23, 30, 0) // 2026-11-24 23:30
+        }
+        assertEquals("2026-11-24", DailySummaryReceiver.dateKey(prayerCal))
+    }
+
+    @Test
+    fun prayerEpoch_afterMidnight_stillReturnsPrayerDay() {
+        // prayerTime = 11:55 PM on day D; "now" would be 12:05 AM day D+1 — only the epoch matters
+        val prayerCal = Calendar.getInstance().apply {
+            clear(); set(2026, 10, 24, 23, 55, 0) // 2026-11-24 23:55
+        }
+        assertEquals("2026-11-24", DailySummaryReceiver.dateKey(prayerCal))
+    }
 }
