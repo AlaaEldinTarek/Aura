@@ -3,6 +3,7 @@ import '../utils/task_reminder_args.dart';
 import '../utils/legacy_digest.dart';
 import '../utils/legacy_jumuah.dart';
 import 'dart:io' show Platform;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -146,10 +147,12 @@ class NotificationService {
 
     _prefs = await SharedPreferences.getInstance();
 
-    // Schedule Jumu'ah reminder if enabled
+    // Schedule Jumu'ah reminder if enabled and an active session exists (F75)
     final jumuahEnabled = _prefs!.getBool('jumua_reminder_enabled') ?? true;
     if (jumuahEnabled) {
-      await scheduleJumuahReminder();
+      final isGuest = _prefs!.getBool(AppConstants.keyIsGuest) ?? false;
+      final hasUser = FirebaseAuth.instance.currentUser != null;
+      if (isGuest || hasUser) await scheduleJumuahReminder();
     }
 
     debugPrint('NotificationService: Initialized');
