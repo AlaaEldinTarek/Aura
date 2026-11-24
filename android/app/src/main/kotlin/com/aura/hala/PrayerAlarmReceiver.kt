@@ -395,6 +395,14 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             try { cancelReminderAlarms(context) } catch (e: Exception) {
                 Log.e(TAG, "❌ [REMINDER] cancel failed: ${e.message}")
             }
+            try {
+                for (prayer in listOf("Fajr", "Sunrise", "Zuhr", "Asr", "Maghrib", "Isha")) {
+                    cancelPostPrayerCheck(context, prayer, getNotificationId(prayer))
+                }
+                Log.d(TAG, "📋 [POST_CHECK] All post-check alarms cancelled")
+            } catch (e: Exception) {
+                Log.e(TAG, "❌ [POST_CHECK] cancel failed: ${e.message}")
+            }
             Log.d(TAG, "All prayer alarms cancelled")
         }
 
@@ -735,14 +743,12 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
                 }
             }
 
-            // If no future prayer found today, next is Fajr tomorrow
+            // If no future prayer found today, trigger a native recalc so tomorrow's exact
+            // Fajr time replaces the stale today-Fajr+24h approximation.
             if (nextPrayerName == null) {
-                val fajrTimeKey = "fajr_time"
-                val storedFajrTime = prefs.getString(fajrTimeKey, null)?.toLongOrNull() ?: 0L
-                nextPrayerName = "Fajr"
-                // Add 24 hours to get tomorrow's Fajr
-                nextPrayerTime = storedFajrTime + (24 * 60 * 60 * 1000)
-                Log.d(TAG, "🌙 [UPDATE] No future prayer today, next is Fajr tomorrow")
+                Log.d(TAG, "🌙 [UPDATE] No future prayer today — triggering native recalc for tomorrow")
+                NativePrayerCalculator.calculateAndSave(context)
+                return   // calculateAndSave updates next_prayer_* and calls updateWidgets internally
             }
 
             if (nextPrayerTime > 0) {
@@ -812,10 +818,15 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             true
         }
 
-        // Save current ringer mode
-        val currentRingerMode = audioManager.ringerMode
-        silentPrefs.edit().putInt("saved_ringer_mode", currentRingerMode).apply()
-        Log.d(TAG, "📱 Saved ringer mode: $currentRingerMode, DND permission: $hasDndPermission")
+        // Save current ringer mode — only when not already in a silent-mode cycle so that a
+        // "Keep Silent" from a previous prayer doesn't overwrite the original pre-vibrate mode.
+        if (!silentPrefs.getBoolean("is_silent_active", false)) {
+            val currentRingerMode = audioManager.ringerMode
+            silentPrefs.edit().putInt("saved_ringer_mode", currentRingerMode).apply()
+            Log.d(TAG, "📱 Saved ringer mode: $currentRingerMode, DND permission: $hasDndPermission")
+        } else {
+            Log.d(TAG, "📱 Silent already active — keeping saved_ringer_mode unchanged, DND permission: $hasDndPermission")
+        }
 
         // Set to vibrate mode (not silent/DND — user preference)
         try {

@@ -141,7 +141,8 @@ class PrayerRescheduleService : Service() {
         }
 
         if (scheduled == 0) {
-            Log.w(TAG, "⚠️ [RESCHEDULE] No real prayer times found in aura_prayer_times — Flutter will reschedule on next launch")
+            Log.w(TAG, "⚠️ [RESCHEDULE] No future times in cache — running native recalc")
+            NativePrayerCalculator.calculateAndSave(this)
         } else {
             Log.d(TAG, "✅ [RESCHEDULE] Scheduled $scheduled prayer alarms from real times")
         }
