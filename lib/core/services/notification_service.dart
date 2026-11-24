@@ -1,3 +1,4 @@
+import '../utils/achievement_notification_id.dart';
 import '../utils/task_reminder_args.dart';
 import '../utils/legacy_digest.dart';
 import '../utils/legacy_jumuah.dart';
@@ -1189,10 +1190,10 @@ class NotificationService {
   // ─── Achievement Notifications ────────────────────────────────────────────
 
   /// Show a system notification when an achievement is unlocked.
-  /// Notification IDs: 7100–8099 (hash-based per achievement, no collisions between types).
+  /// Notification IDs: 20000–20999 (FNV-1a per achievement id; see achievement_notification_id.dart).
   Future<void> showAchievementNotification(Achievement achievement, bool isArabic) async {
     try {
-      final id = 7100 + (achievement.id.hashCode.abs() % 1000);
+      final id = achievementNotificationId(achievement.id);
       final title = isArabic ? '🏆 إنجاز جديد!' : '🏆 Achievement Unlocked!';
       final body = '${achievement.iconEmoji} ${isArabic ? achievement.nameAr : achievement.nameEn}';
 
