@@ -290,6 +290,21 @@ class PrayerAlarmService {
     }
   }
 
+  /// F70: cancel every Aura alarm (native AlarmManager), WorkManager job, foreground
+  /// service and all Android notifications in one native call (AlarmCleanup.cancelAll).
+  /// Called at logout after a successful sign-out (spec P3, D3).
+  Future<void> cancelAllAppAlarms() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+    try {
+      await _channel.invokeMethod('cancelAllAppAlarms');
+      debugPrint('🧹 [PRAYER ALARMS] cancelAllAppAlarms done');
+    } catch (e) {
+      debugPrint('❌ [PRAYER ALARMS] cancelAllAppAlarms failed: $e');
+    }
+  }
+
   /// Re-arm only the pre-prayer reminder alarms (request codes 2101-2106) with
   /// the current lead time. Touches no adhan, post-check or azkar alarm.
   Future<void> rearmReminderAlarms() async {

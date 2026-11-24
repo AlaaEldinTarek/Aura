@@ -212,6 +212,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       });
       _handleWidgetIntent();
       _scheduleDailySummaryOnStartup();
+      if (!_isDesktop) _scheduleJumuahOnStartup();
       Future.delayed(const Duration(seconds: 3), _checkUntrackedPrayers);
 
       // Cold start: re-arm task reminders that an OEM app-freeze may have
@@ -532,6 +533,20 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       await PrayerAlarmService.instance.scheduleDailySummary(timeStr);
     } catch (e) {
       debugPrint('Error scheduling daily summary: $e');
+    }
+  }
+
+  // F70 P3: re-arm the Jumu'ah reminder at every shell entry (login, guest, or
+  // app restart). NotificationService.initialize already does this on cold start;
+  // this covers the case where the user logs out and back in without restarting.
+  Future<void> _scheduleJumuahOnStartup() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final enabled = prefs.getBool('jumua_reminder_enabled') ?? true;
+      if (!enabled) return;
+      await NotificationService.instance.scheduleJumuahReminder();
+    } catch (e) {
+      debugPrint("Error scheduling Jumu'ah on startup: $e");
     }
   }
 

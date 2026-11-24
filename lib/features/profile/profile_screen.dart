@@ -27,6 +27,7 @@ import '../../core/widgets/setting_tile.dart';
 import 'profile_version_tile.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/share_card.dart';
+import '../../core/services/logout_cleanup.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/shared_preferences_service.dart';
 import '../../core/utils/share_util.dart';
@@ -1087,8 +1088,10 @@ class ProfileScreen extends ConsumerWidget {
         debugPrint('❌ [AUTH] signOut failed: $e');
       }
       if (!context.mounted) return;
-      // Signed out → Login with the shell cleared (F47f); local data stays.
+      // Signed out → cancel all alarms/notifications, then go to Login (F70 P3, F47f).
       if (authService.currentUser == null) {
+        await logoutCleanup();
+        if (!context.mounted) return;
         Navigator.of(context, rootNavigator: true)
             .pushNamedAndRemoveUntil('/login', (_) => false);
       }
