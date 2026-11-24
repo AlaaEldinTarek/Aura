@@ -1019,7 +1019,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
   }
 
   bool _isCompletedToday(Task t) {
-    if (t.completedAt == null) return true;
+    if (t.completedAt == null) return false;
     final now = DateTime.now();
     final c = t.completedAt!;
     return c.year == now.year && c.month == now.month && c.day == now.day;
