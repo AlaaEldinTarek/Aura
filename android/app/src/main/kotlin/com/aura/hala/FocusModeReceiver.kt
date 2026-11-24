@@ -83,6 +83,10 @@ class FocusModeReceiver : BroadcastReceiver() {
             Log.d(TAG, "🎯 [FOCUS] Scheduled alarm for '$taskTitle' at $triggerTimeMillis (duration=${durationMinutes}min)")
         }
 
+        /** F70 cancel table: request code 5000 + abs(taskId.hashCode() % 1000), so 5000-5999, with ACTION_FOCUS_ALARM. */
+        internal fun cancelSpecs(): List<CancelSpec> =
+            (0..999).map { CancelSpec(FocusModeReceiver::class.java, ACTION_FOCUS_ALARM, REQUEST_CODE_BASE + it) }
+
         fun cancelFocusAlarm(context: Context, taskId: String) {
             val requestCode = REQUEST_CODE_BASE + abs(taskId.hashCode() % 1000)
             val intent = Intent(context, FocusModeReceiver::class.java).apply {

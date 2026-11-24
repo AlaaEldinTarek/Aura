@@ -61,6 +61,11 @@ class PrayerBootReceiver : BroadcastReceiver() {
 
                 // Wait a bit for the system to fully start
                 android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                    // F70: no session (signed out, no guest) means nothing is re-armed after a boot or an update
+                    if (!SessionState.isSessionActive(context, "boot")) {
+                        Log.d(TAG, "🔐 [SESSION] gate closed, boot re-arm skipped")
+                        return@postDelayed
+                    }
                     reschedulePrayerAlarms(context)
                     rescheduleDailySummary(context)
                     rescheduleJumuahReminder(context)

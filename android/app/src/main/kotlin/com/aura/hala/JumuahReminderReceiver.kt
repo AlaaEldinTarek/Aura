@@ -84,6 +84,10 @@ class JumuahReminderReceiver : BroadcastReceiver() {
             }
         }
 
+        /** F70 cancel table: request code 8001, no action. */
+        internal fun cancelSpecs(): List<CancelSpec> =
+            listOf(CancelSpec(JumuahReminderReceiver::class.java, null, REQUEST_CODE))
+
         fun cancel(context: Context) {
             val intent = Intent(context, JumuahReminderReceiver::class.java)
             val pendingIntent = PendingIntent.getBroadcast(

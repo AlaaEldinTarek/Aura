@@ -360,6 +360,20 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
         }
 
         /**
+         * F70 cancel table: the alarms this receiver arms with NO action, by request code, as the arming code above
+         * builds them: adhan 1001-1006, after-adhan snooze 2001-2006, pre-prayer reminder 2101-2106 and post-check
+         * adhan code + 2000 (3001-3006). Run by AlarmCleanup with FLAG_NO_CREATE.
+         */
+        internal fun cancelSpecs(): List<CancelSpec> {
+            val adhanCodes = listOf("Fajr", "Sunrise", "Zuhr", "Asr", "Maghrib", "Isha").map { getNotificationId(it) }
+            val codes = adhanCodes +
+                listOf("Fajr", "Sunrise", "Zuhr", "Asr", "Maghrib", "Isha").map { getReminderNotificationId(it) } +
+                adhanCodes.map { ReminderLogic.requestCode(it) } +
+                adhanCodes.map { it + 2000 }
+            return codes.map { CancelSpec(PrayerAlarmReceiver::class.java, null, it) }
+        }
+
+        /**
          * Cancel all prayer alarms
          */
         fun cancelAllAlarms(context: Context) {

@@ -585,6 +585,19 @@ class MainActivity : FlutterFragmentActivity() {
                     PrayerAlarmReceiver.cancelAllAlarms(this)
                     result.success(true)
                 }
+                "cancelAllAppAlarms" -> {
+                    // F70: logout cleanup (after a successful sign-out). Off the main thread: about 3000 PendingIntent lookups.
+                    Log.d("PrayerChannel", "🧹 [F70] cancelAllAppAlarms")
+                    Thread {
+                        try {
+                            val cancelled = AlarmCleanup.cancelAll(this)
+                            runOnUiThread { result.success(cancelled) }
+                        } catch (e: Exception) {
+                            Log.e("PrayerChannel", "❌ [F70] cancelAllAppAlarms failed: ${e.message}")
+                            runOnUiThread { result.error("FAILED", e.message, null) }
+                        }
+                    }.start()
+                }
                 "schedulePostPrayerCheck" -> {
                     val prayerName = call.argument<String>("prayerName")
                         ?: return@setMethodCallHandler result.error("INVALID", "prayerName required", null)
