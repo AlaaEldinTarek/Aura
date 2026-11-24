@@ -214,13 +214,21 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
           prayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
       await notifier.load(fajrTime: fajrTime);
 
-      final statuses = ref.read(dailyPrayerStatusProvider).statuses;
+      final dailyStatus = ref.read(dailyPrayerStatusProvider);
+      final statuses = dailyStatus.statuses;
+      final effNow = DateTime.now();
+      final effectiveIsToday = dailyStatus.effectiveToday.year == effNow.year &&
+          dailyStatus.effectiveToday.month == effNow.month &&
+          dailyStatus.effectiveToday.day == effNow.day;
       setState(() {
         _prayerStatuses.clear();
         _explicitlyMarked.clear();
         for (final entry in statuses.entries) {
-          // Apply 20-min rule: don't show a prayer as checked before its window
-          if (!isPrayerTimeReached(entry.key, prayerTimes)) continue;
+          // Between midnight and Fajr effectiveToday is yesterday — all its
+          // prayers are past, so skip the 20-min gate on those days.
+          if (effectiveIsToday && !isPrayerTimeReached(entry.key, prayerTimes)) {
+            continue;
+          }
           _prayerStatuses[entry.key] = entry.value;
           // All prayers with a record are explicitly marked (including missed)
           _explicitlyMarked.add(entry.key);
@@ -235,12 +243,20 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
   Future<void> _markPrayerAsCompleted(String prayerName) async {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    // Check 20-minute rule: must be at least 20 minutes past prayer time
-    if (!canMarkPrayer(
-        context: context,
-        prayerName: prayerName,
-        prayerTimes: _prayerTimes,
-        isArabic: isArabic)) {
+    // The 20-min rule only applies when marking the actual calendar today's
+    // prayers. Between midnight and Fajr effectiveToday is yesterday — all of
+    // yesterday's prayers are already in the past, so the gate must not block.
+    final markDailyStatus = ref.read(dailyPrayerStatusProvider);
+    final markNow = DateTime.now();
+    final markEffIsToday = markDailyStatus.effectiveToday.year == markNow.year &&
+        markDailyStatus.effectiveToday.month == markNow.month &&
+        markDailyStatus.effectiveToday.day == markNow.day;
+    if (markEffIsToday &&
+        !canMarkPrayer(
+            context: context,
+            prayerName: prayerName,
+            prayerTimes: _prayerTimes,
+            isArabic: isArabic)) {
       return;
     }
 
@@ -403,11 +419,16 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
     ref.listen<DailyPrayerStatus>(dailyPrayerStatusProvider, (_, next) {
       if (!mounted) return;
       final currentPrayerTimes = ref.read(prayerTimesProvider).prayerTimes;
+      final listenNow = DateTime.now();
+      final listenEffIsToday = next.effectiveToday.year == listenNow.year &&
+          next.effectiveToday.month == listenNow.month &&
+          next.effectiveToday.day == listenNow.day;
       setState(() {
         _prayerStatuses.clear();
         _explicitlyMarked.clear();
         for (final entry in next.statuses.entries) {
-          if (!isPrayerTimeReached(entry.key, currentPrayerTimes)) continue;
+          if (listenEffIsToday &&
+              !isPrayerTimeReached(entry.key, currentPrayerTimes)) continue;
           _prayerStatuses[entry.key] = entry.value;
           _explicitlyMarked.add(entry.key);
         }

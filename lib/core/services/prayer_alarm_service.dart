@@ -441,7 +441,7 @@ class PrayerAlarmService {
 
         final date = DateTime.parse(dateStr);
 
-        await PrayerTrackingService.instance.recordPrayer(
+        final synced = await PrayerTrackingService.instance.recordPrayer(
           userId: userId,
           prayerName: prayerName,
           date: date,
@@ -451,8 +451,11 @@ class PrayerAlarmService {
           notes: 'Logged via notification reminder',
         );
 
-        // Clear the native key after successful sync
-        await clearNativePrayerStatus(key);
+        if (synced) {
+          await clearNativePrayerStatus(key);
+        } else {
+          debugPrint('⚠️ [SYNC] recordPrayer failed for $key — keeping for retry');
+        }
       }
 
       debugPrint('✅ [SYNC] Native prayer statuses synced to Firestore');

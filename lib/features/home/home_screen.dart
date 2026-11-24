@@ -297,15 +297,22 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     final showTasks = appMode != AppMode.prayerOnly;
 
     // Calculate prayer progress from shared provider
-    // Filter: only show prayers that have reached Adhan + 20 min — same rule
-    // as canMarkPrayer — so a future prayer can never appear as already done.
+    // Filter: only apply the 20-min gate on the real calendar today.
+    // Between midnight and Fajr effectiveToday is yesterday — all its prayers
+    // are already in the past, so the gate must not hide them.
     final rawPrayerStatuses =
         ref.watch(dailyPrayerStatusProvider.select((s) => s.statuses));
+    final effectiveIsToday = ref.watch(dailyPrayerStatusProvider.select((s) {
+      final eff = s.effectiveToday;
+      final now = DateTime.now();
+      return eff.year == now.year && eff.month == now.month && eff.day == now.day;
+    }));
     final todayPrayerTimes =
         ref.watch(prayerTimesProvider.select((s) => s.prayerTimes));
     final prayerStatuses = Map<String, PrayerStatus>.fromEntries(
-      rawPrayerStatuses.entries
-          .where((e) => isPrayerTimeReached(e.key, todayPrayerTimes)),
+      rawPrayerStatuses.entries.where(
+        (e) => !effectiveIsToday || isPrayerTimeReached(e.key, todayPrayerTimes),
+      ),
     );
     final trackablePrayers = kPrayerNames;
     final completedCount = trackablePrayers.where((p) {
