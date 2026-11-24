@@ -152,7 +152,7 @@ class AzkarAlarmReceiver : BroadcastReceiver() {
             .setAutoCancel(true)
             .setFullScreenIntent(fullScreenPi, true)
             .setContentIntent(fullScreenPi)
-            .setTimeoutAfter(60_000)
+            .setTimeoutAfter(30 * 60 * 1000L)
             .setCustomContentView(cardView)
             .setCustomBigContentView(cardView)
             .setVisibility(AzkarCard.VISIBILITY)
