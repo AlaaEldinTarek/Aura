@@ -23,6 +23,10 @@ class AzkarNotifier extends StateNotifier<AzkarState> {
     try {
       final json = jsonDecode(raw) as Map<String, dynamic>;
       state = AzkarState.fromJson(json, _todayKey());
+      final lastDate = prefs.getString(_kStreakDateKey) ?? '';
+      if (lastDate != _todayKey() && lastDate != _yesterdayKey()) {
+        state = state.copyWith(streakCount: 0);
+      }
     } catch (_) {}
   }
 
