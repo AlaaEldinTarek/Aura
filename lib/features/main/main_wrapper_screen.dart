@@ -1302,10 +1302,13 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       );
     }
 
+    final appMode = ref.watch(appModeProvider);
     final pageView = PageView(
       controller: _pageController,
-      // Disable swipe on desktop — navigation is via sidebar
-      physics: _isDesktop ? const NeverScrollableScrollPhysics() : null,
+      // Disable swipe on desktop (sidebar nav) and when tabs are hidden by app mode
+      physics: (_isDesktop || appMode != AppMode.both)
+          ? const NeverScrollableScrollPhysics()
+          : null,
       onPageChanged: (index) {
         if (_isDesktop) return;
         app_haptic.HapticFeedback.light();
