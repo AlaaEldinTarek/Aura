@@ -24,8 +24,16 @@ class DailyRecalcReceiver : BroadcastReceiver() {
         const val ACTION_DAILY_RECALC = "com.aura.hala.DAILY_RECALC"
         private const val REQUEST_CODE = 9100
 
-        /** Schedule the next 00:05 daily recalculation. */
+        /** F70 cancel table: request code 9100 with the recalc action. */
+        internal fun cancelSpecs(): List<CancelSpec> =
+            listOf(CancelSpec(DailyRecalcReceiver::class.java, ACTION_DAILY_RECALC, REQUEST_CODE))
+
+        /** Schedule the next 00:05 daily recalculation (not while signed out without a guest session, F70). */
         fun schedule(context: Context) {
+            if (!SessionState.isSessionActive(context, "recalc_schedule")) {
+                Log.d(TAG, "🔐 [SESSION] gate closed, 00:05 recalc not scheduled")
+                return
+            }
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
             val cal = Calendar.getInstance().apply {
@@ -64,6 +72,11 @@ class DailyRecalcReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action != ACTION_DAILY_RECALC) return
+        // F70: a signed-out phone with no guest session neither recalculates (that re-arms alarms) nor reschedules itself
+        if (!SessionState.isSessionActive(context, "recalc_00_05")) {
+            Log.d(TAG, "🔐 [SESSION] gate closed, daily recalc skipped and not rescheduled")
+            return
+        }
         Log.d(TAG, "🔄 Daily recalc fired — computing new day's prayer times")
 
         val ok = NativePrayerCalculator.calculateAndSave(context)

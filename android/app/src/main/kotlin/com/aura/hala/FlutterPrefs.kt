@@ -32,6 +32,14 @@ object FlutterPrefs {
             else -> default
         }
 
+    fun putLong(context: Context, key: String, value: Long) {
+        prefs(context).edit().putLong(KEY_PREFIX + key, value).apply()
+    }
+
+    fun remove(context: Context, key: String) {
+        prefs(context).edit().remove(KEY_PREFIX + key).apply()
+    }
+
     fun putString(context: Context, key: String, value: String) {
         prefs(context).edit().putString(KEY_PREFIX + key, value).apply()
     }

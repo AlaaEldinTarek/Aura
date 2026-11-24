@@ -37,7 +37,8 @@ daily-summary notifications always English, daily summary time reverting to 21:0
 | `silent_mode_duration` | `shared_preferences_service.dart`, `app_constants.dart` | `PrayerAlarmReceiver.kt:722`, `ToggleSilentModeReceiver.kt:102` (getInt, Long-safe) | Dart W / Kotlin R | No | Verified |
 | `theme_mode` (`AppConstants.keyThemeMode`) | `app_constants.dart:56` | `PrayerForegroundService.kt:662` | Dart W / Kotlin R | No | Verified |
 | `widget_navigate_to_tab` | `main_wrapper_screen.dart` | `MainActivity.kt:57` (putInt) | Kotlin W / Dart R | No | Verified (resolves D7) |
-| `pending_complete_task_id` | `main_wrapper_screen.dart` | `TasksWidget.kt:52,290` | Kotlin W / Dart R | No | Verified |
+| `pending_complete_task_id` | `main_wrapper_screen.dart` (`_handleWidgetIntent`, resume and start; now completes only, never un-completes, one id or several comma separated) | `TasksWidget.kt:52,290` (one id), `TaskReminderReceiver.kt` Done button (appends an id; T2b) | Kotlin W / Dart R | No | Verified (code) |
+| `task_snoozed_until_<taskId>` | `notification_service.dart` (`scheduleTaskReminder` guard, `cancelTaskNotification` removes it) | `TaskReminderReceiver.kt` Remind Later writes it (Long, ms; Done removes it; T2b) | Dart W+R, Kotlin W | No | Verified (code) |
 | `widget_open_task_form` | `main_wrapper_screen.dart` | `TasksWidget.kt:63` | Kotlin W / Dart R | No | Verified |
 
 ## Cross-boundary keys — `aura_prayer_times` (Dart writes via channel args → MainActivity)
@@ -71,7 +72,7 @@ daily-summary notifications always English, daily summary time reverting to 21:0
 - `${packageName}_preferences`: `focus_completed_task_id`, `focus_task_was_completed`.
 
 ## Dart-only keys (FlutterSharedPreferences; no Kotlin reader found)
-- Tasks: `task_notifications_enabled`, `task_reminder_minutes` (also desktop), `task_sort_order`, `task_category_filter`,
+- Tasks: `task_notifications_enabled`, `task_reminder_minutes` (also desktop; Kotlin reads it through `FlutterPrefs.getInt` for the task reminder Remind Later delay, `TaskReminderReceiver.kt`, default 30; Dart still the only writer), `task_sort_order`, `task_category_filter`,
   `task_streak_count`, `task_streak_date`.
 - Wird: `wird_settings` (JSON), `wird_streak_count`, `wird_streak_date`,
   `wird_total_days_completed`, `wird_progress_history` (JSON, pruned to 90 days), `wird_completed_juz` (JSON list),
@@ -99,3 +100,7 @@ daily-summary notifications always English, daily summary time reverting to 21:0
   `tutorial_wird_seen`, `tutorial_reader_seen`.
 
 Added 2026-11-18 (S05 reminder, `docs/designs/fix-prayer-reminder.md`): Flutter prefs `notification_reminder_minutes` (5/10/15/30, default 10; any other value reads as 10) is now read natively through `FlutterPrefs` in `PrayerAlarmReceiver.scheduleReminderAlarm`, and `prayer_notifications_enabled` (the Prayer-screen "Reminder Prayer" switch, the only on/off) is read natively too.
+
+T6 (post-prayer azkar card): no new prefs read natively. `AzkarCard` reads only what the other themed cards already read: `language` in `aura_prayer_times` (`ThemedNotification.isArabic`) and the Flutter pref `theme_mode` through `FlutterPrefs` (`ThemedNotification.isDark`). The azkar streak (`azkar_state`, `azkar_streak_date`) is not read: it counts the Morning/Evening azkar sessions, not this post-prayer screen.
+
+T7 (Jumu'ah card): no new prefs. `JumuahCard` reads `language` and `dhuhr_time` in `aura_prayer_times` (the receiver passes `dhuhr_time` as today's Zuhr; unknown or past = text only, no countdown) and the Flutter pref `theme_mode` through `FlutterPrefs`. Notification id 8001 and channel `jumuah_reminder` are unchanged; the tap PendingIntent uses the new activity request code 8003.

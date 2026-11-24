@@ -94,6 +94,12 @@ class AzkarAlarmReceiver : BroadcastReceiver() {
             Log.d(TAG, "✅ [AZKAR] Scheduled for $prayerName at $triggerStr ($delayMin min from now)")
         }
 
+        /** F70 cancel table: request codes 3001-3006 with ACTION_AZKAR_ALARM (same codes as the post-checks, other class). */
+        internal fun cancelSpecs(): List<CancelSpec> =
+            listOf("Fajr", "Sunrise", "Zuhr", "Asr", "Maghrib", "Isha").map {
+                CancelSpec(AzkarAlarmReceiver::class.java, ACTION_AZKAR_ALARM, getAzkarRequestCode(it))
+            }
+
         fun cancel(context: Context, prayerName: String) {
             val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
             val intent = Intent(context, AzkarAlarmReceiver::class.java).apply {
@@ -134,6 +140,9 @@ class AzkarAlarmReceiver : BroadcastReceiver() {
         val title = if (isArabic) "أذكار بعد الصلاة 🤲" else "Post-Prayer Azkar 🤲"
         val body  = if (isArabic) "حان وقت أذكار بعد صلاة $prayerNameAr" else "Time for post-prayer azkar after $prayerName"
 
+        // T6: themed card (look only). The button shares fullScreenPi, the same PendingIntent as the content intent.
+        val cardView = AzkarCard.contentView(context, prayerName, prayerNameAr, fullScreenPi)
+
         val notif = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentTitle(title)
@@ -143,7 +152,11 @@ class AzkarAlarmReceiver : BroadcastReceiver() {
             .setAutoCancel(true)
             .setFullScreenIntent(fullScreenPi, true)
             .setContentIntent(fullScreenPi)
-            .setTimeoutAfter(60_000)
+            .setTimeoutAfter(30 * 60 * 1000L)
+            .setCustomContentView(cardView)
+            .setCustomBigContentView(cardView)
+            .setVisibility(AzkarCard.VISIBILITY)
+            .addExtras(AzkarCard.extras(prayerName, prayerNameAr, System.currentTimeMillis()))
             .build()
 
         try {

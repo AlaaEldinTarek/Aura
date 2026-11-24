@@ -1,23 +1,18 @@
 package com.aura.hala
 
 import android.app.AlarmManager
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
-import androidx.core.app.NotificationCompat
 import java.util.Calendar
 
 class JumuahReminderReceiver : BroadcastReceiver() {
 
     companion object {
         private const val TAG = "JumuahReminder"
-        private const val NOTIFICATION_ID = 8001
-        private const val CHANNEL_ID = "jumuah_reminder"
         private const val REQUEST_CODE = 8001
 
         fun schedule(context: Context) {
@@ -89,6 +84,10 @@ class JumuahReminderReceiver : BroadcastReceiver() {
             }
         }
 
+        /** F70 cancel table: request code 8001, no action. */
+        internal fun cancelSpecs(): List<CancelSpec> =
+            listOf(CancelSpec(JumuahReminderReceiver::class.java, null, REQUEST_CODE))
+
         fun cancel(context: Context) {
             val intent = Intent(context, JumuahReminderReceiver::class.java)
             val pendingIntent = PendingIntent.getBroadcast(
@@ -114,33 +113,11 @@ class JumuahReminderReceiver : BroadcastReceiver() {
     }
 
     private fun showNotification(context: Context, isArabic: Boolean) {
-        val notificationManager =
-            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Jumu'ah Reminder",
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply { description = "Weekly Friday prayer reminder" }
-            notificationManager.createNotificationChannel(channel)
-        }
-
-        val title = if (isArabic) "جمعة مباركة 🕌" else "Jumu'ah Mubarak 🕌"
-        val body = if (isArabic)
-            "اقترب وقت صلاة الجمعة، لا تفوّتها"
-        else
-            "Friday prayer time is approaching. Don't miss it!"
-
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(title)
-            .setContentText(body)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .build()
-
-        notificationManager.notify(NOTIFICATION_ID, notification)
+        // T7: themed card with a live countdown to today's Zuhr (unknown or past Zuhr = text only)
+        val prayerPrefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
+        val zuhrMillis = prayerPrefs.getString("dhuhr_time", null)?.toLongOrNull() ?: 0L
+        JumuahCard.ensureChannel(context)
+        JumuahCard.show(context, zuhrMillis, null)
         Log.d(TAG, "✅ Jumu'ah notification shown")
     }
 }

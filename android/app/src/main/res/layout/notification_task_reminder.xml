@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Task reminder card, light LTR (English) (docs/designs/fix-themed-notifications.md, T2/T2b).
+     Plain horizontal LinearLayout like notification_actions*.xml. Logo + text on the left, Done / Remind Later at the end.
+     Transparent Aura logo (ic_launcher_foreground). Used for the collapsed and the expanded view. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/bg_notification"
+    android:layoutDirection="ltr"
+    android:paddingLeft="16dp"
+    android:paddingRight="16dp"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <ImageView
+        android:id="@+id/task_reminder_icon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/ic_launcher_foreground"
+        android:scaleType="centerInside"
+        android:contentDescription="Aura" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginLeft="6dp"
+        android:layout_marginRight="8dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/task_reminder_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="Task reminder"
+            android:textSize="15sp"
+            android:textStyle="bold"
+            android:textColor="#DE000000" />
+
+        <TextView
+            android:id="@+id/task_reminder_body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:text="Your task is due"
+            android:textSize="12sp"
+            android:textColor="#99000000" />
+
+        <Chronometer
+            android:id="@+id/task_reminder_countdown"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="left"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:visibility="gone"
+            android:textSize="12sp"
+            android:textColor="#99000000" />
+
+    </LinearLayout>
+
+    <!-- Done above Remind Later, same width, one column at the end (like the foreground vibration buttons). -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/btn_task_done"
+            android:layout_width="84dp"
+            android:layout_height="28dp"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp"
+            android:background="@drawable/bg_post_check_done"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="Done"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#4CAF50" />
+
+        <TextView
+            android:id="@+id/btn_task_remind_later"
+            android:layout_width="84dp"
+            android:layout_height="28dp"
+            android:layout_marginTop="4dp"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:paddingLeft="4dp"
+            android:paddingRight="4dp"
+            android:background="@drawable/bg_post_check_remind_light"
+            android:clickable="true"
+            android:focusable="true"
+            android:text="Remind Later"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="#B5821B" />
+
+    </LinearLayout>
+
+</LinearLayout>

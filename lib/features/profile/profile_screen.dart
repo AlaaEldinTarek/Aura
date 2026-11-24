@@ -9,6 +9,7 @@ import '../../core/providers/auth_provider.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/providers/prayer_times_provider.dart';
 import '../../core/services/prayer_alarm_service.dart';
+import '../../core/services/task_service.dart';
 import '../../core/utils/haptic_feedback.dart';
 import '../../core/utils/number_formatter.dart';
 import '../../core/theme/app_typography.dart';
@@ -26,6 +27,7 @@ import '../../core/widgets/setting_tile.dart';
 import 'profile_version_tile.dart';
 import '../../core/widgets/shimmer_loading.dart';
 import '../../core/widgets/share_card.dart';
+import '../../core/services/logout_cleanup.dart';
 import '../../core/services/notification_service.dart';
 import '../../core/services/shared_preferences_service.dart';
 import '../../core/utils/share_util.dart';
@@ -317,6 +319,37 @@ class ProfileScreen extends ConsumerWidget {
                           if (next == null) return;
                           await PrayerAlarmService.instance.testPostCheckNow(
                               next.name, next.nameAr, next.time);
+                        },
+                        // Dev tile item (7 taps): the task digest card now, with the real counts (T4).
+                        fireDigest: () async {
+                          final userId = getCurrentUserId();
+                          if (userId.isEmpty) return;
+                          final tasks = await TaskService.instance
+                              .getTasksOnce(userId: userId, limit: 500);
+                          final today = tasks
+                              .where((t) => t.isDueToday && !t.isCompleted)
+                              .length;
+                          final overdue = tasks
+                              .where((t) => t.isOverdue && !t.isCompleted)
+                              .length;
+                          await PrayerAlarmService.instance
+                              .testDigestNow(today, overdue);
+                        },
+                        // Dev tile item (7 taps): the real post-prayer azkar trigger now, for the current prayer (T6).
+                        fireAzkar: () async {
+                          final state = ref.read(prayerTimesProvider);
+                          final prayer = state.currentPrayer ??
+                              state.nextPrayer ??
+                              (state.prayerTimes.isNotEmpty
+                                  ? state.prayerTimes.first
+                                  : null);
+                          if (prayer == null) return;
+                          await PrayerAlarmService.instance
+                              .testAzkarNow(prayer.name, prayer.nameAr);
+                        },
+                        // Dev tile item (7 taps): the Jumu'ah card now with a fake Zuhr 30 min ahead, any day (T7).
+                        fireJumuah: () async {
+                          await PrayerAlarmService.instance.testJumuahNow();
                         },
                       );
                     },
@@ -1055,8 +1088,10 @@ class ProfileScreen extends ConsumerWidget {
         debugPrint('❌ [AUTH] signOut failed: $e');
       }
       if (!context.mounted) return;
-      // Signed out → Login with the shell cleared (F47f); local data stays.
+      // Signed out → cancel all alarms/notifications, then go to Login (F70 P3, F47f).
       if (authService.currentUser == null) {
+        await logoutCleanup();
+        if (!context.mounted) return;
         Navigator.of(context, rootNavigator: true)
             .pushNamedAndRemoveUntil('/login', (_) => false);
       }

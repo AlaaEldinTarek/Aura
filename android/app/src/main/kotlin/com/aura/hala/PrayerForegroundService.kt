@@ -81,6 +81,8 @@ class PrayerForegroundService : Service() {
         // PendingIntent request codes of the two vibration buttons
         private const val REQ_STOP_VIBRATION = 9101
         private const val REQ_KEEP_VIBRATION = 9102
+        // PendingIntent request code of the service's own restart alarm (scheduleRestartIfNeeded)
+        private const val REQ_RESTART = 1
 
         /**
          * The Stop / Keep Vibration buttons show only while the vibration window
@@ -101,7 +103,16 @@ class PrayerForegroundService : Service() {
         fun isAutoStartAllowed(settingEnabled: Boolean, userStopped: Boolean): Boolean =
             settingEnabled && !userStopped
 
+        /** F70 cancel table: the restart alarm armed by scheduleRestartIfNeeded (getService, request code 1, no action). */
+        internal fun cancelSpecs(): List<CancelSpec> =
+            listOf(CancelSpec(PrayerForegroundService::class.java, null, REQ_RESTART, CancelKind.SERVICE))
+
         fun startServiceIfAllowed(context: Context, reason: String): Boolean {
+            // F70: no session (signed out, no guest) means the boot, recalc and refresh paths must not start the service
+            if (!SessionState.isSessionActive(context, "fg_start:$reason")) {
+                Log.d(TAG, "🔐 [SESSION] gate closed, service not started: $reason")
+                return false
+            }
             val settingEnabled = FlutterPrefs.getBoolean(context, "background_notification_enabled", true)
             if (!isAutoStartAllowed(settingEnabled, userStopped = false)) {
                 Log.d(TAG, "⏭️ [FG_SERVICE] Auto-start skipped (background notification off): $reason")
@@ -148,9 +159,34 @@ class PrayerForegroundService : Service() {
         }
     }
 
+    /** Phone dark mode as last seen, to tell a real flip from other configuration changes. */
+    private var lastNight = false
+
+    /**
+     * The phone's dark mode flipped while the app theme is "system": re-theme every themed notification at once.
+     * Without this they only changed when the app was next opened and reloaded prayer times (a few seconds).
+     */
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        try {
+            val night = (newConfig.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+            val themeMode = FlutterPrefs.getString(this, "theme_mode", "system")
+            if (ThemedNotification.shouldRefreshOnNightChange(themeMode, lastNight, night)) {
+                Log.d(TAG, "🌙 [THEME] phone night mode changed to $night, refreshing themed notifications")
+                ThemedNotification.refreshAll(this)
+            }
+            lastNight = night
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [FG_SERVICE] onConfigurationChanged failed: ${e.message}")
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         instance = this
+        lastNight = (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+            android.content.res.Configuration.UI_MODE_NIGHT_YES
         createNotificationChannel()
         loadPrayerTimes()
         startForeground(NOTIFICATION_ID, createNotification())
@@ -161,6 +197,11 @@ class PrayerForegroundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent == null) {
+            if (!SessionState.isSessionActive(this, "fg_sticky")) {
+                Log.d(TAG, "🔐 [SESSION] gate closed, sticky recreation skipped")
+                stopSelf()
+                return START_NOT_STICKY
+            }
             val settingEnabled = FlutterPrefs.getBoolean(this, "background_notification_enabled", true)
             val userStopped = getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
                 .getBoolean(KEY_USER_STOPPED, false)
@@ -410,6 +451,19 @@ class PrayerForegroundService : Service() {
         }
 
         handler?.post(updateRunnable!!)
+    }
+
+    /**
+     * Theme or language changed in the app (ThemedNotification.refreshAll, from the updatePrayerWidgets bridge):
+     * rebuild the card now instead of waiting for the next 60 s tick. Same id, same builder, no new sound.
+     */
+    fun refreshNotification() {
+        try {
+            Log.d(TAG, "🔄 [FG_SERVICE] refreshNotification (theme/language)")
+            updateNotification()
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ [FG_SERVICE] refreshNotification failed: ${e.message}")
+        }
     }
 
     private fun updateNotification() {
@@ -723,16 +777,7 @@ class PrayerForegroundService : Service() {
         )
     }
 
-    private fun isDarkTheme(): Boolean {
-        return when (FlutterPrefs.getString(this, "theme_mode", "system")) {
-            "dark", "amoled" -> true
-            "light" -> false
-            else -> {
-                val nightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
-                nightMode == Configuration.UI_MODE_NIGHT_YES
-            }
-        }
-    }
+    private fun isDarkTheme(): Boolean = ThemedNotification.isDark(this)
 
     // Mosque icon — shown during adhan mode
     private fun loadMosqueIcon(): Bitmap? = loadIcon(R.drawable.ic_mosque)
@@ -835,6 +880,7 @@ class PrayerForegroundService : Service() {
     }
 
     private fun shouldAutoRestart(): Boolean {
+        if (!SessionState.isSessionActive(this, "fg_restart")) return false
         val settingEnabled = FlutterPrefs.getBoolean(this, "background_notification_enabled", true)
         val userStopped = getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
             .getBoolean(KEY_USER_STOPPED, false)
@@ -857,7 +903,7 @@ class PrayerForegroundService : Service() {
         }
         val restartIntent = Intent(applicationContext, PrayerForegroundService::class.java)
         val pendingIntent = PendingIntent.getService(
-            applicationContext, 1, restartIntent,
+            applicationContext, REQ_RESTART, restartIntent,
             PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_IMMUTABLE
         )
         val alarmManager = getSystemService(ALARM_SERVICE) as android.app.AlarmManager

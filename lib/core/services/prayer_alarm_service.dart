@@ -184,6 +184,51 @@ class PrayerAlarmService {
     }
   }
 
+  /// Dev tile only (7 taps on Version): fires the real post-prayer azkar trigger now (card and screen) for [prayerName] (T6).
+  Future<void> testAzkarNow(String prayerName, String prayerNameAr) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      await _channel.invokeMethod('testAzkarNow', {
+        'prayerName': prayerName,
+        'prayerNameAr': prayerNameAr,
+      });
+    } catch (e) {
+      debugPrint('❌ [PRAYER ALARMS] Error firing test azkar - $e');
+    }
+  }
+
+  /// Dev tile only (7 taps on Version): posts the real Jumu'ah card now with a fake Zuhr 30 minutes ahead (T7).
+  Future<void> testJumuahNow() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      await _channel.invokeMethod('testJumuahNow');
+    } catch (e) {
+      debugPrint('❌ [PRAYER ALARMS] Error posting test Jumu-ah card - $e');
+    }
+  }
+
+  /// Dev tile only (7 taps on Version): shows the real task digest card now with the given real counts (T4).
+  Future<void> testDigestNow(int todayCount, int overdueCount) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
+    try {
+      await _channel.invokeMethod('testDigestNow', {
+        'todayCount': todayCount,
+        'overdueCount': overdueCount,
+      });
+    } catch (e) {
+      debugPrint('❌ [PRAYER ALARMS] Error showing test digest - $e');
+    }
+  }
+
   /// Dev tile only (7 taps on Version): shows the real post-prayer check for [prayerName] now
   /// (docs/designs/fix-post-check-remind-later.md).
   Future<void> testPostCheckNow(
@@ -242,6 +287,21 @@ class PrayerAlarmService {
       debugPrint('PrayerAlarmService: All alarms cancelled');
     } catch (e) {
       debugPrint('PrayerAlarmService: Error cancelling alarms - $e');
+    }
+  }
+
+  /// F70: cancel every Aura alarm (native AlarmManager), WorkManager job, foreground
+  /// service and all Android notifications in one native call (AlarmCleanup.cancelAll).
+  /// Called at logout after a successful sign-out (spec P3, D3).
+  Future<void> cancelAllAppAlarms() async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+    try {
+      await _channel.invokeMethod('cancelAllAppAlarms');
+      debugPrint('🧹 [PRAYER ALARMS] cancelAllAppAlarms done');
+    } catch (e) {
+      debugPrint('❌ [PRAYER ALARMS] cancelAllAppAlarms failed: $e');
     }
   }
 

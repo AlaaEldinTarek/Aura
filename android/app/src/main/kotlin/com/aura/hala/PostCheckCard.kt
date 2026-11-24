@@ -6,15 +6,12 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
-import android.graphics.Bitmap
-import android.graphics.Canvas
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.content.res.ResourcesCompat
 
 /**
  * Android-side helpers shared by the post-prayer check notification (PrayerAlarmReceiver) and the tap popup
@@ -44,29 +41,23 @@ object PostCheckCard {
         }
     }
 
-    fun isArabic(context: Context): Boolean =
-        (context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE).getString("language", "en") ?: "en") == "ar"
+    fun isArabic(context: Context): Boolean = ThemedNotification.isArabic(context)
 
     /** App theme pick (the same rule as the foreground Next Prayer card); system follows the phone. */
-    fun isDark(context: Context): Boolean {
-        val night = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
-        return PostCheckActions.isDark(FlutterPrefs.getString(context, "theme_mode", "system"), night)
-    }
+    fun isDark(context: Context): Boolean = ThemedNotification.isDark(context)
 
-    fun layoutId(dark: Boolean, isArabic: Boolean): Int = when {
-        dark && isArabic -> R.layout.notification_post_check_dark_rtl
-        dark -> R.layout.notification_post_check_dark
-        isArabic -> R.layout.notification_post_check_rtl
-        else -> R.layout.notification_post_check
-    }
+    fun layoutId(dark: Boolean, isArabic: Boolean): Int = ThemedNotification.pickLayout(
+        dark, isArabic,
+        R.layout.notification_post_check, R.layout.notification_post_check_dark,
+        R.layout.notification_post_check_rtl, R.layout.notification_post_check_dark_rtl
+    )
 
     /** P2b card: plain LinearLayout like notification_actions*.xml, all four buttons, same view collapsed and expanded. */
-    fun cardLayoutId(dark: Boolean, isArabic: Boolean): Int = when {
-        dark && isArabic -> R.layout.notification_post_check_card_dark_rtl
-        dark -> R.layout.notification_post_check_card_dark
-        isArabic -> R.layout.notification_post_check_card_rtl
-        else -> R.layout.notification_post_check_card
-    }
+    fun cardLayoutId(dark: Boolean, isArabic: Boolean): Int = ThemedNotification.pickLayout(
+        dark, isArabic,
+        R.layout.notification_post_check_card, R.layout.notification_post_check_card_dark,
+        R.layout.notification_post_check_card_rtl, R.layout.notification_post_check_card_dark_rtl
+    )
 
     private const val EXTRA_NAME = "aura_post_check_name"
     private const val EXTRA_NAME_AR = "aura_post_check_name_ar"
@@ -99,7 +90,7 @@ object PostCheckCard {
         val view = RemoteViews(context.packageName, cardLayoutId(isDark(context), isArabic))
         view.setTextViewText(R.id.post_check_title, title)
         view.setTextViewText(R.id.post_check_body, body)
-        iconBitmap(context, prayerName)?.let { view.setImageViewBitmap(R.id.post_check_icon, it) }
+        ThemedNotification.iconBitmap(context, prayerName)?.let { view.setImageViewBitmap(R.id.post_check_icon, it) }
         for (spec in PostCheckActions.ALL) {
             val viewId = when (spec.key) {
                 "done" -> R.id.btn_done
@@ -163,28 +154,6 @@ object PostCheckCard {
             }
         } catch (e: Exception) {
             Log.e(TAG, "❌ [POST_CHECK] refreshShowing failed: ${e.message}")
-        }
-    }
-
-    fun iconBitmap(context: Context, prayerName: String): Bitmap? {
-        val iconRes = when (PostCheckActions.iconKey(prayerName)) {
-            "fajr" -> R.drawable.ic_prayer_fajr
-            "dhuhr" -> R.drawable.ic_prayer_dhuhr
-            "afternoon" -> R.drawable.ic_prayer_afternoon
-            "maghrib" -> R.drawable.ic_prayer_maghrib
-            "isha" -> R.drawable.ic_prayer_isha
-            else -> R.drawable.ic_mosque
-        }
-        return try {
-            ResourcesCompat.getDrawable(context.resources, iconRes, null)?.let { d ->
-                val bmp = Bitmap.createBitmap(128, 128, Bitmap.Config.ARGB_8888)
-                d.setBounds(0, 0, 128, 128)
-                d.draw(Canvas(bmp))
-                bmp
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ [POST_CHECK] icon load failed: ${e.message}")
-            null
         }
     }
 

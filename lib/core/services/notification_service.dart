@@ -1,3 +1,7 @@
+import '../utils/achievement_notification_id.dart';
+import '../utils/task_reminder_args.dart';
+import '../utils/legacy_digest.dart';
+import '../utils/legacy_jumuah.dart';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -683,6 +687,9 @@ class NotificationService {
 
     DateTime reminderTime;
     String body;
+    // Kind of body text, so Android builds it in the app language (also after a live language change)
+    String bodyKind;
+    int bodyMinutes = 0;
 
     if (hasDueTime) {
       // Specific time set — remind X minutes before (user setting)
@@ -690,12 +697,15 @@ class NotificationService {
       final reminderMinutes = prefs2.getInt('task_reminder_minutes') ?? 30;
       final reminderBefore = dueDate.subtract(Duration(minutes: reminderMinutes));
       reminderTime = reminderBefore.isAfter(now) ? reminderBefore : dueDate;
+      bodyKind = reminderBefore.isAfter(now) ? 'before' : 'due_now';
+      bodyMinutes = reminderMinutes;
       body = isArabic
           ? (reminderBefore.isAfter(now) ? 'موعد المهمة بعد ${NumberFormatter.withArabicNumerals('$reminderMinutes')} دقيقة' : 'حان موعد المهمة الآن')
           : (reminderBefore.isAfter(now) ? 'Task due in $reminderMinutes minutes' : 'Task is due now');
     } else {
       // No specific time — remind at 9:00 AM on the due date
       reminderTime = DateTime(dueDate.year, dueDate.month, dueDate.day, 9, 0);
+      bodyKind = 'today';
       body = isArabic ? 'لديك مهمة مستحقة اليوم' : 'You have a task due today';
     }
 
@@ -712,7 +722,9 @@ class NotificationService {
       return;
     }
 
-    // An active "Remind Later" snooze owns this notification id — leave it.
+    // An active "Remind Later" snooze owns this notification id — leave it. The native Remind Later writes
+    // `task_snoozed_until_<id>` itself, so reload before reading (Dart caches the prefs file).
+    await prefs.reload();
     final snoozedUntil = prefs.getInt('task_snoozed_until_$taskId') ?? 0;
     if (snoozedUntil > now.millisecondsSinceEpoch) {
       debugPrint('TaskNotification: "$title" snoozed until '
@@ -723,6 +735,7 @@ class NotificationService {
 
     final notifId = _taskNotificationId(taskId);
     await _notifications.cancel(notifId);
+    final countdownDueAt = countdownDueAtMs(bodyKind: bodyKind, dueDate: dueDate);
 
     if (!kIsWeb && Platform.isAndroid) {
       // Native delivery path — survives EMUI/MIUI broadcast filtering that
@@ -735,6 +748,10 @@ class NotificationService {
           'body': body,
           'triggerAt': reminderTime.millisecondsSinceEpoch,
           'isArabic': isArabic,
+          'bodyKind': bodyKind,
+          'bodyMinutes': bodyMinutes,
+          // Epoch ms of the due time, only for a "before" reminder: the native card counts down to it (TC1)
+          if (countdownDueAt != null) 'dueAt': countdownDueAt,
         });
         debugPrint('TaskNotification: Native reminder scheduled "$title" at $reminderTime (id=$notifId)');
       } catch (e) {
@@ -855,6 +872,9 @@ class NotificationService {
           'tapTab': 3,
           'repeatDaily': true,
           'isArabic': isArabic,
+          'kind': 'digest',
+          'countA': todayCount,
+          'countB': overdueCount,
         });
         debugPrint('TaskSummary: Native daily summary scheduled at $hour:$minute');
       } catch (e) {
@@ -1036,33 +1056,38 @@ class NotificationService {
         body = isArabic ? 'يوم نظيف! لا مهام اليوم 🎉' : 'Clean day! No tasks due today 🎉';
       }
 
-      await _notifications.cancel(notificationId);
-
-      final now = DateTime.now();
-      var scheduledTime = tz.TZDateTime(tz.local, now.year, now.month, now.day, 8, 0);
-      if (scheduledTime.isBefore(tz.TZDateTime.now(tz.local))) {
-        scheduledTime = scheduledTime.add(const Duration(days: 1));
+      // An alarm that an older build armed through flutter_local_notifications (same id) is cancelled once, only if
+      // it really is still pending. An unconditional cancel(id) would also remove a digest card that is showing, so the
+      // card used to vanish whenever the app was opened and rescheduled.
+      final pending = await _notifications.pendingNotificationRequests();
+      if (hasLegacyDigestAlarm(pending.map((p) => p.id), notificationId)) {
+        await _notifications.cancel(notificationId);
+        debugPrint('🧹 [DIGEST] Cancelled a leftover flutter_local_notifications digest alarm');
       }
 
-      final androidDetails = AndroidNotificationDetails(
-        'task_digest',
-        'Daily Task Digest',
-        channelDescription: 'Morning summary of your tasks',
-        importance: Importance.defaultImportance,
-        priority: Priority.defaultPriority,
-        icon: '@mipmap/ic_launcher',
-      );
+      final now = DateTime.now();
+      var scheduled = DateTime(now.year, now.month, now.day, 8, 0);
+      if (scheduled.isBefore(now)) {
+        scheduled = scheduled.add(const Duration(days: 1));
+      }
 
-      await _notifications.zonedSchedule(
-        notificationId,
-        title,
-        body,
-        scheduledTime,
-        NotificationDetails(android: androidDetails),
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-      );
+      // Native delivery like the Wird reminders (EMUI drops flutter_local_notifications' broadcasts, see the
+      // task reminders above); the owner's T4 check saw no digest. One shot, re-armed with fresh counts on each
+      // app open as before; the card builds the text from the counts in the app language.
+      await _nativeAlarmChannel.invokeMethod('scheduleNativeNotification', {
+        'notificationId': notificationId,
+        'title': title,
+        'body': body,
+        'channelId': 'task_digest',
+        'channelName': 'Daily Task Digest',
+        'triggerAt': scheduled.millisecondsSinceEpoch,
+        'tapTab': 3,
+        'repeatDaily': false,
+        'isArabic': isArabic,
+        'kind': 'digest',
+        'countA': todayCount,
+        'countB': overdueCount,
+      });
       debugPrint('✅ [DIGEST] Scheduled daily task digest at 8 AM — $todayCount today, $overdueCount overdue');
     } catch (e) {
       debugPrint('❌ [DIGEST] Error scheduling digest: $e');
@@ -1111,6 +1136,9 @@ class NotificationService {
             'tapTab': 2,
             'repeatDaily': true,
             'isArabic': isArabic,
+            // The card builds the text itself in the app language (live); title/body above stay as the fallback
+            'kind': 'wird',
+            'countA': dailyPageGoal,
           });
           debugPrint('📖 [WIRD] Native reminder #$i scheduled at $scheduled');
         } catch (e) {
@@ -1165,10 +1193,10 @@ class NotificationService {
   // ─── Achievement Notifications ────────────────────────────────────────────
 
   /// Show a system notification when an achievement is unlocked.
-  /// Notification IDs: 7100–8099 (hash-based per achievement, no collisions between types).
+  /// Notification IDs: 20000–20999 (FNV-1a per achievement id; see achievement_notification_id.dart).
   Future<void> showAchievementNotification(Achievement achievement, bool isArabic) async {
     try {
-      final id = 7100 + (achievement.id.hashCode.abs() % 1000);
+      final id = achievementNotificationId(achievement.id);
       final title = isArabic ? '🏆 إنجاز جديد!' : '🏆 Achievement Unlocked!';
       final body = '${achievement.iconEmoji} ${isArabic ? achievement.nameAr : achievement.nameEn}';
 
@@ -1386,8 +1414,7 @@ class NotificationService {
   Future<void> scheduleJumuahReminder() async {
     if (defaultTargetPlatform != TargetPlatform.android) return;
     try {
-      // Cancel any old Flutter-scheduled Jumu'ah notification (legacy cleanup)
-      await _notifications.cancel(_jumuahNotificationId);
+      await _cancelLegacyJumuahAlarm();
       await _prayerAlarmsChannel.invokeMethod('scheduleJumuahReminder');
       debugPrint("✅ [JUMUA] Jumu'ah reminder scheduled via native");
     } catch (e) {
@@ -1395,10 +1422,21 @@ class NotificationService {
     }
   }
 
+  /// F7: id 7001 is the native Daily Prayer Reminder card, so it is never cancelled by id. A leftover alarm that an old
+  /// build armed through flutter_local_notifications is cancelled only when it is really pending (never throws).
+  Future<void> _cancelLegacyJumuahAlarm() async {
+    final cancelled = await cancelLegacyJumuahAlarmIfPending(
+      pendingIds: () async => (await _notifications.pendingNotificationRequests()).map((p) => p.id),
+      cancel: (id) => _notifications.cancel(id),
+      id: _jumuahNotificationId,
+    );
+    if (cancelled) debugPrint('🧹 [JUMUA] Cancelled a leftover flutter_local_notifications alarm with id 7001');
+  }
+
   Future<void> cancelJumuahReminder() async {
     if (defaultTargetPlatform != TargetPlatform.android) return;
     try {
-      await _notifications.cancel(_jumuahNotificationId);
+      await _cancelLegacyJumuahAlarm();
       await _prayerAlarmsChannel.invokeMethod('cancelJumuahReminder');
       debugPrint("✅ [JUMUA] Jumu'ah reminder cancelled");
     } catch (e) {

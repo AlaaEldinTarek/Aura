@@ -79,6 +79,9 @@ class MainActivity : FlutterFragmentActivity() {
         if (tabIndex >= 0) {
             FlutterPrefs.putInt(this, "widget_navigate_to_tab", tabIndex)
             Log.d("MainActivity", "🗂️ [WIDGET] Queued tab navigation → $tabIndex")
+            // App already running (onNewIntent): also tell Dart directly, like the route taps do (the daily summary
+            // tap works this way). The pref stays for a cold start, where Dart is not listening yet.
+            navigationChannel?.invokeMethod("navigateToTab", mapOf("tab" to tabIndex))
         }
     }
 
@@ -346,8 +349,8 @@ class MainActivity : FlutterFragmentActivity() {
                     // Update widgets
                     updateWidgets()
 
-                    // Theme / language may have changed: refresh a post-check card that is on screen (P2c)
-                    PostCheckCard.refreshShowing(this)
+                    // Theme / language may have changed: re-apply it to every themed notification that is showing (T1)
+                    ThemedNotification.refreshAll(this)
 
                     result.success(true)
                 }
@@ -524,10 +527,76 @@ class MainActivity : FlutterFragmentActivity() {
                         result.error("FAILED", e.message, null)
                     }
                 }
+                "testAzkarNow" -> {
+                    // Hidden dev tile (7 taps on Version): fires the real post-prayer azkar trigger now (notification and the
+                    // full-screen screen, exactly as the alarm does) for the given prayer (T6).
+                    val prayerName = call.argument<String>("prayerName")
+                        ?: return@setMethodCallHandler result.error("INVALID", "prayerName required", null)
+                    val prayerNameAr = call.argument<String>("prayerNameAr") ?: prayerName
+                    try {
+                        AzkarAlarmReceiver().onReceive(
+                            this,
+                            Intent(AzkarAlarmReceiver.ACTION_AZKAR_ALARM).apply {
+                                putExtra(AzkarAlarmReceiver.EXTRA_PRAYER_NAME, prayerName)
+                                putExtra(AzkarAlarmReceiver.EXTRA_PRAYER_NAME_AR, prayerNameAr)
+                            }
+                        )
+                        Log.d("PrayerChannel", "🧪 Test azkar fired for $prayerName")
+                        result.success(true)
+                    } catch (e: Exception) {
+                        Log.e("PrayerChannel", "❌ testAzkarNow failed: ${e.message}")
+                        result.error("FAILED", e.message, null)
+                    }
+                }
+                "testJumuahNow" -> {
+                    // Hidden dev tile (7 taps on Version): posts the real Jumu'ah card now with a fake Zuhr 30 min ahead,
+                    // so it works on any day of the week (T7).
+                    try {
+                        JumuahCard.ensureChannel(this)
+                        JumuahCard.show(this, JumuahCard.testZuhrMs(System.currentTimeMillis()), null)
+                        Log.d("PrayerChannel", "🧪 Test Jumu'ah card posted")
+                        result.success(true)
+                    } catch (e: Exception) {
+                        Log.e("PrayerChannel", "❌ testJumuahNow failed: ${e.message}")
+                        result.error("FAILED", e.message, null)
+                    }
+                }
+                "testDigestNow" -> {
+                    // Hidden dev tile (7 taps on Version): posts the real task digest card now, with the counts Dart
+                    // computed from the real tasks, through the same card as the 8:00 alarm (T4).
+                    val todayCount = call.argument<Int>("todayCount") ?: 0
+                    val overdueCount = call.argument<Int>("overdueCount") ?: 0
+                    try {
+                        NativeReminderCard.ensureChannel(this, "task_digest", "Daily Task Digest")
+                        NativeReminderCard.show(
+                            this, 4001, "", "", "task_digest", "Daily Task Digest", 3,
+                            ThemedNotification.isArabic(this), null, 0L,
+                            NativeReminderCard.KIND_DIGEST, todayCount, overdueCount, null
+                        )
+                        Log.d("PrayerChannel", "🧪 Test digest posted: $todayCount today, $overdueCount overdue")
+                        result.success(true)
+                    } catch (e: Exception) {
+                        Log.e("PrayerChannel", "❌ testDigestNow failed: ${e.message}")
+                        result.error("FAILED", e.message, null)
+                    }
+                }
                 "cancelAllPrayerAlarms" -> {
                     Log.d("PrayerChannel", "Cancelling all prayer alarms")
                     PrayerAlarmReceiver.cancelAllAlarms(this)
                     result.success(true)
+                }
+                "cancelAllAppAlarms" -> {
+                    // F70: logout cleanup (after a successful sign-out). Off the main thread: about 3000 PendingIntent lookups.
+                    Log.d("PrayerChannel", "🧹 [F70] cancelAllAppAlarms")
+                    Thread {
+                        try {
+                            val cancelled = AlarmCleanup.cancelAll(this)
+                            runOnUiThread { result.success(cancelled) }
+                        } catch (e: Exception) {
+                            Log.e("PrayerChannel", "❌ [F70] cancelAllAppAlarms failed: ${e.message}")
+                            runOnUiThread { result.error("FAILED", e.message, null) }
+                        }
+                    }.start()
                 }
                 "schedulePostPrayerCheck" -> {
                     val prayerName = call.argument<String>("prayerName")
@@ -561,7 +630,10 @@ class MainActivity : FlutterFragmentActivity() {
                     val triggerAt = call.argument<Long>("triggerAt")
                         ?: return@setMethodCallHandler result.error("INVALID", "triggerAt required", null)
                     val isArabic = call.argument<Boolean>("isArabic") ?: false
-                    TaskReminderReceiver.schedule(this, notificationId, taskId, title, body, triggerAt, isArabic)
+                    val bodyKind = call.argument<String>("bodyKind")
+                    val bodyMinutes = call.argument<Int>("bodyMinutes") ?: 0
+                    val dueAt = call.argument<Long>("dueAt") ?: 0L
+                    TaskReminderReceiver.schedule(this, notificationId, taskId, title, body, triggerAt, isArabic, bodyKind, bodyMinutes, dueAt)
                     result.success(true)
                 }
                 "cancelNativeTaskReminder" -> {
@@ -582,9 +654,14 @@ class MainActivity : FlutterFragmentActivity() {
                     val isArabic = call.argument<Boolean>("isArabic") ?: false
                     val prayerName = call.argument<String>("prayerName")
                     val prayerTimeMs = call.argument<Long>("prayerTimeMs") ?: 0L
+                    // Optional (T4): a text kind plus numbers, so the card builds the text in the app language
+                    val kind = call.argument<String>("kind")
+                    val countA = call.argument<Int>("countA") ?: 0
+                    val countB = call.argument<Int>("countB") ?: 0
                     NativeNotificationReceiver.schedule(
                         this, notificationId, title, body, channelId, channelName,
-                        triggerAt, tapTab, repeatDaily, isArabic, prayerName, prayerTimeMs
+                        triggerAt, tapTab, repeatDaily, isArabic, prayerName, prayerTimeMs,
+                        kind, countA, countB
                     )
                     result.success(true)
                 }

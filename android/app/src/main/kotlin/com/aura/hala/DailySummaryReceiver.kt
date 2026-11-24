@@ -8,8 +8,6 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
 import java.util.Calendar
 import java.util.Locale
 
@@ -18,9 +16,8 @@ class DailySummaryReceiver : BroadcastReceiver() {
     companion object {
         private const val TAG = "DailySummaryReceiver"
         private const val ACTION = "com.aura.hala.DAILY_PRAYER_SUMMARY"
-        private const val NOTIFICATION_ID = 7001
         private const val REQUEST_CODE = 7001
-        private val PRAYER_NAMES = listOf("Fajr", "Zuhr", "Asr", "Maghrib", "Isha")
+        internal val PRAYER_NAMES = listOf("Fajr", "Zuhr", "Asr", "Maghrib", "Isha")
 
         fun schedule(context: Context, timeStr: String) {
             val parts = timeStr.split(":")
@@ -59,6 +56,10 @@ class DailySummaryReceiver : BroadcastReceiver() {
             Locale.US, "%04d-%02d-%02d",
             cal.get(Calendar.YEAR), cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH)
         )
+
+        /** F70 cancel table: request code 7001 with the summary action. */
+        internal fun cancelSpecs(): List<CancelSpec> =
+            listOf(CancelSpec(DailySummaryReceiver::class.java, ACTION, REQUEST_CODE))
 
         fun cancel(context: Context) {
             val intent = Intent(context, DailySummaryReceiver::class.java).apply { action = ACTION }
@@ -103,9 +104,13 @@ class DailySummaryReceiver : BroadcastReceiver() {
 
         val today = todayDateKey()
         val prayerPrefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
-        val untracked = PRAYER_NAMES.filter { name ->
-            val key = "prayer_status_${name}_$today"
-            !prayerPrefs.contains(key)
+        val now = System.currentTimeMillis()
+        val untracked = DailySummaryCard.untrackedNames(PRAYER_NAMES) { name ->
+            val timeKey = if (name == "Zuhr") "dhuhr_time" else "${name.lowercase()}_time"
+            val prayerMs = prayerPrefs.getString(timeKey, null)?.toLongOrNull() ?: 0L
+            val notYetDue = prayerMs > 0L && prayerMs > now &&
+                dateKey(Calendar.getInstance().apply { timeInMillis = prayerMs }) == today
+            notYetDue || prayerPrefs.contains("prayer_status_${name}_$today")
         }
 
         if (untracked.isEmpty()) {
@@ -114,42 +119,8 @@ class DailySummaryReceiver : BroadcastReceiver() {
             return
         }
 
-        val language = prayerPrefs.getString("language", "en") ?: "en"
-        val isArabic = language == "ar"
-        val count = untracked.size
-
-        val title = if (isArabic) "تذكير الصلاة اليومي" else "Daily Prayer Reminder"
-        val body = if (isArabic) {
-            "لديك $count ${if (count == 1) "صلاة" else "صلوات"} لم تُسجَّل اليوم"
-        } else {
-            "You have $count untracked ${if (count == 1) "prayer" else "prayers"} today"
-        }
-
-        val tapIntent = Intent(context, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-            putExtra("route", "/prayer_tracking")
-        }
-        val tapPending = PendingIntent.getActivity(
-            context, NOTIFICATION_ID, tapIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val builder = NotificationCompat.Builder(context, "prayer_tracking")
-            .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(title)
-            .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
-            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setCategory(NotificationCompat.CATEGORY_REMINDER)
-            .setAutoCancel(true)
-            .setContentIntent(tapPending)
-
-        try {
-            NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, builder.build())
-            Log.d(TAG, "📅 Daily summary shown: $count untracked prayers")
-        } catch (e: Exception) {
-            Log.e(TAG, "❌ Failed to show daily summary: ${e.message}")
-        }
+        // Themed card (T3): app theme + language, Arabic numerals, tap opens Prayer Tracking (unchanged)
+        DailySummaryCard.show(context, untracked.size, null)
 
         rescheduleForTomorrow(context)
     }
@@ -164,7 +135,7 @@ class DailySummaryReceiver : BroadcastReceiver() {
     /** Remove prayer_status_{name}_{YYYY-MM-DD} keys older than 7 days. */
     private fun pruneOldPrayerStatuses(context: Context) {
         val prefs = context.getSharedPreferences("aura_prayer_times", Context.MODE_PRIVATE)
-        val cutoffCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -7) }
+        val cutoffCal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -30) }
         val cutoff = dateKey(cutoffCal)
         val editor = prefs.edit()
         var removed = 0

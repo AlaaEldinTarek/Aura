@@ -15,6 +15,7 @@ import '../../core/constants/app_constants.dart';
 import '../../core/providers/preferences_provider.dart';
 import '../../core/providers/prayer_times_provider.dart';
 import '../../core/providers/task_provider.dart';
+import '../../core/utils/pending_task_done.dart';
 import '../../core/services/task_service.dart';
 import '../../core/services/achievement_service.dart';
 import '../../core/services/notification_service.dart';
@@ -211,6 +212,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       });
       _handleWidgetIntent();
       _scheduleDailySummaryOnStartup();
+      if (!_isDesktop) _scheduleJumuahOnStartup();
       Future.delayed(const Duration(seconds: 3), _checkUntrackedPrayers);
 
       // Cold start: re-arm task reminders that an OEM app-freeze may have
@@ -237,7 +239,17 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     // Listen for app shortcut navigation from native side (Android only)
     if (!kIsWeb && Platform.isAndroid)
       _navigationChannel.setMethodCallHandler((call) async {
-        if (call.method == 'navigateToRoute') {
+        if (call.method == 'navigateToTab') {
+          // Notification / widget tap while the app is running (native also queues the pref for a cold start)
+          final tab = (call.arguments['tab'] as num?)?.toInt() ?? -1;
+          debugPrint('🗂️ [TAB] navigateToTab from native: $tab');
+          if (tab >= 0 && tab < 5 && mounted) {
+            final prefs = await SharedPreferences.getInstance();
+            await prefs.reload();
+            await prefs.remove('widget_navigate_to_tab');
+            _handleTabTap(tab);
+          }
+        } else if (call.method == 'navigateToRoute') {
           final route = call.arguments['route'] as String?;
           if (route != null && mounted) {
             Navigator.of(context).pushNamed(route);
@@ -432,13 +444,38 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       await prefs.reload();
 
       // Handle tap-to-complete from widget
-      final taskId = prefs.getString('pending_complete_task_id');
-      if (taskId != null && taskId.isNotEmpty) {
+      // The Tasks widget writes one id; the task reminder notification's Done button may write several (comma
+      // separated). Both only COMPLETE: a task that is already done is never un-completed.
+      final pendingIds = parsePendingTaskIds(prefs.getString('pending_complete_task_id'));
+      if (pendingIds.isNotEmpty) {
         prefs.remove('pending_complete_task_id');
         final userId = ref.read(currentUserIdProvider);
-        await TaskService.instance
-            .toggleTaskCompletion(userId: userId, taskId: taskId);
-        debugPrint('✅ Widget tap-to-complete: toggled task $taskId');
+        // Streak: same rule as completing in the app (the last incomplete active task counts). Decided from the
+        // task list BEFORE completing; unknown list (not loaded) = no streak change.
+        var streakIds = <String>[];
+        try {
+          final tasks = await ref.read(allTasksProvider.future).timeout(const Duration(seconds: 3));
+          final open = tasks.where((t) => !t.isCompleted);
+          streakIds = streakCountingIds(
+            pendingIds: pendingIds,
+            openIds: open.map((t) => t.id).toSet(),
+            activeOpenIds:
+                open.where((t) => t.isDueToday || t.dueDate == null).map((t) => t.id).toSet(),
+          );
+        } catch (e) {
+          debugPrint('⚠️ Done streak: task list unavailable, streak unchanged ($e)');
+        }
+        var completedAny = false;
+        for (final taskId in pendingIds) {
+          final ok = await TaskService.instance
+              .toggleTaskCompletion(userId: userId, taskId: taskId, onlyComplete: true);
+          if (ok && streakIds.contains(taskId)) completedAny = true;
+          debugPrint('✅ Widget/notification Done: completed task $taskId');
+        }
+        if (completedAny) await TaskService.instance.incrementTaskStreak();
+        // Task list, statistics and the widget count follow the completion
+        ref.invalidate(tasksProvider(const TaskFilterParams()));
+        ref.invalidate(allTasksProvider);
       }
 
       // Handle quick-add from widget "+" button
@@ -496,6 +533,20 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       await PrayerAlarmService.instance.scheduleDailySummary(timeStr);
     } catch (e) {
       debugPrint('Error scheduling daily summary: $e');
+    }
+  }
+
+  // F70 P3: re-arm the Jumu'ah reminder at every shell entry (login, guest, or
+  // app restart). NotificationService.initialize already does this on cold start;
+  // this covers the case where the user logs out and back in without restarting.
+  Future<void> _scheduleJumuahOnStartup() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final enabled = prefs.getBool('jumua_reminder_enabled') ?? true;
+      if (!enabled) return;
+      await NotificationService.instance.scheduleJumuahReminder();
+    } catch (e) {
+      debugPrint("Error scheduling Jumu'ah on startup: $e");
     }
   }
 
