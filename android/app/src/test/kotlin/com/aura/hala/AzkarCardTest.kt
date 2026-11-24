@@ -80,7 +80,7 @@ class AzkarCardTest {
         val mustStay = listOf(
             ".setFullScreenIntent(fullScreenPi, true)",
             ".setContentIntent(fullScreenPi)",
-            ".setTimeoutAfter(60_000)",
+            ".setTimeoutAfter(30 * 60 * 1000L)",
             ".setAutoCancel(true)",
             ".setPriority(NotificationCompat.PRIORITY_HIGH)",
             ".setCategory(NotificationCompat.CATEGORY_ALARM)",

@@ -386,7 +386,12 @@ private fun restoreRingerMode(context: Context) {
     val sharedPrefs = context.getSharedPreferences("aura_silent_mode", Context.MODE_PRIVATE)
 
     val savedRingerMode = sharedPrefs.getInt("saved_ringer_mode", AudioManager.RINGER_MODE_NORMAL)
-    audioManager.ringerMode = savedRingerMode
-
-    Log.d("SilentOffReceiver", "🔊 Restored ringer mode to: $savedRingerMode")
+    try {
+        audioManager.ringerMode = savedRingerMode
+        Log.d("SilentOffReceiver", "🔊 Restored ringer mode to: $savedRingerMode")
+    } catch (e: SecurityException) {
+        Log.e("SilentOffReceiver", "❌ Restore failed (DND access missing): ${e.message}")
+    } catch (e: Exception) {
+        Log.e("SilentOffReceiver", "❌ Restore failed: ${e.message}")
+    }
 }

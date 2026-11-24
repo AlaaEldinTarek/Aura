@@ -311,6 +311,8 @@ object AdhanPlayer {
                 return true
             } else {
                 Log.w(TAG, "❌ [BUILT-IN] NOT FOUND in res/raw: $fileName")
+                mediaPlayer?.release()
+                mediaPlayer = null
                 return false
             }
 
@@ -394,7 +396,11 @@ object AdhanPlayer {
             player.setDataSource(context, android.provider.Settings.System.DEFAULT_NOTIFICATION_URI)
             player.prepare()
             player.start()
-            player.setOnCompletionListener { player.release() }
+            mediaPlayer = player   // stop() and isPlaying() can now reach the fallback player
+            player.setOnCompletionListener {
+                if (mediaPlayer == player) mediaPlayer = null
+                player.release()
+            }
             Log.d(TAG, "Played default notification sound as fallback")
         } catch (e: Exception) {
             Log.e(TAG, "Error playing default sound", e)
