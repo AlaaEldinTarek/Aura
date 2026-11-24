@@ -872,6 +872,9 @@ class NotificationService {
           'tapTab': 3,
           'repeatDaily': true,
           'isArabic': isArabic,
+          'kind': 'digest',
+          'countA': todayCount,
+          'countB': overdueCount,
         });
         debugPrint('TaskSummary: Native daily summary scheduled at $hour:$minute');
       } catch (e) {
