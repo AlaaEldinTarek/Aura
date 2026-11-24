@@ -1,5 +1,5 @@
 # Project State — 2026-11-24
-- App: Aura 1.1.0+60 on main (aa648f9), tag `v1.1.0` = 9ce26e2 (MSIX 1.0.3.114) | Analyze: 407 issues (0 errors) | Tests: 890 Dart pass; Kotlin `AlarmCleanupTest` + `SessionStateTest` added (run: `./gradlew :app:testDebugUnitTest`)
+- App: Aura 1.1.0+60 on main (8e0b598), tag `v1.1.0` = 9ce26e2 (MSIX 1.0.3.114) | Analyze: 407 issues (0 errors) | Tests: 890 Dart pass; Kotlin `AlarmCleanupTest` + `SessionStateTest` added (run: `./gradlew :app:testDebugUnitTest`)
 - Baseline commit: 75d38b9 | Flutter 3.38.7 / Dart 3.10.7 (frozen) | Android minSdk 24 / target 36 / compile 36
 - Support target: current minSdk and newer (Android 10 must keep working; test device nova 5T = API 29)
 - Phase: Fix track before refactor (ADR 0001); bootstrap Steps 0–2.5 + Step 6 report done | Refactor Steps 3–4 after CRITICAL/HIGH fixes
@@ -26,6 +26,7 @@
 - Next (ADR 0001): FX-0 (done) → "locale-dependent keys" (done) → "sign-in & onboarding flow" (done, PR #5) → F60–F65 (done, PRs #6–#11) → "Dart->native settings bridge" (done, PR #12) → F52f (done, 5cedaf3) → F30d+F32a (done, 85a12b5) → F36b (done, 075b0c1) → F20a+F25 (done PR #16) → F68 (device check PASS on nova 5T 2026-11-11, user report "work fine"; per-CUJ detail not recorded; fix/silent-mode-notification, PR #17 merged 2026-11-11 (merge 19fe0c1); commits: 87123ca spec, 72e6a98 spec-amendments, 8a7cf12 code, 55621cb state-log) → remaining HIGH. Per group: `docs/designs/fix-<name>.md` via /egm:egm-draft (user) → /egm:egm-review → /egm:egm-resolve → "approve phase <group>" (Level C) → tests first, fix on `fix/<group>` + PR
 - Fix F51b+F51c+F51d spec: docs/designs/fix-f51bcd.md (Draft, not approved). Branch fix/f51bcd (not yet created). Device checks S57, S58 added.
 - Fix F30c "completed-today null completedAt": spec `docs/designs/fix-f30c.md` (Approved P1). Branch `fix/f30c` from main bc0b4e8. Fix: `task_service.dart` preserves `completedAt` when editing an already-completed task (both guest + Firestore paths); `tasks_screen.dart:_isCompletedToday` returns false for null. Tests T1+T2 `test/features/tasks/f30c_source_test.dart`. 885 Dart pass. PR pending.
+- PR #90 (docs only) MERGED on 2026-11-25 (merge 8e0b598): records PR #89 as merged in STATE.md (branch docs/pr89-state, commit 659e710).
 - PR #89 (docs only) MERGED on 2026-11-25 (merge aa648f9): records PR #88 as merged in STATE.md (branch docs/pr88-state, commit 2388a29).
 - PR #88 (docs only) MERGED on 2026-11-25 (merge 878f125): records PR #87 as merged in STATE.md (branch docs/pr87-state, commit ccdc003).
 - PR #87 (docs only) MERGED on 2026-11-24 (merge 67d4cf9): records PRs #80–#84 as merged in STATE.md (branch docs/pr80-84-state, commit 4286493).
