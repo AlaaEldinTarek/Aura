@@ -11,7 +11,9 @@ import '../../core/models/dhikr.dart';
 import '../../core/models/prayer_record.dart';
 import '../../core/services/dhikr_service.dart';
 import 'custom_zikr_form_screen.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../core/theme/app_typography.dart';
+import '../../core/utils/number_formatter.dart';
 import '../../core/widgets/aura_button.dart';
 
 /// Dhikr Counter (Tasbeeh) Screen
@@ -184,7 +186,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
             const Icon(Icons.check_circle, color: Colors.green, size: 64),
             const SizedBox(height: 16),
             Text(
-              isArabic ? 'الحمد لله' : 'Alhamdulillah',
+              'dhikr_complete_heading'.tr(),
               style: AppTypography.headingL.copyWith(
                 fontWeight: FontWeight.bold,
                 color: AppConstants.getPrimary(isDark),
@@ -192,7 +194,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              isArabic ? 'أكملت الذكر' : 'Zikr Completed!',
+              'dhikr_complete_body'.tr(),
               style: AppTypography.bodyL.copyWith(color: Colors.grey.shade600),
             ),
             const SizedBox(height: 24),
@@ -200,7 +202,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
               children: [
                 Expanded(
                   child: AuraButton.secondary(
-                    label: isArabic ? 'بدء جديد' : 'Start New',
+                    label: 'dhikr_start_new'.tr(),
                     onPressed: () {
                       Navigator.pop(context);
                       _resetCounter();
@@ -211,10 +213,11 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                 const SizedBox(width: 12),
                 Expanded(
                   child: AuraButton(
-                    label: isArabic ? 'متابعة' : 'Continue',
+                    label: 'dhikr_continue'.tr(),
                     onPressed: () {
                       Navigator.pop(context);
-                      _incrementCounter();
+                      setState(() => _isCompleted = false);
+                      _updateProgressAnimation();
                     },
                     expanded: true,
                   ),
@@ -249,7 +252,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  isArabic ? 'اختر الذكر' : 'Select Zikr',
+                  'dhikr_select_zikr'.tr(),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -267,7 +270,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                   Padding(
                     padding: const EdgeInsets.only(top: 8, bottom: 4),
                     child: Text(
-                      isArabic ? 'أذكار مخصصة' : 'Custom Zikr',
+                      'dhikr_custom_section'.tr(),
                       style: AppTypography.caption.copyWith(
                         fontWeight: FontWeight.w600,
                         color: Colors.grey.shade500,
@@ -291,7 +294,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                     child: Icon(Icons.add, color: AppConstants.getPrimary(isDark), size: 20),
                   ),
                   title: Text(
-                    isArabic ? 'إضافة ذكر مخصص' : 'Add Custom Zikr',
+                    'dhikr_add_custom'.tr(),
                     style: AppTypography.label.copyWith(
                       fontWeight: FontWeight.w600,
                       color: AppConstants.getPrimary(isDark),
@@ -417,7 +420,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppConstants.radiusLarge),
         ),
-        title: Text(isArabic ? 'حذف الذكر' : 'Delete Zikr'),
+        title: Text('dhikr_delete_title'.tr()),
         content: Text(
           isArabic
               ? 'هل تريد حذف "${preset.displayName}"؟'
@@ -426,7 +429,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(isArabic ? 'إلغاء' : 'Cancel'),
+            child: Text('cancel'.tr()),
           ),
           TextButton(
             onPressed: () {
@@ -444,7 +447,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
               Navigator.pop(context);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(isArabic ? 'حذف' : 'Delete'),
+            child: Text('dhikr_delete_confirm'.tr()),
           ),
         ],
       ),
@@ -455,6 +458,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
 
   void _showTargetSelector() {
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final lang = isArabic ? 'ar' : 'en';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     showModalBottomSheet(
@@ -469,7 +473,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text(
-              isArabic ? 'اختر العدد المستهدف' : 'Select Target',
+              'dhikr_select_target'.tr(),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -478,7 +482,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
             ...[33, 99, 100, 333, 1000].map((target) {
               return ListTile(
                 title: Text(
-                  '$target',
+                  NumberFormatter.withArabicNumeralsByLanguage('$target', lang),
                   style: AppTypography.headingL.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -514,19 +518,19 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
 
     final scaffold = Scaffold(
       appBar: AppBar(
-        title: Text(isArabic ? 'المسبحة' : 'Tasbeeh'),
+        title: Text('dhikr_title'.tr()),
         actions: [
           IconButton(
             icon: const Icon(Icons.bar_chart_rounded),
             onPressed: () {
               Navigator.of(context).pushNamed('/dhikr_stats');
             },
-            tooltip: isArabic ? 'الإحصائيات' : 'Statistics',
+            tooltip: 'dhikr_statistics_tooltip'.tr(),
           ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: _showPresetSelector,
-            tooltip: isArabic ? 'الإعدادات' : 'Settings',
+            tooltip: 'dhikr_settings_tooltip'.tr(),
           ),
         ],
       ),
@@ -606,13 +610,13 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      isArabic ? 'الهدف: ' : 'Target: ',
+                      'dhikr_target_label'.tr(),
                       style: AppTypography.bodyM.copyWith(
                         color: AppConstants.textMuted(isDark),
                       ),
                     ),
                     Text(
-                      '$_currentTarget',
+                      NumberFormatter.withArabicNumeralsByLanguage('$_currentTarget', isArabic ? 'ar' : 'en'),
                       style: AppTypography.bodyM.copyWith(
                         fontWeight: FontWeight.bold,
                         color: AppConstants.getPrimary(isDark),
@@ -631,7 +635,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
               children: [
                 Expanded(
                   child: AuraButton.secondary(
-                    label: isArabic ? 'إعادة' : 'Reset',
+                    label: 'dhikr_reset'.tr(),
                     onPressed: _resetCounter,
                     icon: const Icon(Icons.refresh),
                     expanded: true,
@@ -641,7 +645,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                 Expanded(
                   flex: 2,
                   child: AuraButton(
-                    label: isArabic ? 'عدّ' : 'Count',
+                    label: 'dhikr_count'.tr(),
                     onPressed: _incrementCounter,
                     expanded: true,
                   ),
@@ -675,6 +679,9 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
 
   Widget _buildCounterDisplay(BuildContext context, bool isDark, bool isArabic) {
     final ts = MediaQuery.textScalerOf(context);
+    final lang = isArabic ? 'ar' : 'en';
+    final countStr = NumberFormatter.withArabicNumeralsByLanguage('$_currentCount', lang);
+    final targetStr = NumberFormatter.withArabicNumeralsByLanguage('$_currentTarget', lang);
     return AnimatedBuilder(
       animation: _pulseAnimation,
       builder: (context, child) {
@@ -684,7 +691,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
             onTap: _incrementCounter,
             child: Semantics(
               button: true,
-              label: '${isArabic ? 'عداد التسبيح' : 'Tasbeeh counter'}: $_currentCount / $_currentTarget',
+              label: '${'dhikr_counter_label'.tr()}: $countStr / $targetStr',
               child: Container(
               width: ts.scale(190.0),
               height: ts.scale(190.0),
@@ -713,7 +720,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    '$_currentCount',
+                    countStr,
                     style: AppTypography.displayL.copyWith(
                       fontSize: ts.scale(56.0),
                       fontWeight: FontWeight.bold,
@@ -723,7 +730,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
                     textScaler: TextScaler.noScaling,
                   ),
                   Text(
-                    '/ $_currentTarget',
+                    '/ $targetStr',
                     style: AppTypography.headingM.copyWith(
                       fontWeight: FontWeight.w500,
                       color: Colors.white.withOpacity(0.8),

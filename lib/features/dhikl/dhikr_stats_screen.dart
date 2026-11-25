@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../core/constants/app_constants.dart';
@@ -90,7 +91,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isArabic ? 'إحصائيات الأذكار' : 'Zikr Statistics'),
+        title: Text('dhikr_stats_title'.tr()),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -108,7 +109,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
                         Expanded(
                           child: _StatCard(
                             icon: Icons.local_fire_department,
-                            label: isArabic ? 'التتابع' : 'Streak',
+                            label: 'dhikr_stats_streak'.tr(),
                             value: _n(_stats.streakDays, isArabic: isArabic),
                             color: Colors.orange,
                             isDark: isDark,
@@ -118,7 +119,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
                         Expanded(
                           child: _StatCard(
                             icon: Icons.pan_tool,
-                            label: isArabic ? 'اليوم' : 'Today',
+                            label: 'dhikr_stats_today'.tr(),
                             value: _n(_stats.todayCount, isArabic: isArabic),
                             color: Colors.green,
                             isDark: isDark,
@@ -128,7 +129,7 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
                         Expanded(
                           child: _StatCard(
                             icon: Icons.format_list_numbered,
-                            label: isArabic ? 'الجلسات' : 'Sessions',
+                            label: 'dhikr_stats_sessions'.tr(),
                             value: _n(_stats.totalSessions, isArabic: isArabic),
                             color: AppConstants.getPrimary(isDark),
                             isDark: isDark,
@@ -142,8 +143,8 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
                     // Weekly activity chart
                     _buildSectionCard(
                       context,
-                      isArabic ? 'النشاط الأسبوعي' : 'Weekly Activity',
-                      isArabic ? 'عدد التسبيحات في آخر 7 أيام' : 'Zikr count over last 7 days',
+                      'dhikr_stats_weekly'.tr(),
+                      'dhikr_stats_weekly_sub'.tr(),
                       _buildWeeklyChart(isDark, isArabic),
                       isDark,
                     ),
@@ -153,13 +154,13 @@ class _DhikrStatsScreenState extends State<DhikrStatsScreen> {
                     // Recent sessions
                     _buildSectionCard(
                       context,
-                      isArabic ? 'الجلسات الأخيرة' : 'Recent Sessions',
+                      'dhikr_stats_recent'.tr(),
                       '',
                       _recentSessions.isEmpty
                           ? Padding(
                               padding: const EdgeInsets.all(24),
                               child: Text(
-                                isArabic ? 'لا توجد جلسات بعد' : 'No sessions yet',
+                                'dhikr_stats_empty'.tr(),
                                 style: AppTypography.bodyM.copyWith(
                                   color: AppConstants.textDisabled(isDark),
                                 ),

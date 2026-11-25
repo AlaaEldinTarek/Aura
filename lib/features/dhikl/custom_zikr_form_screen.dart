@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_typography.dart';
@@ -79,21 +80,16 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          _isEditing
-              ? (isArabic ? 'تعديل الذكر' : 'Edit Zikr')
-              : (isArabic ? 'إضافة ذكر مخصص' : 'Add Custom Zikr'),
-        ),
+        title: Text(_isEditing ? 'dhikr_edit_title'.tr() : 'dhikr_add_custom'.tr()),
         actions: [
           TextButton.icon(
             onPressed: _save,
             icon: const Icon(Icons.check, color: Colors.white),
             label: Text(
-              isArabic ? 'حفظ' : 'Save',
+              'save'.tr(),
               style: AppTypography.label.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ),
@@ -107,7 +103,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Preview card
-              _buildPreviewCard(isDark, isArabic),
+              _buildPreviewCard(isDark),
               const SizedBox(height: AppConstants.paddingLarge),
 
               // Name
@@ -115,15 +111,15 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
                 controller: _nameController,
                 textCapitalization: TextCapitalization.words,
                 decoration: InputDecoration(
-                  labelText: isArabic ? 'الاسم' : 'Name *',
-                  hintText: isArabic ? 'مثال: صلاة على النبي' : 'e.g., Salawat',
+                  labelText: 'dhikr_field_name'.tr(),
+                  hintText: 'dhikr_field_name_hint'.tr(),
                   prefixIcon: const Icon(Icons.label_outline),
                   border: const OutlineInputBorder(),
                 ),
                 onChanged: (_) => setState(() {}),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return isArabic ? 'مطلوب' : 'Required';
+                    return 'dhikr_field_required'.tr();
                   }
                   return null;
                 },
@@ -136,8 +132,8 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
                 textDirection: TextDirection.rtl,
                 style: AppTypography.headingM,
                 decoration: InputDecoration(
-                  labelText: isArabic ? 'النص العربي' : 'Arabic Text',
-                  hintText: isArabic ? 'مثال: اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ' : 'e.g., اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ',
+                  labelText: 'dhikr_field_arabic'.tr(),
+                  hintText: 'dhikr_field_arabic_hint'.tr(),
                   prefixIcon: const Icon(Icons.translate),
                   border: const OutlineInputBorder(),
                 ),
@@ -149,8 +145,8 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
               TextFormField(
                 controller: _transliterationController,
                 decoration: InputDecoration(
-                  labelText: isArabic ? 'النطق' : 'Transliteration',
-                  hintText: isArabic ? 'اختياري' : 'e.g., Allahumma salli ala Muhammad',
+                  labelText: 'dhikr_field_transliteration'.tr(),
+                  hintText: 'dhikr_field_transliteration_hint'.tr(),
                   prefixIcon: const Icon(Icons.record_voice_over_outlined),
                   border: const OutlineInputBorder(),
                 ),
@@ -162,8 +158,8 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
               TextFormField(
                 controller: _translationController,
                 decoration: InputDecoration(
-                  labelText: isArabic ? 'الترجمة' : 'Translation',
-                  hintText: isArabic ? 'اختياري' : 'e.g., O Allah send blessings upon Muhammad',
+                  labelText: 'dhikr_field_translation'.tr(),
+                  hintText: 'dhikr_field_translation_hint'.tr(),
                   prefixIcon: const Icon(Icons.description_outlined),
                   border: const OutlineInputBorder(),
                 ),
@@ -173,7 +169,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
 
               // Target count
               Text(
-                isArabic ? 'العدد المستهدف' : 'Target Count',
+                'dhikr_field_target'.tr(),
                 style: AppTypography.label.copyWith(
                   fontWeight: FontWeight.w600,
                   color: AppConstants.textMuted(isDark),
@@ -190,7 +186,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
                 validator: (value) {
                   final num = int.tryParse(value ?? '');
                   if (num == null || num <= 0) {
-                    return isArabic ? 'أدخل رقماً صحيحاً' : 'Enter a valid number';
+                    return 'dhikr_field_target_invalid'.tr();
                   }
                   return null;
                 },
@@ -199,7 +195,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
 
               // Quick pick chips
               Text(
-                isArabic ? 'اختيار سريع:' : 'Quick pick:',
+                'dhikr_quick_pick'.tr(),
                 style: AppTypography.caption.copyWith(color: Colors.grey.shade500),
               ),
               const SizedBox(height: 8),
@@ -225,9 +221,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
 
               // Save button
               AuraButton(
-                label: _isEditing
-                    ? (isArabic ? 'حفظ التعديلات' : 'Save Changes')
-                    : (isArabic ? 'إضافة الذكر' : 'Add Zikr'),
+                label: _isEditing ? 'dhikr_save_changes'.tr() : 'dhikr_add_zikr'.tr(),
                 onPressed: _save,
                 expanded: true,
               ),
@@ -240,7 +234,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
     );
   }
 
-  Widget _buildPreviewCard(bool isDark, bool isArabic) {
+  Widget _buildPreviewCard(bool isDark) {
     final name = _nameController.text.trim();
     final arabicText = _arabicController.text.trim();
     final translation = _translationController.text.trim();
@@ -261,7 +255,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
       child: Column(
         children: [
           Text(
-            isArabic ? 'معاينة' : 'Preview',
+            'dhikr_preview'.tr(),
             style: AppTypography.labelS.copyWith(
               fontWeight: FontWeight.w600,
               color: Colors.grey.shade500,
@@ -317,7 +311,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
                     ),
                   ),
                   Text(
-                    isArabic ? 'هدف' : 'target',
+                    'dhikr_target_suffix'.tr(),
                     style: AppTypography.caption.copyWith(fontSize: 10, color: Colors.grey.shade500),
                   ),
                 ],

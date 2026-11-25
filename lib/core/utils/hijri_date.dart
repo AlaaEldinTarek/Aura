@@ -1,3 +1,5 @@
+import 'number_formatter.dart';
+
 /// Accurate Hijri (Islamic) date utility
 class HijriDate {
   /// Get Hijri date for a given Gregorian date
@@ -102,9 +104,11 @@ class HijriDate {
     return months[(month - 1) % 12];
   }
 
-  /// Format Hijri date in Arabic
+  /// Format Hijri date in Arabic with Arabic-Indic numerals
   static String formatAr(Map<String, dynamic> hijri) {
-    return '${hijri['day']} ${getMonthNameAr(hijri['month'])} ${hijri['year']}';
+    final day = NumberFormatter.withArabicNumerals('${hijri['day']}');
+    final year = NumberFormatter.withArabicNumerals('${hijri['year']}');
+    return '$day ${getMonthNameAr(hijri['month'])} $year';
   }
 
   /// Format Hijri date in English
