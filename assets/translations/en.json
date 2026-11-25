@@ -649,5 +649,13 @@
   "profile_app_mode_tasks": "Tasks Only",
   "profile_app_mode_tasks_subtitle": "Task management",
   "profile_achievements_show_less": "Show less",
-  "profile_achievements_show_all": "Show all (+%d+)"
+  "profile_achievements_show_all": "Show all (+%d+)",
+  "qibla_title": "Qibla",
+  "qibla_distance_title": "Distance to Makkah",
+  "qibla_distance_unit": "km",
+  "qibla_instruction_facing": "You are facing Qibla",
+  "qibla_instruction_close": "Close to Qibla",
+  "qibla_instruction_turn": "Turn to the right",
+  "qibla_hold_flat": "Hold your device flat",
+  "qibla_error_title": "Error loading Qibla"
 }

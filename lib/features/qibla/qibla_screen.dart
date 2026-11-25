@@ -8,6 +8,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/services/location_service.dart';
+import '../../core/utils/number_formatter.dart';
 import '../../core/widgets/offline_banner.dart';
 import '../../core/theme/app_typography.dart';
 import '../../core/widgets/aura_button.dart';
@@ -101,7 +102,10 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
       });
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString();
+        final raw = e.toString();
+        _errorMessage = raw.startsWith('Exception: ')
+            ? raw.substring('Exception: '.length)
+            : raw;
         _isLoading = false;
       });
     }
@@ -172,7 +176,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
               flexibleSpace: FlexibleSpaceBar(
                 titlePadding: const EdgeInsets.only(left: 16, bottom: 16),
                 title: Text(
-                  isArabic ? 'القبلة' : 'Qibla',
+                  'qibla_title'.tr(),
                   style: AppTypography.label.copyWith(
                     color: isDark ? Colors.white : AppConstants.getPrimary(isDark),
                     fontWeight: FontWeight.bold,
@@ -230,9 +234,9 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
 
   Widget _buildLocationInfo(BuildContext context, bool isDark, bool isArabic) {
     final distance = _calculateDistanceToKaaba();
-    final distanceText = isArabic
-        ? '${distance.toStringAsFixed(0)} كم'
-        : '${distance.toStringAsFixed(0)} km';
+    final distanceFormatted = NumberFormatter.withArabicNumeralsByLanguage(
+        distance.toStringAsFixed(0), isArabic ? 'ar' : 'en');
+    final distanceText = '$distanceFormatted ${'qibla_distance_unit'.tr()}';
 
     return Container(
       padding: const EdgeInsets.all(AppConstants.paddingMedium),
@@ -254,7 +258,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
               ),
               const SizedBox(width: 8),
               Text(
-                isArabic ? 'المسافة إلى مكة' : 'Distance to Makkah',
+                'qibla_distance_title'.tr(),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -358,13 +362,13 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
     Color instructionColor;
 
     if (headingDiff < 5) {
-      instruction = isArabic ? 'أنت تتجه نحو القبلة' : 'You are facing Qibla';
+      instruction = 'qibla_instruction_facing'.tr();
       instructionColor = Colors.green;
     } else if (headingDiff < 20) {
-      instruction = isArabic ? 'أنت قريب من القبلة' : 'Close to Qibla';
+      instruction = 'qibla_instruction_close'.tr();
       instructionColor = Colors.orange;
     } else {
-      instruction = isArabic ? 'دور نحو اليمين' : 'Turn to the right';
+      instruction = 'qibla_instruction_turn'.tr();
       instructionColor = Colors.grey;
     }
 
@@ -389,7 +393,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            isArabic ? 'حمل جهازك بشكل مسطح' : 'Hold your device flat',
+            'qibla_hold_flat'.tr(),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: isDark ? Colors.white60 : Colors.black54,
                 ),
@@ -412,7 +416,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
           ),
           const SizedBox(height: AppConstants.paddingMedium),
           Text(
-            isDark ? 'خطأ في تحميل القبلة' : 'Error loading Qibla',
+            'qibla_error_title'.tr(),
             style: Theme.of(context).textTheme.titleLarge,
             textAlign: TextAlign.center,
           ),

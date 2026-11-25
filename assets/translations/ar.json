@@ -649,5 +649,13 @@
   "profile_app_mode_tasks": "المهام فقط",
   "profile_app_mode_tasks_subtitle": "إدارة المهام",
   "profile_achievements_show_less": "عرض أقل",
-  "profile_achievements_show_all": "عرض الكل (%d+)"
+  "profile_achievements_show_all": "عرض الكل (%d+)",
+  "qibla_title": "القبلة",
+  "qibla_distance_title": "المسافة إلى مكة",
+  "qibla_distance_unit": "كم",
+  "qibla_instruction_facing": "أنت تتجه نحو القبلة",
+  "qibla_instruction_close": "أنت قريب من القبلة",
+  "qibla_instruction_turn": "دور نحو اليمين",
+  "qibla_hold_flat": "حمل جهازك بشكل مسطح",
+  "qibla_error_title": "خطأ في تحميل القبلة"
 }
