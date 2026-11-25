@@ -97,9 +97,12 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
   }
 
   void _showErrorSnackBar(String message) {
+    final clean = message.startsWith('Exception: ')
+        ? message.substring('Exception: '.length)
+        : message;
     final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(clean),
         backgroundColor: AppConstants.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(

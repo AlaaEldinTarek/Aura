@@ -33,7 +33,12 @@
   "auth_validation_password_required": "Password is required",
   "auth_validation_password_short": "Password must be at least 6 characters",
   "auth_validation_passwords_not_match": "Passwords do not match",
+  "auth_validation_password_mismatch": "Passwords do not match",
   "auth_validation_name_required": "Full name is required",
+  "auth_reset_link_hint": "We'll send you a password reset link",
+  "auth_email_address": "Email address",
+  "auth_send": "Send",
+  "auth_reset_sent": "Reset link sent to {}",
 
   "onboarding_title": "Complete Your Setup",
   "onboarding_description": "Customize your Aura experience by selecting your preferences",

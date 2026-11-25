@@ -33,7 +33,12 @@
   "auth_validation_password_required": "كلمة المرور مطلوبة",
   "auth_validation_password_short": "يجب أن تكون كلمة المرور 6 أحرف على الأقل",
   "auth_validation_passwords_not_match": "كلمات المرور غير متطابقة",
+  "auth_validation_password_mismatch": "كلمات المرور غير متطابقة",
   "auth_validation_name_required": "الاسم الكامل مطلوب",
+  "auth_reset_link_hint": "سنرسل لك رابط إعادة تعيين كلمة المرور",
+  "auth_email_address": "البريد الإلكتروني",
+  "auth_send": "إرسال",
+  "auth_reset_sent": "تم إرسال رابط إعادة التعيين إلى {}",
 
   "onboarding_title": "أكمل إعداداتك",
   "onboarding_description": "خصص تجربة هالة من خلال اختيار تفضيلاتك",
