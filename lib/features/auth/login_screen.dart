@@ -248,7 +248,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _showForgotPasswordDialog() async {
-    final isRTL = context.locale.languageCode == 'ar';
     final resetController = TextEditingController(text: _emailController.text.trim());
 
     await showDialog(
@@ -258,19 +257,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              isRTL
-                  ? 'سنرسل لك رابط إعادة تعيين كلمة المرور'
-                  : 'We\'ll send you a password reset link',
-              style: AppTypography.label,
-            ),
+            Text('auth_reset_link_hint'.tr(), style: AppTypography.label),
             const SizedBox(height: 16),
             TextField(
               controller: resetController,
               keyboardType: TextInputType.emailAddress,
-
               decoration: InputDecoration(
-                hintText: isRTL ? 'البريد الإلكتروني' : 'Email address',
+                hintText: 'auth_email_address'.tr(),
                 prefixIcon: const Icon(Icons.email_outlined),
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -279,11 +272,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
         actions: [
           AuraButton.ghost(
-            label: isRTL ? 'إلغاء' : 'Cancel',
+            label: 'cancel'.tr(),
             onPressed: () => Navigator.pop(ctx),
           ),
           AuraButton(
-            label: isRTL ? 'إرسال' : 'Send',
+            label: 'auth_send'.tr(),
             onPressed: () async {
               final email = resetController.text.trim();
               if (email.isEmpty) return;
@@ -294,9 +287,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     .sendPasswordResetEmail(email);
                 if (mounted) {
                   final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text(isRTL
-                        ? 'تم إرسال رابط إعادة التعيين إلى $email'
-                        : 'Reset link sent to $email'),
+                    content: Text('auth_reset_sent'.tr(args: [email])),
                     backgroundColor: Colors.green,
                     behavior: SnackBarBehavior.floating,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -317,9 +308,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _showErrorSnackBar(String message) {
+    final clean = message.startsWith('Exception: ')
+        ? message.substring('Exception: '.length)
+        : message;
     final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Text(clean),
         backgroundColor: AppConstants.error,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/models/achievement.dart';
 import '../../core/models/prayer_record.dart';
@@ -64,13 +65,14 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
     final visibleTotal = AchievementDefinitions.all
         .where((a) => visibleCategories.contains(a.category))
         .length;
+    final allIds = AchievementDefinitions.all.map((a) => a.id).toSet();
     final earnedCount = _earnedAchievements
-        .where((a) => visibleCategories.contains(a.category))
+        .where((a) => visibleCategories.contains(a.category) && allIds.contains(a.id))
         .length;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isArabic ? 'الإنجازات' : 'Achievements'),
+        title: Text('achievements_screen_title'.tr()),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -102,7 +104,7 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  isArabic ? 'إنجازاتك' : 'Your Achievements',
+                                  'achievements_header'.tr(),
                                   style: AppTypography.headingM.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white,
@@ -110,9 +112,10 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                                 ),
                                 SizedBox(height: ts.scale(4.0)),
                                 Text(
-                                  isArabic
-                                      ? '${NumberFormatter.withArabicNumerals('$earnedCount')} من ${NumberFormatter.withArabicNumerals('$visibleTotal')} مكتمل'
-                                      : '$earnedCount of $visibleTotal unlocked',
+                                  'achievements_subtitle'.tr(args: [
+                                    NumberFormatter.withArabicNumeralsByLanguage('$earnedCount', isArabic ? 'ar' : 'en'),
+                                    NumberFormatter.withArabicNumeralsByLanguage('$visibleTotal', isArabic ? 'ar' : 'en'),
+                                  ]),
                                   style: AppTypography.label.copyWith(
                                     color: Colors.white.withOpacity(0.8),
                                   ),
@@ -145,12 +148,12 @@ class _AchievementsScreenState extends ConsumerState<AchievementsScreen> {
                     if (achievements.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
 
                     final categoryNames = {
-                      AchievementCategory.streaks: isArabic ? 'التتابعات' : 'Streaks',
-                      AchievementCategory.consistency: isArabic ? 'الالتزام' : 'Consistency',
-                      AchievementCategory.dhikr: isArabic ? 'الأذكار' : 'Zikr',
-                      AchievementCategory.tasks: isArabic ? 'المهام' : 'Tasks',
-                      AchievementCategory.quran: isArabic ? 'القرآن' : 'Quran',
-                      AchievementCategory.special: isArabic ? 'خاص' : 'Special',
+                      AchievementCategory.streaks:     'achievement_category_streaks'.tr(),
+                      AchievementCategory.consistency: 'achievement_category_consistency'.tr(),
+                      AchievementCategory.dhikr:       'achievement_category_dhikr'.tr(),
+                      AchievementCategory.tasks:       'achievement_category_tasks'.tr(),
+                      AchievementCategory.quran:       'achievement_category_quran'.tr(),
+                      AchievementCategory.special:     'achievement_category_special'.tr(),
                     };
 
                     final isCollapsed = _collapsedCategories.contains(category);
