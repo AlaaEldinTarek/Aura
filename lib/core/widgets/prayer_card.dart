@@ -7,6 +7,7 @@ import '../utils/number_formatter.dart';
 import '../utils/date_formatter.dart';
 import '../theme/app_typography.dart';
 import 'info_tip_icon.dart';
+import '../utils/prayer_time_rules.dart';
 
 /// A beautiful prayer time card with countdown indicator
 class PrayerCard extends StatelessWidget {
@@ -93,7 +94,7 @@ class PrayerCard extends StatelessWidget {
         color: Colors.transparent,
         child: Semantics(
           button: true,
-          label: '${isArabic ? prayer.nameAr : prayer.name}, ${_formatPrayerTime(prayer, isArabic)}'
+          label: '${getPrayerDisplayName(prayer.name, isArabic: isArabic)}, ${_formatPrayerTime(prayer, isArabic)}'
               '${isCompleted ? ", ${isArabic ? 'مُصلّاة' : 'prayed'}" : ""}'
               '${isCurrent ? ", ${isArabic ? 'الصلاة الحالية' : 'current prayer'}" : ""}',
           child: InkWell(
@@ -118,7 +119,7 @@ class PrayerCard extends StatelessWidget {
                         children: [
                           Flexible(
                             child: Text(
-                              isArabic ? prayer.nameAr : prayer.name,
+                              getPrayerDisplayName(prayer.name, isArabic: isArabic),
                               style: Theme.of(context)
                                   .textTheme
                                   .titleLarge

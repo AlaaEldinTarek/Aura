@@ -1218,15 +1218,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                         data: mq.copyWith(
                             textScaler: TextScaler.linear(cappedScale)),
                         child: Text(
-                          isArabic
-                              ? [
-                                  'الفجر',
-                                  'الظهر',
-                                  'العصر',
-                                  'المغرب',
-                                  'العشاء'
-                                ][i]
-                              : kPrayerNames[i],
+                          getPrayerDisplayName(trackablePrayers[i], isArabic: isArabic),
                           style: AppTypography.caption.copyWith(
                             fontSize: prayerLabelFs,
                             color: isTracked
@@ -1799,15 +1791,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: kPrayerNames.map((name) {
-                    final prayerNamesAr = {
-                      'Fajr': 'الفجر',
-                      'Zuhr': 'الظهر',
-                      'Asr': 'العصر',
-                      'Maghrib': 'المغرب',
-                      'Isha': 'العشاء',
-                    };
                     final displayName =
-                        isArabic ? (prayerNamesAr[name] ?? name) : name;
+                        getPrayerDisplayName(name, isArabic: isArabic);
                     return Padding(
                       padding: EdgeInsets.symmetric(vertical: ts.scale(2.0)),
                       child: Row(

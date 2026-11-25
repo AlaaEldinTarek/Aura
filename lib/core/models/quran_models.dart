@@ -1,4 +1,4 @@
-import 'package:equatable/equatable.dart';
+﻿import 'package:equatable/equatable.dart';
 
 enum RevelationType { makki, madani }
 
@@ -184,12 +184,12 @@ class QuranReadingProgress extends Equatable {
 const List<SurahMetaData> kSurahMetaData = [
   SurahMetaData(1, 'Al-Fātiḥah', 'الفَاتِحة', 7, RevelationType.makki, 1, 1),
   SurahMetaData(2, 'Al-Baqarah', 'البَقَرَة', 286, RevelationType.madani, 2, 49),
-  SurahMetaData(3, 'Āl-‘Imrān', 'آل عِمران', 200, RevelationType.makki, 50, 76),
-  SurahMetaData(4, 'An-Nisā’', 'النِّسَاء', 176, RevelationType.makki, 77, 106),
-  SurahMetaData(5, 'Al-Mā’idah', 'المَائدة', 120, RevelationType.makki, 106, 127),
+  SurahMetaData(3, 'Āl-‘Imrān', 'آل عِمران', 200, RevelationType.madani, 50, 76),
+  SurahMetaData(4, 'An-Nisā’', 'النِّسَاء', 176, RevelationType.madani, 77, 106),
+  SurahMetaData(5, 'Al-Mā’idah', 'المَائدة', 120, RevelationType.madani, 106, 127),
   SurahMetaData(6, 'Al-An‘ām', 'الأنعَام', 165, RevelationType.makki, 128, 150),
   SurahMetaData(7, 'Al-A‘rāf', 'الأعرَاف', 206, RevelationType.makki, 151, 176),
-  SurahMetaData(8, 'Al-Anfāl', 'الأنفَال', 75, RevelationType.makki, 177, 186),
+  SurahMetaData(8, 'Al-Anfāl', 'الأنفَال', 75, RevelationType.madani, 177, 186),
   SurahMetaData(9, 'At-Taubah', 'التوبَة', 129, RevelationType.madani, 187, 207),
   SurahMetaData(10, 'Yūnus', 'يُونس', 109, RevelationType.makki, 208, 221),
   SurahMetaData(11, 'Hūd', 'هُود', 123, RevelationType.makki, 221, 235),
