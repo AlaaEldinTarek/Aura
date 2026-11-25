@@ -684,9 +684,12 @@ class PrayerAlarmReceiver : BroadcastReceiver() {
             // appears immediately instead of after its current 60 s sleep
             PrayerForegroundService.nudge()
 
-            // Schedule azkar reminder 10 min after iqama (or 15 min from now if no iqama)
-            val azkarTrigger = if (iqamaTimeMs > 0) iqamaTimeMs + 10 * 60 * 1000L
-                               else currentTime + 15 * 60 * 1000L
+            // Schedule azkar backup alarm 60 s after iqama (or 60 s from now if no iqama).
+            // AdhanFullScreenActivity is the primary launcher (3 s after iqama); it cancels this
+            // alarm via AzkarAlarmReceiver.cancel() before launching, so the alarm only fires when
+            // the adhan screen was dismissed before reaching iqama.
+            val azkarTrigger = if (iqamaTimeMs > 0) iqamaTimeMs + 60 * 1000L
+                               else currentTime + 60 * 1000L
             AzkarAlarmReceiver.schedule(context, prayerName, prayerNameAr, azkarTrigger)
         }
 
