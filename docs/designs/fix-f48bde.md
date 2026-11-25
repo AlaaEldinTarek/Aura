@@ -4,6 +4,15 @@
 
 ---
 
+## Assumptions
+
+- `NumberFormatter` exists at `lib/core/utils/number_formatter.dart` (used by F47b, F49d); this fix does not create it.
+- `.tr()` is supplied by `easy_localization`; falls back to the key name if the key is missing at runtime.
+- `isArabic` is a `bool` local variable derived from the active `easy_localization` locale, already in scope in the methods that use it.
+- Behavioral tests use `NumberFormatter` and a local `stripPrefix` helper directly (see `test/features/qibla/f48bde_source_test.dart`).
+
+---
+
 ## Findings
 
 ### F48b — Error title chosen by theme, not language (LOW)
@@ -11,7 +20,7 @@
 ```dart
 isDark ? 'خطأ في تحميل القبلة' : 'Error loading Qibla'
 ```
-Uses `isDark` instead of `isArabic`, so a dark-theme English user sees Arabic and a light-theme Arabic user sees English.
+Uses `isDark` instead of locale, so a dark-theme English user sees Arabic and a light-theme Arabic user sees English.
 
 **Fix:** `'qibla_error_title'.tr()` — `.tr()` picks the locale.
 
@@ -31,6 +40,8 @@ final distanceFormatted = NumberFormatter.withArabicNumeralsByLanguage(
 final distanceText = '$distanceFormatted ${'qibla_distance_unit'.tr()}';
 ```
 
+Uses `withArabicNumeralsByLanguage()` (same method as F47b and F49d) so locale detection is encapsulated in `NumberFormatter` and no extra `isArabic ?` branch is needed at the call site.
+
 ### F48e — Inline EN/AR strings + raw `e.toString()` error (LOW)
 Six inline `isArabic ? … : …` ternaries and one raw `e.toString()` error assignment.
 
@@ -43,7 +54,19 @@ Six inline `isArabic ? … : …` ternaries and one raw `e.toString()` error ass
 | Instruction — turn (line 367) | `isArabic ? 'دور نحو اليمين' : 'Turn to the right'` | `qibla_instruction_turn` |
 | Hold flat hint (line 392) | `isArabic ? 'حمل جهازك بشكل مسطح' : 'Hold your device flat'` | `qibla_hold_flat` |
 
-Raw error: `_errorMessage = e.toString()` (line 104) → strip `"Exception: "` prefix (same pattern as `login_screen.dart:311–313` and `profile_screen.dart`).
+No `qibla_instruction_turn_left` key: the compass has only a right-turn instruction; there is no left-turn string in `qibla_screen.dart`.
+
+Raw error: `_errorMessage = e.toString()` (`qibla_screen.dart:104`). `_errorMessage` is passed to `_buildErrorState` and rendered at `qibla_screen.dart:421` (`Text(error, ...)`), so it is user-visible. Strip the `"Exception: "` prefix using the existing codebase pattern (`login_screen.dart:311–313`, `signup_screen.dart:100–101`, `profile_screen.dart:947–948`):
+```dart
+final raw = e.toString();
+_errorMessage = raw.startsWith('Exception: ')
+    ? raw.substring('Exception: '.length)
+    : raw;
+```
+
+**Not changed** (intentional):
+- Cardinal compass labels `N / E / S / W` in `CompassPainter` — ISO compass notation; not expected to vary by locale for this app's target audience.
+- `'retry'.tr()` — already localised (`qibla_screen.dart:429`).
 
 ---
 
@@ -78,6 +101,28 @@ Raw error: `_errorMessage = e.toString()` (line 104) → strip `"Exception: "` p
 **T1** — `NumberFormatter.withArabicNumeralsByLanguage('1200', 'ar')` → `'١٢٠٠'`  
 **T2** — `NumberFormatter.withArabicNumeralsByLanguage('1200', 'en')` → `'1200'`  
 **T3** — Exception prefix stripped: `'Exception: location denied'` → `'location denied'`
+
+---
+
+## Alternatives Considered
+
+**Exception-stripping: `replaceFirst` vs `startsWith`+`substring`**  
+`replaceFirst` silently passes the original string through when the prefix is absent. `startsWith`+`substring` is explicit about the guard and matches the three existing call sites. Chosen: `startsWith`+`substring`.
+
+**F48d number formatting: `withArabicNumerals(rawNum)` with `isArabic ?` guard vs `withArabicNumeralsByLanguage()`**  
+An `isArabic ?` guard at the call site would reintroduce a branch that F48e is removing. `withArabicNumeralsByLanguage()` encapsulates locale detection in `NumberFormatter` and matches how F47b and F49d handle the same pattern. Chosen: `withArabicNumeralsByLanguage()`.
+
+---
+
+## Contract check
+
+| Contract | Verdict |
+|---|---|
+| SharedPreferences key names | Unchanged |
+| Firestore paths | Unchanged |
+| Notification IDs / channels | Not involved |
+| Translation keys | 8 new keys added |
+| New prefs keys introduced | None |
 
 ---
 
