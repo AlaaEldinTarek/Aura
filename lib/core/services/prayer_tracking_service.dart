@@ -712,8 +712,11 @@ class PrayerTrackingService {
   }
 
   /// Delete prayer records for today where the record was created before
-  /// the prayer's Adhan + 20-min window — i.e. impossible to have been created
-  /// by a legitimate user action (canMarkPrayer blocks early marking).
+  /// the prayer's Adhan — i.e. impossible to have been created by any
+  /// legitimate user action.  Notification paths fire at adhan time and may
+  /// write [prayedAt] equal to [prayer.time]; those are valid and must not
+  /// be removed.  The 20-minute in-app guard ([canMarkPrayer]) is enforced
+  /// by the UI, not by this cleanup.
   /// Called once per day from the prayer times side-effects block to clean up
   /// any records produced by historical bugs.
   Future<void> cleanupFuturePrayerRecords({
@@ -728,15 +731,14 @@ class PrayerTrackingService {
       for (final record in records) {
         final prayer = prayerTimes.where((p) => p.name == record.prayerName).firstOrNull;
         if (prayer == null) continue;
-        final windowEnd = prayer.time.add(const Duration(minutes: 20));
-        // prayedAt before the window = physically impossible legitimate record
-        if (record.prayedAt.isBefore(windowEnd)) {
+        // prayedAt before adhan = truly impossible (prayer hadn't started yet)
+        if (record.prayedAt.isBefore(prayer.time)) {
           await deletePrayerRecord(
             userId: userId,
             prayerName: record.prayerName,
             date: today,
           );
-          debugPrint('🧹 Removed invalid prayer record: ${record.prayerName} (prayedAt=${record.prayedAt}, windowEnd=$windowEnd)');
+          debugPrint('🧹 Removed invalid prayer record: ${record.prayerName} (prayedAt=${record.prayedAt}, adhan=${prayer.time})');
         }
       }
     } catch (e) {

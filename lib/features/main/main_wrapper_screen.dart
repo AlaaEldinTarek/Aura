@@ -24,6 +24,7 @@ import '../../core/services/desktop_notification_service.dart';
 import '../../core/services/desktop_adhan_service.dart';
 import '../../core/services/prayer_alarm_service.dart';
 import '../../core/services/prayer_tracking_service.dart';
+import '../../core/utils/prayer_time_rules.dart';
 import '../../core/models/prayer_record.dart';
 import '../../core/models/prayer_time.dart';
 import '../../core/models/achievement.dart';
@@ -623,9 +624,10 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
 
-      // Past prayers = prayers whose adhan time has already passed (excluding Sunrise)
+      // Only prompt for prayers whose 20-min marking window has opened so the
+      // sheet never races with canMarkPrayer on the Home / Prayer tabs.
       final pastPrayers = prayerTimes
-          .where((p) => p.name != 'Sunrise' && p.time.isBefore(now))
+          .where((p) => p.name != 'Sunrise' && isPrayerTimeReached(p.name, prayerTimes))
           .toList();
       if (pastPrayers.isEmpty) return;
 
