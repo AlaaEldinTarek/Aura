@@ -104,13 +104,13 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _lifecycleState = state;
     if (state == AppLifecycleState.resumed) {
-      // Check untracked prayers BEFORE invalidating provider (would clear prayer times)
-      _checkUntrackedPrayers();
-      // Read fajr time before invalidating, so after-midnight detection still works
+      // Read prayer times BEFORE invalidating — both the after-midnight Fajr
+      // snapshot and the untracked-prayer check need the pre-invalidation list.
       final resumePrayerTimes =
           ref.read(prayerTimesProvider)?.prayerTimes ?? [];
       final resumeFajrTime =
           resumePrayerTimes.where((p) => p.name == 'Fajr').firstOrNull?.time;
+      _checkUntrackedPrayers(resumePrayerTimes);
       ref.invalidate(prayerTimesProvider);
       ref.invalidate(tasksProvider(const TaskFilterParams()));
       ref.invalidate(allTasksProvider);
@@ -214,7 +214,10 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       _handleWidgetIntent();
       _scheduleDailySummaryOnStartup();
       if (!_isDesktop) _scheduleJumuahOnStartup();
-      Future.delayed(const Duration(seconds: 3), _checkUntrackedPrayers);
+      Future.delayed(
+          const Duration(seconds: 3),
+          () => _checkUntrackedPrayers(
+              ref.read(prayerTimesProvider)?.prayerTimes ?? []));
 
       // Cold start: re-arm task reminders that an OEM app-freeze may have
       // cancelled while Aura was closed. Delay lets auth settle so the right
@@ -447,7 +450,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       // Handle tap-to-complete from widget
       // The Tasks widget writes one id; the task reminder notification's Done button may write several (comma
       // separated). Both only COMPLETE: a task that is already done is never un-completed.
-      final pendingIds = parsePendingTaskIds(prefs.getString('pending_complete_task_id'));
+      final pendingIds =
+          parsePendingTaskIds(prefs.getString('pending_complete_task_id'));
       if (pendingIds.isNotEmpty) {
         prefs.remove('pending_complete_task_id');
         final userId = ref.read(currentUserIdProvider);
@@ -455,21 +459,26 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
         // task list BEFORE completing; unknown list (not loaded) = no streak change.
         var streakIds = <String>[];
         try {
-          final tasks = await ref.read(allTasksProvider.future).timeout(const Duration(seconds: 3));
+          final tasks = await ref
+              .read(allTasksProvider.future)
+              .timeout(const Duration(seconds: 3));
           final open = tasks.where((t) => !t.isCompleted);
           streakIds = streakCountingIds(
             pendingIds: pendingIds,
             openIds: open.map((t) => t.id).toSet(),
-            activeOpenIds:
-                open.where((t) => t.isDueToday || t.dueDate == null).map((t) => t.id).toSet(),
+            activeOpenIds: open
+                .where((t) => t.isDueToday || t.dueDate == null)
+                .map((t) => t.id)
+                .toSet(),
           );
         } catch (e) {
-          debugPrint('⚠️ Done streak: task list unavailable, streak unchanged ($e)');
+          debugPrint(
+              '⚠️ Done streak: task list unavailable, streak unchanged ($e)');
         }
         var completedAny = false;
         for (final taskId in pendingIds) {
-          final ok = await TaskService.instance
-              .toggleTaskCompletion(userId: userId, taskId: taskId, onlyComplete: true);
+          final ok = await TaskService.instance.toggleTaskCompletion(
+              userId: userId, taskId: taskId, onlyComplete: true);
           if (ok && streakIds.contains(taskId)) completedAny = true;
           debugPrint('✅ Widget/notification Done: completed task $taskId');
         }
@@ -599,10 +608,11 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
 
   bool _untrackedCheckInProgress = false;
 
-  Future<void> _checkUntrackedPrayers() async {
+  Future<void> _checkUntrackedPrayers(List<PrayerTime> prayerTimes) async {
     if (_untrackedCheckInProgress) return;
     _untrackedCheckInProgress = true;
     try {
+      if (prayerTimes.isEmpty) return;
       final prefs = SharedPreferencesService.instance;
       final enabled = await prefs.isPrayerTrackingEnabled();
       if (!enabled) return;
@@ -612,11 +622,9 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
 
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
-      final prayerState = ref.read(prayerTimesProvider);
-      if (prayerState.prayerTimes.isEmpty) return;
 
       // Past prayers = prayers whose adhan time has already passed (excluding Sunrise)
-      final pastPrayers = prayerState.prayerTimes
+      final pastPrayers = prayerTimes
           .where((p) => p.name != 'Sunrise' && p.time.isBefore(now))
           .toList();
       if (pastPrayers.isEmpty) return;
@@ -1405,48 +1413,48 @@ class _DesktopShellState extends ConsumerState<_DesktopShell> {
           onToggle: onToggle,
         ),
         content: LayoutBuilder(
-              builder: (ctx, constraints) {
-                final mq = MediaQuery.of(ctx);
-                final scale = desktopTextScale(mq.size.width, mq.size.height);
-                final iconSize = (24.0 * scale).clamp(18.0, 52.0);
-                final chipPadH = (8.0 * scale).clamp(6.0, 20.0);
-                final chipPadV = (4.0 * scale).clamp(2.0, 12.0);
-                // VisualDensity scales Material component padding — capped to avoid
-                // excessive expansion at very large window sizes.
-                final density = ((scale - 1.0) * 2.0).clamp(-4.0, 2.0);
-                final baseTheme = Theme.of(ctx);
-                return Theme(
-                  data: baseTheme.copyWith(
-                    visualDensity: VisualDensity(
-                      horizontal: density,
-                      vertical: density,
-                    ),
-                    iconTheme: baseTheme.iconTheme.copyWith(size: iconSize),
-                    chipTheme: baseTheme.chipTheme.copyWith(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: chipPadH, vertical: chipPadV),
-                    ),
-                    listTileTheme: baseTheme.listTileTheme.copyWith(
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: (16.0 * scale).clamp(0, 24.0),
-                        vertical: 0,
-                      ),
-                      minVerticalPadding: (8.0 * scale).clamp(0, 12.0),
-                    ),
-                    cardTheme: baseTheme.cardTheme.copyWith(
-                      margin: EdgeInsets.all((4.0 * scale).clamp(0, 6.0)),
-                    ),
+          builder: (ctx, constraints) {
+            final mq = MediaQuery.of(ctx);
+            final scale = desktopTextScale(mq.size.width, mq.size.height);
+            final iconSize = (24.0 * scale).clamp(18.0, 52.0);
+            final chipPadH = (8.0 * scale).clamp(6.0, 20.0);
+            final chipPadV = (4.0 * scale).clamp(2.0, 12.0);
+            // VisualDensity scales Material component padding — capped to avoid
+            // excessive expansion at very large window sizes.
+            final density = ((scale - 1.0) * 2.0).clamp(-4.0, 2.0);
+            final baseTheme = Theme.of(ctx);
+            return Theme(
+              data: baseTheme.copyWith(
+                visualDensity: VisualDensity(
+                  horizontal: density,
+                  vertical: density,
+                ),
+                iconTheme: baseTheme.iconTheme.copyWith(size: iconSize),
+                chipTheme: baseTheme.chipTheme.copyWith(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: chipPadH, vertical: chipPadV),
+                ),
+                listTileTheme: baseTheme.listTileTheme.copyWith(
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: (16.0 * scale).clamp(0, 24.0),
+                    vertical: 0,
                   ),
-                  child: MediaQuery(
-                    data: mq.copyWith(textScaler: TextScaler.linear(scale)),
-                    child: Navigator(
-                      key: _contentNavKey,
-                      onGenerateRoute: _generateDesktopRoute,
-                    ),
-                  ),
-                );
-              },
-            ),
+                  minVerticalPadding: (8.0 * scale).clamp(0, 12.0),
+                ),
+                cardTheme: baseTheme.cardTheme.copyWith(
+                  margin: EdgeInsets.all((4.0 * scale).clamp(0, 6.0)),
+                ),
+              ),
+              child: MediaQuery(
+                data: mq.copyWith(textScaler: TextScaler.linear(scale)),
+                child: Navigator(
+                  key: _contentNavKey,
+                  onGenerateRoute: _generateDesktopRoute,
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
