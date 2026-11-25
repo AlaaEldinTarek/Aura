@@ -1191,7 +1191,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     // Keep task widget synced
     ref.watch(taskWidgetSyncProvider);
 
-    // Desktop notification popup — slides up above taskbar clock, no focus steal
+    // Desktop notification popup — overlaid on shell to preserve mount state
+    Widget? popupOverlay;
     if (_isDesktop && _activePopup != null && _popupAnimCtrl != null) {
       final popup = _activePopup!;
       final isArabic = Localizations.localeOf(context).languageCode == 'ar';
@@ -1217,98 +1218,102 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
         curve: Curves.easeOutCubic,
       ));
 
-      return Scaffold(
-        backgroundColor: bgColor,
-        body: SlideTransition(
-          position: slideAnim,
-          child: Container(
-            decoration: BoxDecoration(
-              border: Border.all(color: primary.withOpacity(0.4), width: 1.5),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(popup.emoji, style: const TextStyle(fontSize: 22)),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          title,
-                          style: AppTypography.headingS.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: primary,
-                          ),
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: _dismissCurrentPopup,
-                        child: Icon(Icons.close,
-                            size: 18,
-                            color: isDark ? Colors.white54 : Colors.black45),
-                      ),
-                    ],
-                  ),
-                  if (body != null) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      body,
-                      style: AppTypography.bodyS.copyWith(
-                        color: isDark ? Colors.white70 : Colors.black87,
-                      ),
-                    ),
-                  ],
-                  if (popup.isAdhan) ...[
-                    const SizedBox(height: 12),
+      popupOverlay = Align(
+        alignment: Alignment.bottomRight,
+        child: SizedBox(
+          width: 360,
+          child: SlideTransition(
+            position: slideAnim,
+            child: Container(
+              decoration: BoxDecoration(
+                color: bgColor,
+                border: Border.all(color: primary.withOpacity(0.4), width: 1.5),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        TextButton(
-                          onPressed: _dismissCurrentPopup,
-                          style: TextButton.styleFrom(
-                            foregroundColor:
-                                isDark ? Colors.white54 : Colors.black45,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
+                        Text(popup.emoji, style: const TextStyle(fontSize: 22)),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: AppTypography.headingS.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: primary,
+                            ),
                           ),
-                          child: Text(isArabic ? 'إغلاق' : 'Dismiss'),
                         ),
-                        const SizedBox(width: 8),
-                        TextButton(
-                          onPressed: () {
-                            DesktopAdhanService.instance.stop();
-                            _dismissCurrentPopup();
-                          },
-                          style: TextButton.styleFrom(
-                            foregroundColor:
-                                isDark ? Colors.white54 : Colors.black45,
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
-                          ),
-                          child: Text(isArabic ? 'إيقاف الأذان' : 'Stop Adhan'),
-                        ),
-                        const SizedBox(width: 8),
-                        AuraButton(
-                          label: isArabic ? 'صليت ✓' : 'Prayed ✓',
-                          onPressed: () async {
-                            final name = popup.prayerName ?? '';
-                            if (name.isNotEmpty) {
-                              await DesktopNotificationService.instance
-                                  .recordPrayerOnTime(name);
-                            }
-                            DesktopAdhanService.instance.stop();
-                            _dismissCurrentPopup();
-                          },
-                          verticalPadding: 6,
-                          fontSize: 12,
+                        GestureDetector(
+                          onTap: _dismissCurrentPopup,
+                          child: Icon(Icons.close,
+                              size: 18,
+                              color: isDark ? Colors.white54 : Colors.black45),
                         ),
                       ],
                     ),
+                    if (body != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        body,
+                        style: AppTypography.bodyS.copyWith(
+                          color: isDark ? Colors.white70 : Colors.black87,
+                        ),
+                      ),
+                    ],
+                    if (popup.isAdhan) ...[
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: _dismissCurrentPopup,
+                            style: TextButton.styleFrom(
+                              foregroundColor:
+                                  isDark ? Colors.white54 : Colors.black45,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                            ),
+                            child: Text(isArabic ? 'إغلاق' : 'Dismiss'),
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton(
+                            onPressed: () {
+                              DesktopAdhanService.instance.stop();
+                              _dismissCurrentPopup();
+                            },
+                            style: TextButton.styleFrom(
+                              foregroundColor:
+                                  isDark ? Colors.white54 : Colors.black45,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                            ),
+                            child: Text(isArabic ? 'إيقاف الأذان' : 'Stop Adhan'),
+                          ),
+                          const SizedBox(width: 8),
+                          AuraButton(
+                            label: isArabic ? 'صليت ✓' : 'Prayed ✓',
+                            onPressed: () async {
+                              final name = popup.prayerName ?? '';
+                              if (name.isNotEmpty) {
+                                await DesktopNotificationService.instance
+                                    .recordPrayerOnTime(name);
+                              }
+                              DesktopAdhanService.instance.stop();
+                              _dismissCurrentPopup();
+                            },
+                            verticalPadding: 6,
+                            fontSize: 12,
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
@@ -1341,7 +1346,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       ],
     );
 
-    return PopScope(
+    final shell = PopScope(
       canPop: false,
       onPopInvoked: (didPop) async {
         if (!didPop) await _onWillPop();
@@ -1360,6 +1365,10 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
               ),
             ),
     );
+    if (popupOverlay != null) {
+      return Stack(children: [shell, popupOverlay]);
+    }
+    return shell;
   }
 }
 
