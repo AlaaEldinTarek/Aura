@@ -1,5 +1,5 @@
 # Project State — 2026-11-25
-- App: Aura 1.1.0+60 on main (b89b2ec), tag `v1.1.0` = 9ce26e2 (MSIX 1.0.3.114) | Analyze: 409 issues (0 errors) | Tests: 915 Dart pass; Kotlin `AlarmCleanupTest` + `SessionStateTest` added (run: `./gradlew :app:testDebugUnitTest`)
+- App: Aura 1.1.0+60 on main (1b38a62), tag `v1.1.0` = 9ce26e2 (MSIX 1.0.3.114) | Analyze: 409 issues (0 errors) | Tests: 915 Dart pass; Kotlin `AlarmCleanupTest` + `SessionStateTest` added (run: `./gradlew :app:testDebugUnitTest`)
 - Baseline commit: 75d38b9 | Flutter 3.38.7 / Dart 3.10.7 (frozen) | Android minSdk 24 / target 36 / compile 36
 - Support target: current minSdk and newer (Android 10 must keep working; test device nova 5T = API 29)
 - Phase: Fix track before refactor (ADR 0001); bootstrap Steps 0–2.5 + Step 6 report done | Refactor Steps 3–4 after CRITICAL/HIGH fixes
