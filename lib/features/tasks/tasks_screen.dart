@@ -1153,16 +1153,6 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
         return a.isPinned ? -1 : 1;
       });
 
-    final todayTasks = tasks
-        .where((t) => isVisible(t) && t.isDueToday && !t.isOverdue)
-        .toList()
-      ..sort((a, b) =>
-          (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099)))
-      ..sort((a, b) {
-        if (a.isPinned == b.isPinned) return 0;
-        return a.isPinned ? -1 : 1;
-      });
-
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final tomorrow = today.add(const Duration(days: 1));
@@ -1170,13 +1160,25 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
     final thisWeekEnd = today.add(const Duration(days: 7));
     final nextWeekEnd = today.add(const Duration(days: 14));
 
-    // Due soon — has a time component and due within 3 hours
+    // Due soon computed first so todayTasks can exclude it (more-specific section wins)
     final dueSoonTasks = tasks.where((t) {
       if (!isVisible(t) || t.isOverdue || t.isCompleted) return false;
       if (t.dueDate == null || !t.hasDueTime) return false;
       return t.dueDate!.isAfter(now) && t.dueDate!.isBefore(in3Hours);
     }).toList()
       ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!))
+      ..sort((a, b) {
+        if (a.isPinned == b.isPinned) return 0;
+        return a.isPinned ? -1 : 1;
+      });
+
+    final todayTasks = tasks
+        .where((t) =>
+            isVisible(t) && t.isDueToday && !t.isOverdue &&
+            !dueSoonTasks.contains(t))
+        .toList()
+      ..sort((a, b) =>
+          (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099)))
       ..sort((a, b) {
         if (a.isPinned == b.isPinned) return 0;
         return a.isPinned ? -1 : 1;
