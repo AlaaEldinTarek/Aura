@@ -76,7 +76,8 @@ daily-summary notifications always English, daily summary time reverting to 21:0
   `task_streak_count`, `task_streak_date`.
 - Wird: `wird_settings` (JSON), `wird_streak_count`, `wird_streak_date`,
   `wird_total_days_completed`, `wird_progress_history` (JSON, pruned to 90 days), `wird_completed_juz` (JSON list),
-  `wird_khatm_count`, `wird_khatm_dates` (JSON list) — all in `wird_service.dart`.
+  `wird_khatm_count`, `wird_khatm_dates` (JSON list),
+  `wird_local_updated_at_ms` (int, epoch ms; set by `_pushToCloud` for logged-in users; read by `syncFromFirestore` to guard against overwriting offline changes — F52g) — all in `wird_service.dart`.
   `wird_total_pages_read` is no longer written or read (P4b of wird-marker): `creditPages`, `removePages`, `resetAllProgress`,
   `getFullState` and the `wird/data` sync skip it, and `achievement_service.dart` reads the marker instead. The legacy
   `recordPagesRead`, the last writer, was deleted in P5 together with `_totalPagesKey`. Old values stay in prefs unused

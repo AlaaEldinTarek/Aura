@@ -39,8 +39,24 @@ class WirdService {
   static const _completedJuzKey = 'wird_completed_juz';
   static const _khatmCountKey = 'wird_khatm_count';
   static const _khatmDatesKey = 'wird_khatm_dates';
+  // Epoch-ms timestamp of the last local write (set in _pushToCloud so only
+  // logged-in users update it). Used in syncFromFirestore to skip the cloud
+  // overwrite when local data is newer than the cloud snapshot (F52g).
+  static const _localUpdatedAtKey = 'wird_local_updated_at_ms';
 
   Future<SharedPreferences> get _prefs => SharedPreferences.getInstance();
+
+  /// Returns true when the cloud snapshot is at least as recent as local data,
+  /// meaning the cloud should win and the overwrite may proceed.
+  ///
+  /// Tie (equal ms) → cloud wins. `_pushToCloud` sets the local timestamp
+  /// before calling `syncToFirestore`, which calls `DateTime.now()` again, so
+  /// after a successful push cloud.localUpdatedAt ≥ local._localUpdatedAtKey
+  /// and cloud always wins on the next sync — harmless since they carry the
+  /// same data.
+  @visibleForTesting
+  static bool cloudIsNewer(int localUpdatedAtMs, int cloudUpdatedAtMs) =>
+      cloudUpdatedAtMs >= localUpdatedAtMs;
 
   // ── Settings ─────────────────────────────────────────────────────────────
 
@@ -504,6 +520,11 @@ class WirdService {
   Future<void> _pushToCloud() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
+    // Record the local modification time before the push attempt. If the push
+    // fails (offline), the timestamp still marks local as dirty so the next
+    // syncFromFirestore will push rather than overwrite (F52g).
+    final prefs = await _prefs;
+    await prefs.setInt(_localUpdatedAtKey, DateTime.now().millisecondsSinceEpoch);
     await syncToFirestore(uid);
   }
 
@@ -513,6 +534,7 @@ class WirdService {
       final completedJuz = await getCompletedJuz();
       final khatmCount = await getKhatmCount();
       final khatmDates = await getKhatmDates();
+      final history = await _loadHistory();
       final prefs = await _prefs;
       final doc = FirebaseFirestore.instance.collection('users').doc(userId).collection('wird').doc('data');
       await doc.set({
@@ -523,6 +545,8 @@ class WirdService {
         'completedJuz': completedJuz,
         'khatmCount': khatmCount,
         'khatmDates': khatmDates,
+        'progressHistory': history.map((e) => e.toJson()).toList(),
+        'localUpdatedAt': DateTime.now().millisecondsSinceEpoch,
         'updatedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     } catch (e) {
@@ -544,34 +568,65 @@ class WirdService {
       final data = doc.data()!;
       final prefs = await _prefs;
 
-      if (data['settings'] != null) {
-        await prefs.setString(
-          _settingsKey,
-          jsonEncode(Map<String, dynamic>.from(data['settings'] as Map)),
-        );
+      // F52g: guard against overwriting offline local changes with stale cloud
+      // data. If local has been modified more recently than the cloud snapshot,
+      // push local up instead and skip the overwrite. The recovery push's own
+      // try-catch absorbs failures; the guard retries on the next app start.
+      final cloudUpdatedAt = (data['localUpdatedAt'] as int?) ?? 0;
+      final localUpdatedAt = prefs.getInt(_localUpdatedAtKey) ?? 0;
+      if (!WirdService.cloudIsNewer(localUpdatedAt, cloudUpdatedAt)) {
+        await syncToFirestore(userId);
+        return;
       }
-      if (data['streakCount'] != null) {
-        await prefs.setInt(_streakCountKey, data['streakCount'] as int);
-      }
-      if (data['streakDate'] != null) {
-        await prefs.setString(_streakDateKey, data['streakDate'] as String);
-      }
-      if (data['totalDaysCompleted'] != null) {
-        await prefs.setInt(_totalDaysKey, data['totalDaysCompleted'] as int);
-      }
-      if (data['completedJuz'] != null) {
-        final juzList = (data['completedJuz'] as List<dynamic>).map((e) => e as int).toList();
-        await prefs.setString(_completedJuzKey, jsonEncode(juzList));
-      }
-      if (data['khatmCount'] != null) {
-        await prefs.setInt(_khatmCountKey, data['khatmCount'] as int);
-      }
-      if (data['khatmDates'] != null) {
-        final dateList = (data['khatmDates'] as List<dynamic>).map((e) => e as String).toList();
-        await prefs.setString(_khatmDatesKey, jsonEncode(dateList));
-      }
+
+      await applyCloudData(data, prefs);
     } catch (e) {
       debugPrint('❌ Wird sync from Firestore error: $e');
+    }
+  }
+
+  /// Writes cloud data fields to local SharedPreferences.
+  /// Only called when the cloud snapshot is at least as recent as local data.
+  @visibleForTesting
+  Future<void> applyCloudData(
+      Map<String, dynamic> data, SharedPreferences prefs) async {
+    if (data['settings'] != null) {
+      await prefs.setString(
+        _settingsKey,
+        jsonEncode(Map<String, dynamic>.from(data['settings'] as Map)),
+      );
+    }
+    if (data['streakCount'] != null) {
+      await prefs.setInt(_streakCountKey, data['streakCount'] as int);
+    }
+    if (data['streakDate'] != null) {
+      await prefs.setString(_streakDateKey, data['streakDate'] as String);
+    }
+    if (data['totalDaysCompleted'] != null) {
+      await prefs.setInt(_totalDaysKey, data['totalDaysCompleted'] as int);
+    }
+    if (data['completedJuz'] != null) {
+      final juzList =
+          (data['completedJuz'] as List<dynamic>).map((e) => e as int).toList();
+      await prefs.setString(_completedJuzKey, jsonEncode(juzList));
+    }
+    if (data['khatmCount'] != null) {
+      await prefs.setInt(_khatmCountKey, data['khatmCount'] as int);
+    }
+    if (data['khatmDates'] != null) {
+      final dateList = (data['khatmDates'] as List<dynamic>)
+          .map((e) => e as String)
+          .toList();
+      await prefs.setString(_khatmDatesKey, jsonEncode(dateList));
+    }
+    // P2: restore history from cloud (last-write-wins; _loadHistory prunes to
+    // 90 days on the next read so no extra pruning is needed here).
+    if (data['progressHistory'] != null) {
+      final histList = (data['progressHistory'] as List<dynamic>)
+          .map((e) =>
+              WirdProgress.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+      await _saveHistory(histList);
     }
   }
 
