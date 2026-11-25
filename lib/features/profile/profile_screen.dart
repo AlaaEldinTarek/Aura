@@ -113,7 +113,7 @@ class ProfileScreen extends ConsumerWidget {
   Widget _buildLoginPrompt(BuildContext context, bool isDark, bool isArabic) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(isArabic ? 'الملف الشخصي' : 'Profile'),
+        title: Text('profile_header_title'.tr()),
       ),
       body: Builder(builder: (ctx) {
         final ts = MediaQuery.textScalerOf(ctx);
@@ -169,7 +169,7 @@ class ProfileScreen extends ConsumerWidget {
     final gapL = ts.scale(AppConstants.paddingLarge).clamp(0.0, 28.0);
     return Scaffold(
       appBar: AppBar(
-        title: Text(isArabic ? 'الملف الشخصي' : 'Profile'),
+        title: Text('profile_header_title'.tr()),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -197,31 +197,31 @@ class ProfileScreen extends ConsumerWidget {
             // Account Section
             SettingsSectionHeader(
               icon: Icons.person_outline,
-              title: isArabic ? 'الحساب' : 'Account',
+              title: 'profile_section_account'.tr(),
             ),
             SettingsCard(
               children: [
                 SettingTile(
                   icon: Icons.email_outlined,
                   title: user.email ?? '',
-                  subtitle: isArabic ? 'البريد الإلكتروني' : 'Email',
+                  subtitle: 'profile_email_subtitle'.tr(),
                 ),
                 SettingTile(
                   icon: Icons.person_outline,
-                  title: user.displayName ?? (isArabic ? 'اسم المستخدم' : 'Display Name'),
-                  subtitle: isArabic ? 'الاسم المعروض' : 'Display Name',
+                  title: user.displayName ?? 'profile_display_name_fallback'.tr(),
+                  subtitle: 'display_name'.tr(),
                 ),
                 SettingTile(
                   icon: Icons.edit_outlined,
-                  title: isArabic ? 'تعديل الاسم' : 'Edit Display Name',
-                  subtitle: isArabic ? 'تغيير اسمك المعروض' : 'Change your display name',
+                  title: 'profile_edit_name_title'.tr(),
+                  subtitle: 'profile_edit_name_subtitle'.tr(),
                   trailing: Icon(Icons.chevron_right, size: 20, color: isDark ? Colors.white60 : Colors.black54),
                   onTap: () => _showEditNameDialog(context, ref, user, isArabic),
                 ),
                 SettingTile(
                   icon: Icons.password,
-                  title: isArabic ? 'تغيير كلمة المرور' : 'Change Password',
-                  subtitle: isArabic ? 'تحديث كلمة المرور' : 'Update your password',
+                  title: 'profile_change_password_title'.tr(),
+                  subtitle: 'profile_change_password_subtitle'.tr(),
                   trailing: Icon(Icons.chevron_right, size: 20, color: isDark ? Colors.white60 : Colors.black54),
                   onTap: () => _showChangePasswordDialog(context, ref, isArabic),
                 ),
@@ -232,7 +232,7 @@ class ProfileScreen extends ConsumerWidget {
             // App Mode Section
             SettingsSectionHeader(
               icon: Icons.tune,
-              title: isArabic ? 'وضع التطبيق' : 'App Mode',
+              title: 'profile_section_app_mode'.tr(),
             ),
             SettingsCard(
               children: [
@@ -245,7 +245,7 @@ class ProfileScreen extends ConsumerWidget {
             // Achievements Section
             SettingsSectionHeader(
               icon: Icons.emoji_events,
-              title: isArabic ? 'الإنجازات' : 'Achievements',
+              title: 'profile_section_achievements'.tr(),
             ),
             _AchievementsBadgeGrid(isDark: isDark, isArabic: isArabic, appMode: appMode),
             SizedBox(height: gapL),
@@ -253,20 +253,20 @@ class ProfileScreen extends ConsumerWidget {
             // Settings & App Tour Section
             SettingsSectionHeader(
               icon: Icons.settings_outlined,
-              title: isArabic ? 'الإعدادات' : 'Settings',
+              title: 'profile_section_settings'.tr(),
             ),
             SettingsCard(
               children: [
                 SettingTile(
                   icon: Icons.settings_outlined,
-                  title: isArabic ? 'جميع الإعدادات' : 'All Settings',
-                  subtitle: isArabic ? 'الصلاة، المهام، الإشعارات، المظهر' : 'Prayer, tasks, notifications, appearance',
+                  title: 'profile_all_settings_title'.tr(),
+                  subtitle: 'profile_all_settings_subtitle'.tr(),
                   onTap: () => Navigator.of(context).pushNamed('/settings'),
                 ),
                 SettingTile(
                   icon: Icons.tour_outlined,
-                  title: isArabic ? 'جولة التطبيق' : 'App Tour',
-                  subtitle: isArabic ? 'أعد مشاهدة دليل التطبيق' : 'Replay the interactive walkthrough',
+                  title: 'profile_app_tour_title'.tr(),
+                  subtitle: 'profile_app_tour_subtitle'.tr(),
                   onTap: () async {
                     final prefs = SharedPreferencesService.instance;
                     await prefs.setTutorialCompleted(false);
@@ -288,7 +288,7 @@ class ProfileScreen extends ConsumerWidget {
             // About Section
             SettingsSectionHeader(
               icon: Icons.info_outline,
-              title: isArabic ? 'حول التطبيق' : 'About',
+              title: 'profile_section_about'.tr(),
             ),
             SettingsCard(
               children: [
@@ -296,7 +296,7 @@ class ProfileScreen extends ConsumerWidget {
                   if (!kIsWeb && Platform.isWindows) {
                     return SettingTile(
                       icon: Icons.info_outline,
-                      title: isArabic ? 'الإصدار' : 'Version',
+                      title: 'profile_version_title'.tr(),
                       subtitle: AppConstants.desktopVersion,
                     );
                   }
@@ -307,7 +307,7 @@ class ProfileScreen extends ConsumerWidget {
                           ? '${snap.data!.version}+${snap.data!.buildNumber}'
                           : '—';
                       return ProfileVersionTile(
-                        title: isArabic ? 'الإصدار' : 'Version',
+                        title: 'profile_version_title'.tr(),
                         version: version,
                         // Dev tile item (7 taps): the post-prayer check for the next prayer, now.
                         firePostCheck: () async {
@@ -357,7 +357,7 @@ class ProfileScreen extends ConsumerWidget {
                 }),
                 SettingTile(
                   icon: Icons.code,
-                  title: isArabic ? 'المطور' : 'Developer',
+                  title: 'profile_developer_title'.tr(),
                   subtitle: 'Aura Team',
                 ),
               ],
@@ -405,7 +405,7 @@ class ProfileScreen extends ConsumerWidget {
                       Text(
                         'guest_sync_profile_subtitle'
                             .tr()
-                            .replaceAll('%d', '${migration.taskCount}'),
+                            .replaceAll('%d', NumberFormatter.withArabicNumeralsByLanguage('${migration.taskCount}', isArabic ? 'ar' : 'en')),
                         style: AppTypography.bodyS.copyWith(
                           color: AppConstants.textSecondary(isDark),
                         ),
@@ -556,7 +556,7 @@ class ProfileScreen extends ConsumerWidget {
               children: [
                 // Name
                 Text(
-                  user.displayName ?? (isArabic ? 'مستخدم' : 'User'),
+                  user.displayName ?? 'profile_user_fallback'.tr(),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                         color: isDark ? Colors.white : AppConstants.getPrimary(isDark),
@@ -689,7 +689,7 @@ class ProfileScreen extends ConsumerWidget {
 
         // Show -- until user has at least 1 recorded prayer
         final completionValue = totalPrayers > 0
-            ? '${(completionRate * 100).round()}%'
+            ? '${NumberFormatter.withArabicNumeralsByLanguage('${(completionRate * 100).round()}', isArabic ? 'ar' : 'en')}%'
             : '--';
 
         final ts = MediaQuery.textScalerOf(context);
@@ -702,7 +702,7 @@ class ProfileScreen extends ConsumerWidget {
             child: Row(
               children: [
                 Text(
-                  isArabic ? 'الصلاة' : 'Prayer',
+                  'profile_prayer_stats_section'.tr(),
                   style: AppTypography.bodyS.copyWith(
                     fontWeight: FontWeight.w600,
                     color: AppConstants.textMuted(isDark),
@@ -713,7 +713,7 @@ class ProfileScreen extends ConsumerWidget {
                   TextButton.icon(
                     onPressed: () => _showShareDialog(context, isArabic, ShareCardType.prayerStreak, streak),
                     icon: const Icon(Icons.share_outlined, size: 16),
-                    label: Text(isArabic ? 'مشاركة' : 'Share', style: AppTypography.caption),
+                    label: Text('profile_share'.tr(), style: AppTypography.caption),
                     style: TextButton.styleFrom(
                       foregroundColor: AppConstants.getPrimary(isDark),
                       padding: EdgeInsets.zero,
@@ -733,7 +733,7 @@ class ProfileScreen extends ConsumerWidget {
                 child: _ProfileStatCard(
                   icon: Icons.local_fire_department,
                   value: NumberFormatter.withArabicNumeralsByLanguage('$streak', isArabic ? 'ar' : 'en'),
-                  label: isArabic ? 'التتابع' : 'Streak',
+                  label: 'profile_stat_streak'.tr(),
                   color: Colors.orange,
                   isDark: isDark,
                 ),
@@ -743,7 +743,7 @@ class ProfileScreen extends ConsumerWidget {
                 child: _ProfileStatCard(
                   icon: Icons.mosque_outlined,
                   value: NumberFormatter.withArabicNumeralsByLanguage('$totalPrayers', isArabic ? 'ar' : 'en'),
-                  label: isArabic ? 'الصلوات' : 'Prayers',
+                  label: 'profile_stat_prayers'.tr(),
                   color: AppConstants.getPrimary(isDark),
                   isDark: isDark,
                 ),
@@ -753,7 +753,7 @@ class ProfileScreen extends ConsumerWidget {
                 child: _ProfileStatCard(
                   icon: Icons.check_circle,
                   value: completionValue,
-                  label: isArabic ? 'الإتمام' : 'Completion',
+                  label: 'profile_stat_completion'.tr(),
                   color: totalPrayers > 0 ? Colors.green : Colors.grey,
                   isDark: isDark,
                 ),
@@ -763,7 +763,7 @@ class ProfileScreen extends ConsumerWidget {
                 child: _ProfileStatCard(
                   icon: Icons.emoji_events,
                   value: NumberFormatter.withArabicNumeralsByLanguage('$achievementCount', isArabic ? 'ar' : 'en'),
-                  label: isArabic ? 'الأوسمة' : 'Badges',
+                  label: 'profile_stat_badges'.tr(),
                   color: Colors.purple,
                   isDark: isDark,
                 ),
@@ -794,7 +794,7 @@ class ProfileScreen extends ConsumerWidget {
               children: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: Text(isArabic ? 'إلغاء' : 'Cancel'),
+                  child: Text('cancel'.tr()),
                 ),
                 const SizedBox(width: 8),
                 FilledButton.icon(
@@ -803,7 +803,7 @@ class ProfileScreen extends ConsumerWidget {
                     await captureAndShare(cardKey, 'aura_share.png');
                   },
                   icon: const Icon(Icons.share_outlined, size: 16),
-                  label: Text(isArabic ? 'مشاركة' : 'Share'),
+                  label: Text('profile_share'.tr()),
                 ),
               ],
             ),
@@ -829,7 +829,7 @@ class ProfileScreen extends ConsumerWidget {
             Padding(
               padding: EdgeInsets.symmetric(horizontal: ts.scale(AppConstants.paddingMedium)),
               child: Text(
-                isArabic ? 'المهام' : 'Tasks',
+                'profile_task_stats_section'.tr(),
                 style: AppTypography.bodyS.copyWith(
                   fontWeight: FontWeight.w600,
                   color: AppConstants.textMuted(isDark),
@@ -846,7 +846,7 @@ class ProfileScreen extends ConsumerWidget {
                       icon: Icons.today,
                       value: NumberFormatter.withArabicNumeralsByLanguage(
                           '${stats.dueToday}', isArabic ? 'ar' : 'en'),
-                      label: isArabic ? 'اليوم' : 'Today',
+                      label: 'profile_stat_today'.tr(),
                       color: AppConstants.getPrimary(isDark),
                       isDark: isDark,
                     ),
@@ -857,7 +857,7 @@ class ProfileScreen extends ConsumerWidget {
                       icon: Icons.task_alt,
                       value: NumberFormatter.withArabicNumeralsByLanguage(
                           '${stats.completed}', isArabic ? 'ar' : 'en'),
-                      label: isArabic ? 'مكتملة' : 'Done',
+                      label: 'profile_stat_done'.tr(),
                       color: Colors.green,
                       isDark: isDark,
                     ),
@@ -868,7 +868,7 @@ class ProfileScreen extends ConsumerWidget {
                       icon: Icons.pending_actions,
                       value: NumberFormatter.withArabicNumeralsByLanguage(
                           '${stats.pending}', isArabic ? 'ar' : 'en'),
-                      label: isArabic ? 'معلقة' : 'Pending',
+                      label: 'profile_stat_pending'.tr(),
                       color: Colors.orange,
                       isDark: isDark,
                     ),
@@ -922,18 +922,18 @@ class ProfileScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(isArabic ? 'تعديل الاسم' : 'Edit Display Name'),
+        title: Text('profile_edit_name_title'.tr()),
         content: TextField(
           controller: controller,
           autofocus: true,
           decoration: InputDecoration(
-            hintText: isArabic ? 'أدخل اسمك' : 'Enter your name',
+            hintText: 'profile_edit_name_hint'.tr(),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(isArabic ? 'إلغاء' : 'Cancel'),
+            child: Text('cancel'.tr()),
           ),
           TextButton(
             onPressed: () async {
@@ -944,15 +944,18 @@ class ProfileScreen extends ConsumerWidget {
                   if (context.mounted) Navigator.pop(context);
                 } catch (e) {
                   if (context.mounted) {
+                    final msg = e.toString().startsWith('Exception: ')
+                        ? e.toString().substring('Exception: '.length)
+                        : e.toString();
                     final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(isArabic ? 'خطأ: $e' : 'Error: $e'), backgroundColor: AppConstants.error, behavior: SnackBarBehavior.floating, margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16)),
+                      SnackBar(content: Text(msg), backgroundColor: AppConstants.error, behavior: SnackBarBehavior.floating, margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16)),
                     );
                     Future.delayed(const Duration(seconds: 3), snackCtrl.close);
                   }
                 }
               }
             },
-            child: Text(isArabic ? 'حفظ' : 'Save'),
+            child: Text('save'.tr()),
           ),
         ],
       ),
@@ -965,19 +968,19 @@ class ProfileScreen extends ConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(isArabic ? 'تغيير كلمة المرور' : 'Change Password'),
+        title: Text('profile_change_password_title'.tr()),
         content: TextField(
           controller: controller,
           obscureText: true,
           autofocus: true,
           decoration: InputDecoration(
-            hintText: isArabic ? 'كلمة المرور الجديدة' : 'New password',
+            hintText: 'profile_new_password_hint'.tr(),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(isArabic ? 'إلغاء' : 'Cancel'),
+            child: Text('cancel'.tr()),
           ),
           TextButton(
             onPressed: () async {
@@ -989,7 +992,7 @@ class ProfileScreen extends ConsumerWidget {
                     Navigator.pop(context);
                     final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text(isArabic ? 'تم تغيير كلمة المرور' : 'Password updated'),
+                        content: Text('profile_password_updated'.tr()),
                         backgroundColor: Colors.green,
                         behavior: SnackBarBehavior.floating,
                         margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16),
@@ -999,15 +1002,18 @@ class ProfileScreen extends ConsumerWidget {
                   }
                 } catch (e) {
                   if (context.mounted) {
+                    final msg = e.toString().startsWith('Exception: ')
+                        ? e.toString().substring('Exception: '.length)
+                        : e.toString();
                     final snackCtrl = ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(isArabic ? 'خطأ: $e' : 'Error: $e'), backgroundColor: AppConstants.error, behavior: SnackBarBehavior.floating, margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16)),
+                      SnackBar(content: Text(msg), backgroundColor: AppConstants.error, behavior: SnackBarBehavior.floating, margin: const EdgeInsets.only(bottom: 82, left: 16, right: 16)),
                     );
                     Future.delayed(const Duration(seconds: 3), snackCtrl.close);
                   }
                 }
               }
             },
-            child: Text(isArabic ? 'حفظ' : 'Save'),
+            child: Text('save'.tr()),
           ),
         ],
       ),
@@ -1194,9 +1200,9 @@ class _AppModeTiles extends ConsumerWidget {
     final currentMode = ref.watch(appModeProvider);
 
     final modes = [
-      (AppMode.both, Icons.apps, isArabic ? 'الكل' : 'Full App', isArabic ? 'الصلاة والقرآن والمهام' : 'Prayer, Quran & Tasks'),
-      (AppMode.prayerOnly, Icons.mosque, isArabic ? 'الصلاة والقرآن' : 'Prayer & Quran', isArabic ? 'أوقات الصلاة والقرآن والأذان' : 'Prayer times, Quran & Adhan'),
-      (AppMode.tasksOnly, Icons.task_alt, isArabic ? 'المهام فقط' : 'Tasks Only', isArabic ? 'إدارة المهام' : 'Task management'),
+      (AppMode.both, Icons.apps, 'profile_app_mode_both'.tr(), 'profile_app_mode_both_subtitle'.tr()),
+      (AppMode.prayerOnly, Icons.mosque, 'profile_app_mode_prayer'.tr(), 'profile_app_mode_prayer_subtitle'.tr()),
+      (AppMode.tasksOnly, Icons.task_alt, 'profile_app_mode_tasks'.tr(), 'profile_app_mode_tasks_subtitle'.tr()),
     ];
 
     return Column(
@@ -1344,8 +1350,8 @@ class _AchievementsBadgeGridState extends State<_AchievementsBadgeGrid> {
                                 const SizedBox(width: 4),
                                 Text(
                                   _isExpanded
-                                      ? (isArabic ? 'عرض أقل' : 'Show less')
-                                      : (isArabic ? 'عرض الكل (${NumberFormatter.withArabicNumerals('${all.length - maxCollapsed}')}+)' : 'Show all (+${all.length - maxCollapsed})'),
+                                      ? 'profile_achievements_show_less'.tr()
+                                      : 'profile_achievements_show_all'.tr().replaceAll('%d', NumberFormatter.withArabicNumerals('${all.length - maxCollapsed}')),
                                   style: AppTypography.caption.copyWith(color: primary, fontWeight: FontWeight.w600),
                                 ),
                               ],
