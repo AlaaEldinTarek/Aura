@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/models/azkar.dart';
 import '../../core/providers/azkar_provider.dart';
@@ -17,19 +18,31 @@ class AzkarScreen extends ConsumerStatefulWidget {
 }
 
 class _AzkarScreenState extends ConsumerState<AzkarScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.read(azkarProvider.notifier).checkDate();
+    });
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _tabController.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState appState) {
+    if (appState == AppLifecycleState.resumed && mounted) {
+      ref.read(azkarProvider.notifier).checkDate();
+    }
   }
 
   @override
@@ -41,17 +54,17 @@ class _AzkarScreenState extends ConsumerState<AzkarScreen>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isArabic ? 'الأذكار' : 'Azkar'),
+        title: Text('azkar_title'.tr()),
         bottom: TabBar(
           controller: _tabController,
           tabs: [
             Tab(
               icon: Text('🌅', style: TextStyle(fontSize: ts.scale(18.0))),
-              text: isArabic ? 'أذكار الصباح' : 'Morning',
+              text: 'azkar_morning_tab'.tr(),
             ),
             Tab(
               icon: Text('🌙', style: TextStyle(fontSize: ts.scale(18.0))),
-              text: isArabic ? 'أذكار المساء' : 'Evening',
+              text: 'azkar_evening_tab'.tr(),
             ),
           ],
         ),
@@ -261,8 +274,8 @@ class _ProgressHeader extends StatelessWidget {
               children: [
                 Text(
                   isComplete
-                      ? (isArabic ? 'ما شاء الله! 🎉' : 'Well done! 🎉')
-                      : (isArabic ? 'تقدمك اليوم' : "Today's Progress"),
+                      ? 'azkar_progress_complete_title'.tr()
+                      : 'azkar_progress_title'.tr(),
                   style: AppTypography.bodyL.copyWith(
                     fontWeight: FontWeight.bold,
                     color: isComplete
@@ -273,10 +286,11 @@ class _ProgressHeader extends StatelessWidget {
                 SizedBox(height: ts.scale(4.0)),
                 Text(
                   isComplete
-                      ? (isArabic ? 'أكملت جميع الأذكار' : 'All azkar completed')
-                      : (isArabic
-                          ? '${NumberFormatter.withArabicNumerals('$done')} من ${NumberFormatter.withArabicNumerals('$total')} مكتمل'
-                          : '$done of $total completed'),
+                      ? 'azkar_progress_complete_subtitle'.tr()
+                      : 'azkar_progress_subtitle'.tr(args: [
+                          NumberFormatter.withArabicNumeralsByLanguage('$done', isArabic ? 'ar' : 'en'),
+                          NumberFormatter.withArabicNumeralsByLanguage('$total', isArabic ? 'ar' : 'en'),
+                        ]),
                   style: AppTypography.bodyS.copyWith(
                     color: isComplete
                         ? Colors.white.withOpacity(0.9)
@@ -290,9 +304,9 @@ class _ProgressHeader extends StatelessWidget {
                       Text('🔥', style: TextStyle(fontSize: ts.scale(12.0))),
                       SizedBox(width: ts.scale(4.0)),
                       Text(
-                        isArabic
-                            ? '${NumberFormatter.withArabicNumerals('$streakCount')} يوم متتالي'
-                            : '$streakCount day streak',
+                        'azkar_streak'.tr(args: [
+                          NumberFormatter.withArabicNumeralsByLanguage('$streakCount', isArabic ? 'ar' : 'en'),
+                        ]),
                         style: AppTypography.caption.copyWith(
                           fontWeight: FontWeight.w600,
                           color: isComplete

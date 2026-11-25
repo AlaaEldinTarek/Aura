@@ -105,6 +105,19 @@ class AzkarNotifier extends StateNotifier<AzkarState> {
     return '${yesterday.year}-${yesterday.month.toString().padLeft(2, '0')}-${yesterday.day.toString().padLeft(2, '0')}';
   }
 
+  void checkDate() {
+    final today = _todayKey();
+    if (state.dateKey == today) return;
+    state = AzkarState(
+      completedMorning: {},
+      completedEvening: {},
+      dateKey: today,
+      streakCount: state.streakCount,
+      totalSessions: state.totalSessions,
+    );
+    _save();
+  }
+
   Future<void> resetDay() async {
     state = AzkarState.empty();
     await _save();
