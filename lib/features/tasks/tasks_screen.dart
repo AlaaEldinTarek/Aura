@@ -1147,13 +1147,21 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
         .where((t) => isVisible(t) && t.isOverdue)
         .toList()
       ..sort((a, b) =>
-          (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099)));
+          (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099)))
+      ..sort((a, b) {
+        if (a.isPinned == b.isPinned) return 0;
+        return a.isPinned ? -1 : 1;
+      });
 
     final todayTasks = tasks
         .where((t) => isVisible(t) && t.isDueToday && !t.isOverdue)
         .toList()
       ..sort((a, b) =>
-          (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099)));
+          (a.dueDate ?? DateTime(2099)).compareTo(b.dueDate ?? DateTime(2099)))
+      ..sort((a, b) {
+        if (a.isPinned == b.isPinned) return 0;
+        return a.isPinned ? -1 : 1;
+      });
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -1168,7 +1176,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       if (t.dueDate == null || !t.hasDueTime) return false;
       return t.dueDate!.isAfter(now) && t.dueDate!.isBefore(in3Hours);
     }).toList()
-      ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
+      ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!))
+      ..sort((a, b) {
+        if (a.isPinned == b.isPinned) return 0;
+        return a.isPinned ? -1 : 1;
+      });
 
     final tomorrowTasks = tasks.where((t) {
       if (!isVisible(t) || t.isOverdue || t.isCompleted) return false;
@@ -1176,7 +1188,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       final dueDay = DateTime(t.dueDate!.year, t.dueDate!.month, t.dueDate!.day);
       return dueDay == tomorrow && !dueSoonTasks.contains(t);
     }).toList()
-      ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
+      ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!))
+      ..sort((a, b) {
+        if (a.isPinned == b.isPinned) return 0;
+        return a.isPinned ? -1 : 1;
+      });
 
     final thisWeekTasks = tasks.where((t) {
       if (!isVisible(t) || t.isOverdue || t.isDueToday || t.isCompleted) return false;
@@ -1185,7 +1201,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       return dueDay.isAfter(tomorrow) && dueDay.isBefore(thisWeekEnd) &&
           !dueSoonTasks.contains(t) && !tomorrowTasks.contains(t);
     }).toList()
-      ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
+      ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!))
+      ..sort((a, b) {
+        if (a.isPinned == b.isPinned) return 0;
+        return a.isPinned ? -1 : 1;
+      });
 
     final nextWeekTasks = tasks.where((t) {
       if (!isVisible(t) || t.isOverdue || t.isDueToday || t.isCompleted) return false;
@@ -1193,7 +1213,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       final dueDay = DateTime(t.dueDate!.year, t.dueDate!.month, t.dueDate!.day);
       return !dueDay.isBefore(thisWeekEnd) && dueDay.isBefore(nextWeekEnd);
     }).toList()
-      ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
+      ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!))
+      ..sort((a, b) {
+        if (a.isPinned == b.isPinned) return 0;
+        return a.isPinned ? -1 : 1;
+      });
 
     final laterTasks = tasks.where((t) {
       if (!isVisible(t) || t.isOverdue || t.isDueToday || t.isCompleted) return false;
@@ -1201,7 +1225,11 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       final dueDay = DateTime(t.dueDate!.year, t.dueDate!.month, t.dueDate!.day);
       return !dueDay.isBefore(nextWeekEnd);
     }).toList()
-      ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!));
+      ..sort((a, b) => a.dueDate!.compareTo(b.dueDate!))
+      ..sort((a, b) {
+        if (a.isPinned == b.isPinned) return 0;
+        return a.isPinned ? -1 : 1;
+      });
 
     // No due date tasks
     final otherTasks = tasks
