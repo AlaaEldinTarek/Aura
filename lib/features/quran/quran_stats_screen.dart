@@ -394,7 +394,7 @@ class _BarChart extends StatelessWidget {
       return arDays[day.weekday % 7];
     }
     const enDays = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
-    return enDays[day.weekday % 7];
+    return enDays[day.weekday - 1];
   }
 
   @override
