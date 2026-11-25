@@ -21,7 +21,7 @@ class AuthService {
   );
 
   // Auth State Changes
-  Stream<User?> get authStateChanges => _auth.authStateChanges();
+  Stream<User?> get authStateChanges => _auth.userChanges();
 
   // Current User
   User? get currentUser => _auth.currentUser;
