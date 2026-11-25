@@ -2,9 +2,7 @@
   "app_name": "Aura",
   "app_name_arabic": "هالة",
   "app_tagline": "هالة تضىء يومك بالالتزام",
-
   "splash_welcome": "مرحباً بك في هالة",
-
   "auth_login": "تسجيل الدخول",
   "auth_signup": "إنشاء حساب",
   "auth_email": "البريد الإلكتروني",
@@ -39,7 +37,6 @@
   "auth_email_address": "البريد الإلكتروني",
   "auth_send": "إرسال",
   "auth_reset_sent": "تم إرسال رابط إعادة التعيين إلى {}",
-
   "onboarding_title": "أكمل إعداداتك",
   "onboarding_description": "خصص تجربة هالة من خلال اختيار تفضيلاتك",
   "onboarding_language": "اللغة",
@@ -48,20 +45,17 @@
   "onboarding_theme_dark": "داكن",
   "onboarding_theme_system": "النظام",
   "onboarding_continue": "متابعة",
-
   "home": "الرئيسية",
   "home_welcome": "مرحباً بك في هالة",
   "home_description": "رفيقك للإنتاجية",
   "profile": "الملف الشخصي",
   "version": "الإصدار",
   "made_with_love": "صُنع بحب",
-
   "error_unknown": "حدث خطأ غير معروف",
   "error_network": "خطأ في الشبكة. الرجاء التحقق من اتصالك",
   "error_auth_failed": "فشل المصادقة",
   "error_cancelled": "تم إلغاء العملية",
   "offline_mode": "أنت غير متصل. سيتم مزامنة البيانات عند العودة للإنترنت",
-
   "theme_light": "الوضع الفاتح",
   "theme_dark": "الوضع الداكن",
   "theme_system": "النظام",
@@ -69,24 +63,20 @@
   "language_arabic": "العربية",
   "logout": "تسجيل الخروج",
   "logout_confirm": "هل أنت متأكد من تسجيل الخروج؟",
-
   "prayer_times_title": "أوقات الصلاة",
   "nav_prayer": "الصلاة",
   "prayer_times_desc": "تتبع جدول الصلاة اليومي",
   "prayer_times_coming_soon": "قريباً",
-
   "task_management": "إدارة المهام",
   "tasks_nav": "المهام",
   "task_management_desc": "نظم مهامك اليومية بكفاءة",
   "coming_soon": "قريباً",
   "Tasks_coming_soon": "إدارة المهام قريباً",
   "guest_mode": "المتابعة كضيف",
-
   "error_loading_preferences": "خطأ في تحميل الإعدادات",
   "error_loading_theme": "خطأ في تحميل المظهر",
   "error_loading_profile": "خطأ في تحميل الملف الشخصي",
   "error_loading_setting": "خطأ في تحميل الإعداد",
-
   "theme": "المظهر",
   "language": "اللغة",
   "loading": "جاري التحميل...",
@@ -96,7 +86,6 @@
   "help": "مساعدة",
   "save": "حفظ",
   "edit": "تعديل",
-
   "profile_header_title": "الملف الشخصي",
   "account": "الحساب",
   "email": "البريد الإلكتروني",
@@ -114,14 +103,12 @@
   "login_required": "يجب تسجيل الدخول",
   "login_required_desc": "الرجاء تسجيل الدخول للوصول إلى ملفك الشخصي",
   "login": "تسجيل الدخول",
-
   "Fajr": "الفجر",
   "Shuruq": "الشروق",
   "Dhuhr": "الظهر",
   "Asr": "العصر",
   "Maghrib": "المغرب",
   "Isha": "العشاء",
-
   "month_january": "يناير",
   "month_february": "فبراير",
   "month_march": "مارس",
@@ -134,7 +121,6 @@
   "month_october": "أكتوبر",
   "month_november": "نوفمبر",
   "month_december": "ديسمبر",
-
   "weekday_sunday": "الأحد",
   "weekday_monday": "الاثنين",
   "weekday_tuesday": "الثلاثاء",
@@ -142,19 +128,15 @@
   "weekday_thursday": "الخميس",
   "weekday_friday": "الجمعة",
   "weekday_saturday": "السبت",
-
   "press_again_to_exit": "اضغط مرة أخرى للخروج",
-
   "next_prayer": "الصلاة القادمة",
   "starts_in": "تبدأ خلال",
   "today": "اليوم",
   "error_loading_prayer_times": "خطأ في تحميل أوقات الصلاة",
-
   "battery_optimization_title": "تعطيل تحسين البطارية",
   "battery_optimization_message": "كي تعمل تنبيهات الصلاة بشكل موثوق، يرجاء تعطيل تحسين البطارية لهذا التطبيق.",
   "exact_alarm_title": "إذن المنبه الدقيق",
   "exact_alarm_message": "كي تعمل منبهات الصلاة بشكل صحيح، يرجاء منح إذن المنبه الدقيق.",
-
   "auto_launch_title": "التشغيل التلقائي بعد إعادة التشغيل",
   "auto_launch_subtitle": "في هواوي: فعّل «التشغيل التلقائي» و«التشغيل الثانوي» و«التشغيل في الخلفية» لتطبيق Aura حتى تعمل تنبيهات الصلاة بعد إعادة تشغيل الهاتف",
   "background_service_section": "العمل في الخلفية",
@@ -162,33 +144,27 @@
   "background_service_subtitle": "يحافظ التطبيق على العمل حتى عند إغلاقه للحصول على تنبيهات الصلاة",
   "background_service_enable": "تفعيل العمل في الخلفية",
   "background_service_enable_subtitle": "يظهر إشعارًا مستمرًا للحفاظ على التطبيق نشطًا",
-
   "notifications_section": "الإشعارات",
   "prayer_notifications_title": "إشعارات الصلاة",
   "prayer_notifications_subtitle": "تنبيه قبل موعد الصلاة",
   "notification_time_title": "وقت التنبيه",
   "notification_time_subtitle": "5 دقائق قبل الصلاة",
   "minutes": "دقائق",
-
   "theme_light_mode_full": "وضع فاتح",
   "theme_dark_mode_full": "وضع داكن",
-
   "notification_time_dialog_title": "وقت التنبيه",
   "language_dialog_name": "اللغة",
   "language_dialog_title": "اللغة",
   "theme_dialog_title": "المظهر",
-
   "cancel": "إلغاء",
   "ok": "حسناً",
   "settings": "الإعدادات",
-
   "auto_silent_mode": "الوضع الصامت التلقائي",
   "auto_silent_mode_subtitle": "تشغيل الوضع الصامت تلقائياً عند الأذان لمدة 20 دقيقة",
   "silent_mode_duration": "مدة الوضع الصامت",
   "silent_mode_disabled": "الوضع الصامت معطل، تم التخطي",
   "silent_mode_enabled": "تم تفعيل الوضع الصامت",
   "silent_mode_extended": "تمديد الوضع الصامت",
-
   "remind_me_again": "ذكرني مرة أخرى",
   "remind_me_again_desc": "إرسال تذكير آخر قبل 5 دقائق من الصلاة",
   "test_notification": "اختبار الإشعار",
@@ -203,7 +179,6 @@
   "notification_permission_desc": "مطلوب لإشعارات أوقات الصلاة",
   "dnd_permission_title": "وضع عدم الإزعاج",
   "dnd_permission_desc": "مطلوب لتفعيل الوضع الصامت أثناء الصلاة",
-
   "focus_mode": "وضع التركيز",
   "focus_mode_subtitle": "قفل الشاشة وكتم الإشعارات أثناء العمل على هذه المهمة",
   "focus_mode_duration": "مدة التركيز",
@@ -223,7 +198,6 @@
   "focus_mode_task_done": "إتمام المهمة والخروج",
   "accessibility_permission_title": "أذونات وضع التركيز",
   "accessibility_permission_desc": "مطلوب لعمل وضع التركيز بشكل صحيح",
-
   "jumua_mubarak": "جمعة مباركة 🕌",
   "jumua_subtitle": "جعلها الله جمعة مباركة وتقبّل صلاتك",
   "jumua_prayer_name": "الجمعة",
@@ -234,16 +208,13 @@
   "pre_prayer_reminder_option_many": "{} دقيقة",
   "pre_prayer_reminder_switch_subtitle": "قبل كل صلاة بـ {} دقائق",
   "pre_prayer_reminder_switch_subtitle_many": "قبل كل صلاة بـ {} دقيقة",
-
   "overlay_permission_title": "العرض فوق التطبيقات",
   "overlay_permission_desc": "مطلوب لعرض شاشة وضع التركيز فوق التطبيقات الأخرى",
-
   "post_prayer_done": "صلّيت",
   "post_prayer_late": "متأخر",
   "post_prayer_missed": "فاتتني",
   "post_prayer_remind_later": "ذكّرني لاحقاً",
   "post_prayer_next_note": "صلاة {prayer} ستبدأ بعد {min} دقيقة",
-
   "prayer_tracking_reminders": "تذكير تسجيل الصلاة",
   "prayer_tracking_reminders_desc": "إشعار بعد الصلاة وملخص يومي",
   "daily_summary_time": "وقت الملخص اليومي",
@@ -253,7 +224,6 @@
   "prayer_status_later_label": "لاحقاً",
   "daily_summary_notif_title": "تذكير الصلاة اليومي",
   "daily_summary_notif_body": "لديك {count} صلوات لم تُسجَّل اليوم",
-
   "quran": "القرآن",
   "surahs": "السور",
   "juz": "الأجزاء",
@@ -281,7 +251,6 @@
   "bookmark_delete_message": "سيتم حذف هذه المحفوظات نهائياً.",
   "bookmark_deleted": "تم حذف المحفوظات",
   "undo": "تراجع",
-
   "wird": "الورد",
   "wird_setup_title": "عيّن وردك اليومي",
   "wird_setup_subtitle": "التزم بقراءة القرآن كل يوم",
@@ -447,7 +416,6 @@
   "tutorial_reader_topbar_body": "اضغط على أيقونة الإشارة لوضع علامة الورد على هذه الصفحة. اضغط على أي آية لعرض نصها وحفظها بلون مخصص. اضغط في أي مكان آخر لإخفاء الأشرطة.",
   "tutorial_reader_bottombar_title": "التنقل بين الصفحات",
   "tutorial_reader_bottombar_body": "استخدم الأسهم للانتقال للصفحة السابقة أو التالية. اضغط على رقم الصفحة للقفز مباشرة لأي صفحة في المصحف.",
-
   "azkar": "الأذكار",
   "azkar_morning": "أذكار الصباح",
   "azkar_evening": "أذكار المساء",
@@ -456,7 +424,6 @@
   "azkar_well_done": "ما شاء الله! 🎉",
   "azkar_of": "من",
   "azkar_completed": "مكتمل",
-
   "quran_stats_title": "إحصاءات القرآن",
   "quran_stats_header_pages": "مجموع الصفحات",
   "quran_stats_header_khatm": "ختمة",
@@ -470,7 +437,6 @@
   "quran_stats_pages": "صفحة",
   "quran_stats_days": "يوم",
   "quran_stats_juz": "جزء",
-
   "events_title": "المناسبات الإسلامية",
   "events_no_events": "لا توجد مناسبات قادمة",
   "dhikr_title": "المسبحة",
@@ -515,7 +481,6 @@
   "dhikr_stats_weekly_sub": "عدد التسبيحات في آخر 7 أيام",
   "dhikr_stats_recent": "الجلسات الأخيرة",
   "dhikr_stats_empty": "لا توجد جلسات بعد",
-
   "location_dialog_title": "تحديد الموقع",
   "location_auto_detect": "تحديد تلقائي (IP)",
   "location_detecting": "جارٍ التحديد...",
@@ -530,7 +495,6 @@
   "location_invalid_coords": "إحداثيات غير صالحة. خط العرض: -90 إلى 90، خط الطول: -180 إلى 180.",
   "location_no_selection": "ابحث عن مدينة أو أدخل الإحداثيات.",
   "location_change": "تغيير الموقع",
-
   "khatma_celebration_title": "مبروك!",
   "khatma_celebration_subtitle": "لقد أتممت تلاوة القرآن الكريم",
   "khatma_count_label": "الختمة #%d",
@@ -547,7 +511,6 @@
   "khatma_finished_no": "لا بعد",
   "khatma_finished_keep": "أكمل القراءة",
   "khatma_finished_body_on_last": "علامتك على الصفحة %d بالفعل، فتُحتسب هذه الصفحة فقط. بهذا تكون قد أتممت ختمة. لا يمكن التراجع عن هذا.",
-
   "guest_sync_dialog_title": "مزامنة بياناتك",
   "guest_sync_dialog_body": "لديك %d مهمة أنشأتها أثناء استخدام التطبيق كضيف. هل تريد نسخها إلى حسابك الآن؟",
   "guest_sync_now": "مزامنة الآن",
@@ -689,5 +652,41 @@
   "qibla_instruction_close": "أنت قريب من القبلة",
   "qibla_instruction_turn": "دور نحو اليمين",
   "qibla_hold_flat": "حمل جهازك بشكل مسطح",
-  "qibla_error_title": "خطأ في تحميل القبلة"
+  "qibla_error_title": "خطأ في تحميل القبلة",
+  "daily_content_ayah_title": "📖 آية اليوم",
+  "daily_content_hadith_title": "📜 حديث اليوم",
+  "onboarding_btn_lets_go": "هيا بنا! 🚀",
+  "onboarding_btn_next": "التالي",
+  "onboarding_btn_continue": "متابعة",
+  "onboarding_btn_back": "رجوع",
+  "onboarding_btn_skip": "تخطي",
+  "onboarding_theme_title": "اختر المظهر",
+  "onboarding_theme_subtitle": "كيف تريد أن يبدو تطبيقك؟",
+  "onboarding_theme_light_label": "فاتح",
+  "onboarding_theme_light_sub": "واجهة بيضاء ناصعة",
+  "onboarding_theme_dark_label": "داكن",
+  "onboarding_theme_dark_sub": "راحة للعين في الليل",
+  "onboarding_theme_system_label": "تلقائي",
+  "onboarding_theme_system_sub": "يتبع إعداد هاتفك",
+  "onboarding_mode_title": "كيف تريد استخدام هالة؟",
+  "onboarding_mode_subtitle": "يمكنك تغيير هذا لاحقاً من الإعدادات",
+  "onboarding_mode_full_label": "التطبيق كاملاً",
+  "onboarding_mode_full_sub": "أوقات الصلاة وإدارة المهام",
+  "onboarding_mode_full_badge": "موصى به",
+  "onboarding_mode_prayer_label": "الصلاة فقط",
+  "onboarding_mode_prayer_sub": "الأذان والقبلة والتتبع والذكر",
+  "onboarding_mode_tasks_label": "المهام فقط",
+  "onboarding_mode_tasks_sub": "المهام ووضع التركيز والإنجازات",
+  "onboarding_allset_title": "أنت مستعد! 🎉",
+  "onboarding_allset_subtitle": "هالة جاهزة لتبدأ رحلتك.\nإليك ما اخترته:",
+  "onboarding_allset_footer": "يمكنك تغيير أي من هذه الإعدادات لاحقاً من الملف الشخصي",
+  "onboarding_summary_language_label": "اللغة",
+  "onboarding_summary_theme_label": "المظهر",
+  "onboarding_summary_mode_label": "وضع التطبيق",
+  "onboarding_summary_mode_full": "✨ التطبيق كاملاً",
+  "onboarding_summary_mode_prayer": "🕌 الصلاة فقط",
+  "onboarding_summary_mode_tasks": "✅ المهام فقط",
+  "onboarding_summary_theme_light": "☀️ فاتح",
+  "onboarding_summary_theme_dark": "🌙 داكن",
+  "onboarding_summary_theme_system": "⚡ تلقائي"
 }

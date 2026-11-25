@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_constants.dart';
@@ -20,9 +21,8 @@ class DailyContentScreen extends StatelessWidget {
         ? const Color(0xFF00897B)
         : const Color(0xFFD4A017);
 
-    final String typeLabel = isAyah
-        ? (isArabic ? '📖 آية اليوم' : '📖 Verse of the Day')
-        : (isArabic ? '📜 حديث اليوم' : '📜 Hadith of the Day');
+    final String typeLabel =
+        isAyah ? 'daily_content_ayah_title'.tr() : 'daily_content_hadith_title'.tr();
 
     return Scaffold(
       appBar: AppBar(
