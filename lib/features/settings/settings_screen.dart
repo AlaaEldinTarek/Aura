@@ -12,6 +12,7 @@ import '../../core/services/notification_service.dart';
 import '../../core/services/prayer_alarm_service.dart';
 import '../../core/services/platform_channel_service.dart';
 import '../../core/services/windows_startup_service.dart';
+import '../../core/utils/number_formatter.dart';
 import '../../core/widgets/auto_launch_dialog.dart';
 import '../../core/widgets/permission_dialog.dart';
 import '../../core/widgets/setting_tile.dart';
@@ -90,7 +91,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(isArabic ? 'الإعدادات' : 'Settings'),
+        title: Text('settings_title'.tr()),
       ),
       body: !_loaded
           ? const Center(child: CircularProgressIndicator())
@@ -103,7 +104,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   // ── Prayer ──────────────────────────────────────────────
                   SettingsSectionHeader(
                     icon: Icons.mosque_outlined,
-                    title: isArabic ? 'الصلاة' : 'Prayer',
+                    title: 'settings_section_prayer'.tr(),
                   ),
                   SettingsCard(children: [
                     // F57: one tile and one dialog per setting; Done saves.
@@ -143,8 +144,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     SettingTileSwitch(
                       icon: Icons.volume_off_outlined,
                       iconColor: Colors.purple,
-                      title: isArabic ? 'الوضع الصامت عند الأذان' : 'Silent Mode at Adhan',
-                      subtitle: isArabic ? 'يُفعّل الاهتزاز تلقائياً عند الأذان' : 'Auto-vibrate at prayer time',
+                      title: 'settings_silent_mode_title'.tr(),
+                      subtitle: 'settings_silent_mode_subtitle'.tr(),
                       value: _silentMode,
                       onChanged: (v) async {
                         setState(() => _silentMode = v);
@@ -155,20 +156,19 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       SettingTile(
                         icon: Icons.timer_outlined,
                         iconColor: Colors.purple,
-                        title: isArabic ? 'مدة الوضع الصامت' : 'Silent Mode Duration',
-                        subtitle: isArabic
-                            ? '$_silentDuration دقيقة'
-                            : '$_silentDuration minutes',
+                        title: 'settings_silent_duration_title'.tr(),
+                        subtitle:
+                            '${NumberFormatter.withArabicNumeralsByLanguage('$_silentDuration', isArabic ? 'ar' : 'en')} ${'settings_minutes_unit'.tr()}',
                         onTap: () => _showDurationPicker(context, isArabic, isDark),
                       ),
                     SettingTile(
                       icon: Icons.alarm_outlined,
-                      title: isArabic ? 'أوقات الإقامة' : 'Iqama Times',
+                      title: 'settings_iqama_title'.tr(),
                       onTap: () => Navigator.of(context).pushNamed('/iqama_settings'),
                     ),
                     SettingTile(
                       icon: Icons.download_outlined,
-                      title: isArabic ? 'تنزيل الأذان' : 'Adhan Sounds',
+                      title: 'settings_adhan_sounds_title'.tr(),
                       onTap: () => Navigator.of(context).pushNamed('/adhan_downloads'),
                     ),
                   ]),
@@ -176,14 +176,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   // ── Tasks ───────────────────────────────────────────────
                   SettingsSectionHeader(
                     icon: Icons.task_alt_outlined,
-                    title: isArabic ? 'المهام' : 'Tasks',
+                    title: 'settings_section_tasks'.tr(),
                   ),
                   SettingsCard(children: [
                     SettingTileSwitch(
                       icon: Icons.notifications_outlined,
                       iconColor: Colors.orange,
-                      title: isArabic ? 'تذكير المهام' : 'Task Reminders',
-                      subtitle: isArabic ? 'إشعار قبل موعد المهمة' : 'Notify before task due time',
+                      title: 'settings_task_reminders_title'.tr(),
+                      subtitle: 'settings_task_reminders_subtitle'.tr(),
                       value: notifEnabled,
                       onChanged: (v) => ref.read(taskNotificationsEnabledProvider.notifier).setEnabled(v),
                     ),
@@ -191,8 +191,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       SettingTile(
                         icon: Icons.schedule_outlined,
                         iconColor: Colors.orange,
-                        title: isArabic ? 'وقت التذكير' : 'Remind Me Before',
-                        subtitle: isArabic ? '$reminderMins دقيقة' : '$reminderMins minutes',
+                        title: 'settings_remind_before_title'.tr(),
+                        subtitle:
+                            '${NumberFormatter.withArabicNumeralsByLanguage('$reminderMins', isArabic ? 'ar' : 'en')} ${'settings_minutes_unit'.tr()}',
                         onTap: () => _showReminderMinsPicker(context, isArabic, isDark, reminderMins),
                       ),
                   ]),
@@ -200,34 +201,34 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   // ── Appearance ──────────────────────────────────────────
                   SettingsSectionHeader(
                     icon: Icons.palette_outlined,
-                    title: isArabic ? 'المظهر' : 'Appearance',
+                    title: 'settings_section_appearance'.tr(),
                   ),
                   SettingsCard(children: [
                     SettingTile(
                       icon: Icons.language_outlined,
-                      title: isArabic ? 'اللغة' : 'Language',
+                      title: 'settings_language_title'.tr(),
                       subtitle: language == 'ar' ? 'العربية' : 'English',
-                      onTap: () => _showLanguageDialog(context, isArabic, isDark),
+                      onTap: () => _showLanguageDialog(context, isDark),
                     ),
                     SettingTile(
                       icon: Icons.dark_mode_outlined,
-                      title: isArabic ? 'المظهر' : 'Theme',
-                      subtitle: _themeName(themeStr, isArabic),
-                      onTap: () => _showThemeDialog(context, isArabic, isDark),
+                      title: 'settings_theme_title'.tr(),
+                      subtitle: _themeName(themeStr),
+                      onTap: () => _showThemeDialog(context, isDark),
                     ),
                   ]),
 
                   // ── Notifications ───────────────────────────────────────
                   SettingsSectionHeader(
                     icon: Icons.notifications_outlined,
-                    title: isArabic ? 'الإشعارات' : 'Notifications',
+                    title: 'settings_section_notifications'.tr(),
                   ),
                   SettingsCard(children: [
                     SettingTile(
                       icon: Icons.mosque_outlined,
                       iconColor: const Color(0xFFD4A017),
-                      title: isArabic ? 'تذكير صلاة الجمعة' : "Jumu'ah Reminder",
-                      subtitle: isArabic ? 'إشعار قبل حلول وقت الجمعة' : 'Notify before Friday prayer',
+                      title: 'settings_jumuah_title'.tr(),
+                      subtitle: 'settings_jumuah_subtitle'.tr(),
                       showChevron: false,
                       trailing: Switch(
                         value: jumuahEnabled,
@@ -259,8 +260,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     SettingTileSwitch(
                       icon: Icons.track_changes_outlined,
                       iconColor: Colors.green,
-                      title: isArabic ? 'تتبع الصلوات' : 'Prayer Tracking',
-                      subtitle: isArabic ? 'سؤال تلقائي بعد كل صلاة' : 'Auto-ask after each prayer',
+                      title: 'settings_tracking_title'.tr(),
+                      subtitle: 'settings_tracking_subtitle'.tr(),
                       value: _trackingEnabled,
                       onChanged: (v) async {
                         setState(() => _trackingEnabled = v);
@@ -271,8 +272,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       SettingTile(
                         icon: Icons.summarize_outlined,
                         iconColor: Colors.green,
-                        title: isArabic ? 'ملخص يومي' : 'Daily Summary',
-                        subtitle: _dailySummaryTime,
+                        title: 'settings_summary_title'.tr(),
+                        subtitle: isArabic
+                            ? NumberFormatter.withArabicNumerals(_dailySummaryTime)
+                            : _dailySummaryTime,
                         onTap: () => _showTimePicker(context, isArabic),
                       ),
                   ]),
@@ -281,21 +284,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   if (!kIsWeb && Platform.isAndroid) ...[
                     SettingsSectionHeader(
                       icon: Icons.battery_charging_full_outlined,
-                      title: isArabic ? 'الخلفية والبطارية' : 'Background & Battery',
+                      title: 'settings_section_battery'.tr(),
                     ),
                     SettingsCard(children: [
                       SettingTile(
                         icon: Icons.alarm_on_outlined,
                         iconColor: Colors.red,
-                        title: isArabic ? 'التنبيهات الدقيقة' : 'Exact Alarms',
-                        subtitle: isArabic ? 'مطلوب للأذان في الوقت المحدد' : 'Required for on-time adhan',
+                        title: 'settings_exact_alarms_title'.tr(),
+                        subtitle: 'settings_exact_alarms_subtitle'.tr(),
                         onTap: () => PlatformChannelService.openExactAlarmSettings(),
                       ),
                       SettingTile(
                         icon: Icons.battery_alert_outlined,
                         iconColor: Colors.orange,
-                        title: isArabic ? 'تحسين البطارية' : 'Battery Optimization',
-                        subtitle: isArabic ? 'تعطيل لضمان الإشعارات في الخلفية' : 'Disable for reliable background alerts',
+                        title: 'settings_battery_title'.tr(),
+                        subtitle: 'settings_battery_subtitle'.tr(),
                         onTap: () => PlatformChannelService.openBatteryOptimizationSettings(),
                       ),
                       // Every permission and its state on one page.
@@ -322,16 +325,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   if (!kIsWeb && Platform.isWindows) ...[
                     SettingsSectionHeader(
                       icon: Icons.desktop_windows_outlined,
-                      title: isArabic ? 'سطح المكتب' : 'Desktop',
+                      title: 'settings_section_desktop'.tr(),
                     ),
                     SettingsCard(children: [
                       SettingTileSwitch(
                         icon: Icons.power_settings_new_outlined,
                         iconColor: Colors.blue,
-                        title: isArabic ? 'التشغيل مع بدء ويندوز' : 'Start with Windows',
-                        subtitle: isArabic
-                            ? 'تشغيل التطبيق تلقائياً في الخلفية عند بدء النظام'
-                            : 'Launch in the background when Windows starts',
+                        title: 'settings_startup_title'.tr(),
+                        subtitle: 'settings_startup_subtitle'.tr(),
                         value: _windowsStartup,
                         onChanged: (v) async {
                           setState(() => _windowsStartup = v);
@@ -356,11 +357,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
-  String _themeName(String mode, bool isArabic) {
+  String _themeName(String mode) {
     switch (mode) {
-      case 'dark':   return isArabic ? 'داكن' : 'Dark';
-      case 'light':  return isArabic ? 'فاتح' : 'Light';
-      default:       return isArabic ? 'تلقائي' : 'System';
+      case 'dark':   return 'settings_theme_dark'.tr();
+      case 'light':  return 'settings_theme_light'.tr();
+      default:       return 'settings_theme_system'.tr();
     }
   }
 
@@ -369,13 +370,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(isArabic ? 'مدة الوضع الصامت' : 'Silent Mode Duration'),
+        title: Text('settings_silent_duration_title'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: options.map((mins) => RadioListTile<int>(
             value: mins,
             groupValue: _silentDuration,
-            title: Text(isArabic ? '$mins دقيقة' : '$mins minutes'),
+            title: Text(
+              '${NumberFormatter.withArabicNumeralsByLanguage('$mins', isArabic ? 'ar' : 'en')} ${'settings_minutes_unit'.tr()}',
+            ),
             activeColor: AppConstants.getPrimary(isDark),
             onChanged: (v) async {
               if (v != null) {
@@ -426,13 +429,15 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(isArabic ? 'وقت التذكير' : 'Remind Me Before'),
+        title: Text('settings_remind_before_title'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: options.map((mins) => RadioListTile<int>(
             value: mins,
             groupValue: current,
-            title: Text(isArabic ? '$mins دقيقة' : '$mins minutes'),
+            title: Text(
+              '${NumberFormatter.withArabicNumeralsByLanguage('$mins', isArabic ? 'ar' : 'en')} ${'settings_minutes_unit'.tr()}',
+            ),
             activeColor: AppConstants.getPrimary(isDark),
             onChanged: (v) async {
               if (v != null) {
@@ -456,11 +461,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         isMounted: () => context.mounted,
       );
 
-  void _showLanguageDialog(BuildContext context, bool isArabic, bool isDark) {
+  void _showLanguageDialog(BuildContext context, bool isDark) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(isArabic ? 'اللغة' : 'Language'),
+        title: Text('settings_language_title'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -494,16 +499,16 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  void _showThemeDialog(BuildContext context, bool isArabic, bool isDark) {
+  void _showThemeDialog(BuildContext context, bool isDark) {
     final options = [
-      ('system', isArabic ? 'تلقائي' : 'System'),
-      ('light',  isArabic ? 'فاتح' : 'Light'),
-      ('dark',   isArabic ? 'داكن' : 'Dark'),
+      ('system', 'settings_theme_system'.tr()),
+      ('light',  'settings_theme_light'.tr()),
+      ('dark',   'settings_theme_dark'.tr()),
     ];
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(isArabic ? 'المظهر' : 'Theme'),
+        title: Text('settings_theme_title'.tr()),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: options.map((opt) => RadioListTile<String>(
