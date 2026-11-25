@@ -547,5 +547,14 @@
   "permissions_denied_hint": "إن بقي الإذن مغلقًا، فعّله من إعدادات التطبيق.",
   "wird_mode_switch_title": "التبديل من أجزاء إلى صفحات؟",
   "wird_mode_switch_body": "سيتم تفريغ بطاقات الأجزاء التي حددتها. يبقى سجل الختمات والإنجازات التي حصلت عليها. إذا عدت إلى أجزاء فستبدأ ببطاقات فارغة.",
-  "wird_mode_switch_confirm": "تبديل"
+  "wird_mode_switch_confirm": "تبديل",
+  "achievements_screen_title": "الإنجازات",
+  "achievements_header": "إنجازاتك",
+  "achievements_subtitle": "{} من {} مكتمل",
+  "achievement_category_streaks": "التتابعات",
+  "achievement_category_consistency": "الالتزام",
+  "achievement_category_dhikr": "الأذكار",
+  "achievement_category_tasks": "المهام",
+  "achievement_category_quran": "القرآن",
+  "achievement_category_special": "خاص"
 }

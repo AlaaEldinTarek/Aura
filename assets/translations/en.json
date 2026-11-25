@@ -547,5 +547,14 @@
   "permissions_denied_hint": "If it stays off, turn it on in the app's settings.",
   "wird_mode_switch_title": "Switch from Juz to Pages?",
   "wird_mode_switch_body": "Your checked juz cards will be emptied. Your khatm history and earned achievements stay. If you come back to Juz, you start with empty cards.",
-  "wird_mode_switch_confirm": "Switch"
+  "wird_mode_switch_confirm": "Switch",
+  "achievements_screen_title": "Achievements",
+  "achievements_header": "Your Achievements",
+  "achievements_subtitle": "{} of {} unlocked",
+  "achievement_category_streaks": "Streaks",
+  "achievement_category_consistency": "Consistency",
+  "achievement_category_dhikr": "Zikr",
+  "achievement_category_tasks": "Tasks",
+  "achievement_category_quran": "Quran",
+  "achievement_category_special": "Special"
 }
