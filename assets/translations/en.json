@@ -681,5 +681,13 @@
   "settings_battery_subtitle": "Disable for reliable background alerts",
   "settings_section_desktop": "Desktop",
   "settings_startup_title": "Start with Windows",
-  "settings_startup_subtitle": "Launch in the background when Windows starts"
+  "settings_startup_subtitle": "Launch in the background when Windows starts",
+  "qibla_title": "Qibla",
+  "qibla_distance_title": "Distance to Makkah",
+  "qibla_distance_unit": "km",
+  "qibla_instruction_facing": "You are facing Qibla",
+  "qibla_instruction_close": "Close to Qibla",
+  "qibla_instruction_turn": "Turn to the right",
+  "qibla_hold_flat": "Hold your device flat",
+  "qibla_error_title": "Error loading Qibla"
 }

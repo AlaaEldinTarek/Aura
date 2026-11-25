@@ -681,5 +681,13 @@
   "settings_battery_subtitle": "تعطيل لضمان الإشعارات في الخلفية",
   "settings_section_desktop": "سطح المكتب",
   "settings_startup_title": "التشغيل مع بدء ويندوز",
-  "settings_startup_subtitle": "تشغيل التطبيق تلقائياً في الخلفية عند بدء النظام"
+  "settings_startup_subtitle": "تشغيل التطبيق تلقائياً في الخلفية عند بدء النظام",
+  "qibla_title": "القبلة",
+  "qibla_distance_title": "المسافة إلى مكة",
+  "qibla_distance_unit": "كم",
+  "qibla_instruction_facing": "أنت تتجه نحو القبلة",
+  "qibla_instruction_close": "أنت قريب من القبلة",
+  "qibla_instruction_turn": "دور نحو اليمين",
+  "qibla_hold_flat": "حمل جهازك بشكل مسطح",
+  "qibla_error_title": "خطأ في تحميل القبلة"
 }
