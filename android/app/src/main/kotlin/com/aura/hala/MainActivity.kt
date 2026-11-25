@@ -193,6 +193,13 @@ class MainActivity : FlutterFragmentActivity() {
             } catch (e: Exception) {
                 Log.w("MainActivity", "⚠️ [CHANNEL] Could not remove silent_mode_control: ${e.message}")
             }
+            // The one-shot 4001 digest was retired (F20c+F52e); 3999 is now the sole daily digest.
+            try {
+                notificationManager.deleteNotificationChannel("task_digest")
+                Log.d("MainActivity", "🧹 [CHANNEL] Removed retired task_digest channel")
+            } catch (e: Exception) {
+                Log.w("MainActivity", "⚠️ [CHANNEL] Could not remove task_digest: ${e.message}")
+            }
         } else {
             Log.d("MainActivity", "⏭️ [CHANNEL] SDK < O, notification channel not needed")
         }
@@ -564,12 +571,13 @@ class MainActivity : FlutterFragmentActivity() {
                 "testDigestNow" -> {
                     // Hidden dev tile (7 taps on Version): posts the real task digest card now, with the counts Dart
                     // computed from the real tasks, through the same card as the 8:00 alarm (T4).
+                    // Uses 3999 / task_reminders — the production path after 4001 was retired (F20c+F52e).
                     val todayCount = call.argument<Int>("todayCount") ?: 0
                     val overdueCount = call.argument<Int>("overdueCount") ?: 0
                     try {
-                        NativeReminderCard.ensureChannel(this, "task_digest", "Daily Task Digest")
+                        NativeReminderCard.ensureChannel(this, "task_reminders", "Task Reminders")
                         NativeReminderCard.show(
-                            this, 4001, "", "", "task_digest", "Daily Task Digest", 3,
+                            this, 3999, "", "", "task_reminders", "Task Reminders", 3,
                             ThemedNotification.isArabic(this), null, 0L,
                             NativeReminderCard.KIND_DIGEST, todayCount, overdueCount, null
                         )
