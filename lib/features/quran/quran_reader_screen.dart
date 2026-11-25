@@ -98,7 +98,7 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
         if (mounted) ref.read(desktopSidebarVisibleProvider.notifier).state = false;
       });
     }
-    _saveProgress(_currentPage);
+    _saveProgress(_currentPage, ayaNo: widget.scrollToAyaNo);
     for (int i = 1; i <= 3; i++) {
       QuranSvgService.preload(_currentPage - i);
       QuranSvgService.preload(_currentPage + i);
@@ -171,11 +171,11 @@ class _QuranReaderScreenState extends ConsumerState<QuranReaderScreen> {
     return result;
   }
 
-  void _saveProgress(int page) {
+  void _saveProgress(int page, {int? ayaNo}) {
     final meta = _surahForPage(page);
     if (meta != null) {
       ref.read(quranReadingProgressProvider.notifier).saveProgress(
-            meta.suraNo, 1, page,
+            meta.suraNo, ayaNo ?? 1, page,
           );
     }
   }
