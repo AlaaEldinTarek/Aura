@@ -147,6 +147,21 @@ class NotificationService {
 
     _prefs = await SharedPreferences.getInstance();
 
+    // One-time upgrade cleanup: cancel the retired 4001 digest alarm (F20c+F52e).
+    // 3999 (repeatDaily:true) is now the sole daily task digest on Android.
+    if (!kIsWeb && Platform.isAndroid) {
+      final pending = await _notifications.pendingNotificationRequests();
+      if (hasLegacyDigestAlarm(pending.map((p) => p.id), 4001)) {
+        await _notifications.cancel(4001);
+        debugPrint('🧹 [DIGEST] Cancelled leftover plugin alarm 4001');
+      }
+      try {
+        await _nativeAlarmChannel.invokeMethod(
+            'cancelNativeNotification', {'notificationId': 4001});
+        debugPrint('🧹 [DIGEST] Cancelled native alarm 4001');
+      } catch (_) {}
+    }
+
     // Schedule Jumu'ah reminder if enabled and an active session exists (F75)
     final jumuahEnabled = _prefs!.getBool('jumua_reminder_enabled') ?? true;
     if (jumuahEnabled) {

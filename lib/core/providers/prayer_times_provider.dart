@@ -425,39 +425,29 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
         await prayerEffects();
         if (!runDailyEffects) return;
 
-        // Schedule daily task digest notification
-        try {
-          if (_isDesktop) {
-            // Counts are fetched when the 8 AM timer fires — fetching here at
-            // startup crashes the process (Defender blocks new exe network access)
-            // and would be stale by digest time anyway.
-            await DesktopNotificationService.instance.scheduleDailyTaskDigest(
-              0,
-              0,
-              fetchCounts: () async {
-                final userId = getCurrentUserId();
-                if (userId.isEmpty) return const [0, 0];
-                final tasks = await TaskService.instance
-                    .getTasksOnce(userId: userId, limit: 500);
-                final today =
-                    tasks.where((t) => t.isDueToday && !t.isCompleted).length;
-                final overdue =
-                    tasks.where((t) => t.isOverdue && !t.isCompleted).length;
-                return [today, overdue];
-              },
-            );
-          } else {
-            final userId = getCurrentUserId();
-            if (userId.isNotEmpty) {
-              final tasks = await TaskService.instance.getTasksOnce(userId: userId, limit: 500);
-              final today = tasks.where((t) => t.isDueToday && !t.isCompleted).length;
-              final overdue = tasks.where((t) => t.isOverdue && !t.isCompleted).length;
-              await NotificationService.instance.scheduleDailyTaskDigest(
-                todayCount: today,
-                overdueCount: overdue,
-              );
-            }
-          }
+        // Schedule daily task digest notification (desktop only).
+        // Android uses ID 3999 (scheduleDailyTaskSummary, repeatDaily:true) which is
+        // refreshed on every task mutation via TaskService._refreshDailySummary.
+        // The old one-shot 4001 digest was retired (F20c+F52e).
+        if (_isDesktop) try {
+          // Counts are fetched when the 8 AM timer fires — fetching here at
+          // startup crashes the process (Defender blocks new exe network access)
+          // and would be stale by digest time anyway.
+          await DesktopNotificationService.instance.scheduleDailyTaskDigest(
+            0,
+            0,
+            fetchCounts: () async {
+              final userId = getCurrentUserId();
+              if (userId.isEmpty) return const [0, 0];
+              final tasks = await TaskService.instance
+                  .getTasksOnce(userId: userId, limit: 500);
+              final today =
+                  tasks.where((t) => t.isDueToday && !t.isCompleted).length;
+              final overdue =
+                  tasks.where((t) => t.isOverdue && !t.isCompleted).length;
+              return [today, overdue];
+            },
+          );
         } catch (e) {
           debugPrint('PrayerTimesNotifier: Error scheduling task digest - $e');
         }

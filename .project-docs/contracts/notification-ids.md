@@ -11,7 +11,7 @@ Verified 2026-11-06 at 4aa1022 by static grep (Step 2). Do NOT modify IDs. All I
 | 2101–2106 | Pre-prayer reminder **request codes only** (`requestCode + 1100`, `PrayerAlarmReceiver`); posts no notification of its own (spec `docs/designs/fix-prayer-reminder.md`, owner-confirmed 2026-11-18) | — | `PrayerAlarmReceiver.kt` (`scheduleReminderAlarm`, `ReminderLogic.requestCode`) | No | Code on branch `fix/prayer-reminder`, not device-verified |
 | 2000 | PrayerRescheduleService foreground notification | — | `PrayerRescheduleService.kt:30` | No | Partial (Kotlin only) |
 | 3999 | Task daily summary | `notification_service.dart:805` | (`cancelNativeNotification` passthrough) | No | Verified |
-| 4001 | Daily task digest (08:00) | `notification_service.dart:1021` | — | No | Partial — inside 4000–4999 (F8) |
+| 4001 | **Retired** (F20c+F52e): was daily task digest (08:00), consolidated into 3999. No new alarm arms this ID. Upgrade cleanup in `NotificationService.initialize()`. F8 collision risk eliminated. | ~~`notification_service.dart:1021`~~ | — | No | Retired |
 | 4000–4999 | Task reminders, `4000 + hash % 1000` | `notification_service.dart:669` | via `scheduleNativeTaskReminder` | Yes (hash) | Verified |
 | 5001–5006 | Flutter-side prayer notifications (`_getNotificationId + 5000`) | `notification_service.dart:431` | — | No | Partial |
 | +5000 offset | "Remind again" re-schedule of a native notification. No live producer today (F4 spec 1.4: only the dead `scheduleDailyPrayers` path passes a prayer name) | — | `NativeNotificationReceiver.kt:131` | Yes | Partial |
@@ -55,4 +55,4 @@ channel at launch. Spec: `docs/designs/fix-silent-mode-buttons-in-fgs.md`. Full 
 | `prayer_reschedule` | — | `PrayerRescheduleService.kt:31` | Partial |
 | `channel_id` | — | `NativeNotificationReceiver.kt:44` is the **extra key**, not a channel; channel comes from Dart | — |
 
-Added 2026-11-18 (S05 reminder spec): 4001–4006 was checked for the reminder and is NOT free (4001 = daily task digest, 4000–4999 = task reminders), so the reminder uses 2101–2106. No 21xx value is used anywhere in `android/app/src/main`, `lib` or `test`. Full request-code table: `docs/designs/fix-prayer-reminder.md`.
+Added 2026-11-18 (S05 reminder spec): 4001–4006 was checked for the reminder and is NOT free (4001 = retired, see row; 4000–4999 = task reminders), so the reminder uses 2101–2106. No 21xx value is used anywhere in `android/app/src/main`, `lib` or `test`. Full request-code table: `docs/designs/fix-prayer-reminder.md`.
