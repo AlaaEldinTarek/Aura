@@ -28,7 +28,7 @@ Verified 2026-11-06 at 4aa1022 by static grep (Step 2). Do NOT modify IDs. All I
 | 9999 | Prayer foreground service | — | `PrayerForegroundService.kt:32` | No | Partial |
 
 PendingIntent request-code offsets (not notification IDs, but must stay unique): `PrayerAlarmReceiver` +1000/+2000
-(`:147,:348,:372,:810`; planned +1100 for the pre-prayer reminder, 2101–2106), `FocusModeReceiver` base 5000, `TasksWidget` widgetId +1000/+2000/+5000.
+(`:147,:348,:372,:810`; planned +1100 for the pre-prayer reminder, 2101–2106), `FocusModeReceiver` base 5000 range 5000–14999 (`REQUEST_CODE_SLOTS = 10_000`, F51m), `TasksWidget` widgetId +1000/+2000/+5000.
 Added 2026-11-07 (Kotlin EGM): silent restore 3999 (`SilentOffReceiver`), azkar 3000–3006, daily summary 7001,
 Jumu'ah 8001, daily recalc 9100, test adhan 9999, `NativeNotificationReceiver` / `TaskReminderReceiver` id, id+1, id+2 (+3),
 Focus relaunch 5996. Foreground-service silent buttons 8001/8002 removed (dead code, F68).

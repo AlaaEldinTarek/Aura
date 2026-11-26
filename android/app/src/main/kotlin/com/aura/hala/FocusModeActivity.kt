@@ -57,7 +57,7 @@ class FocusModeActivity : AppCompatActivity() {
     private var durationMinutes: Int = 25
     private var isArabic: Boolean = false
     private var savedRingerMode: Int = AudioManager.RINGER_MODE_NORMAL
-    private var wasDndEnabled: Boolean = false
+    private var savedInterruptionFilter: Int = NotificationManager.INTERRUPTION_FILTER_ALL
     private var countDownTimer: CountDownTimer? = null
     private var pulseAnimator: ObjectAnimator? = null
     private var totalDurationMs: Long = 0
@@ -297,7 +297,7 @@ class FocusModeActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             if (notificationManager.isNotificationPolicyAccessGranted) {
-                wasDndEnabled = true
+                savedInterruptionFilter = notificationManager.currentInterruptionFilter
                 try {
                     notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
                 } catch (_: Exception) {
@@ -322,11 +322,13 @@ class FocusModeActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             if (notificationManager.isNotificationPolicyAccessGranted) {
-                try { notificationManager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL) } catch (_: Exception) {}
+                try { notificationManager.setInterruptionFilter(savedInterruptionFilter) } catch (_: Exception) {}
             }
         }
         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        try { audioManager.ringerMode = AudioManager.RINGER_MODE_NORMAL } catch (_: Exception) {}
+        try { audioManager.ringerMode = savedRingerMode } catch (_: Exception) {
+            try { audioManager.ringerMode = AudioManager.RINGER_MODE_NORMAL } catch (_: Exception) {}
+        }
     }
 
     // --- Countdown Timer ---
