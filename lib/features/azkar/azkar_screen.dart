@@ -1,4 +1,5 @@
 import 'dart:io' show Platform;
+import 'dart:ui' as ui show TextDirection;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -408,7 +409,7 @@ class _ZikrCard extends StatelessWidget {
                             : (AppConstants.textPrimary(isDark)),
                         decoration: TextDecoration.none,
                       ),
-                      textDirection: TextDirection.rtl,
+                      textDirection: ui.TextDirection.rtl,
                     ),
                     SizedBox(height: ts.scale(6.0)),
                     // English translation
