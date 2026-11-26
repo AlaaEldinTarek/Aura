@@ -1119,6 +1119,7 @@ class NotificationService {
   Future<void> scheduleWirdReminders({
     required List<String> reminderTimes,
     required int dailyPageGoal,
+    bool isJuzMode = false,
   }) async {
     if (!kIsWeb && (Platform.isWindows || Platform.isMacOS || Platform.isLinux)) return;
     // Cancel all existing wird notifications
@@ -1139,8 +1140,12 @@ class NotificationService {
 
       final title = isArabic ? 'تذكير الورد' : 'Wird Reminder';
       final body = isArabic
-          ? 'اقرأ وردك اليومي — $dailyPageGoal صفحة اليوم'
-          : 'Read your daily Wird — $dailyPageGoal pages today';
+          ? isJuzMode
+              ? 'اقرأ وردك اليومي — ${NumberFormatter.withArabicNumerals("$dailyPageGoal")} جزء اليوم'
+              : 'اقرأ وردك اليومي — ${NumberFormatter.withArabicNumerals("$dailyPageGoal")} صفحة اليوم'
+          : isJuzMode
+              ? 'Read your daily Wird — $dailyPageGoal juz today'
+              : 'Read your daily Wird — $dailyPageGoal pages today';
 
       if (!kIsWeb && Platform.isAndroid) {
         try {
@@ -1155,7 +1160,7 @@ class NotificationService {
             'repeatDaily': true,
             'isArabic': isArabic,
             // The card builds the text itself in the app language (live); title/body above stay as the fallback
-            'kind': 'wird',
+            'kind': isJuzMode ? 'wird_juz' : 'wird',
             'countA': dailyPageGoal,
           });
           debugPrint('📖 [WIRD] Native reminder #$i scheduled at $scheduled');

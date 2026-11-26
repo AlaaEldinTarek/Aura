@@ -144,7 +144,7 @@ class AzkarAlarmReceiver : BroadcastReceiver() {
         val cardView = AzkarCard.contentView(context, prayerName, prayerNameAr, fullScreenPi)
 
         val notif = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(body)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
