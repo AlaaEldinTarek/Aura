@@ -66,9 +66,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   // Survives provider rebuilds; cleared only when tutorial actually starts.
   bool _pendingTutorialLaunch = false;
 
+  late Future<int> _streakFuture;
+
   @override
   void initState() {
     super.initState();
+    _streakFuture = _getStreak();
     WidgetsBinding.instance.addObserver(this);
     // Load prayer statuses via shared provider (cached, won't hit Firestore if fresh)
     Future.microtask(() {
@@ -212,6 +215,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   @override
   void dispose() {
+    _pendingTutorialLaunch = false;
     WidgetsBinding.instance.removeObserver(this);
     _countdownTimer?.cancel();
     _countdownNotifier.dispose();
@@ -1383,7 +1387,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                                 stats.overdue > 0 ? Colors.red : Colors.grey),
                             SizedBox(width: ts.scale(16.0).clamp(0.0, 22.0)),
                             FutureBuilder<int>(
-                              future: _getStreak(),
+                              future: _streakFuture,
                               builder: (_, snap) => _buildMiniStat(
                                   Icons.local_fire_department,
                                   '${snap.data ?? 0}',
@@ -1673,7 +1677,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       // If this was the last today task, increment streak + celebrate
       if (wasLastTask) {
         await TaskService.instance.incrementTaskStreak();
-        setState(() {});
+        setState(() {
+          _streakFuture = _getStreak();
+        });
         Future.delayed(const Duration(milliseconds: 800), () {
           if (mounted) _showCelebration();
         });
