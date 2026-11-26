@@ -1,3 +1,4 @@
+import 'dart:ui' as ui show TextDirection;
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import '../../core/constants/app_constants.dart';
@@ -129,7 +130,7 @@ class _CustomZikrFormScreenState extends State<CustomZikrFormScreen> {
               // Arabic text
               TextFormField(
                 controller: _arabicController,
-                textDirection: TextDirection.rtl,
+                textDirection: ui.TextDirection.rtl,
                 style: AppTypography.headingM,
                 decoration: InputDecoration(
                   labelText: 'dhikr_field_arabic'.tr(),
