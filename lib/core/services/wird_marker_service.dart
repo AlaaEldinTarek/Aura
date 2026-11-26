@@ -20,6 +20,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/wird.dart';
 import '../models/wird_marker.dart';
+import 'achievement_service.dart' show AchievementService;
 import 'wird_marker_logic.dart';
 import 'wird_service.dart';
 
@@ -344,6 +345,8 @@ class WirdMarkerService {
           versionAfterMove: v.record.version,
         ));
         _syncInBackground();
+        // F52h: award any newly-unlocked page-mode achievements (unawaited, no-op for guests)
+        AchievementService.instance.checkAndAward(userId: _uid() ?? 'guest_user');
         return Moved(
           pagesAdded: v.pagesAdded,
           markerPage: target,
@@ -367,6 +370,8 @@ class WirdMarkerService {
             fromPage: before!.markerPage!, toPage: 1);
         await clearUndo();
         _syncInBackground();
+        // F52h: award khatma/page achievements (unawaited, no-op for guests)
+        AchievementService.instance.checkAndAward(userId: _uid() ?? 'guest_user');
         return Completed(
           pagesAdded: v.pagesAdded,
           khatmCount: legacy + v.record.khatmaCount,
