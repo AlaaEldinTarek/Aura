@@ -759,7 +759,7 @@ class _PrayerScreenState extends ConsumerState<PrayerScreen>
         SizedBox(height: ts.scale(AppSpacing.base)),
         CircularCountdownTimer(
           targetTime: nextPrayer.time,
-          prayerName: isArabic ? nextPrayer.nameAr : nextPrayer.name,
+          prayerName: getPrayerDisplayName(nextPrayer.name, isArabic: isArabic),
           prayerTime: DateFormatter.formatTime(nextPrayer.time,
               languageCode: isArabic ? 'ar' : 'en'),
           size: ts.scale(180.0),
