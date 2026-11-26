@@ -206,7 +206,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.inactive) {
+        (state == AppLifecycleState.inactive && !_isDesktop)) {
       _countdownTimer?.cancel();
     } else if (state == AppLifecycleState.resumed) {
       _startCountdownTimer();

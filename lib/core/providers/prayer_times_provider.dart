@@ -149,6 +149,9 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
               .schedulePrayerTimers(state.prayerTimes)
               .catchError((e) => debugPrint('⚠️ [DESKTOP] Reschedule after wake failed: $e'));
         }
+        DesktopNotificationService.instance
+            .rescheduleAfterWake()
+            .catchError((e) => debugPrint('⚠️ [DESKTOP] Reminder reschedule after wake failed: $e'));
       }
 
       if (!state.isLoading && state.prayerTimes.isNotEmpty) {

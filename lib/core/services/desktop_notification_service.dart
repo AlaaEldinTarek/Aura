@@ -53,6 +53,12 @@ class DesktopNotificationService {
   // Daily task digest timer
   Timer? _digestTimer;
 
+  // Stored params for reschedule-after-wake (populated on first schedule call)
+  List<String>? _wirdReminderTimes;
+  int _wirdDailyGoal = 0;
+  bool _wirdIsJuzMode = false;
+  Future<List<int>> Function()? _digestFetchCounts;
+
   // Riverpod container — attached by main.dart to allow recording prayer/task state.
   ProviderContainer? _container;
 
@@ -449,6 +455,9 @@ class DesktopNotificationService {
     bool isJuzMode = false,
   }) async {
     if (!isDesktop) return;
+    _wirdReminderTimes = List.unmodifiable(reminderTimes);
+    _wirdDailyGoal = dailyGoal;
+    _wirdIsJuzMode = isJuzMode;
     cancelWirdReminders();
 
     final prefs = await SharedPreferences.getInstance();
@@ -494,31 +503,54 @@ class DesktopNotificationService {
     Future<List<int>> Function()? fetchCounts,
   }) async {
     if (!isDesktop) return;
+    if (fetchCounts != null) _digestFetchCounts = fetchCounts;
     _digestTimer?.cancel();
     _digestTimer = null;
 
     final now = DateTime.now();
-    final digestTime = DateTime(now.year, now.month, now.day, 8, 0);
-    if (digestTime.isBefore(now)) return;
+    final todayDigest = DateTime(now.year, now.month, now.day, 8, 0);
+    final target = todayDigest.isBefore(now)
+        ? todayDigest.add(const Duration(days: 1))
+        : todayDigest;
 
-    final delay = digestTime.difference(now);
+    final delay = target.difference(now);
     _digestTimer = Timer(delay, () async {
       var today = todayCount;
       var overdue = overdueCount;
-      if (fetchCounts != null) {
+      if (_digestFetchCounts != null) {
         try {
-          final counts = await fetchCounts();
+          final counts = await _digestFetchCounts!();
           today = counts[0];
           overdue = counts[1];
         } catch (e) {
           debugPrint('DesktopNotificationService: digest count fetch failed: $e');
         }
       }
-      _showDailyTaskDigest(today, overdue);
+      await _showDailyTaskDigest(today, overdue);
       _digestTimer = null;
+      // Self-reschedule for the next day's 8:00 AM.
+      unawaited(scheduleDailyTaskDigest(0, 0));
     });
     debugPrint(
         'DesktopNotificationService: Daily task digest in ${delay.inMinutes} min');
+  }
+
+  // ─── Wake Reschedule ──────────────────────────────────────────────────────
+
+  /// Re-arm wird and digest timers after a system sleep/wake cycle.
+  /// Called by [PrayerTimesNotifier] when a wall-clock gap is detected.
+  Future<void> rescheduleAfterWake() async {
+    if (!isDesktop) return;
+    debugPrint('DesktopNotificationService: reschedule after wake');
+    final times = _wirdReminderTimes;
+    if (times != null) {
+      await scheduleWirdReminders(
+        reminderTimes: times,
+        dailyGoal: _wirdDailyGoal,
+        isJuzMode: _wirdIsJuzMode,
+      );
+    }
+    await scheduleDailyTaskDigest(0, 0);
   }
 
   Future<void> _showDailyTaskDigest(

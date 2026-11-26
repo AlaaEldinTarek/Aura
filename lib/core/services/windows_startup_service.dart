@@ -17,7 +17,7 @@ class WindowsStartupService {
 
   static Future<bool> isEnabled() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(prefKey) ?? true;
+    return prefs.getBool(prefKey) ?? false;
   }
 
   static Future<void> setEnabled(bool enabled) async {
