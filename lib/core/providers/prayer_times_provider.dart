@@ -97,6 +97,10 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
   // slept, which freezes Dart timers (desktop adhan timers fire late)
   DateTime _lastTickWallClock = DateTime.now();
 
+  // True after the first day-transition reload fires; prevents repeated
+  // loadPrayerTimes calls every minute in the post-Isha window (F52d).
+  bool _dayTransitionPending = false;
+
   PrayerTimesNotifier(this._prayerTimesService, this._locationService, [this._prefs])
       : super(PrayerTimesState(selectedDate: DateTime.now())) {
     // Wrap init in microtask to avoid modifying state during provider creation
@@ -160,17 +164,23 @@ class PrayerTimesNotifier extends StateNotifier<PrayerTimesState> {
     final nextPrayer = _prayerTimesService.getNextPrayer(state.prayerTimes);
     final currentPrayer = _prayerTimesService.getCurrentPrayer(state.prayerTimes);
 
-    // Check if next prayer is tomorrow (day transition) - need full reload
+    // Check if next prayer is tomorrow (day transition) - need full reload.
+    // Guard with _dayTransitionPending so we reload only once per post-Isha
+    // window instead of every minute until midnight (F52d).
     if (nextPrayer != null) {
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
       final nextPrayerDate = DateTime(nextPrayer.time.year, nextPrayer.time.month, nextPrayer.time.day);
       if (nextPrayerDate.isAfter(today)) {
-        debugPrint('📅 [QUICK_UPDATE] Day transition detected, doing full reload');
-        loadPrayerTimes(DateTime.now());
+        if (!_dayTransitionPending) {
+          _dayTransitionPending = true;
+          debugPrint('📅 [QUICK_UPDATE] Day transition detected, doing full reload');
+          loadPrayerTimes(DateTime.now());
+        }
         return;
       }
     }
+    _dayTransitionPending = false;
 
     final updatedPrayerTimes = state.prayerTimes.map((p) {
       return p.copyWith(
