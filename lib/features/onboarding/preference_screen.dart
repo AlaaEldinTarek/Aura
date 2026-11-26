@@ -10,7 +10,7 @@ import '../../core/theme/app_typography.dart';
 import '../../core/widgets/aura_button.dart';
 import '../../core/services/rating_service.dart';
 import '../../core/utils/app_language.dart';
-import 'package:easy_localization/easy_localization.dart' show BuildContextEasyLocalizationExtension;
+import 'package:easy_localization/easy_localization.dart';
 
 class PreferenceScreen extends ConsumerStatefulWidget {
   const PreferenceScreen({super.key});
@@ -46,40 +46,34 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
           _Slide(
             emoji: '🕌',
             color: const Color(0xFF1565C0),
-            titleEn: 'Accurate Prayer Times',
-            titleAr: 'أوقات صلاة دقيقة',
-            subtitleEn: 'GPS-based calculation with 9 scholarly methods',
-            subtitleAr: 'حساب بالموقع الجغرافي بـ 9 طرق علمية',
+            titleKey: 'onboarding_slide_prayer_1_title',
+            subtitleKey: 'onboarding_slide_prayer_1_sub',
             features: [
-              _Feature('⏰', 'All 5 daily prayers + Sunrise', 'جميع الصلوات الخمس + الشروق'),
-              _Feature('📍', 'Auto-detects your city', 'يتعرف تلقائياً على مدينتك'),
-              _Feature('🔔', 'Adhan alerts at prayer time', 'أذان عند دخول وقت الصلاة'),
+              _Feature('⏰', 'onboarding_slide_prayer_1_f1'),
+              _Feature('📍', 'onboarding_slide_prayer_1_f2'),
+              _Feature('🔔', 'onboarding_slide_prayer_1_f3'),
             ],
           ),
           _Slide(
             emoji: '📿',
             color: const Color(0xFF00695C),
-            titleEn: 'Spiritual Tools',
-            titleAr: 'أدوات روحية',
-            subtitleEn: 'Everything you need for your worship',
-            subtitleAr: 'كل ما تحتاجه في عبادتك',
+            titleKey: 'onboarding_slide_prayer_2_title',
+            subtitleKey: 'onboarding_slide_prayer_2_sub',
             features: [
-              _Feature('🧭', 'Qibla compass to Kaaba', 'بوصلة القبلة نحو الكعبة'),
-              _Feature('📿', 'Digital Dhikr counter', 'عداد أذكار رقمي'),
-              _Feature('🌙', 'Daily Hadith & Quran', 'حديث وآية يومية'),
+              _Feature('🧭', 'onboarding_slide_prayer_2_f1'),
+              _Feature('📿', 'onboarding_slide_prayer_2_f2'),
+              _Feature('🌙', 'onboarding_slide_prayer_2_f3'),
             ],
           ),
           _Slide(
             emoji: '📊',
             color: const Color(0xFF6A1B9A),
-            titleEn: 'Track Your Journey',
-            titleAr: 'تتبع رحلتك',
-            subtitleEn: 'Build consistency with daily prayer tracking',
-            subtitleAr: 'ابنِ المداومة بتتبع الصلوات اليومية',
+            titleKey: 'onboarding_slide_prayer_3_title',
+            subtitleKey: 'onboarding_slide_prayer_3_sub',
             features: [
-              _Feature('🔥', 'Prayer streaks & milestones', 'سلاسل الصلاة والإنجازات'),
-              _Feature('📅', 'Monthly calendar view', 'عرض تقويمي شهري'),
-              _Feature('🏆', 'Achievements & badges', 'أوسمة وشارات'),
+              _Feature('🔥', 'onboarding_slide_prayer_3_f1'),
+              _Feature('📅', 'onboarding_slide_prayer_3_f2'),
+              _Feature('🏆', 'onboarding_slide_prayer_3_f3'),
             ],
           ),
         ];
@@ -89,40 +83,34 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
           _Slide(
             emoji: '✅',
             color: const Color(0xFF2E7D32),
-            titleEn: 'Smart Task Management',
-            titleAr: 'إدارة مهام ذكية',
-            subtitleEn: 'Organize everything that matters to you',
-            subtitleAr: 'نظّم كل ما يهمك',
+            titleKey: 'onboarding_slide_tasks_1_title',
+            subtitleKey: 'onboarding_slide_tasks_1_sub',
             features: [
-              _Feature('🎯', 'Priorities, categories & due dates', 'أولويات وتصنيفات ومواعيد'),
-              _Feature('📋', 'Subtasks & recurring tasks', 'مهام فرعية ومتكررة'),
-              _Feature('📌', 'Pin important tasks to top', 'تثبيت المهام المهمة'),
+              _Feature('🎯', 'onboarding_slide_tasks_1_f1'),
+              _Feature('📋', 'onboarding_slide_tasks_1_f2'),
+              _Feature('📌', 'onboarding_slide_tasks_1_f3'),
             ],
           ),
           _Slide(
             emoji: '🎯',
             color: const Color(0xFFE65100),
-            titleEn: 'Stay Focused',
-            titleAr: 'ابقَ مركزاً',
-            subtitleEn: 'Lock in and get things done without distractions',
-            subtitleAr: 'ركز وأنجز مهامك بلا تشتيت',
+            titleKey: 'onboarding_slide_tasks_2_title',
+            subtitleKey: 'onboarding_slide_tasks_2_sub',
             features: [
-              _Feature('🔒', 'Focus mode locks your screen', 'وضع التركيز يقفل شاشتك'),
-              _Feature('🔕', 'Silences all notifications', 'يكتم جميع الإشعارات'),
-              _Feature('⏱️', 'Countdown timer on screen', 'مؤقت عدّ تنازلي على الشاشة'),
+              _Feature('🔒', 'onboarding_slide_tasks_2_f1'),
+              _Feature('🔕', 'onboarding_slide_tasks_2_f2'),
+              _Feature('⏱️', 'onboarding_slide_tasks_2_f3'),
             ],
           ),
           _Slide(
             emoji: '🏆',
             color: const Color(0xFF6A1B9A),
-            titleEn: 'Build Good Habits',
-            titleAr: 'ابنِ عادات جيدة',
-            subtitleEn: 'Stay motivated with streaks and achievements',
-            subtitleAr: 'حافظ على حماسك بالسلاسل والإنجازات',
+            titleKey: 'onboarding_slide_tasks_3_title',
+            subtitleKey: 'onboarding_slide_tasks_3_sub',
             features: [
-              _Feature('🔥', '7-day task streak tracking', 'تتبع سلسلة 7 أيام'),
-              _Feature('🏅', 'Unlock achievement badges', 'افتح شارات الإنجازات'),
-              _Feature('📈', 'Daily & weekly statistics', 'إحصاءات يومية وأسبوعية'),
+              _Feature('🔥', 'onboarding_slide_tasks_3_f1'),
+              _Feature('🏅', 'onboarding_slide_tasks_3_f2'),
+              _Feature('📈', 'onboarding_slide_tasks_3_f3'),
             ],
           ),
         ];
@@ -132,40 +120,34 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
           _Slide(
             emoji: '✨',
             color: AppConstants.getPrimary(isDark),
-            titleEn: 'Your Complete Companion',
-            titleAr: 'رفيقك الشامل',
-            subtitleEn: 'Prayer times + Task management in one beautiful app',
-            subtitleAr: 'أوقات الصلاة وإدارة المهام في تطبيق واحد',
+            titleKey: 'onboarding_slide_full_1_title',
+            subtitleKey: 'onboarding_slide_full_1_sub',
             features: [
-              _Feature('🕌', 'Full Islamic prayer system', 'نظام صلاة إسلامي متكامل'),
-              _Feature('✅', 'Powerful task management', 'إدارة مهام قوية'),
-              _Feature('🏆', 'Unified achievements', 'إنجازات موحدة للاثنين'),
+              _Feature('🕌', 'onboarding_slide_full_1_f1'),
+              _Feature('✅', 'onboarding_slide_full_1_f2'),
+              _Feature('🏆', 'onboarding_slide_full_1_f3'),
             ],
           ),
           _Slide(
             emoji: '🌅',
             color: const Color(0xFFE65100),
-            titleEn: 'Structure Your Day',
-            titleAr: 'نظّم يومك',
-            subtitleEn: 'Plan your tasks around your prayer schedule',
-            subtitleAr: 'خطط مهامك حول أوقات صلاتك',
+            titleKey: 'onboarding_slide_full_2_title',
+            subtitleKey: 'onboarding_slide_full_2_sub',
             features: [
-              _Feature('⏰', 'Know when your prayers are', 'اعرف أوقات صلاتك'),
-              _Feature('📋', 'Fill the gaps with tasks', 'املأ الفراغات بالمهام'),
-              _Feature('🎯', 'Focus mode between prayers', 'وضع التركيز بين الصلوات'),
+              _Feature('⏰', 'onboarding_slide_full_2_f1'),
+              _Feature('📋', 'onboarding_slide_full_2_f2'),
+              _Feature('🎯', 'onboarding_slide_full_2_f3'),
             ],
           ),
           _Slide(
             emoji: '📈',
             color: const Color(0xFF2E7D32),
-            titleEn: 'Track Everything',
-            titleAr: 'تتبع كل شيء',
-            subtitleEn: 'Spiritual and productive growth in one view',
-            subtitleAr: 'النمو الروحي والإنتاجي في مكان واحد',
+            titleKey: 'onboarding_slide_full_3_title',
+            subtitleKey: 'onboarding_slide_full_3_sub',
             features: [
-              _Feature('🔥', 'Prayer & task streaks', 'سلاسل الصلاة والمهام'),
-              _Feature('📊', 'Combined statistics', 'إحصاءات مجمّعة'),
-              _Feature('🏅', 'Earn badges for both', 'اكسب شارات لكلٍّ منهما'),
+              _Feature('🔥', 'onboarding_slide_full_3_f1'),
+              _Feature('📊', 'onboarding_slide_full_3_f2'),
+              _Feature('🏅', 'onboarding_slide_full_3_f3'),
             ],
           ),
         ];
@@ -264,9 +246,9 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
 
   // ── Button label ──────────────────────────────────────────────────────────
   String get _btnLabel {
-    if (_step == 4) return _isAr ? 'هيا بنا! 🚀' : "Let's Go! 🚀";
-    if (_step == 3 && _carouselSlide < 2) return _isAr ? 'التالي' : 'Next';
-    return _isAr ? 'متابعة' : 'Continue';
+    if (_step == 4) return 'onboarding_btn_lets_go'.tr();
+    if (_step == 3 && _carouselSlide < 2) return 'onboarding_btn_next'.tr();
+    return 'onboarding_btn_continue'.tr();
   }
 
   // ── Build ─────────────────────────────────────────────────────────────────
@@ -310,16 +292,17 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
                 children: [
                   _LanguageStep(
                     selected: _language,
-                    onSelect: (v) => setState(() => _language = v),
+                    onSelect: (v) {
+                      setState(() => _language = v);
+                      context.setLocale(Locale(v));
+                    },
                   ),
                   _ThemeStep(
                     selected: _theme,
-                    isAr: _isAr,
                     onSelect: (v) => setState(() => _theme = v),
                   ),
                   _ModeStep(
                     selected: _mode,
-                    isAr: _isAr,
                     isDark: isDark,
                     onSelect: (v) => setState(() => _mode = v),
                   ),
@@ -327,12 +310,10 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
                     slides: _slides,
                     currentSlide: _carouselSlide,
                     controller: _carouselController,
-                    isAr: _isAr,
                     isDark: isDark,
                     onSlideChanged: (i) => setState(() => _carouselSlide = i),
                   ),
                   _AllSetStep(
-                    isAr: _isAr,
                     isDark: isDark,
                     language: _language,
                     theme: _theme,
@@ -357,7 +338,7 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
                   if (_step > 0) ...[
                     const SizedBox(height: 4),
                     AuraButton.ghost(
-                      label: _isAr ? 'رجوع' : 'Back',
+                      label: 'onboarding_btn_back'.tr(),
                       onPressed: _back,
                     ),
                   ] else ...[
@@ -365,7 +346,7 @@ class _PreferenceScreenState extends ConsumerState<PreferenceScreen> {
                     TextButton(
                       onPressed: _saving ? null : _finish,
                       child: Text(
-                        _isAr ? 'تخطي' : 'Skip',
+                        'onboarding_btn_skip'.tr(),
                         style: AppTypography.bodyM.copyWith(
                           color: Colors.grey,
                         ),
@@ -552,20 +533,19 @@ class _LangCard extends StatelessWidget {
 // ═══════════════════════════════════════════════════════════════════════════
 class _ThemeStep extends StatelessWidget {
   final String selected;
-  final bool isAr;
   final ValueChanged<String> onSelect;
-  const _ThemeStep({required this.selected, required this.isAr, required this.onSelect});
+  const _ThemeStep({required this.selected, required this.onSelect});
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final options = [
-      _ThemeOpt('light', Icons.light_mode_rounded, isAr ? 'فاتح' : 'Light',
-          isAr ? 'واجهة بيضاء ناصعة' : 'Bright white interface', Colors.orange),
-      _ThemeOpt('dark', Icons.dark_mode_rounded, isAr ? 'داكن' : 'Dark',
-          isAr ? 'راحة للعين في الليل' : 'Easy on the eyes at night', Colors.indigo),
-      _ThemeOpt('system', Icons.brightness_auto_rounded, isAr ? 'تلقائي' : 'System',
-          isAr ? 'يتبع إعداد هاتفك' : 'Follows your device setting', AppConstants.getPrimary(isDark)),
+      _ThemeOpt('light', Icons.light_mode_rounded,
+          'onboarding_theme_light_label'.tr(), 'onboarding_theme_light_sub'.tr(), Colors.orange),
+      _ThemeOpt('dark', Icons.dark_mode_rounded,
+          'onboarding_theme_dark_label'.tr(), 'onboarding_theme_dark_sub'.tr(), Colors.indigo),
+      _ThemeOpt('system', Icons.brightness_auto_rounded,
+          'onboarding_theme_system_label'.tr(), 'onboarding_theme_system_sub'.tr(), AppConstants.getPrimary(isDark)),
     ];
 
     return SingleChildScrollView(
@@ -591,7 +571,7 @@ class _ThemeStep extends StatelessWidget {
           ).animate().fadeIn(duration: 500.ms).scale(curve: Curves.elasticOut),
           const SizedBox(height: 24),
           Text(
-            isAr ? 'اختر المظهر' : 'Choose Your Theme',
+            'onboarding_theme_title'.tr(),
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -599,7 +579,7 @@ class _ThemeStep extends StatelessWidget {
           ).animate().fadeIn(delay: 150.ms),
           const SizedBox(height: 8),
           Text(
-            isAr ? 'كيف تريد أن يبدو تطبيقك؟' : 'How do you want your app to look?',
+            'onboarding_theme_subtitle'.tr(),
             style: AppTypography.label.copyWith(
               color: isDark ? Colors.white54 : Colors.black45,
             ),
@@ -713,11 +693,10 @@ class _ThemeOpt {
 // ═══════════════════════════════════════════════════════════════════════════
 class _ModeStep extends StatelessWidget {
   final AppMode selected;
-  final bool isAr, isDark;
+  final bool isDark;
   final ValueChanged<AppMode> onSelect;
   const _ModeStep({
     required this.selected,
-    required this.isAr,
     required this.isDark,
     required this.onSelect,
   });
@@ -729,30 +708,23 @@ class _ModeStep extends StatelessWidget {
         mode: AppMode.both,
         emoji: '✨',
         color: AppConstants.getPrimary(isDark),
-        labelEn: 'Full App',
-        labelAr: 'التطبيق كاملاً',
-        subEn: 'Prayer times + Task management',
-        subAr: 'أوقات الصلاة وإدارة المهام',
-        badgeEn: 'Recommended',
-        badgeAr: 'موصى به',
+        labelKey: 'onboarding_mode_full_label',
+        subKey: 'onboarding_mode_full_sub',
+        badgeKey: 'onboarding_mode_full_badge',
       ),
       _ModeOpt(
         mode: AppMode.prayerOnly,
         emoji: '🕌',
         color: const Color(0xFF1565C0),
-        labelEn: 'Prayer Only',
-        labelAr: 'الصلاة فقط',
-        subEn: 'Adhan, Qibla, tracking & Dhikr',
-        subAr: 'الأذان والقبلة والتتبع والذكر',
+        labelKey: 'onboarding_mode_prayer_label',
+        subKey: 'onboarding_mode_prayer_sub',
       ),
       _ModeOpt(
         mode: AppMode.tasksOnly,
         emoji: '✅',
         color: const Color(0xFF2E7D32),
-        labelEn: 'Tasks Only',
-        labelAr: 'المهام فقط',
-        subEn: 'Tasks, focus mode & achievements',
-        subAr: 'المهام ووضع التركيز والإنجازات',
+        labelKey: 'onboarding_mode_tasks_label',
+        subKey: 'onboarding_mode_tasks_sub',
       ),
     ];
 
@@ -779,7 +751,7 @@ class _ModeStep extends StatelessWidget {
           ).animate().fadeIn(duration: 500.ms).scale(curve: Curves.elasticOut),
           const SizedBox(height: 24),
           Text(
-            isAr ? 'كيف تريد استخدام هالة؟' : 'How will you use Aura?',
+            'onboarding_mode_title'.tr(),
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -787,7 +759,7 @@ class _ModeStep extends StatelessWidget {
           ).animate().fadeIn(delay: 150.ms),
           const SizedBox(height: 8),
           Text(
-            isAr ? 'يمكنك تغيير هذا لاحقاً من الإعدادات' : 'You can change this anytime in Settings',
+            'onboarding_mode_subtitle'.tr(),
             style: AppTypography.label.copyWith(
               color: isDark ? Colors.white54 : Colors.black45,
             ),
@@ -837,13 +809,13 @@ class _ModeStep extends StatelessWidget {
                             Row(
                               children: [
                                 Text(
-                                  isAr ? opt.labelAr : opt.labelEn,
+                                  opt.labelKey.tr(),
                                   style: AppTypography.bodyL.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: isSelected ? opt.color : null,
                                   ),
                                 ),
-                                if (opt.badgeEn != null) ...[
+                                if (opt.badgeKey != null) ...[
                                   const SizedBox(width: 8),
                                   Container(
                                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -852,7 +824,7 @@ class _ModeStep extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Text(
-                                      isAr ? opt.badgeAr! : opt.badgeEn!,
+                                      opt.badgeKey!.tr(),
                                       style: AppTypography.caption.copyWith(
                                         color: Colors.white,
                                         fontSize: 10,
@@ -865,7 +837,7 @@ class _ModeStep extends StatelessWidget {
                             ),
                             const SizedBox(height: 3),
                             Text(
-                              isAr ? opt.subAr : opt.subEn,
+                              opt.subKey.tr(),
                               style: AppTypography.caption.copyWith(
                                 color: isDark ? Colors.white54 : Colors.black45,
                               ),
@@ -906,19 +878,16 @@ class _ModeStep extends StatelessWidget {
 
 class _ModeOpt {
   final AppMode mode;
-  final String emoji, labelEn, labelAr, subEn, subAr;
-  final String? badgeEn, badgeAr;
+  final String emoji, labelKey, subKey;
+  final String? badgeKey;
   final Color color;
   const _ModeOpt({
     required this.mode,
     required this.emoji,
     required this.color,
-    required this.labelEn,
-    required this.labelAr,
-    required this.subEn,
-    required this.subAr,
-    this.badgeEn,
-    this.badgeAr,
+    required this.labelKey,
+    required this.subKey,
+    this.badgeKey,
   });
 }
 
@@ -929,14 +898,13 @@ class _CarouselStep extends StatelessWidget {
   final List<_Slide> slides;
   final int currentSlide;
   final PageController controller;
-  final bool isAr, isDark;
+  final bool isDark;
   final ValueChanged<int> onSlideChanged;
 
   const _CarouselStep({
     required this.slides,
     required this.currentSlide,
     required this.controller,
-    required this.isAr,
     required this.isDark,
     required this.onSlideChanged,
   });
@@ -953,7 +921,6 @@ class _CarouselStep extends StatelessWidget {
             onPageChanged: onSlideChanged,
             itemBuilder: (_, i) => _SlideView(
               slide: slides[i],
-              isAr: isAr,
               isDark: isDark,
             ),
           ),
@@ -987,8 +954,8 @@ class _CarouselStep extends StatelessWidget {
 
 class _SlideView extends StatelessWidget {
   final _Slide slide;
-  final bool isAr, isDark;
-  const _SlideView({required this.slide, required this.isAr, required this.isDark});
+  final bool isDark;
+  const _SlideView({required this.slide, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
@@ -1020,7 +987,7 @@ class _SlideView extends StatelessWidget {
           const SizedBox(height: 20),
 
           Text(
-            isAr ? slide.titleAr : slide.titleEn,
+            slide.titleKey.tr(),
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
               color: slide.color,
@@ -1031,7 +998,7 @@ class _SlideView extends StatelessWidget {
           const SizedBox(height: 8),
 
           Text(
-            isAr ? slide.subtitleAr : slide.subtitleEn,
+            slide.subtitleKey.tr(),
             style: AppTypography.headingS.copyWith(
               fontSize: 15,
               height: 1.5,
@@ -1065,7 +1032,7 @@ class _SlideView extends StatelessWidget {
                     const SizedBox(width: 14),
                     Expanded(
                       child: Text(
-                        isAr ? f.textAr : f.textEn,
+                        f.textKey.tr(),
                         style: AppTypography.label.copyWith(
                           fontWeight: FontWeight.w600,
                           color: AppConstants.textPrimary(isDark),
@@ -1085,35 +1052,32 @@ class _SlideView extends StatelessWidget {
 }
 
 class _Slide {
-  final String emoji, titleEn, titleAr, subtitleEn, subtitleAr;
+  final String emoji, titleKey, subtitleKey;
   final Color color;
   final List<_Feature> features;
   const _Slide({
     required this.emoji,
     required this.color,
-    required this.titleEn,
-    required this.titleAr,
-    required this.subtitleEn,
-    required this.subtitleAr,
+    required this.titleKey,
+    required this.subtitleKey,
     required this.features,
   });
 }
 
 class _Feature {
-  final String emoji, textEn, textAr;
-  const _Feature(this.emoji, this.textEn, this.textAr);
+  final String emoji, textKey;
+  const _Feature(this.emoji, this.textKey);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
 // STEP 4 — You're All Set
 // ═══════════════════════════════════════════════════════════════════════════
 class _AllSetStep extends StatelessWidget {
-  final bool isAr, isDark;
+  final bool isDark;
   final String language, theme;
   final AppMode mode;
 
   const _AllSetStep({
-    required this.isAr,
     required this.isDark,
     required this.language,
     required this.theme,
@@ -1122,23 +1086,17 @@ class _AllSetStep extends StatelessWidget {
 
   String get _modeLabel {
     switch (mode) {
-      case AppMode.both:
-        return isAr ? '✨ التطبيق كاملاً' : '✨ Full App';
-      case AppMode.prayerOnly:
-        return isAr ? '🕌 الصلاة فقط' : '🕌 Prayer Only';
-      case AppMode.tasksOnly:
-        return isAr ? '✅ المهام فقط' : '✅ Tasks Only';
+      case AppMode.both:        return 'onboarding_summary_mode_full'.tr();
+      case AppMode.prayerOnly:  return 'onboarding_summary_mode_prayer'.tr();
+      case AppMode.tasksOnly:   return 'onboarding_summary_mode_tasks'.tr();
     }
   }
 
   String get _themeLabel {
     switch (theme) {
-      case 'light':
-        return isAr ? '☀️ فاتح' : '☀️ Light';
-      case 'dark':
-        return isAr ? '🌙 داكن' : '🌙 Dark';
-      default:
-        return isAr ? '⚡ تلقائي' : '⚡ System';
+      case 'light':   return 'onboarding_summary_theme_light'.tr();
+      case 'dark':    return 'onboarding_summary_theme_dark'.tr();
+      default:        return 'onboarding_summary_theme_system'.tr();
     }
   }
 
@@ -1146,11 +1104,11 @@ class _AllSetStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final summaryItems = [
       _SummaryItem(
-        isAr ? 'اللغة' : 'Language',
+        'onboarding_summary_language_label'.tr(),
         language == 'ar' ? '🇸🇦 العربية' : '🇬🇧 English',
       ),
-      _SummaryItem(isAr ? 'المظهر' : 'Theme', _themeLabel),
-      _SummaryItem(isAr ? 'وضع التطبيق' : 'App Mode', _modeLabel),
+      _SummaryItem('onboarding_summary_theme_label'.tr(), _themeLabel),
+      _SummaryItem('onboarding_summary_mode_label'.tr(), _modeLabel),
     ];
 
     return SingleChildScrollView(
@@ -1187,7 +1145,7 @@ class _AllSetStep extends StatelessWidget {
           const SizedBox(height: 24),
 
           Text(
-            isAr ? 'أنت مستعد! 🎉' : "You're All Set! 🎉",
+            'onboarding_allset_title'.tr(),
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -1197,9 +1155,7 @@ class _AllSetStep extends StatelessWidget {
           const SizedBox(height: 8),
 
           Text(
-            isAr
-                ? 'هالة جاهزة لتبدأ رحلتك.\nإليك ما اخترته:'
-                : 'Aura is ready for your journey.\nHere\'s what you chose:',
+            'onboarding_allset_subtitle'.tr(),
             style: AppTypography.headingS.copyWith(
               fontSize: 15,
               height: 1.6,
@@ -1259,9 +1215,7 @@ class _AllSetStep extends StatelessWidget {
           const SizedBox(height: 16),
 
           Text(
-            isAr
-                ? 'يمكنك تغيير أي من هذه الإعدادات لاحقاً من الملف الشخصي'
-                : 'You can change any of these settings later from Profile',
+            'onboarding_allset_footer'.tr(),
             style: AppTypography.caption.copyWith(
               color: AppConstants.textDisabled(isDark),
             ),

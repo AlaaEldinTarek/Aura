@@ -270,6 +270,9 @@ Check only when a phase touches the area:
   `!mounted` (`:97–101, :110–113`); a disposed State never remounts and `_pendingTutorialLaunch` is not cleared.
 - **(e) Unused code**: `_buildDailyProgressRing` (`:1755`), `_buildRecentActivity` / `_getRecentRecords` (`:1853, :1951`),
   `_getPrayerEmoji` (`:243`) have no callers. **Tag: P6 cleanup.**
+- **(f) Prayer-screen countdown ring shows "Zuhr" on Friday** — **Tag: fix track, LOW.** `CircularCountdownTimer` at `prayer_screen.dart:762` passes
+  `prayerName: isArabic ? nextPrayer.nameAr : nextPrayer.name`; raw canonical name is never "Jumu'ah". Same family as F26 / F32c.
+  DEVICE-VERIFIED nova 5T 2026-11-26 simulated Friday (found during S-F32c check). Fix: use `getPrayerDisplayName` (CLAUDE.md rule). **FIXED — fix/f32bdf.**
 
 ## F33 — Home scout backlog (lib/features/home) — UNVERIFIED
 Check only when a phase touches the area:
