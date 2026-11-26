@@ -1,11 +1,12 @@
+import 'dart:async' show unawaited;
 import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/services.dart' show KeyDownEvent, LogicalKeyboardKey;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:vibration/vibration.dart';
+import '../../core/utils/haptic_feedback.dart' as app_haptic;
 import '../../core/constants/app_constants.dart';
 import '../../core/models/dhikr.dart';
 import '../../core/models/prayer_record.dart';
@@ -110,7 +111,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
       return;
     }
 
-    HapticFeedback.mediumImpact();
+    unawaited(app_haptic.HapticFeedback.medium());
 
     setState(() {
       _currentCount++;
@@ -123,16 +124,10 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
     _pulseController.forward().then((_) => _pulseController.reverse());
     _updateProgressAnimation();
 
-    // Vibrate if supported
-    Vibration.hasVibrator().then((hasVibrator) {
-      if (hasVibrator == true) {
-        Vibration.vibrate(duration: 50);
-      }
-    });
   }
 
   void _resetCounter() {
-    HapticFeedback.lightImpact();
+    unawaited(app_haptic.HapticFeedback.light());
     setState(() {
       _currentCount = 0;
       _isCompleted = false;
@@ -145,7 +140,7 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
   }
 
   void _onComplete() {
-    HapticFeedback.heavyImpact();
+    unawaited(app_haptic.HapticFeedback.heavy());
 
     // Persist session to Firestore
     final userId = getCurrentUserId();
@@ -156,12 +151,6 @@ class _DhikrScreenState extends ConsumerState<DhikrScreen>
       target: _currentTarget,
     );
 
-    // Vibrate pattern
-    Vibration.hasVibrator().then((hasVibrator) {
-      if (hasVibrator == true) {
-        Vibration.vibrate(pattern: [0, 100, 50, 100]);
-      }
-    });
 
     // Show completion dialog
     _showCompletionDialog();

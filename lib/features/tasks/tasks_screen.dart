@@ -1010,12 +1010,10 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
       case _SortOrder.manual:
         sorted.sort((a, b) => a.manualOrder.compareTo(b.manualOrder));
     }
-    // Pinned tasks always float to top
-    sorted.sort((a, b) {
-      if (a.isPinned == b.isPinned) return 0;
-      return a.isPinned ? -1 : 1;
-    });
-    return sorted;
+    // Pinned tasks always float to top — stable partition preserves first-sort order
+    final pinned = sorted.where((t) => t.isPinned).toList();
+    final unpinned = sorted.where((t) => !t.isPinned).toList();
+    return [...pinned, ...unpinned];
   }
 
   bool _isCompletedToday(Task t) {

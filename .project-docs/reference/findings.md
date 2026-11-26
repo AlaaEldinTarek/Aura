@@ -364,8 +364,7 @@ Check only when a phase touches the area:
   sees all other pages of that color as new and calls `syncBookmarkPages` on them.
 - **(d) Stats English weekday labels off by one** — **Tag: fix track, LOW.** `quran_stats_screen.dart:390–391` indexes a Monday-first list with
   `weekday % 7` (Monday → "Tu", Sunday → "Mo"); the Arabic list is Sunday-first and correct.
-- **(e) Stats average unit wrong in juz mode** — **Tag: fix track, LOW.** `averageDaily = totalPagesRead / totalDaysCompleted`
-  (`wird_provider.dart:25`) but is labelled `quran_stats_juz` in juz mode (`quran_stats_screen.dart:142–144`).
+- **(e) Stats average unit wrong in juz mode** — **RESOLVED (stale finding, fixed by PR #29 2026-11-16).** `averagePerCompletedDay` in `wird_marker_logic.dart:214–226` already computes `(juzKhatmCount * 30 + checkedJuzCount) / totalDays` in juz mode; label `quran_stats_juz` is correct. No code change needed.
 - **(f) Contract doc gap** — **RESOLVED 2026-11-07** (keys added to prefs-keys.md). `contracts/prefs-keys.md` lacks `quran_bookmarks`, `quran_reading_progress`
   (`quran_bookmark_service.dart:6–7`), the Wird completed-juz / khatm keys (`wird_service.dart`) and tutorial flag names
   (`app_constants.dart:118–123`).
@@ -742,22 +741,17 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
   `wird_total_pages_read` when the day was already completed (`wird_service.dart:100–112`; promotes the F20 backlog item;
   feeds `wird_khatma` / `wird_pages_*`). `syncFromFirestore` replaces local settings / streak / totals with the cloud copy
   on every init, no merge, and `wird_progress_history` never syncs (`wird_service.dart:490–560`).
-- **(h) Wird achievements awarded late** — **Tag: fix track LOW.** No wird code calls `checkAndAward` (callers:
-  `prayer_tracking_service.dart:134`, `task_service.dart:531`, `profile_screen.dart:1180`).
-- **(i) Wird reminder says pages in juz mode (mobile)** — **Tag: fix track LOW.** `WirdService.scheduleReminders` passes
-  only `dailyPageGoal`, no juz flag (`wird_service.dart:466–470`, `notification_service.dart:1093–1095`); desktop gets
-  `isJuzMode`.
+- **(h) Wird achievements awarded late** — **DONE (branch fix/f52hln, PR pending).** `unawaited(AchievementService.instance.checkAndAward(...))` added after `_syncInBackground()` in `moveMarker` and `completeKhatma` (`wird_marker_service.dart`). No-op for guests.
+- **(i) Wird reminder says pages in juz mode (mobile)** — **Tag: fix track LOW — deferred to native group.** Full fix requires Dart (`notification_service.dart`) and Kotlin (`NativeReminderCard.bodyFor` hardcodes "pages" at line ~81). Deferred to F51n/p native batch to keep fix/f52hln Dart-only.
 - **(j) Desktop reminder timers drift after sleep and are today-only** — **Tag: fix track LOW (Windows).** Wake detection
   reschedules only prayer timers (`prayer_times_provider.dart:127–133`); task / wird / digest `Timer`s in
   `desktop_notification_service.dart` (`:382, :423, :459`) are not; wird and digest cover today only (`:416, :457`).
 - **(k) Home countdown stops when the desktop window loses focus** — **Tag: fix track LOW (Windows), behavior inferred.**
   `home_screen.dart:205–207` cancels the timer on `inactive` as well as `paused`.
-- **(l) Dhikr ignores vibration settings** — **Tag: fix track LOW.** `dhikr_screen.dart:111–127` uses Flutter
-  `HapticFeedback` + unconditional `Vibration.vibrate(50)`, not `lib/core/utils/haptic_feedback.dart` (see F23, F44 backlog).
+- **(l) Dhikr ignores vibration settings** — **DONE (branch fix/f52hln, PR pending).** Replaced raw `HapticFeedback.*` + unconditional `Vibration.vibrate` with `app_haptic.HapticFeedback.*` in `_incrementCounter`, `_resetCounter`, `_onComplete`; removed `vibration` import.
 - **(m) "Start with Windows" is opt-out** — **Tag: fix track LOW (user 2026-11-07: should be off by default).** `windows_startup_enabled`
   defaults to true (`windows_startup_service.dart:20`); `registerIfEnabled()` runs every launch (`main.dart:94`).
-- **(n) Pinned float relies on a stable sort** — **Tag: fix track LOW, with F30b.** `_applySort` re-sorts to float pinned
-  tasks (`tasks_screen.dart:1014–1017`); Dart `List.sort` is not guaranteed stable.
+- **(n) Pinned float relies on a stable sort** — **DONE (branch fix/f52hln, PR pending).** Replaced `sorted.sort(isPinned comparator)` with stable `final pinned/unpinned = sorted.where(...); return [...pinned, ...unpinned]` in `_applySort` (`tasks_screen.dart`).
 - **(o) Dead code / stale comments** — **Tag: P6 cleanup.** Dart `PrayerTimesNotifier.updateNextPrayer` (no caller);
   `BackgroundServiceHandler.kt` (unreferenced; `MainActivity` registers the channel); unused `quran_service.dart` import
   (`main.dart:22`); named route `/khatma_dua` never pushed by name; dead variable `y` in `WirdService.undoComplete`
