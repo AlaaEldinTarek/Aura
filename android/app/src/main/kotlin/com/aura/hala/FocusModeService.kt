@@ -355,7 +355,7 @@ class FocusModeService : Service() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(ServiceNotificationText.focusModeTitle(isArabic))
                 .setContentText(taskTitle)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
@@ -390,7 +390,7 @@ class FocusModeService : Service() {
         )
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(ServiceNotificationText.focusModeTitle(isArabic))
             .setContentText(taskTitle)
             .setPriority(NotificationCompat.PRIORITY_MAX)

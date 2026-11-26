@@ -314,7 +314,12 @@ class AzkarFullScreenActivity : AppCompatActivity() {
                 tv.setTextColor(0xFFF5B301.toInt())
             }
             else -> {
-                tv.text = "${item.count}\n──\n${item.target}"
+                tv.text = if (isArabic) {
+                    "${ThemedNotification.withArabicNumerals(item.count.toString())}\n──\n" +
+                        ThemedNotification.withArabicNumerals(item.target.toString())
+                } else {
+                    "${item.count}\n──\n${item.target}"
+                }
                 tv.textSize = 13f
                 tv.setTextColor(0xFFF5B301.toInt())
             }
@@ -325,7 +330,12 @@ class AzkarFullScreenActivity : AppCompatActivity() {
         val done  = items.count { it.isDone }
         val total = items.size
         val tv = findViewById<TextView>(R.id.azkarProgressText)
-        tv.text = if (isArabic) "$total / $done أذكار" else "$done / $total azkar"
+        tv.text = if (isArabic) {
+            "${ThemedNotification.withArabicNumerals(total.toString())} / " +
+                "${ThemedNotification.withArabicNumerals(done.toString())} أذكار"
+        } else {
+            "$done / $total azkar"
+        }
     }
 
     private fun checkAllComplete() {

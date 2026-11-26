@@ -34,6 +34,7 @@ object NativeReminderCard {
 
     /** Text kinds Dart can send instead of finished text (Kotlin then builds both languages, live). */
     const val KIND_WIRD = "wird"
+    const val KIND_WIRD_JUZ = "wird_juz"
     const val KIND_DIGEST = "digest"
 
     /** Full text on the lock screen (same decision as the daily summary card). */
@@ -64,7 +65,7 @@ object NativeReminderCard {
 
     /** Title for a kind; any other kind (or none: alarms armed before T4) keeps the text Dart sent. */
     fun titleFor(kind: String?, fallback: String, isArabic: Boolean): String = when (kind) {
-        KIND_WIRD -> if (isArabic) "تذكير الورد" else "Wird Reminder"
+        KIND_WIRD, KIND_WIRD_JUZ -> if (isArabic) "تذكير الورد" else "Wird Reminder"
         KIND_DIGEST -> if (isArabic) "ملخص مهامك اليوم" else "Today's Tasks"
         else -> fallback
     }
@@ -75,10 +76,15 @@ object NativeReminderCard {
     private fun tasks(a: Int, isArabic: Boolean): String =
         if (isArabic) ArabicCount.tasks(a) else "$a ${if (a == 1) "task" else "tasks"}"
 
+    private fun juzParts(a: Int, isArabic: Boolean): String =
+        if (isArabic) ArabicCount.juzParts(a) else "$a juz"
+
     /** Body for a kind: wird = [a] pages; digest = [a] tasks today and [b] overdue. */
     fun bodyFor(kind: String?, a: Int, b: Int, fallback: String, isArabic: Boolean): String = when (kind) {
         KIND_WIRD ->
             if (isArabic) "اقرأ وردك اليومي — ${ArabicCount.pages(a)} اليوم" else "Read your daily Wird — ${pages(a, false)} today"
+        KIND_WIRD_JUZ ->
+            if (isArabic) "اقرأ وردك اليومي — ${ArabicCount.juzParts(a)} اليوم" else "Read your daily Wird — ${juzParts(a, false)} today"
         KIND_DIGEST -> when {
             a > 0 && b > 0 ->
                 if (isArabic) "${ArabicCount.tasks(a)} اليوم · ${ArabicCount.overdueTasks(b)}" else "${tasks(a, false)} today · $b overdue"
