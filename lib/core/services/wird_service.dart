@@ -502,7 +502,10 @@ class WirdService {
     } else {
       await NotificationService.instance.scheduleWirdReminders(
         reminderTimes: settings.reminderTimes,
-        dailyPageGoal: settings.dailyPageGoal,
+        dailyPageGoal: settings.wirdUnit == WirdUnit.juz
+            ? settings.dailyJuzGoal
+            : settings.dailyPageGoal,
+        isJuzMode: settings.wirdUnit == WirdUnit.juz,
       );
     }
   }
