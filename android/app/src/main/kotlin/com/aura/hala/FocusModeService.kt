@@ -90,7 +90,7 @@ class FocusModeService : Service() {
     private var isArabic: Boolean = false
     private var isTimerFinished: Boolean = false
     private var savedRingerMode: Int = AudioManager.RINGER_MODE_NORMAL
-    private var wasDndEnabled: Boolean = false
+    private var savedInterruptionFilter: Int = NotificationManager.INTERRUPTION_FILTER_ALL
     private lateinit var wakeLock: PowerManager.WakeLock
     private lateinit var screenWakeLock: PowerManager.WakeLock
 
@@ -141,11 +141,10 @@ class FocusModeService : Service() {
                 if (focusStartedAt == 0L) {
                     focusStartedAt = System.currentTimeMillis()
                 }
-                saveFocusState()
-
                 startForeground()
                 acquireWakeLock()
                 enableSilentMode()
+                saveFocusState()
                 addTouchBlocker()
                 startMonitoring()
                 isRunning = true
@@ -217,7 +216,7 @@ class FocusModeService : Service() {
     override fun onDestroy() {
         stopMonitoring()
         removeTouchBlocker()
-        restoreSoundMode()
+        if (isTimerFinished) restoreSoundMode()
         releaseWakeLock()
         isRunning = false
 
@@ -246,6 +245,8 @@ class FocusModeService : Service() {
             .putInt("duration_minutes", durationMinutes)
             .putString("language", language)
             .putLong("started_at", focusStartedAt)
+            .putInt("saved_ringer_mode", savedRingerMode)
+            .putInt("saved_dnd_filter", savedInterruptionFilter)
             .apply()
     }
 
@@ -355,7 +356,7 @@ class FocusModeService : Service() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
             val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.ic_notification)
                 .setContentTitle(ServiceNotificationText.focusModeTitle(isArabic))
                 .setContentText(taskTitle)
                 .setPriority(NotificationCompat.PRIORITY_MAX)
@@ -390,7 +391,7 @@ class FocusModeService : Service() {
         )
 
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(ServiceNotificationText.focusModeTitle(isArabic))
             .setContentText(taskTitle)
             .setPriority(NotificationCompat.PRIORITY_MAX)
@@ -406,12 +407,22 @@ class FocusModeService : Service() {
 
     private fun enableSilentMode() {
         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        savedRingerMode = audioManager.ringerMode
-
+        val prefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        if (prefs.contains("saved_ringer_mode")) {
+            savedRingerMode = prefs.getInt("saved_ringer_mode", AudioManager.RINGER_MODE_NORMAL)
+            savedInterruptionFilter = prefs.getInt("saved_dnd_filter", NotificationManager.INTERRUPTION_FILTER_ALL)
+        } else {
+            savedRingerMode = audioManager.ringerMode
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+                if (nm.isNotificationPolicyAccessGranted) {
+                    savedInterruptionFilter = nm.currentInterruptionFilter
+                }
+            }
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             if (nm.isNotificationPolicyAccessGranted) {
-                wasDndEnabled = true
                 try { nm.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY) } catch (_: Exception) { fallbackToRingerSilent(audioManager) }
             } else { fallbackToRingerSilent(audioManager) }
         } else { fallbackToRingerSilent(audioManager) }
@@ -425,7 +436,7 @@ class FocusModeService : Service() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             if (nm.isNotificationPolicyAccessGranted) {
-                try { nm.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALL) } catch (_: Exception) {}
+                try { nm.setInterruptionFilter(savedInterruptionFilter) } catch (_: Exception) {}
             }
         }
         val audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager

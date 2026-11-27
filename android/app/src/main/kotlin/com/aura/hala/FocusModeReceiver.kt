@@ -34,6 +34,7 @@ class FocusModeReceiver : BroadcastReceiver() {
         const val ACTION_FOCUS_COMPLETE = "com.aura.hala.FOCUS_TASK_COMPLETE"
 
         private const val REQUEST_CODE_BASE = 5000
+        private const val REQUEST_CODE_SLOTS = 10_000
         private const val FOCUS_NOTIFICATION_CHANNEL = "focus_mode"
         private const val FOCUS_NOTIFICATION_ID = 5999
 
@@ -46,7 +47,7 @@ class FocusModeReceiver : BroadcastReceiver() {
             durationMinutes: Int,
             language: String
         ) {
-            val requestCode = REQUEST_CODE_BASE + abs(taskId.hashCode() % 1000)
+            val requestCode = REQUEST_CODE_BASE + abs(taskId.hashCode() % REQUEST_CODE_SLOTS)
 
             val intent = Intent(context, FocusModeReceiver::class.java).apply {
                 action = ACTION_FOCUS_ALARM
@@ -83,12 +84,12 @@ class FocusModeReceiver : BroadcastReceiver() {
             Log.d(TAG, "🎯 [FOCUS] Scheduled alarm for '$taskTitle' at $triggerTimeMillis (duration=${durationMinutes}min)")
         }
 
-        /** F70 cancel table: request code 5000 + abs(taskId.hashCode() % 1000), so 5000-5999, with ACTION_FOCUS_ALARM. */
+        /** F70 cancel table: request code 5000 + abs(taskId.hashCode() % 10000), so 5000-14999, with ACTION_FOCUS_ALARM. */
         internal fun cancelSpecs(): List<CancelSpec> =
-            (0..999).map { CancelSpec(FocusModeReceiver::class.java, ACTION_FOCUS_ALARM, REQUEST_CODE_BASE + it) }
+            (0 until REQUEST_CODE_SLOTS).map { CancelSpec(FocusModeReceiver::class.java, ACTION_FOCUS_ALARM, REQUEST_CODE_BASE + it) }
 
         fun cancelFocusAlarm(context: Context, taskId: String) {
-            val requestCode = REQUEST_CODE_BASE + abs(taskId.hashCode() % 1000)
+            val requestCode = REQUEST_CODE_BASE + abs(taskId.hashCode() % REQUEST_CODE_SLOTS)
             val intent = Intent(context, FocusModeReceiver::class.java).apply {
                 action = ACTION_FOCUS_ALARM
             }

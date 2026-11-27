@@ -90,7 +90,8 @@ class AdhanFullScreenActivity : AppCompatActivity() {
                 val remaining = iqamaTimeMs - now
                 val minutes = (remaining / 60_000).toInt()
                 val seconds = ((remaining % 60_000) / 1000).toInt()
-                countdown.text = String.format("%d:%02d", minutes, seconds)
+                val formatted = String.format("%d:%02d", minutes, seconds)
+                countdown.text = if (isArabic) ThemedNotification.withArabicNumerals(formatted) else formatted
                 tickHandler.postDelayed(this, 500)
             } else if (iqamaTimeMs > 0) {
                 // Iqama time reached — show briefly then launch azkar

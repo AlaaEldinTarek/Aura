@@ -18,4 +18,5 @@ object ArabicCount {
     fun overdueTasks(count: Int): String =
         phrase(count, "مهمة متأخرة", "مهمتان متأخرتان", "مهام متأخرة", "مهمة متأخرة واحدة")
     fun minutes(count: Int): String = phrase(count, "دقيقة", "دقيقتان", "دقائق", "دقيقة واحدة")
+    fun juzParts(count: Int): String = phrase(count, "جزء", "جزءان", "أجزاء", "جزء واحد")
 }
