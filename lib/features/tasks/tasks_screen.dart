@@ -161,7 +161,8 @@ class _TasksScreenState extends ConsumerState<TasksScreen> with WidgetsBindingOb
           taskId: completedTaskId,
         );
         // Refresh tasks
-        ref.invalidate(tasksProvider(const TaskFilterParams()));
+        ref.invalidate(allTasksProvider);
+        ref.invalidate(taskStatisticsProvider);
       }
     }
   }
