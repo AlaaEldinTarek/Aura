@@ -609,8 +609,13 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
 
   bool _untrackedCheckInProgress = false;
 
+  // True from the moment the untracked-prayers sheet is requested until it
+  // closes (F34f). _untrackedCheckInProgress only covers the async check.
+  bool _untrackedSheetOpen = false;
+
   Future<void> _checkUntrackedPrayers(List<PrayerTime> prayerTimes) async {
     if (_untrackedCheckInProgress) return;
+    if (_untrackedSheetOpen) return;
     _untrackedCheckInProgress = true;
     try {
       if (prayerTimes.isEmpty) return;
@@ -646,6 +651,8 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
       if (untracked.isEmpty) return;
 
       if (!mounted) return;
+      // Another check may have opened the sheet while this one awaited.
+      if (_untrackedSheetOpen) return;
       _showUntrackedPrayersSheet(untracked);
     } catch (e) {
       debugPrint('Error checking untracked prayers: $e');
@@ -662,6 +669,7 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
     // Mutable copy — rows are removed one-by-one as the user handles each prayer
     final remaining = List<PrayerTime>.from(untrackedPrayers);
 
+    _untrackedSheetOpen = true;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -784,7 +792,9 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
           );
         },
       ),
-    );
+    ).whenComplete(() {
+      _untrackedSheetOpen = false;
+    });
   }
 
   void _updateCurrentRoute() {
