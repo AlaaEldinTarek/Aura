@@ -35,21 +35,21 @@
 - [x] F48a — Qibla accuracy (P1 + P2 vibration merged via PR #142, eb5b789, 2026-11-28; device-checked)
 - [ ] F48f — Qibla accuracy part 2 (pending S24)
 - [ ] F43a — confirm intent first
-- [ ] F51o
+- [ ] F51o — spec merged (PR #147, docs/designs/fix-f51o.md); waiting on 3 owner decisions
 
 ---
 
 ## Phase 3 — P2 fixes
 
-- [ ] F34d
-- [ ] F48c
-- [ ] F51r
+- [ ] F34d — spec merged with F48c (PR #148, docs/designs/fix-f34d-f48c.md); waiting on 2 owner decisions
+- [ ] F48c — same spec as F34d
+- [ ] F51r — spec merged (PR #149, docs/designs/fix-f51r.md); waiting on 3 scope decisions
 
 ---
 
 ## Phase 4 — P3 fixes
 
-- [ ] F30f
+- [x] F30f — focus-resume refresh (PR #151, 6ad7e8f, 2026-11-28; device-checked on nova 5T)
 - [ ] F47g — Firestore usage (measure first)
 - [ ] F49f — duplicate enums (linked to FX-0, likely root of F36a)
 - [ ] F52p
