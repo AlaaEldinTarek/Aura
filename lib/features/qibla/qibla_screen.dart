@@ -354,21 +354,24 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
   }
 
   Widget _buildInstructions(BuildContext context, bool isDark, bool isArabic) {
-    final headingDiff = _qiblaDirection != null && _heading != null
-        ? (_qiblaDirection! - _heading!).abs()
+    final angleDiff = _qiblaDirection != null && _heading != null
+        ? ((_qiblaDirection! - _heading!) + 540) % 360 - 180
         : 0.0;
 
     String instruction;
     Color instructionColor;
 
-    if (headingDiff < 5) {
+    if (angleDiff.abs() < 5) {
       instruction = 'qibla_instruction_facing'.tr();
       instructionColor = Colors.green;
-    } else if (headingDiff < 20) {
+    } else if (angleDiff.abs() < 20) {
       instruction = 'qibla_instruction_close'.tr();
       instructionColor = Colors.orange;
+    } else if (angleDiff > 0) {
+      instruction = 'qibla_instruction_turn_right'.tr();
+      instructionColor = Colors.grey;
     } else {
-      instruction = 'qibla_instruction_turn'.tr();
+      instruction = 'qibla_instruction_turn_left'.tr();
       instructionColor = Colors.grey;
     }
 
