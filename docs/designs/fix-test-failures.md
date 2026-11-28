@@ -51,6 +51,7 @@ the test name and the failure reason to say `_applySort` no longer uses the patt
 | `lib/core/services/wird_marker_service.dart` | injectable `awardAchievements`, default = current behavior |
 | `test/core/services/wird_marker_service_test.dart` | pass a fake `awardAchievements`; add call-recording test |
 | `test/core/providers/wird_provider_test.dart` | pass a fake `awardAchievements` |
+| `test/features/dhikl/f52hl_source_test.dart` | found while implementing G1: its source-text check for the literal `AchievementService.instance.checkAndAward` in `moveMarker` and `completeKhatma` now looks for `_awardAchievements(` there, plus one check that the default is the real call |
 | `test/features/quran/wird_mode_switch_strings_test.dart` | consecutive-keys check |
 | `test/features/tasks/f30b_source_test.dart` | expect 7 |
 
