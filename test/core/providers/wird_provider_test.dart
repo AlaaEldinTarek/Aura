@@ -77,7 +77,11 @@ void _build({Map<String, Object> prefs = const {}}) {
   uid = null;
   wird = CountingWird(() => clock);
   marker = WirdMarkerService.forTesting(
-      cloud: cloud, wird: wird, now: () => clock, uid: () => uid);
+      cloud: cloud,
+      wird: wird,
+      now: () => clock,
+      uid: () => uid,
+      awardAchievements: (_) async {});
 }
 
 Future<void> _settle() => pumpEventQueue(times: 60);
