@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 import 'dart:async';
+import 'dart:io' show Platform;
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_compass/flutter_compass.dart';
@@ -63,6 +65,17 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
       _errorMessage = null;
     });
 
+    // flutter_compass has a native side only on Android and iOS; elsewhere
+    // (Windows, web) no compass event would ever arrive and the spinner would
+    // never stop.
+    if (kIsWeb || !(Platform.isAndroid || Platform.isIOS)) {
+      setState(() {
+        _errorMessage = 'qibla_compass_unavailable'.tr();
+        _isLoading = false;
+      });
+      return;
+    }
+
     try {
       // Get current location
       final locationService = LocationService.instance;
@@ -124,6 +137,12 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
         _isFacing = newIsFacing;
         setState(() {
           _heading = _smoothedHeading;
+          _isLoading = false;
+        });
+      }, onError: (Object error) {
+        if (!mounted) return;
+        setState(() {
+          _errorMessage = 'qibla_compass_unavailable'.tr();
           _isLoading = false;
         });
       });

@@ -654,6 +654,7 @@
   "qibla_instruction_turn_left": "Turn to the left",
   "qibla_hold_flat": "Hold your device flat",
   "qibla_error_title": "Error loading Qibla",
+  "qibla_compass_unavailable": "Compass is not available on this device",
   "daily_content_ayah_title": "📖 Verse of the Day",
   "daily_content_hadith_title": "📜 Hadith of the Day",
   "onboarding_btn_lets_go": "Let's Go! 🚀",

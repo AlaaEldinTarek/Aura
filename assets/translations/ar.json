@@ -654,6 +654,7 @@
   "qibla_instruction_turn_left": "دور نحو اليسار",
   "qibla_hold_flat": "حمل جهازك بشكل مسطح",
   "qibla_error_title": "خطأ في تحميل القبلة",
+  "qibla_compass_unavailable": "البوصلة غير متوفرة على هذا الجهاز",
   "daily_content_ayah_title": "📖 آية اليوم",
   "daily_content_hadith_title": "📜 حديث اليوم",
   "onboarding_btn_lets_go": "هيا بنا! 🚀",
