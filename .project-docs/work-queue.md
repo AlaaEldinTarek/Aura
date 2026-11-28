@@ -32,7 +32,7 @@
 ## Phase 2 — MEDIUM fixes
 
 - [ ] F51f — adhan beats Focus Mode (pending S28)
-- [x] F48a — Qibla accuracy (P1 merged; P2 vibration committed b3ef6ad on fix/f48a, device-checked 2026-11-28, not yet merged)
+- [x] F48a — Qibla accuracy (P1 + P2 vibration merged via PR #142, eb5b789, 2026-11-28; device-checked)
 - [ ] F48f — Qibla accuracy part 2 (pending S24)
 - [ ] F43a — confirm intent first
 - [ ] F51o
