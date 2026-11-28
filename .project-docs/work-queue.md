@@ -51,8 +51,8 @@
 
 - [x] F30f — focus-resume refresh (PR #151, 6ad7e8f, 2026-11-28; device-checked on nova 5T)
 - [ ] F47g — Firestore usage (measure first)
-- [ ] F49f — duplicate enums (linked to FX-0, likely root of F36a)
-- [ ] F52p
+- [ ] F49f — duplicate enums: bug fixed by FX-0 (2026-11-08); the duplicates remain, structural cleanup for refactor phase P3 (not a fix)
+- [x] F52p — already fixed: both engines map `proportional` to MWL since f9f23ad (2026-11-08); verified in source only
 
 ---
 
