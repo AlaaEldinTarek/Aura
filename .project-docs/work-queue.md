@@ -10,11 +10,11 @@
 - [ ] S-F52d-1 — suppress post-Isha full reload (PR #137)
 - [ ] S-F51n-1 — Arabic-Indic digits in iqama countdown
 - [ ] S-F51n-2 — Arabic-Indic digits in iqama countdown (run 2)
-- [ ] S-F52i-1 — Arabic-Indic in azkar counter / progress
-- [ ] S-F51p-1 — monochrome ic_notification in AzkarAlarmReceiver + FocusModeService
+- [x] S-F52i-1 — Arabic-Indic in azkar counter / progress (PASS nova 5T 2026-11-28)
+- [x] S-F51p-1 — monochrome ic_notification in AzkarAlarmReceiver + FocusModeService (PASS nova 5T 2026-11-28)
 - [ ] S-F51m-1 — FocusMode restores pre-Focus DND filter + ringer mode
-- [ ] S-F51m-2 — FocusMode device check run 2
-- [ ] S-F51m-3 — FocusMode device check run 3
+- [x] S-F51m-2 — FocusMode device check run 2 (PASS nova 5T 2026-11-28)
+- [x] S-F51m-3 — FocusMode device check run 3 (PASS nova 5T 2026-11-28)
 - [x] Merge PR #140 (fix/d3-d4-to-main)
 
 ---
@@ -32,7 +32,7 @@
 ## Phase 2 — MEDIUM fixes
 
 - [ ] F51f — adhan beats Focus Mode (pending S28)
-- [ ] F48a — Qibla accuracy
+- [x] F48a — Qibla accuracy (P1 merged; P2 vibration committed b3ef6ad on fix/f48a, device-checked 2026-11-28, not yet merged)
 - [ ] F48f — Qibla accuracy part 2 (pending S24)
 - [ ] F43a — confirm intent first
 - [ ] F51o
