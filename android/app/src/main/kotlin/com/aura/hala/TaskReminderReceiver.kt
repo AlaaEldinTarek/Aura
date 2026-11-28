@@ -77,10 +77,15 @@ class TaskReminderReceiver : BroadcastReceiver() {
                 context, notificationId, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
-            } else {
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
+                } else {
+                    alarmManager.setExact(AlarmManager.RTC_WAKEUP, triggerAtMs, pendingIntent)
+                }
+            } catch (e: SecurityException) {
+                Log.e(TAG, "❌ Exact alarm not allowed for task reminder id=$notificationId: ${e.message}")
+                return
             }
             Log.d(TAG, "⏰ Task reminder scheduled id=$notificationId at ${DateFormat.format("MM-dd HH:mm", Date(triggerAtMs))}")
         }
