@@ -81,4 +81,4 @@
 - [ ] fix/adhan-stop — keep tray "Stop Adhan" until playback ends + diagnose 30 s timeout
 - [ ] Remove tray_quit_log.txt temp file (after owner go-ahead)
 - [ ] Play Store upload — one final release after all edits done (new version + build > 60)
-- [ ] wip/crazy-haibt-tasks (F55 pin-tasks) — parked until feature work starts
+- [ ] F55 pin-tasks — parked until feature work starts (branch wip/crazy-haibt-tasks deleted 2026-11-28, last commit e4b1d5c)
