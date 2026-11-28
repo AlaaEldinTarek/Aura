@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_compass/flutter_compass.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:vibration/vibration.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/services/location_service.dart';
 import '../../core/utils/number_formatter.dart';
@@ -33,6 +34,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   StreamSubscription<CompassEvent>? _compassSubscription;
+  bool _isFacing = false;
 
   @override
   void initState() {
@@ -44,6 +46,14 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
   void dispose() {
     _compassSubscription?.cancel();
     super.dispose();
+  }
+
+  Future<void> _onFacingQibla() async {
+    try {
+      if (await Vibration.hasVibrator()) {
+        await Vibration.vibrate(duration: 200, amplitude: 128);
+      }
+    } catch (_) {}
   }
 
   Future<void> _initializeCompass() async {
@@ -95,6 +105,15 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
           if (_smoothedHeading < 0) _smoothedHeading += 360;
           if (_smoothedHeading >= 360) _smoothedHeading -= 360;
         }
+        final newIsFacing = _qiblaDirection != null
+            ? (((_qiblaDirection! - _smoothedHeading) + 540) % 360 - 180)
+                    .abs() <
+                5
+            : false;
+        if (newIsFacing && !_isFacing) {
+          _onFacingQibla();
+        }
+        _isFacing = newIsFacing;
         setState(() {
           _heading = _smoothedHeading;
           _isLoading = false;
