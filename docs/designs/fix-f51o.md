@@ -40,6 +40,8 @@ In the `updateTasksWidget` handler (`MainActivity.kt:364-395`) also store `saved
 
 ## Decisions (owner)
 
+**Answered 2026-11-28:** (1) yes, past prayers use the past dot. Decisions 2 (P3 midnight guard) and 3 (item 4c waits on F43a) are still open; P1 is not blocked by them.
+
 1. Past prayers get the dimmer "past" dot instead of the "now" dot (visible change in the timeline tab). Yes / no?
 2. P3: yesterday's list is replaced by "No tasks today" after midnight until the app pushes again (instead of staying stale). Yes / no / defer?
 3. Item 4c waits on F43a; confirm.
