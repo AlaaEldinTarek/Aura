@@ -1,6 +1,6 @@
 # Fix F48a — Qibla instruction text: wrong direction + 0/360 wrap
 
-**Branch:** `fix/f48a` | **Status:** Spec — awaiting approve phase P1
+**Branch:** `fix/f48a` | **Status:** P1 merged; P2 awaiting approve phase P2
 
 ---
 
@@ -148,9 +148,60 @@ Would leave an ambiguous generic "turn" key in the bundle with no call site. Ren
 
 ## Device check
 
-**S-F48a-1** — Open Qibla screen. Rotate phone slowly through a full 360°. Confirm:
-- Instruction reads "Turn to the right" / "Turn to the left" depending on which way the dial marker needs to move.
-- Instruction reads "Close to Qibla" (orange) when marker is within ~20° of the Qibla line.
-- Instruction reads "You are facing Qibla" (green) when marker is within ~5°.
-- Direction text is consistent with the dial marker direction at the 0°/360° boundary (hold phone so Qibla is near North / 0°).
-- When pointing roughly opposite Qibla (~180° away), instruction reads "Turn to the left" (expected tie-break direction).
+**S-F48a-1** — PASS nova 5T 2026-11-28 (all directions, boundary, and facing confirmed by user rotation).
+
+---
+
+## P2 — Haptic feedback on facing Qibla
+
+### Finding
+
+No physical feedback when the user reaches the Qibla direction; the instruction text colour change alone is easy to miss while the phone is moving.
+
+### Fix
+
+Vibrate once (short pulse) when `angleDiff.abs()` crosses the 5° threshold from above: transitioning from "not facing" to "facing". Do **not** vibrate continuously while already facing — only on the edge.
+
+**New state field** (`_QiblaScreenState`):
+```dart
+bool _isFacing = false;
+```
+
+**In the compass stream listener** (after the smoothing block, before `setState`):
+```dart
+final newIsFacing = _qiblaDirection != null
+    ? (((_qiblaDirection! - _smoothedHeading) + 540) % 360 - 180).abs() < 5
+    : false;
+if (newIsFacing && !_isFacing) {
+  _onFacingQibla();
+}
+_isFacing = newIsFacing;
+```
+
+**New helper** (Android-only gate, matches `AdhanPlayerService` pattern):
+```dart
+Future<void> _onFacingQibla() async {
+  try {
+    if (await Vibration.hasVibrator() ?? false) {
+      await Vibration.vibrate(duration: 200, amplitude: 128);
+    }
+  } catch (_) {}
+}
+```
+
+**New import**: `package:vibration/vibration.dart` (already in `pubspec.yaml` at `^2.0.0`).
+
+### Files changed (P2)
+
+| File | Change |
+|---|---|
+| `lib/features/qibla/qibla_screen.dart` | Add `_isFacing` field, transition check in listener, `_onFacingQibla()` helper, vibration import |
+
+### No new translation keys, prefs keys, or contracts.
+
+### Device check
+
+**S-F48a-2** — Open Qibla screen. Face away from Qibla, then rotate toward it:
+- One short vibration fires at the moment the "You are facing Qibla" text appears.
+- No continuous vibration while holding the phone on Qibla.
+- Rotate away and back: a second vibration fires on re-entry.
