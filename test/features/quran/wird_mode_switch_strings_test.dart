@@ -53,10 +53,15 @@ void main() {
   });
 
   // The two files already differed in the order of 5 older keys before M3
-  // (not reordered here). The three new keys are last, in the same order.
-  test('the three new keys are the last three, in the same order, in both', () {
+  // (not reordered here). The three keys sit next to each other, in the same
+  // order, in both. They were the last three until later keys were appended.
+  test('the three keys are consecutive, in the same order, in both', () {
     final want = _en.keys.toList();
-    expect(_keysInOrder(enRaw).sublist(_keysInOrder(enRaw).length - 3), want);
-    expect(_keysInOrder(arRaw).sublist(_keysInOrder(arRaw).length - 3), want);
+    for (final raw in [enRaw, arRaw]) {
+      final keys = _keysInOrder(raw);
+      final start = keys.indexOf(want.first);
+      expect(start, isNonNegative);
+      expect(keys.sublist(start, start + 3), want);
+    }
   });
 }
