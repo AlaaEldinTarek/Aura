@@ -788,8 +788,19 @@ class _MainWrapperScreenState extends ConsumerState<MainWrapperScreen>
   }
 
   void _updateCurrentRoute() {
+    // The channel exists only in MainActivity (same condition as the handler
+    // registered in initState); other platforms have no native side.
+    if (kIsWeb || !Platform.isAndroid) return;
     final route = _currentIndex == 0 ? '/home' : '/tab/$_currentIndex';
-    _navigationChannel.invokeMethod('setCurrentRoute', {'route': route});
+    _setCurrentRoute(route);
+  }
+
+  Future<void> _setCurrentRoute(String route) async {
+    try {
+      await _navigationChannel.invokeMethod('setCurrentRoute', {'route': route});
+    } catch (e) {
+      debugPrint('🧭 setCurrentRoute failed: $e');
+    }
   }
 
   void _showReminderPicker(
