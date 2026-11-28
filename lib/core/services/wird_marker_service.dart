@@ -87,6 +87,7 @@ class WirdMarkerService {
   final WirdService _wird;
   final DateTime Function() _now;
   final String? Function() _uid;
+  final Future<void> Function(String userId) _awardAchievements;
 
   WirdMarkerService._({
     required WirdMarkerCloud cloud,
@@ -96,7 +97,13 @@ class WirdMarkerService {
   })  : _cloud = cloud,
         _wird = wird,
         _now = now,
-        _uid = uid;
+        _uid = uid,
+        _awardAchievements = _defaultAward;
+
+  /// Real achievement check (F52h). Tests inject a fake so they never reach
+  /// Firebase through [AchievementService].
+  static Future<void> _defaultAward(String userId) =>
+      AchievementService.instance.checkAndAward(userId: userId);
 
   /// Constructor with injectable parts: fakes for the cloud, the Wird service,
   /// the clock and the uid reader. Tests use it, and so does `WirdNotifier`
@@ -107,10 +114,12 @@ class WirdMarkerService {
     required WirdService wird,
     DateTime Function()? now,
     String? Function()? uid,
+    Future<void> Function(String userId)? awardAchievements,
   })  : _cloud = cloud,
         _wird = wird,
         _now = now ?? DateTime.now,
-        _uid = uid ?? _defaultUid;
+        _uid = uid ?? _defaultUid,
+        _awardAchievements = awardAchievements ?? _defaultAward;
 
   static final WirdMarkerService instance = WirdMarkerService._(
     cloud: FirestoreWirdMarkerCloud(),
@@ -346,7 +355,7 @@ class WirdMarkerService {
         ));
         _syncInBackground();
         // F52h: award any newly-unlocked page-mode achievements (unawaited, no-op for guests)
-        AchievementService.instance.checkAndAward(userId: _uid() ?? 'guest_user');
+        _awardAchievements(_uid() ?? 'guest_user');
         return Moved(
           pagesAdded: v.pagesAdded,
           markerPage: target,
@@ -371,7 +380,7 @@ class WirdMarkerService {
         await clearUndo();
         _syncInBackground();
         // F52h: award khatma/page achievements (unawaited, no-op for guests)
-        AchievementService.instance.checkAndAward(userId: _uid() ?? 'guest_user');
+        _awardAchievements(_uid() ?? 'guest_user');
         return Completed(
           pagesAdded: v.pagesAdded,
           khatmCount: legacy + v.record.khatmaCount,

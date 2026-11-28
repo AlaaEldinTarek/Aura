@@ -70,6 +70,8 @@ late DateTime clock;
 String? uid;
 late WirdService wird;
 late WirdMarkerService svc;
+// User ids passed to the injected achievement check (F52h), in call order.
+late List<String> awarded;
 
 Future<SharedPreferences> _prefs() => SharedPreferences.getInstance();
 
@@ -79,11 +81,13 @@ void _build({Map<String, Object> prefs = const {}}) {
   clock = DateTime(2026, 11, 13, 10);
   uid = null;
   wird = WirdService.forTesting(now: () => clock);
+  awarded = [];
   svc = WirdMarkerService.forTesting(
     cloud: cloud,
     wird: wird,
     now: () => clock,
     uid: () => uid,
+    awardAchievements: (id) async => awarded.add(id),
   );
 }
 
@@ -756,6 +760,18 @@ void main() {
       final live = (await svc.load())!;
       expect(undo.cycle, live.cycle);
       expect(undo.versionAfterMove, live.version);
+    });
+
+    test(
+        'F52h: a move and a khatma run the achievement check, guest_user when signed out',
+        () async {
+      await svc.placeMarker(31, 0xFF1E88E5);
+      expect(awarded, isEmpty);
+      await svc.moveMarker(34);
+      expect(awarded, ['guest_user']);
+      uid = 'u1';
+      await svc.completeKhatma();
+      expect(awarded, ['guest_user', 'u1']);
     });
 
     test('a move that reaches the goal reports the streak credit', () async {

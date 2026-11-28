@@ -20,14 +20,22 @@ void main() {
       final moveIdx = src.indexOf('Future<MoveOutcome> moveMarker(');
       expect(moveIdx, isNot(-1));
       final moveBody = src.substring(moveIdx, moveIdx + 1200);
-      expect(moveBody, contains('AchievementService.instance.checkAndAward'));
+      expect(moveBody, contains('_awardAchievements('));
     });
 
     test('calls checkAndAward in completeKhatma', () {
       final khatmaIdx = src.indexOf('Future<KhatmaOutcome> completeKhatma(');
       expect(khatmaIdx, isNot(-1));
       final khatmaBody = src.substring(khatmaIdx, khatmaIdx + 900);
-      expect(khatmaBody, contains('AchievementService.instance.checkAndAward'));
+      expect(khatmaBody, contains('_awardAchievements('));
+    });
+
+    test('the default award function is the real AchievementService call', () {
+      // _awardAchievements is injectable for tests; production uses this default.
+      expect(
+        src,
+        contains('AchievementService.instance.checkAndAward(userId: userId)'),
+      );
     });
   });
 
