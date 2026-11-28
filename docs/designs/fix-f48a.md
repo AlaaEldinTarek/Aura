@@ -162,9 +162,10 @@ No physical feedback when the user reaches the Qibla direction; the instruction 
 
 Vibrate once (short pulse) when `angleDiff.abs()` crosses the 5° threshold from above: transitioning from "not facing" to "facing". Do **not** vibrate continuously while already facing — only on the edge.
 
-**New state field** (`_QiblaScreenState`):
+**New state fields** (`_QiblaScreenState`):
 ```dart
 bool _isFacing = false;
+DateTime? _lastVibrationTime;
 ```
 
 **In the compass stream listener** (after the smoothing block, before `setState`):
@@ -173,17 +174,25 @@ final newIsFacing = _qiblaDirection != null
     ? (((_qiblaDirection! - _smoothedHeading) + 540) % 360 - 180).abs() < 5
     : false;
 if (newIsFacing && !_isFacing) {
-  _onFacingQibla();
+  final sinceLastMs = _lastVibrationTime == null
+      ? 999999
+      : DateTime.now().difference(_lastVibrationTime!).inMilliseconds;
+  if (sinceLastMs > 2000) {
+    _lastVibrationTime = DateTime.now();
+    _onFacingQibla();
+  }
 }
 _isFacing = newIsFacing;
 ```
 
-**New helper** (Android-only gate, matches `AdhanPlayerService` pattern):
+The 2-second cooldown prevents compass jitter (heading oscillating ±5° at the threshold) from firing multiple rapid vibrations that cancel each other.
+
+**New helper**:
 ```dart
 Future<void> _onFacingQibla() async {
   try {
-    if (await Vibration.hasVibrator() ?? false) {
-      await Vibration.vibrate(duration: 200, amplitude: 128);
+    if (await Vibration.hasVibrator()) {
+      await Vibration.vibrate(duration: 500, amplitude: 255);
     }
   } catch (_) {}
 }

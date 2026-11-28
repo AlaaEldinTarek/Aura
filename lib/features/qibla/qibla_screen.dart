@@ -35,6 +35,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
   String? _errorMessage;
   StreamSubscription<CompassEvent>? _compassSubscription;
   bool _isFacing = false;
+  DateTime? _lastVibrationTime;
 
   @override
   void initState() {
@@ -51,7 +52,7 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
   Future<void> _onFacingQibla() async {
     try {
       if (await Vibration.hasVibrator()) {
-        await Vibration.vibrate(duration: 200, amplitude: 128);
+        await Vibration.vibrate(duration: 500, amplitude: 255);
       }
     } catch (_) {}
   }
@@ -111,7 +112,14 @@ class _QiblaScreenState extends ConsumerState<QiblaScreen> {
                 5
             : false;
         if (newIsFacing && !_isFacing) {
-          _onFacingQibla();
+          final now = DateTime.now();
+          final sinceLastMs = _lastVibrationTime == null
+              ? 999999
+              : now.difference(_lastVibrationTime!).inMilliseconds;
+          if (sinceLastMs > 2000) {
+            _lastVibrationTime = now;
+            _onFacingQibla();
+          }
         }
         _isFacing = newIsFacing;
         setState(() {
