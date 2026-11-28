@@ -59,6 +59,8 @@ try {
 
 ## Decisions (owner)
 
+**Answered 2026-11-28:** (1) the seven named sites only. Decisions 2 and 3 were not asked; the spec proceeds with their recommended answers (skip the `openExactAlarmSettings` change; the `getForegroundService` question stays a separate device-test item) unless the owner says otherwise at phase approval.
+
 1. Scope: the seven named sites only (recommended, matches the finding), or also the five extra sites listed above (same defect, more files incl. `DailySummaryReceiver.kt`, which is also "edit carefully")?
 2. Skip the `openExactAlarmSettings` result change (recommended: no visible effect)?
 3. `getForegroundService` question: leave as a separate device-test item (recommended)?

@@ -35,24 +35,24 @@
 - [x] F48a — Qibla accuracy (P1 + P2 vibration merged via PR #142, eb5b789, 2026-11-28; device-checked)
 - [ ] F48f — Qibla accuracy part 2 (pending S24)
 - [ ] F43a — confirm intent first
-- [ ] F51o
+- [ ] F51o — spec merged (PR #147, docs/designs/fix-f51o.md); past-dot decision answered (yes); P1 ready for `approve phase P1`; P3 midnight guard and item 4c still open
 
 ---
 
 ## Phase 3 — P2 fixes
 
-- [ ] F34d
-- [ ] F48c
-- [ ] F51r
+- [ ] F34d — spec merged with F48c (PR #148, docs/designs/fix-f34d-f48c.md); decisions answered 2026-11-28 (no timeout, Arabic text approved); ready for `approve phase P1`
+- [ ] F48c — same spec as F34d
+- [ ] F51r — spec merged (PR #149, docs/designs/fix-f51r.md); scope decided 2026-11-28 (7 named sites); ready for `approve phase P1`
 
 ---
 
 ## Phase 4 — P3 fixes
 
-- [ ] F30f
+- [x] F30f — focus-resume refresh (PR #151, 6ad7e8f, 2026-11-28; device-checked on nova 5T)
 - [ ] F47g — Firestore usage (measure first)
-- [ ] F49f — duplicate enums (linked to FX-0, likely root of F36a)
-- [ ] F52p
+- [ ] F49f — duplicate enums: bug fixed by FX-0 (2026-11-08); the duplicates remain, structural cleanup for refactor phase P3 (not a fix)
+- [x] F52p — already fixed: both engines map `proportional` to MWL since f9f23ad (2026-11-08); verified in source only
 
 ---
 

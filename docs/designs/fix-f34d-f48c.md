@@ -1,6 +1,6 @@
 # Fix spec: F34d + F48c — platform guards for two channel/stream calls
 
-Status: Draft — awaiting owner decision (section "Decisions") and `approve phase P1`
+Status: Decisions made 2026-11-28 (no timeout; Arabic text approved) — awaiting `approve phase P1`
 
 Branch: `fix/f34d-f48c` (from main 505a540). Tag: fix track P2 (platform guard). Source: `reference/findings.md` F34(d), F48(c).
 Behavior on Android is unchanged. Windows gets a guard and a message instead of an unhandled error / endless spinner.
@@ -60,6 +60,8 @@ In `_initializeCompass` (`qibla_screen.dart`):
 The Retry button of the error view stays; on Windows it re-shows the same message (harmless). The compass listener body, the vibration code and `_buildInstructions` are not touched.
 
 ## Decisions (owner)
+
+**Answered 2026-11-28:** (1) no timeout in this fix; (2) Arabic text approved as written.
 
 1. Android phone with no compass sensor: add a timeout (e.g. 10 s without any event → same message), or leave as is? The risk of a timeout is a false error on a slow first event. Recommended: **no timeout in this fix**; measure first (the plugin behavior with no sensor is UNVERIFIED).
 2. Arabic text of `qibla_compass_unavailable` — approve or change.

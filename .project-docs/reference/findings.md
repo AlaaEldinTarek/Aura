@@ -571,6 +571,10 @@ Check only when a phase touches the area:
 - **(e) Inline EN/AR strings** across the folder — **Tag: fix track, LOW.**
 - **(f) Duplicate `AsrMadhab` enums** (`asr_madhab_selection.dart` vs `core/models/prayer_settings.dart`, different
   string forms) and two method enums — **Tag: P3, linked to FX-0** (likely root cause of F36a; fix with FX-0).
+  **Status 2026-11-28 (VERIFIED in source): the bug effect was fixed by FX-0** (mapping helpers `calculationMethodFromPref` /
+  `asrMadhabFromPref`; F36a closed). **The duplicate enums still exist** (`enum AsrMadhab` in `asr_madhab_selection.dart:4` and
+  `prayer_settings.dart:97`; `AdhanCalculationMethod` vs `CalculationMethod`), so what remains is a structural cleanup for
+  refactor phase P3, not a fix-track item.
 - **(g) Contract doc error** — `contracts/prefs-keys.md` listed `aura_prefs` as holding "custom adhan" and
   `aura_silent_mode.silent_mode_enabled` as native-only; code shows custom adhan is in memory only and the flag has
   no writer. **Corrected in `contracts/prefs-keys.md` in the settings EGM commit (2026-11-07).**
@@ -766,6 +770,10 @@ drift check also re-confirmed F16, F25, F30a/b/f, F32a/d, F36a/c, F38a/c, F42, F
 - **(p) Dart and native `proportional` differ** — **Tag: P3 (two calc engines; memory "next-prayer architecture").**
   Dart maps it to MWL 18°/17° (`prayer_times_service.dart:272–274`), native uses 15°/15°
   (`NativePrayerCalculator.kt:235`). Not selectable in the UI today.
+  **ALREADY FIXED (VERIFIED in source 2026-11-28, not by a parity run):** the Kotlin adhan port (f9f23ad, 2026-11-08, a day
+  after this finding) maps `proportional` to MWL in `NativePrayerCalculator.kt:155`, the same as Dart
+  (`prayer_times_service.dart:267`); `test/core/services/prayer_calculation_test.dart:21` and
+  `tool/generate_prayer_parity_fixture.dart:60` use the same mapping.
 - Backlog (UNVERIFIED): overlapping fire-and-forget `checkAndAward` calls can award and toast the same achievement twice
   (`achievement_service.dart:55–64, :393–433`); desktop OAuth loopback accepts the first request of any kind and writes
   `$oauthError` into HTML unescaped (`auth_service.dart:163–181`, extends the F20 backlog item); Focus Mode "blocks the
