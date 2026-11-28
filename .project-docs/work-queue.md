@@ -43,7 +43,7 @@
 
 - [ ] F34d — spec merged with F48c (PR #148, docs/designs/fix-f34d-f48c.md); decisions answered 2026-11-28 (no timeout, Arabic text approved); ready for `approve phase P1`
 - [ ] F48c — same spec as F34d
-- [ ] F51r — spec merged (PR #149, docs/designs/fix-f51r.md); scope decided 2026-11-28 (7 named sites); ready for `approve phase P1`
+- [x] F51r — exact-alarm SecurityException guards at the 7 named sites (PR #157, c7dde61, 2026-11-29); failure path and device check not run; 5 extra sites remain unguarded
 
 ---
 
